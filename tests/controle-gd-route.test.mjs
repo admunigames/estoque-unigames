@@ -138,3 +138,50 @@ test("GORDURA ATUALIZADA ATÉ: quem lança informa a data; loja só vê; data va
   data = await (await call(CENTRAL, "GET", undefined, "?month=2026-10")).json();
   assert.equal(data.stores.find((s) => s.storeId === A).updatedUntil, "");
 });
+
+test("PDF HISTÓRICO (?view=history): todos os meses da loja, escopo e module; saldo final = saldo do card", async () => {
+  assert.equal((await entry(A, "2026-08-15", 300, { saleCode: "AGO-1" })).status, 201);
+  assert.equal((await call(CENTRAL, "PUT", { storeId: A, month: "2026-09", balanceCents: 1000 })).status, 200);
+  try {
+    const history = async (actor, query) => call(actor, "GET", undefined, `?view=history&storeId=${A}${query || ""}`);
+    const all = await (await history(CENTRAL)).json();
+    // Padrão: da primeira gordura da loja até hoje.
+    assert.equal(all.from, "2026-08-15");
+    assert.equal(all.to, all.today);
+    assert.equal(all.openingCents, 0);
+    assert.deepEqual(all.months.map((m) => m.month).slice(0, 3), ["2026-08", "2026-09", "2026-10"]);
+    const [aug, sep, oct] = all.months;
+    assert.deepEqual([aug.openingCents, aug.closingCents], [0, 300]);
+    // Setembro com SALDO ANTERIOR corrigido à mão (1000), não o fechamento de agosto.
+    assert.deepEqual([sep.openingCents, sep.openingManual, sep.closingCents], [1000, true, 11000]);
+    assert.equal(oct.openingCents, 11000);
+    assert.ok(oct.entries.every((row, index, rows) => index === 0 || rows[index - 1].entryDate <= row.entryDate), "na ordem da data");
+    // Saldo final = saldo do card do mês atual.
+    const dashboard = await (await call(CENTRAL, "GET", undefined, `?month=${all.today.slice(0, 7)}`)).json();
+    assert.equal(all.balanceCents, dashboard.stores.find((s) => s.storeId === A).balanceCents);
+    assert.equal(all.positiveCents + all.negativeCents, all.months.reduce((sum, m) => sum + m.movementCents, 0));
+
+    // Período DE/ATÉ: só outubro, com o saldo anterior = abertura de outubro.
+    const october = await (await history(CENTRAL, "&from=2026-10-01&to=2026-10-31")).json();
+    const dashOct = await (await call(CENTRAL, "GET", undefined, "?month=2026-10")).json();
+    const alfaOct = dashOct.stores.find((s) => s.storeId === A);
+    assert.deepEqual(october.months.map((m) => m.month), ["2026-10"]);
+    assert.equal(october.openingCents, alfaOct.openingCents);
+    assert.equal(october.balanceCents, alfaOct.balanceCents);
+    assert.equal((await history(CENTRAL, "&from=2026-10-31&to=2026-10-01")).status, 400);
+
+    // Login de loja: só a própria loja.
+    assert.equal((await history(LOJA_A)).status, 200);
+    assert.equal((await call(LOJA_A, "GET", undefined, `?view=history&storeId=${B}`)).status, 400);
+
+    // Module: a Assistência só traz as gorduras da Assistência.
+    const assist = await import("../app/api/gorduras-assistencia/route.ts");
+    const ASSIST = { id: "assist", permissions: ["gorduras_assistencia:view"] };
+    const fromAssist = await (await callRoute(assist.GET, ASSIST, "GET", `/api/gorduras-assistencia?view=history&storeId=${A}`)).json();
+    assert.equal(fromAssist.module, "assistencia");
+    assert.deepEqual(fromAssist.months.flatMap((m) => m.entries.map((row) => row.saleCode)), ["OS-1"]);
+    assert.ok(all.months.flatMap((m) => m.entries).every((row) => row.saleCode !== "OS-1"));
+  } finally {
+    await call(CENTRAL, "PUT", { storeId: A, month: "2026-09", balanceCents: null });
+  }
+});

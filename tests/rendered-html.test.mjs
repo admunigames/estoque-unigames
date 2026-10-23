@@ -5632,3 +5632,17 @@ test("Ordens de Serviço: PDF de produção — um arquivo por categoria (aba TO
   assert.equal(printed.length, 4);
   assert.match(toasts.at(-1), /NENHUMA O\.S\. EM PRODUÇÃO EM TERCEIRIZADO/);
 });
+
+test("Controle de Gorduras: PDF HISTÓRICO da loja (card, detalhes e resumo da loja; impressão no último @media print)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /data-gd-action="history">PDF HISTÓRICO</);
+  assert.match(html, /id="btnGdDetailHistory" type="button">PDF HISTÓRICO</);
+  assert.match(html, /data-gd-history="'\+escapeHtml\(single\.storeId\)\+'">PDF HISTÓRICO</);
+  assert.match(html, /<div id="gdPrintBody" class="gd-print-body" hidden><\/div>\s*<\/section>/);
+  // A regra de impressão fica no ÚLTIMO bloco @media print (vence as anteriores).
+  const lastPrint = html.slice(html.lastIndexOf("@media print{"));
+  assert.match(lastPrint, /body\.gd-printing #pageComercialControleGd > :not\(#gdPrintBody\)\{display:none !important;\}/);
+  assert.match(html, /document\.body\.classList\.add\('pdf-export', 'gd-printing'\)/);
+  assert.match(html, /\?view=history&storeId=/);
+  assert.match(html, /'GORDURAS-ASSISTENCIA' : 'GORDURAS'/);
+});

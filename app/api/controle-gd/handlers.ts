@@ -199,6 +199,8 @@ export async function GET(request: Request, cfg: GdConfig) {
     }
   }
 
+  if (url.searchParams.get("view") === "history") return historyResponse(database, actor, cfg, url);
+
   try {
     const today = todayDate();
     const requestedMonth = safeText(url.searchParams.get("month"), 7);
@@ -301,6 +303,104 @@ export async function GET(request: Request, cfg: GdConfig) {
     console.error("Não foi possível carregar o Controle GD.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O CONTROLE GD." }, 500);
   }
+}
+
+/**
+ * PDF HISTÓRICO da loja (?view=history&storeId&from&to): todas as gorduras
+ * não canceladas da loja no período, na ordem da data, agrupadas por mês, com
+ * o saldo anterior ao período, o saldo de cada mês (respeitando o SALDO
+ * ANTERIOR corrigido à mão) e o saldo final — que bate com o card quando o
+ * período termina hoje. Padrão: da primeira gordura da loja até hoje. Mesmo
+ * escopo de loja (canActOnStore) e mesmo module.
+ */
+async function historyResponse(database: D1Database, actor: Identity, cfg: GdConfig, url: URL) {
+  const storeId = safeText(url.searchParams.get("storeId"), 80);
+  const store = (await loadCompanies(database)).find((company) => company.id === storeId);
+  if (!store || !canActOnStore(actor, `${cfg.prefix}:view`, storeId)) return jsonResponse({ error: "LOJA INVÁLIDA." }, 400);
+  try {
+    const today = todayDate();
+    const [allEntries, overridesResult] = await Promise.all([
+      database
+        .prepare(
+          `SELECT adjustment_date AS entryDate, sale_code AS saleCode, seller_name AS sellerName, amount_cents AS amountCents,
+                  reason AS notes, created_by_name AS createdByName, created_at AS createdAt
+           FROM commercial_gd_balance_adjustments
+           WHERE canceled=0 AND store_id=?1 AND module=?2
+           ORDER BY adjustment_date ASC, created_at ASC`,
+        )
+        .bind(storeId, cfg.module)
+        .all<{ entryDate: string; saleCode: string; sellerName: string; amountCents: number; notes: string; createdByName: string; createdAt: string }>(),
+      database
+        .prepare("SELECT month, balance_cents AS balanceCents FROM commercial_gd_opening_balances WHERE store_id=?1 AND module=?2")
+        .bind(storeId, cfg.module)
+        .all<{ month: string; balanceCents: number }>(),
+    ]);
+    const entries = (allEntries.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
+    const overrides = (overridesResult.results ?? []).map((row) => ({ month: row.month, balanceCents: Number(row.balanceCents) }));
+    const firstDate = entries[0]?.entryDate || today;
+    const fromParam = safeText(url.searchParams.get("from"), 10);
+    const toParam = safeText(url.searchParams.get("to"), 10);
+    const from = ADJUSTMENT_DATE_PATTERN.test(fromParam) ? fromParam : firstDate;
+    const to = ADJUSTMENT_DATE_PATTERN.test(toParam) ? toParam : today;
+    if (from > to) return jsonResponse({ error: "A DATA INICIAL É DEPOIS DA FINAL." }, 400);
+    // Somas por mês de TODO o histórico (o saldo anterior de cada mês depende delas).
+    const sums = new Map<string, number>();
+    for (const entry of entries) sums.set(entry.entryDate.slice(0, 7), (sums.get(entry.entryDate.slice(0, 7)) ?? 0) + entry.amountCents);
+    const monthlySums = [...sums.entries()].map(([month, amountCents]) => ({ month, amountCents }));
+    const openingOf = (month: string) => openingBalanceCents(monthlySums, overrides, month);
+    const sumBetween = (start: string, end: string) => entries
+      .filter((entry) => entry.entryDate >= start && entry.entryDate <= end)
+      .reduce((sum, entry) => sum + entry.amountCents, 0);
+    const fromMonth = from.slice(0, 7);
+    // Saldo anterior ao período: abertura do mês da data inicial + o que veio antes dela no mês.
+    const openingCents = openingOf(fromMonth) + sumBetween(`${fromMonth}-01`, prevDay(from));
+    const inPeriod = entries.filter((entry) => entry.entryDate >= from && entry.entryDate <= to);
+    const byMonth = new Map<string, typeof inPeriod>();
+    for (const entry of inPeriod) byMonth.set(entry.entryDate.slice(0, 7), [...(byMonth.get(entry.entryDate.slice(0, 7)) ?? []), entry]);
+    const months = [...byMonth.entries()].map(([month, rows]) => {
+      const opening = month === fromMonth ? openingCents : openingOf(month);
+      const positiveCents = rows.reduce((sum, row) => (row.amountCents > 0 ? sum + row.amountCents : sum), 0);
+      const negativeCents = rows.reduce((sum, row) => (row.amountCents < 0 ? sum + row.amountCents : sum), 0);
+      return {
+        month,
+        openingCents: opening,
+        openingManual: month !== fromMonth && overrides.some((row) => row.month === month),
+        entries: rows,
+        positiveCents,
+        negativeCents,
+        movementCents: positiveCents + negativeCents,
+        closingCents: opening + positiveCents + negativeCents,
+      };
+    });
+    const toMonth = to.slice(0, 7);
+    // Saldo no fim do período: abertura do mês final (com as correções à mão) + o mês até a data final.
+    const balanceCents = (toMonth === fromMonth ? openingCents + sumBetween(from, to) : openingOf(toMonth) + sumBetween(`${toMonth}-01`, to));
+    return jsonResponse({
+      storeId,
+      storeName: store.name,
+      module: cfg.module,
+      from,
+      to,
+      firstDate,
+      today,
+      openingCents,
+      months,
+      count: inPeriod.length,
+      positiveCents: months.reduce((sum, month) => sum + month.positiveCents, 0),
+      negativeCents: months.reduce((sum, month) => sum + month.negativeCents, 0),
+      balanceCents,
+    });
+  } catch (error) {
+    console.error("Não foi possível carregar o histórico do Controle GD.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O HISTÓRICO." }, 500);
+  }
+}
+
+/** Dia anterior (YYYY-MM-DD). */
+function prevDay(date: string): string {
+  const day = new Date(`${date}T12:00:00Z`);
+  day.setUTCDate(day.getUTCDate() - 1);
+  return day.toISOString().slice(0, 10);
 }
 
 // Lança uma gordura (positiva ou negativa) de uma venda.

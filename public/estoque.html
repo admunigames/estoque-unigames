@@ -4058,6 +4058,33 @@
     .os-print-table th,.os-print-table td{padding:4px 6px; border:1px solid #9ca3af !important; background:#fff !important; color:#111827 !important; text-align:left; vertical-align:top; overflow-wrap:anywhere;}
     .os-print-table th{font:800 8px/1.3 var(--mono); text-transform:uppercase;}
     .os-print-table tr{break-inside:avoid; page-break-inside:avoid;}
+    /* PDF HISTÓRICO do Controle de Gorduras: só o relatório da loja. */
+    body.gd-printing > :not(.shell),
+    body.gd-printing .shell > :not(.content),
+    body.gd-printing .content > :not(#pageComercialControleGd),
+    body.gd-printing #pageComercialControleGd > :not(#gdPrintBody){display:none !important;}
+    body.gd-printing .shell,body.gd-printing .content,body.gd-printing #pageComercialControleGd{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.gd-printing #gdPrintBody{display:block !important; width:100%; color:#111827;}
+    .gd-print-header{display:flex !important; align-items:center; gap:12px;}
+    .gd-print-logo{width:44px; height:auto;}
+    .gd-print-opening{margin:4px 0 8px; font:800 10px/1.4 var(--mono);}
+    .gd-print-month{margin-top:10px;}
+    .gd-print-month h2{margin:0 0 4px; padding:5px 8px; border:1px solid #111827; font:800 11px/1.3 var(--mono); break-after:avoid; page-break-after:avoid;}
+    .gd-print-month h2 small{float:right; font-size:9px;}
+    .gd-print-table{width:100%; border-collapse:collapse; font-size:8.5px; table-layout:fixed;}
+    .gd-print-table thead{display:table-header-group;}
+    .gd-print-table th,.gd-print-table td{padding:3px 5px; border:1px solid #9ca3af !important; background:#fff !important; color:#111827 !important; text-align:left; vertical-align:top; overflow-wrap:anywhere;}
+    .gd-print-table th{font:800 7.5px/1.3 var(--mono); text-transform:uppercase;}
+    .gd-print-table th:nth-child(1){width:11%;} .gd-print-table th:nth-child(2){width:13%;} .gd-print-table th:nth-child(3){width:17%;}
+    .gd-print-table th:nth-child(5){width:13%;} .gd-print-table th:nth-child(6){width:15%;}
+    .gd-print-table .num{text-align:right; white-space:nowrap;}
+    .gd-print-table tr{break-inside:avoid; page-break-inside:avoid;}
+    .gd-print-pos{color:#15803d !important; font-weight:800;}
+    .gd-print-neg{color:#b42318 !important; font-weight:800;}
+    .gd-print-subtotal{margin:3px 0 0; font:700 8.5px/1.4 var(--mono); text-align:right; break-before:avoid; page-break-before:avoid;}
+    .gd-print-footer{margin-top:12px; padding-top:6px; border-top:2px solid #244f83; font:800 9.5px/1.5 var(--mono); break-inside:avoid; page-break-inside:avoid;}
     .os-print-empty{margin:4px 0 0; color:#475569; font-size:9px;}
     .assist-doc{width:100%; min-width:0 !important; font-size:10px; color:#111827 !important;}
     .assist-doc-head,.assist-doc-block,.assist-doc-total,.assist-doc-payments,.assist-doc-obs,.assist-doc-foot{break-inside:avoid; page-break-inside:avoid;}
@@ -7895,6 +7922,8 @@
         </div>
       </div>
       <div class="gd-entries-footer" id="gdEntriesFooter"></div>
+      <!-- PDF HISTÓRICO da loja: só aparece na impressão (body.gd-printing). -->
+      <div id="gdPrintBody" class="gd-print-body" hidden></div>
     </section>
 
 
@@ -12528,9 +12557,29 @@
     <h3 class="supply-section-title">SCRIPT DO DIA</h3>
     <textarea id="gdDetailScript" rows="8" readonly style="width:100%;font:600 12px/1.5 var(--mono);"></textarea>
     <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnGdDetailHistory" type="button">PDF HISTÓRICO</button>
       <button class="btn-accent" id="btnCopyGdDetailScript" type="button">COPIAR SCRIPT</button>
     </div>
   </div>
+</dialog>
+
+<dialog class="purchase-dialog" id="gdHistoryDialog" aria-labelledby="gdHistoryDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="gdHistoryDialogTitle">PDF HISTÓRICO</h3>
+    <button class="purchase-dialog-close" id="btnCloseGdHistoryDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="gdHistoryForm" novalidate>
+    <p class="purchase-field-help">Todas as gorduras registradas da loja, mês a mês, com saldo anterior, saldo de cada mês e saldo atual. Deixe DE/ATÉ vazios para desde a primeira gordura da loja até hoje.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="gdHistoryFrom">DE (OPCIONAL)</label><input type="date" id="gdHistoryFrom"></div>
+      <div class="purchase-field"><label for="gdHistoryTo">ATÉ (OPCIONAL)</label><input type="date" id="gdHistoryTo"></div>
+    </div>
+    <div class="user-form-status" id="gdHistoryStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelGdHistoryDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnGdHistorySubmit" type="submit">GERAR PDF</button>
+    </div>
+  </form>
 </dialog>
 
 <dialog class="purchase-dialog" id="rhEmployeeDialog" aria-labelledby="rhEmployeeDialogTitle">
@@ -31255,7 +31304,8 @@ function renderHomeTasks(){
       '<article class="supply-dashboard-card"><span>SALDO ANTERIOR</span><strong class="'+gdMoneyClass(opening)+'">'+formatCentsBRL(opening)+'</strong><small>'+openingNote+'</small>'+openingButton+'</article>'+
       '<article class="supply-dashboard-card"><span>POSITIVAS NO MÊS</span><strong class="gd-pos">'+gdSignedBRL(sum('positiveCents'))+'</strong></article>'+
       '<article class="supply-dashboard-card"><span>NEGATIVAS NO MÊS</span><strong class="gd-neg">'+formatCentsBRL(sum('negativeCents'))+'</strong></article>'+
-      '<article class="supply-dashboard-card"><span>TOTAL GERAL'+(single ? ' · '+escapeHtml(single.storeName) : '')+'</span><strong class="'+gdMoneyClass(total)+'">'+formatCentsBRL(total)+'</strong><small>'+(total < 0 ? 'NEGATIVO' : 'POSITIVO')+' · SALDO ANTERIOR + GORDURAS DO MÊS</small></article>'+
+      '<article class="supply-dashboard-card"><span>TOTAL GERAL'+(single ? ' · '+escapeHtml(single.storeName) : '')+'</span><strong class="'+gdMoneyClass(total)+'">'+formatCentsBRL(total)+'</strong><small>'+(total < 0 ? 'NEGATIVO' : 'POSITIVO')+' · SALDO ANTERIOR + GORDURAS DO MÊS</small>'+
+        (single ? '<button class="btn-outline small" type="button" data-gd-history="'+escapeHtml(single.storeId)+'">PDF HISTÓRICO</button>' : '')+'</article>'+
       (single
         ? '<article class="supply-dashboard-card"><span>GORDURA ATUALIZADA ATÉ</span><strong>'+escapeHtml(single.updatedUntil ? gdDateLabel(single.updatedUntil) : '—')+'</strong>'+
           '<small>'+escapeHtml(single.updatedUntil ? 'INFORMADO POR '+(single.updatedUntilBy || '') : 'SAI NA IMAGEM NO LUGAR DE "GERADO EM"')+'</small>'+
@@ -31280,6 +31330,7 @@ function renderHomeTasks(){
         '<div class="dre-toolbar-actions" style="margin-top:8px;">'+
           '<button class="btn-outline small" type="button" data-gd-action="detail">DETALHES</button>'+
           '<button class="btn-outline small" type="button" data-gd-action="image">IMAGEM</button>'+
+          '<button class="btn-outline small" type="button" data-gd-action="history">PDF HISTÓRICO</button>'+
         '</div>'+
       '</article>';
     }).join('');
@@ -31373,6 +31424,7 @@ function renderHomeTasks(){
     const btn = event.target.closest('[data-gd-action]');
     if(btn && btn.dataset.gdAction === 'detail') return gdOpenDetailDialog(store);
     if(btn && btn.dataset.gdAction === 'image') return gdOpenShareDialog(store);
+    if(btn && btn.dataset.gdAction === 'history') return gdOpenHistoryDialog(store);
     // Clique no card: filtra a loja (de novo = volta para todas).
     const select = el('gdStoreFilter');
     select.value = select.value === store.storeId ? '' : store.storeId;
@@ -31571,13 +31623,105 @@ function renderHomeTasks(){
     '</svg>';
   }
 
+  let gdDetailStore = null;
   function gdOpenDetailDialog(store){
+    gdDetailStore = store;
     gdRenderDetailChart(store);
     el('gdDetailDialogTitle').textContent = 'DETALHES · '+store.storeName;
     el('gdDetailScript').value = gdBuildScript(store, gdDateLabel((gdDashboardData && gdDashboardData.date) || ''));
     el('gdDetailDialog').showModal();
   }
   el('btnCloseGdDetailDialog') && el('btnCloseGdDetailDialog').addEventListener('click', () => { if(el('gdDetailDialog').open) el('gdDetailDialog').close(); });
+  el('btnGdDetailHistory') && el('btnGdDetailHistory').addEventListener('click', () => {
+    if(!gdDetailStore) return;
+    el('gdDetailDialog').close();
+    gdOpenHistoryDialog(gdDetailStore);
+  });
+  el('gdSummary') && el('gdSummary').addEventListener('click', event => {
+    const button = event.target.closest('[data-gd-history]');
+    const store = button && gdStoreById(button.dataset.gdHistory);
+    if(store) gdOpenHistoryDialog(store);
+  });
+
+  // ----- PDF HISTÓRICO da loja: todas as gorduras, mês a mês -----
+  // Período padrão: da primeira gordura da loja até hoje (o servidor decide).
+  let gdHistoryStore = null;
+  let gdPrintTitleBefore = '';
+
+  function gdOpenHistoryDialog(store){
+    gdHistoryStore = store;
+    el('gdHistoryDialogTitle').textContent = 'PDF HISTÓRICO · '+store.storeName;
+    el('gdHistoryFrom').value = '';
+    el('gdHistoryTo').value = '';
+    el('gdHistoryStatus').textContent = '';
+    el('gdHistoryDialog').showModal();
+  }
+  el('btnCloseGdHistoryDialog') && el('btnCloseGdHistoryDialog').addEventListener('click', () => el('gdHistoryDialog').close());
+  el('btnCancelGdHistoryDialog') && el('btnCancelGdHistoryDialog').addEventListener('click', () => el('gdHistoryDialog').close());
+
+  // "PATTEO" → PATTEO; "QUIOSQUE P.A" → QUIOSQUE-P-A (nome do arquivo).
+  const gdFileToken = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  function gdMonthTitle(month){
+    const [year, monthNumber] = month.split('-').map(Number);
+    return new Date(year, monthNumber - 1, 1).toLocaleString('pt-BR', {month:'long'}).toUpperCase()+' DE '+year;
+  }
+
+  function gdHistoryHtml(data){
+    const assist = data.module === 'assistencia';
+    const money = cents => '<span class="'+(cents > 0 ? 'gd-print-pos' : cents < 0 ? 'gd-print-neg' : '')+'">'+escapeHtml(cents > 0 ? '+'+formatCentsBRL(cents) : formatCentsBRL(cents))+'</span>';
+    const months = data.months.map(month =>
+      '<section class="gd-print-month">'+
+        '<h2>'+escapeHtml(gdMonthTitle(month.month))+' <small>SALDO ANTERIOR'+(month.openingManual ? ' (CORRIGIDO À MÃO)' : '')+': '+money(month.openingCents)+'</small></h2>'+
+        '<table class="gd-print-table"><thead><tr><th>Data</th><th>ID da venda</th><th>Vendedor</th><th>Observação</th><th class="num">Valor</th><th>Lançado por</th></tr></thead><tbody>'+
+        month.entries.map(row => '<tr><td>'+escapeHtml(gdDateLabel(row.entryDate))+'</td><td>'+escapeHtml(row.saleCode || '—')+'</td><td>'+escapeHtml(row.sellerName || '—')+'</td>'+
+          '<td>'+escapeHtml(row.notes || '—')+'</td><td class="num">'+money(row.amountCents)+'</td><td>'+escapeHtml(row.createdByName || '—')+'</td></tr>').join('')+
+        '</tbody></table>'+
+        '<div class="gd-print-subtotal">'+month.entries.length+' GORDURA'+(month.entries.length === 1 ? '' : 'S')+' · ENTRADAS '+money(month.positiveCents)+' · SAÍDAS '+money(month.negativeCents)+
+          ' · SALDO DO MÊS '+money(month.movementCents)+' · <b>SALDO ACUMULADO '+money(month.closingCents)+'</b></div>'+
+      '</section>').join('');
+    return '<header class="print-report-header gd-print-header"><img class="gd-print-logo" src="'+LOGO_DATA_URI+'" alt="">'+
+        '<div><div class="print-report-kicker">'+escapeHtml(assist ? 'ASSISTÊNCIA · CONTROLE GORDURAS ASSISTÊNCIA' : 'COMERCIAL · CONTROLE DE GORDURAS')+'</div>'+
+        '<h1>'+escapeHtml((assist ? 'HISTÓRICO DE GORDURAS ASSISTÊNCIA — ' : 'HISTÓRICO DE GORDURAS — ')+data.storeName)+'</h1>'+
+        '<div class="print-report-meta">PERÍODO '+escapeHtml(gdDateLabel(data.from)+' A '+gdDateLabel(data.to))+' · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></div></header>'+
+      '<div class="gd-print-opening">SALDO ANTERIOR AO PERÍODO: '+money(data.openingCents)+'</div>'+
+      (months || '<p class="gd-print-opening">NENHUMA GORDURA NO PERÍODO.</p>')+
+      '<footer class="gd-print-footer">'+data.count+' GORDURA'+(data.count === 1 ? '' : 'S')+' · TOTAL DE ENTRADAS '+money(data.positiveCents)+' · TOTAL DE SAÍDAS '+money(data.negativeCents)+
+        ' · <b>SALDO ATUAL '+money(data.balanceCents)+'</b></footer>';
+  }
+
+  el('gdHistoryForm') && el('gdHistoryForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!gdHistoryStore) return;
+    const status = el('gdHistoryStatus');
+    const from = el('gdHistoryFrom').value;
+    const to = el('gdHistoryTo').value;
+    if(from && to && from > to){ status.textContent = 'A DATA INICIAL É DEPOIS DA FINAL.'; status.dataset.tone = 'error'; return; }
+    const button = el('btnGdHistorySubmit');
+    button.disabled = true;
+    try{
+      const data = await gdApiRequest('?view=history&storeId='+encodeURIComponent(gdHistoryStore.storeId)+(from ? '&from='+from : '')+(to ? '&to='+to : ''));
+      el('gdHistoryDialog').close();
+      el('gdPrintBody').innerHTML = gdHistoryHtml(data);
+      if(!gdPrintTitleBefore) gdPrintTitleBefore = document.title;
+      // Nome do arquivo: GORDURAS-PATTEO-01-08-2026-A-23-10-2026.
+      const day = iso => gdDateLabel(iso).replace(/\//g, '-');
+      document.title = [data.module === 'assistencia' ? 'GORDURAS-ASSISTENCIA' : 'GORDURAS', gdFileToken(data.storeName), day(data.from), 'A', day(data.to)].join('-');
+      document.body.classList.add('pdf-export', 'gd-printing');
+      window.print();
+    }catch(error){
+      status.textContent = error.message;
+      status.dataset.tone = 'error';
+    }finally{
+      button.disabled = false;
+    }
+  });
+  window.addEventListener('afterprint', () => {
+    if(!gdPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export', 'gd-printing');
+    document.title = gdPrintTitleBefore;
+    gdPrintTitleBefore = '';
+  });
   el('btnCopyGdDetailScript') && el('btnCopyGdDetailScript').addEventListener('click', async () => {
     try{
       await navigator.clipboard.writeText(el('gdDetailScript').value.toLocaleUpperCase('pt-BR'));
