@@ -9999,8 +9999,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="declShoppingTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>A declarar (previsto)</th><th>Valor declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Alerta</th><th></th></tr></thead>
-            <tbody id="declShoppingTableBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>Projetado</th><th>Efetivamente declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Valor efetivamente pago</th><th>Alerta</th><th></th></tr></thead>
+            <tbody id="declShoppingTableBody"><tr><td colspan="13" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -11261,12 +11261,14 @@
       <div class="purchase-field"><label for="declShoppingLojaForm">LOJA *</label><select id="declShoppingLojaForm" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="declShoppingCompetencia">COMPETÊNCIA *</label><input type="month" id="declShoppingCompetencia" required></div>
       <div class="purchase-field"><label for="declShoppingFatReal">FATURAMENTO REAL (R$)</label><input type="text" inputmode="decimal" id="declShoppingFatReal" placeholder="R$ 0,00"><small class="purchase-field-help" id="declShoppingFatRealInfo">ESCOLHA A LOJA E A COMPETÊNCIA.</small></div>
+      <div class="purchase-field"><label for="declShoppingProjetado">VALOR PROJETADO DA DECLARAÇÃO (R$)</label><input type="text" inputmode="decimal" id="declShoppingProjetado" placeholder="R$ 0,00"><small class="purchase-field-help">DIGITE O VALOR QUE PRETENDE DECLARAR.</small></div>
       <div class="purchase-field"><label for="declShoppingDeclarado">VALOR EFETIVAMENTE DECLARADO (R$)</label><input type="text" inputmode="decimal" id="declShoppingDeclarado" placeholder="R$ 0,00"></div>
       <div class="purchase-field full"><label class="assist-check" for="declShoppingTemPct"><input type="checkbox" id="declShoppingTemPct"> LOJA COM ALUGUEL PERCENTUAL</label></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingPercentual">PERCENTUAL CONTRATUAL (%)</label><input type="number" id="declShoppingPercentual" min="0" max="100" step="0.01" placeholder="Ex.: 7"></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" id="declShoppingSugerido" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingSugeridoConta"></small></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="text" inputmode="decimal" id="declShoppingAluguelPct" placeholder="R$ 0,00"><small class="purchase-field-help" id="declShoppingAluguelPctInfo">CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO</small></div>
+      <div class="purchase-field" data-decl-pct-field><label for="declShoppingValorPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="text" id="declShoppingValorPago" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingValorPagoConta">ALUGUEL MÍNIMO + PERCENTUAL SOBRE O VALOR EFETIVAMENTE DECLARADO.</small></div>
       <div class="purchase-field full" data-decl-pct-field><label class="assist-check" for="declShoppingPctPago"><input type="checkbox" id="declShoppingPctPago"> ALUGUEL PERCENTUAL PAGO</label></div>
       <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
     </div>
@@ -42765,7 +42767,8 @@ function renderHomeTasks(){
     let alertLevel = 'none';
     if(breakpointCents > 0 && declared > breakpointCents) alertLevel = 'declared';
     else if(breakpointCents > 0 && real > breakpointCents) alertLevel = 'real';
-    return {breakpointCents, percentageRentCents, alertLevel};
+    const paidRentCents = bps > 0 ? minimum + percentageRentCents : 0;
+    return {breakpointCents, percentageRentCents, paidRentCents, alertLevel};
   }
   function declPctLabel(bps){ return (Number(bps || 0) / 100).toLocaleString('pt-BR', {maximumFractionDigits:2}) + '%'; }
   function declPctToBps(value){ return value === '' || value == null ? 0 : Math.round(Number(String(value).replace(',', '.')) * 100) || 0; }
@@ -42820,18 +42823,19 @@ function renderHomeTasks(){
         '<td data-label="LOJA">'+escapeHtml(storeName(r))+'</td>'+
         '<td data-label="FATURAMENTO REAL">'+formatCentsBRL(r.realRevenueCents)+'</td>'+
         '<td data-label="SUGERIDO">'+(d.breakpointCents ? formatCentsBRL(d.breakpointCents) : '—')+'</td>'+
-        '<td data-label="A DECLARAR (PREVISTO)">'+(Number(r.plannedCents) ? formatCentsBRL(r.plannedCents) : '—')+'</td>'+
-        '<td data-label="VALOR DECLARADO">'+(Number(r.declaredCents) > 0 ? formatCentsBRL(r.declaredCents) : '<span class="status-pill warn">AGUARDANDO DECLARAÇÃO</span>')+'</td>'+
+        '<td data-label="PROJETADO">'+(Number(r.plannedCents) ? formatCentsBRL(r.plannedCents) : '—')+'</td>'+
+        '<td data-label="EFETIVAMENTE DECLARADO">'+(Number(r.declaredCents) > 0 ? formatCentsBRL(r.declaredCents) : '<span class="status-pill warn">AGUARDANDO DECLARAÇÃO</span>')+'</td>'+
         '<td data-label="% S/ FATURAMENTO">'+pctFromBps(d.declaredShareBps)+'</td>'+
         '<td data-label="ALUGUEL MÍNIMO">'+(hasPct ? formatCentsBRL(r.minimumRentCents)+' · '+declPctLabel(r.contractPercentBps) : '—')+'</td>'+
         '<td data-label="ALUGUEL PERCENTUAL"><span>'+(hasPct ? formatCentsBRL(d.percentageRentCents)+' <span class="status-pill '+(r.percentageRentPaid ? 'ok' : 'warn')+'">'+(r.percentageRentPaid ? 'PAGO' : 'NÃO PAGO')+'</span>' : 'SEM PERCENTUAL')+'</span></td>'+
+        '<td data-label="VALOR EFETIVAMENTE PAGO">'+(hasPct ? formatCentsBRL(d.paidRentCents) : '—')+'</td>'+
         '<td data-label="ALERTA">'+(d.alertLevel && d.alertLevel !== 'none' ? '<span class="status-pill '+(d.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(d.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '—')+'</td>'+
         '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
           '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'">EDITAR</button>'+
           '<button class="btn-outline btn-sm" type="button" data-decl-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</div></td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
+    }).join('') : '<tr><td colspan="13" class="responsive-empty">Nenhuma declaração.</td></tr>';
     declShoppingBulk.sync();
   }
   const declShoppingBulk = setupBulkSelection(el('declShoppingBulkBar'), el('declShoppingTableBody'), async (action, ids) => {
@@ -42848,6 +42852,7 @@ function renderHomeTasks(){
       competenceMonth: el('declShoppingCompetencia').value,
       realRevenueCents: declMoneyCents(el('declShoppingFatReal')),
       declaredCents: declMoneyCents(el('declShoppingDeclarado')),
+      plannedCents: declMoneyCents(el('declShoppingProjetado')),
       contractPercentBps: hasPct ? declPctToBps(el('declShoppingPercentual').value) : 0,
       minimumRentCents: hasPct ? declMoneyCents(el('declShoppingMinimo')) : 0,
       percentageRentPaid: hasPct && el('declShoppingPctPago').checked,
@@ -42870,6 +42875,11 @@ function renderHomeTasks(){
     el('declShoppingAluguelPctInfo').textContent = rentInput.dataset.manual === '1'
       ? 'DIGITADO · CALCULADO SERIA '+formatCentsBRL(d.percentageRentCents)+' (APAGUE PARA VOLTAR AO CÁLCULO)'
       : 'CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO';
+    const rentCents = rentInput.dataset.manual === '1' ? declMoneyCents(rentInput) : d.percentageRentCents;
+    el('declShoppingValorPago').value = hasPct ? formatCentsBRL(f.minimumRentCents + rentCents) : '';
+    el('declShoppingValorPagoConta').textContent = hasPct
+      ? formatCentsBRL(f.minimumRentCents)+' (MÍNIMO) + '+formatCentsBRL(rentCents)+' (PERCENTUAL SOBRE '+formatCentsBRL(f.declaredCents)+' DECLARADO)'
+      : 'ALUGUEL MÍNIMO + PERCENTUAL SOBRE O VALOR EFETIVAMENTE DECLARADO.';
     const hint = el('declShoppingCalcHint');
     if(!hasPct || !d.breakpointCents){ hint.textContent = ''; return; }
     let msg = 'PONTO DE VIRADA: '+formatCentsBRL(d.breakpointCents)+' (ATÉ ESTE VALOR DECLARADO O ALUGUEL PERCENTUAL FICA ZERADO).';
@@ -42914,7 +42924,7 @@ function renderHomeTasks(){
   let declShoppingCurrentId = '';
   function openDeclShoppingDialog(row){
     el('declShoppingForm').reset();
-    ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => setCurrencyValue(el(id), ''));
+    ['declShoppingFatReal','declShoppingProjetado','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => setCurrencyValue(el(id), ''));
     el('declShoppingAluguelPct').dataset.manual = '';
     fase8CompanyOptions('declShoppingLojaForm', '');
     declShoppingCurrentId = row ? row.id : '';
@@ -42924,9 +42934,9 @@ function renderHomeTasks(){
       el('declShoppingLojaForm').value = row.companyId || '';
       el('declShoppingCompetencia').value = row.competenceMonth || '';
       setCurrencyValue(el('declShoppingFatReal'), row.realRevenueCents ? row.realRevenueCents / 100 : '');
-      // Mês planejado ainda sem o real: o A DECLARAR já vem no campo para conferir.
-      const declaredOrPlanned = Number(row.declaredCents) || Number(row.plannedCents) || 0;
-      setCurrencyValue(el('declShoppingDeclarado'), declaredOrPlanned ? declaredOrPlanned / 100 : '');
+      // Projetado e efetivamente declarado em campos separados (23/10/2026).
+      setCurrencyValue(el('declShoppingProjetado'), Number(row.plannedCents) ? row.plannedCents / 100 : '');
+      setCurrencyValue(el('declShoppingDeclarado'), Number(row.declaredCents) ? row.declaredCents / 100 : '');
       el('declShoppingTemPct').checked = Number(row.contractPercentBps) > 0;
       el('declShoppingPercentual').value = row.contractPercentBps ? String(row.contractPercentBps / 100) : '';
       setCurrencyValue(el('declShoppingMinimo'), row.minimumRentCents ? row.minimumRentCents / 100 : '');
@@ -42982,7 +42992,7 @@ function renderHomeTasks(){
       showPurchaseToast('Anexo enviado.');
     }catch(error){ status.textContent = error.message; }
   });
-  ['declShoppingFatReal','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => attachCurrencyMask(el(id)));
+  ['declShoppingFatReal','declShoppingProjetado','declShoppingDeclarado','declShoppingMinimo','declShoppingAluguelPct'].forEach(id => attachCurrencyMask(el(id)));
   el('declShoppingAluguelPct').addEventListener('input', () => {
     el('declShoppingAluguelPct').dataset.manual = getCurrencyValue(el('declShoppingAluguelPct')) === '' ? '' : '1';
     declShoppingUpdateHint();

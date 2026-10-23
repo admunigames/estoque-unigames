@@ -43,7 +43,10 @@ function withDerived(row: Row) {
     minimumRentCents: Number(row.minimumRentCents) || 0,
   });
   // Aluguel percentual: o salvo (pode ter sido digitado — valor cobrado pelo shopping).
-  return { ...row, derived: { ...derived, percentageRentCents: Number(row.percentageRentCents) || 0 } };
+  const percentageRentCents = Number(row.percentageRentCents) || 0;
+  // VALOR EFETIVAMENTE PAGO = mínimo + percentual sobre o declarado (o salvo).
+  const paidRentCents = Number(row.contractPercentBps) > 0 ? (Number(row.minimumRentCents) || 0) + percentageRentCents : 0;
+  return { ...row, derived: { ...derived, percentageRentCents, paidRentCents } };
 }
 
 export async function GET(request: Request) {
@@ -114,6 +117,13 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA O ALUGUEL PERCENTUAL." }, 400);
     }
     const notes = safeText(body.notes, 2000);
+    // VALOR PROJETADO DA DECLARAÇÃO (digitado; o PLANEJAR O ANO grava o mesmo
+    // campo). Ausente no corpo = mantém o atual.
+    const plannedRaw = body.plannedCents;
+    const plannedCents = plannedRaw === undefined ? null : plannedRaw === null || plannedRaw === "" ? 0 : Number(plannedRaw);
+    if (plannedCents !== null && !(Number.isInteger(plannedCents) && plannedCents >= 0)) {
+      return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA O VALOR PROJETADO." }, 400);
+    }
 
     const database = await getD1();
     const who = actor.displayName || "Administrador";
@@ -154,13 +164,14 @@ export async function POST(request: Request) {
              real_revenue_cents=?4, suggested_declared_cents=?5, declared_cents=?6,
              contract_percent_bps=?7, minimum_rent_cents=?8, percentage_rent_cents=?9,
              percentage_rent_paid=?10, notes=?11,
-             updated_by=?12, updated_by_name=?13, updated_at=CURRENT_TIMESTAMP
+             updated_by=?12, updated_by_name=?13, updated_at=CURRENT_TIMESTAMP,
+             planned_cents=COALESCE(?15, planned_cents)
            WHERE id=?14`,
         )
         .bind(
           companyId, companyName, competenceMonth, realRevenueCents, derived.breakpointCents,
           values.declaredCents, values.contractPercentBps, values.minimumRentCents,
-          percentageRentCents, percentageRentPaid, notes, actor.id, who, editId,
+          percentageRentCents, percentageRentPaid, notes, actor.id, who, editId, plannedCents,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
@@ -171,6 +182,7 @@ export async function POST(request: Request) {
       id, companyId, companyName, competenceMonth, realRevenueCents,
       declaredCents: values.declaredCents, contractPercentBps: values.contractPercentBps,
       minimumRentCents: values.minimumRentCents, percentageRentCents, percentageRentPaid, notes, actorId: actor.id, who,
+      plannedCents: plannedCents ?? 0,
     }).run();
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
