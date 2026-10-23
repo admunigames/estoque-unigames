@@ -5514,8 +5514,9 @@ test("Contas a Pagar > TIPO DE CONTA: seletor segmentado em linha, rádio fora d
   assert.match(html, /\.purchase-field\.payables-kind-tabs label:has\(input:checked\)\{[^}]*background:var\(--accent-deep\)/);
   assert.match(html, /\.purchase-field\.payables-kind-tabs label:has\(input:focus-visible\)\{outline:2px solid var\(--accent\)/);
   assert.match(html, /html\[data-theme="light"\] \.purchase-field\.payables-kind-tabs label:has\(input:checked\)\{background:var\(--accent\)/);
-  // Os 4 diálogos usam o mesmo componente, com os mesmos name.
-  for (const name of ["payableKind", "expenseKind", "expenseRateioType", "invoiceInstallmentMode"]) {
+  // Os diálogos usam o mesmo componente, com os mesmos name (as duplicatas da
+  // NF viraram tabela manual em 23/10/2026 — sem as abas de modo).
+  for (const name of ["payableKind", "expenseKind", "expenseRateioType"]) {
     assert.match(html, new RegExp(`<div class="purchase-field full payables-kind-tabs">\\s*<label><input type="radio" name="${name}"`), name);
   }
 });

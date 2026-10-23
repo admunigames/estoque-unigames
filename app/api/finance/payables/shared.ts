@@ -133,29 +133,26 @@ export async function assertSlotAvailableForPayable(
 }
 
 /**
- * Confirma que a conta financeira selecionada é da MESMA empresa/loja da
- * conta a pagar (ou global — company_id='' — sem loja/PF, que paga qualquer
- * conta) e está ativa. Conta a pagar SEM loja (escritório/PF/outros) aceita
- * qualquer conta financeira. Nunca confia só no que o frontend já filtrou.
- * Retorna mensagem de erro (409) ou null se ok.
+ * Confirma que a conta financeira selecionada existe e está ativa. Desde
+ * 23/10/2026 a conta bancária NÃO é associada a unidade (pedido do usuário):
+ * qualquer conta ativa paga qualquer lançamento, de qualquer loja ou sem
+ * loja. `companyId` fica na assinatura só por compatibilidade.
+ * Nunca confia só no que o frontend já filtrou. Retorna mensagem de erro
+ * (409) ou null se ok.
  */
 export async function assertFinanceAccountBelongsToCompany(
   database: Awaited<ReturnType<typeof getD1>>,
   financeAccountId: string,
-  companyId: string,
-  options: { requireGlobal?: boolean } = {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _companyId?: string,
 ): Promise<string | null> {
   if (!financeAccountId) return null;
   const account = await database
-    .prepare("SELECT company_id AS companyId, active FROM finance_accounts WHERE id=?1")
+    .prepare("SELECT active FROM finance_accounts WHERE id=?1")
     .bind(financeAccountId)
-    .first<{ companyId: string; active: number }>();
+    .first<{ active: number }>();
   if (!account) return "CONTA FINANCEIRA NÃO ENCONTRADA.";
-  if (account.companyId && options.requireGlobal) return "ESSA CONTA FINANCEIRA PERTENCE A UMA EMPRESA/LOJA.";
-  if (account.companyId && companyId && account.companyId !== companyId) {
-    return "ESSA CONTA FINANCEIRA PERTENCE A OUTRA EMPRESA/LOJA.";
-  }
-  if (!account.active) {
+  if (!Number(account.active)) {
     return "ESSA CONTA FINANCEIRA ESTÁ INATIVA E NÃO PODE SER USADA EM NOVOS LANÇAMENTOS.";
   }
   return null;
