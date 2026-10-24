@@ -33,18 +33,23 @@ function invoice(id, extra = {}) {
 const cell = (item) => db.sqlite.prepare("SELECT amount_cents AS c FROM finance_store_entries WHERE store_id=? AND item_id=?").get(ALFA, item)?.c ?? 0;
 const post = (id, body) => callRoute(installmentsRoute.POST, ADMIN, "POST", `/api/finance/invoices/${id}/installments`, body, { id });
 
-test("parcelas com valor digitado: soma diferente do total recusa (com a diferença); igual grava cada valor e vencimento", async () => {
+test("duplicatas digitadas à mão: soma diferente do total NÃO bloqueia (avisa a diferença); cada valor e vencimento gravado", async () => {
+  invoice("nf-diverge");
+  const diverge = await post("nf-diverge", { mode: "generate", installmentTotal: 3, firstDueDate: "2026-10-10", customDueDates: ["2026-10-10", "2026-10-25", "2026-12-05"], customAmounts: [3000, 3000, 3000] });
+  assert.equal(diverge.status, 201);
+  const warned = await diverge.json();
+  assert.equal(warned.divergenceCents, 1000);
+  assert.match(warned.divergenceWarning, /FALTAM R\$ 10,00 PARA FECHAR O TOTAL DA NF/);
+  assert.equal(db.sqlite.prepare("SELECT financial_status AS s FROM supplier_invoices WHERE id='nf-diverge'").get().s, "aguardando_duplicatas");
+
   invoice("nf-plan");
   const plan = { mode: "generate", installmentTotal: 3, firstDueDate: "2026-10-10", customDueDates: ["2026-10-10", "2026-10-25", "2026-12-05"] };
-  const wrong = await post("nf-plan", { ...plan, customAmounts: [3000, 3000, 3000] });
-  assert.equal(wrong.status, 400);
-  assert.match((await wrong.json()).error, /DIFERENÇA DE R\$ 10,00/);
-  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM supplier_invoice_installments").get().n, 0);
   const ok = await post("nf-plan", { ...plan, customAmounts: [5000, 2500, 2500] });
   assert.equal(ok.status, 201);
+  assert.equal((await ok.json()).divergenceWarning, null);
   const rows = db.sqlite.prepare("SELECT due_date AS d, original_amount_cents AS a FROM supplier_invoice_installments WHERE invoice_id='nf-plan' ORDER BY installment_number").all();
   assert.deepEqual(rows.map((r) => [r.d, r.a]), [["2026-10-10", 5000], ["2026-10-25", 2500], ["2026-12-05", 2500]]);
-  assert.equal(cell("item-serv"), 10000, "NF de serviço entra na DRE como antes");
+  assert.equal(cell("item-serv"), 9000 + 10000, "NF de serviço entra na DRE como antes (as duas NFs)");
 });
 
 test("NF de compra de mercadoria (pedido de Compras ou categoria de mercadoria) nasce fora da DRE", async () => {
@@ -75,4 +80,38 @@ test("editar duplicata não paga atualiza a conta a pagar ligada; paga não edit
   const paid = await callRoute(installmentRoute.PATCH, ADMIN, "PATCH", `/api/finance/invoices/nf-plan/installments/${first.id}`,
     { dueDate: "2026-12-30" }, { id: "nf-plan", installmentId: first.id });
   assert.equal(paid.status, 409);
+});
+
+test("painel das NFs: quantidade e valor por situação (sem o filtro de situação); tela mostra os números", async () => {
+  const listRoute = await import("../app/api/finance/invoices/route.ts");
+  const data = await (await callRoute(listRoute.GET, ADMIN, "GET", "/api/finance/invoices?status=pago")).json();
+  const byStatus = Object.fromEntries(data.summary.map((row) => [row.status, row]));
+  const total = data.summary.reduce((sum, row) => sum + row.count, 0);
+  assert.equal(total, db.sqlite.prepare("SELECT COUNT(*) AS n FROM supplier_invoices").get().n, "o resumo ignora o filtro de situação");
+  assert.equal(byStatus.aguardando_duplicatas.count >= 1, true);
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /invoiceStatusSummary = Array\.isArray\(data\.summary\)/);
+  assert.match(html, /id="btnInvoiceAddPlanRow"/);
+  assert.match(html, /id="btnInvoiceSplitPlan"/);
+  assert.doesNotMatch(html, /name="invoiceInstallmentMode"/);
+});
+
+test("NF sem categoria: as duplicatas usam a CATEGORIA NA DRE escolhida na tela (e a NF passa a ter a categoria)", async () => {
+  invoice("nf-sem-item", { finance_item_id: "", finance_category_id: "" });
+  const blocked = await post("nf-sem-item", { mode: "manual", dueDate: "2026-10-20", originalAmountCents: 10000 });
+  assert.equal(blocked.status, 400);
+  assert.match((await blocked.json()).error, /CATEGORIA NA DRE/);
+  const ok = await post("nf-sem-item", { mode: "manual", dueDate: "2026-10-20", originalAmountCents: 10000, dreFinanceItemId: "item-serv" });
+  assert.equal(ok.status, 201, JSON.stringify(await ok.clone().json()));
+  assert.equal(db.sqlite.prepare("SELECT finance_item_id AS i FROM supplier_invoices WHERE id='nf-sem-item'").get().i, "item-serv");
+  assert.equal(db.sqlite.prepare("SELECT finance_item_id AS i FROM accounts_payable WHERE invoice_number='nf-sem-item'").get().i, "item-serv");
+});
+
+test("NF sem categoria com NÃO INCLUIR na DRE: cadastra as duplicatas sem pedir categoria", async () => {
+  invoice("nf-sem-item-none", { finance_item_id: "", finance_category_id: "" });
+  const ok = await post("nf-sem-item-none", { mode: "manual", dueDate: "2026-10-20", originalAmountCents: 10000, dreTarget: "none" });
+  assert.equal(ok.status, 201, JSON.stringify(await ok.clone().json()));
+  const payable = db.sqlite.prepare("SELECT finance_item_id AS i, dre_target AS t FROM accounts_payable WHERE invoice_number='nf-sem-item-none'").get();
+  assert.deepEqual([payable.i, payable.t], ["", "none"]);
 });

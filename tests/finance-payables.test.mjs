@@ -293,6 +293,8 @@ test("formulários do Financeiro têm um campo único de CATEGORIA (categoria �
     { id: "c1", name: "DESPESAS FIXAS", parentId: "" },
     { id: "c2", name: "OCUPAÇÃO", parentId: "c1" },
     { id: "c3", name: "PESSOAL", parentId: "" },
+    // Cadastrada sem item (23/10/2026): também aparece, como "cat:<id>".
+    { id: "c4", name: "MARKETING", parentId: "" },
   ];
   const financeItems = [
     { id: "i1", categoryId: "c3", name: "VALE TRANSPORTE" },
@@ -314,7 +316,9 @@ test("formulários do Financeiro têm um campo único de CATEGORIA (categoria �
     "DESPESAS FIXAS › INTERNET",
     "DESPESAS FIXAS › OCUPAÇÃO › ALUGUEL",
     "PESSOAL › VALE TRANSPORTE",
+    "MARKETING",
   ]);
+  assert.equal(api.financeItemPickerOptions().find((o) => o.label === "MARKETING").id, "cat:c4");
   search.value = "aluguel";
   api.renderFinanceItemPicker("x");
   assert.equal(select.value, "i2"); // buscando, já escolhe a 1ª encontrada

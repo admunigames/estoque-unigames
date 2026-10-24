@@ -136,7 +136,7 @@ function nextMonth(month: string): string {
   return monthNumber === 12 ? `${year + 1}-01` : `${year}-${String(monthNumber + 1).padStart(2, "0")}`;
 }
 
-type EntryInput = { entryDate: string; saleCode: string; sellerName: string; amountCents: number; notes: string };
+type EntryInput = { entryDate: string; saleCode: string; sellerName: string; amountCents: number; notes: string; uberRide: number };
 
 function parseEntry(body: JsonMap): { error: string } | { entry: EntryInput } {
   const entry = {
@@ -145,6 +145,7 @@ function parseEntry(body: JsonMap): { error: string } | { entry: EntryInput } {
     sellerName: safeText(body.sellerName, 80).toLocaleUpperCase("pt-BR"),
     amountCents: Number(body.amountCents),
     notes: safeText(body.notes, 1000),
+    uberRide: body.uberRide === true || body.uberRide === 1 || body.uberRide === "1" ? 1 : 0,
   };
   if (!ADJUSTMENT_DATE_PATTERN.test(entry.entryDate)) return { error: "DATA INVÁLIDA." };
   if (!entry.saleCode) return { error: "INFORME O ID DA VENDA." };
@@ -240,6 +241,7 @@ export async function GET(request: Request, cfg: GdConfig) {
       bindStore<Record<string, unknown>>(
         `SELECT id, store_id AS storeId, store_name AS storeName, adjustment_date AS entryDate,
                 sale_code AS saleCode, seller_name AS sellerName, amount_cents AS amountCents, reason AS notes,
+                uber_ride AS uberRide,
                 created_by_name AS createdByName, created_at AS createdAt,
                 updated_by_name AS updatedByName, updated_at AS updatedAt
          FROM commercial_gd_balance_adjustments
@@ -397,6 +399,49 @@ async function historyResponse(database: D1Database, actor: Identity, cfg: GdCon
 }
 
 /** Dia anterior (YYYY-MM-DD). */
+/**
+ * CORRIDA UBER (23/10/2026): mantém a corrida da Conciliação Uber dos cartões
+ * corporativos em dia com a gordura — cria/atualiza enquanto a gordura está
+ * ativa e marcada, apaga quando é desmarcada ou excluída. A corrida nasce sem
+ * cartão (card_id '') e entra no cartão quando casa com a cobrança da fatura.
+ */
+async function syncUberRide(database: D1Database, adjustmentId: string, actor: Identity) {
+  const row = await database
+    .prepare(
+      `SELECT store_id AS storeId, adjustment_date AS entryDate, amount_cents AS amountCents, sale_code AS saleCode,
+              seller_name AS sellerName, reason, canceled, uber_ride AS uberRide
+       FROM commercial_gd_balance_adjustments WHERE id=?1`,
+    )
+    .bind(adjustmentId)
+    .first<{ storeId: string; entryDate: string; amountCents: number; saleCode: string; sellerName: string; reason: string; canceled: number; uberRide: number }>();
+  const ride = await database
+    .prepare("SELECT id FROM finance_uber_rides WHERE gd_adjustment_id=?1")
+    .bind(adjustmentId)
+    .first<{ id: string }>();
+  const active = row && Number(row.canceled) === 0 && Number(row.uberRide) === 1;
+  if (!active) {
+    if (ride) await database.prepare("DELETE FROM finance_uber_rides WHERE id=?1").bind(ride.id).run();
+    return;
+  }
+  const amountCents = Math.abs(Number(row.amountCents) || 0);
+  const reason = [row.saleCode ? `VENDA ${row.saleCode}` : "", row.reason].filter(Boolean).join(" · ").slice(0, 300);
+  if (ride) {
+    await database
+      .prepare("UPDATE finance_uber_rides SET company_id=?1, ride_date=?2, amount_cents=?3, passenger=?4, reason=?5 WHERE id=?6")
+      .bind(row.storeId, row.entryDate, amountCents, row.sellerName, reason, ride.id)
+      .run();
+    return;
+  }
+  await database
+    .prepare(
+      `INSERT INTO finance_uber_rides (id, card_id, company_id, ride_date, amount_cents, passenger, reason, source_name,
+         created_by, created_by_name, gd_adjustment_id)
+       VALUES (?1, '', ?2, ?3, ?4, ?5, ?6, 'GORDURA', ?7, ?8, ?9)`,
+    )
+    .bind(crypto.randomUUID(), row.storeId, row.entryDate, amountCents, row.sellerName, reason, actor.id, actor.displayName, adjustmentId)
+    .run();
+}
+
 function prevDay(date: string): string {
   const day = new Date(`${date}T12:00:00Z`);
   day.setUTCDate(day.getUTCDate() - 1);
@@ -424,12 +469,13 @@ export async function POST(request: Request, cfg: GdConfig) {
       .prepare(
         `INSERT INTO commercial_gd_balance_adjustments
           (id, store_id, store_name, adjustment_date, amount_cents, sale_code, seller_name, reason, source,
-           canceled, created_by, created_by_name, created_at, module)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'manual', 0, ?9, ?10, CURRENT_TIMESTAMP, ?11)`,
+           canceled, created_by, created_by_name, created_at, module, uber_ride)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'manual', 0, ?9, ?10, CURRENT_TIMESTAMP, ?11, ?12)`,
       )
       .bind(id, storeId, store.name, entry.entryDate, entry.amountCents, entry.saleCode, entry.sellerName, entry.notes,
-        actor.id, actor.displayName, cfg.module)
+        actor.id, actor.displayName, cfg.module, entry.uberRide)
       .run();
+    if (entry.uberRide) await syncUberRide(database, id, actor);
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     console.error("Não foi possível lançar a gordura do Controle GD.", error);
@@ -440,9 +486,9 @@ export async function POST(request: Request, cfg: GdConfig) {
 async function findEntry(database: D1Database, actor: Identity, id: string, cfg: GdConfig) {
   const row = id
     ? await database
-      .prepare("SELECT id, store_id AS storeId FROM commercial_gd_balance_adjustments WHERE id=?1 AND canceled=0 AND module=?2")
+      .prepare("SELECT id, store_id AS storeId, uber_ride AS uberRide FROM commercial_gd_balance_adjustments WHERE id=?1 AND canceled=0 AND module=?2")
       .bind(id, cfg.module)
-      .first<{ id: string; storeId: string }>()
+      .first<{ id: string; storeId: string; uberRide: number }>()
     : null;
   // Fora do escopo da loja: mesmo 404 de "não encontrado".
   return row && canActOnStore(actor, `${cfg.prefix}:edit`, row.storeId) ? row : null;
@@ -465,12 +511,13 @@ export async function PATCH(request: Request, cfg: GdConfig) {
       .prepare(
         `UPDATE commercial_gd_balance_adjustments
          SET adjustment_date=?1, amount_cents=?2, sale_code=?3, seller_name=?4, reason=?5,
-             updated_by=?6, updated_by_name=?7, updated_at=CURRENT_TIMESTAMP
+             updated_by=?6, updated_by_name=?7, updated_at=CURRENT_TIMESTAMP, uber_ride=?9
          WHERE id=?8`,
       )
       .bind(entry.entryDate, entry.amountCents, entry.saleCode, entry.sellerName, entry.notes,
-        actor.id, actor.displayName, row.id)
+        actor.id, actor.displayName, row.id, entry.uberRide)
       .run();
+    if (entry.uberRide || Number(row.uberRide)) await syncUberRide(database, row.id, actor);
     return jsonResponse({ updated: true });
   } catch (error) {
     console.error("Não foi possível alterar a gordura do Controle GD.", error);
@@ -496,6 +543,7 @@ export async function DELETE(request: Request, cfg: GdConfig) {
       )
       .bind(actor.id, actor.displayName, row.id)
       .run();
+    if (Number(row.uberRide)) await syncUberRide(database, row.id, actor);
     return jsonResponse({ canceled: true });
   } catch (error) {
     console.error("Não foi possível excluir a gordura do Controle GD.", error);

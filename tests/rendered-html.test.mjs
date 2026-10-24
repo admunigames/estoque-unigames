@@ -3397,7 +3397,7 @@ test("Financeiro Fase 6: Recebíveis e Fluxo de Caixa", async () => {
   assert.match(balancesShared, /hasBalance/);
   assert.match(balancesShared, /accountsMissingBalance/);
   assert.match(balancesRoute, /loadAccountBalances\(database, companyId\)/);
-  assert.match(cashFlowRoute, /loadAccountBalances\(database, companyId\)/);
+  assert.match(cashFlowRoute, /loadAccountBalances\(database, companyId, accountId\)/);
   assert.doesNotMatch(cashFlowRoute, /FROM finance_account_balances/);
 
   // RH no Fluxo de Caixa: as três consultas precisam de LIMITE INFERIOR de
@@ -5292,7 +5292,8 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
   assert.match(html, /financeApiRequest\('\/sales-recon', \{method:'POST'[\s\S]{0,120}dryRun:true/);
   assert.match(html, /SERVIÇO \(AUTO\)/);
   assert.match(html, /MAQUINETA NÃO IDENTIFICADA/);
-  assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 3); // Conciliação Bancária, de Vendas e Reposição
+  // Conciliação Bancária e de Vendas (a Reposição usa os extratos já importados — 23/10/2026).
+  assert.equal(html.split("await parseBankStatementFile(file)").length - 1, 2);
   // Extrato em PDF (as 3 importações): leitura aproximada das linhas do pdf.js.
   {
     const start = html.indexOf("function parseBankPdfLines(");
@@ -5343,7 +5344,7 @@ test("Financeiro > Conciliação de Vendas: menu, rota, abas, lote, prazo da adq
       ["2026-10-09", "TARIFA", -48],
       ["2026-10-09", "RECEBIMENTO VENDAS · VISA | DÉBITO", 8574],
     ]);
-    for (const id of ["reconFile", "svBankFile", "rpBankFile"]) assert.match(html, new RegExp(`id="${id}" accept="[^"]*\\.pdf"`), id);
+    for (const id of ["reconFile", "svBankFile"]) assert.match(html, new RegExp(`id="${id}" accept="[^"]*\\.pdf"`), id);
     assert.match(html, /PDF SEM TEXTO \(DIGITALIZADO\?\)/);
     assert.match(html, /CONFIRA COM OS TOTAIS DO EXTRATO ANTES DE IMPORTAR/);
   }
@@ -5514,8 +5515,9 @@ test("Contas a Pagar > TIPO DE CONTA: seletor segmentado em linha, rádio fora d
   assert.match(html, /\.purchase-field\.payables-kind-tabs label:has\(input:checked\)\{[^}]*background:var\(--accent-deep\)/);
   assert.match(html, /\.purchase-field\.payables-kind-tabs label:has\(input:focus-visible\)\{outline:2px solid var\(--accent\)/);
   assert.match(html, /html\[data-theme="light"\] \.purchase-field\.payables-kind-tabs label:has\(input:checked\)\{background:var\(--accent\)/);
-  // Os 4 diálogos usam o mesmo componente, com os mesmos name.
-  for (const name of ["payableKind", "expenseKind", "expenseRateioType", "invoiceInstallmentMode"]) {
+  // Os diálogos usam o mesmo componente, com os mesmos name (as duplicatas da
+  // NF viraram tabela manual em 23/10/2026 — sem as abas de modo).
+  for (const name of ["payableKind", "expenseKind", "expenseRateioType"]) {
     assert.match(html, new RegExp(`<div class="purchase-field full payables-kind-tabs">\\s*<label><input type="radio" name="${name}"`), name);
   }
 });

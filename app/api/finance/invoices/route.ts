@@ -49,15 +49,6 @@ export async function GET(request: Request) {
   // "__none__" = SEM LOJA (escritório / PF / outros).
   if (effectiveCompanyId === "__none__") addCondition("company_id = ''");
   else if (effectiveCompanyId) addCondition("company_id = ?", effectiveCompanyId);
-  const statuses = params.getAll("status").map((value) => safeText(value, 30)).filter(Boolean);
-  if (statuses.length === 1) addCondition("financial_status = ?", statuses[0]);
-  if (statuses.length > 1) {
-    const placeholders = statuses.map((status) => {
-      values.push(status);
-      return `?${values.length}`;
-    });
-    conditions.push(`financial_status IN (${placeholders.join(",")})`);
-  }
   const supplierId = safeText(params.get("supplierId"), 80);
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const notionPurchaseId = safeText(params.get("notionPurchaseId"), 120);
@@ -77,6 +68,19 @@ export async function GET(request: Request) {
       `%${search}%`,
       `%${search}%`,
     );
+  }
+
+  // Painel (cards por situação): mesmos filtros, sem o filtro de situação.
+  const summaryWhereSql = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const summaryValues = [...values];
+  const statuses = params.getAll("status").map((value) => safeText(value, 30)).filter(Boolean);
+  if (statuses.length === 1) addCondition("financial_status = ?", statuses[0]);
+  if (statuses.length > 1) {
+    const placeholders = statuses.map((status) => {
+      values.push(status);
+      return `?${values.length}`;
+    });
+    conditions.push(`financial_status IN (${placeholders.join(",")})`);
   }
 
   const whereSql = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -101,11 +105,20 @@ export async function GET(request: Request) {
       .bind(...rowsValues)
       .all<ListRow>();
 
+    const summary = await database
+      .prepare(
+        `SELECT financial_status AS status, COUNT(*) AS count, COALESCE(SUM(total_amount_cents), 0) AS totalCents
+         FROM supplier_invoices ${summaryWhereSql} GROUP BY financial_status`,
+      )
+      .bind(...summaryValues)
+      .all<{ status: string; count: number; totalCents: number }>();
+
     return jsonResponse({
       rows: rows.results ?? [],
       page,
       pageSize,
       total: Number(totalsRow?.count ?? 0),
+      summary: (summary.results ?? []).map((row) => ({ status: row.status, count: Number(row.count), totalCents: Number(row.totalCents) })),
     });
   } catch (error) {
     console.error("Não foi possível carregar as notas fiscais.", error);

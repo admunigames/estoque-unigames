@@ -6,8 +6,10 @@ import { canManageFinance, identity, jsonResponse, MONTH_PATTERN, safeText, same
 import { scopeActorOf } from "../../card-fees/shared";
 
 // CONTROLE DE REPOSIÇÃO × EXTRATO: as SAÍDAS do extrato bancário (importado
-// na Conciliação Bancária) batidas com os lançamentos de reposição.
-// GET ?financeAccountId&month → saídas do mês (com os lançamentos ligados e a
+// na Conciliação Bancária) batidas com os lançamentos de reposição. A
+// reposição não é associada a conta cadastrada (23/10/2026): o filtro é o
+// RESPONSÁVEL (?responsibleName) e as saídas vêm de todas as contas.
+// GET ?month[&responsibleName][&financeAccountId] → saídas do mês (com os lançamentos ligados e a
 //   sugestão: mesmo valor, até 5 dias de diferença) + lançamentos do mês sem
 //   par no extrato.
 // POST { action: 'link', bankEntryId, replacementIds[] } | { action: 'unlink', replacementIds[] }.
@@ -15,7 +17,10 @@ import { scopeActorOf } from "../../card-fees/shared";
 const SUGGEST_DAYS = 5;
 
 type Exit = { id: string; entryDate: string; description: string; amountCents: number; companyId: string; financeAccountId: string };
-type Replacement = { id: string; entryDate: string; companyId: string; companyName: string; product: string; reason: string; amountCents: number; bankEntryId: string };
+type Replacement = {
+  id: string; entryDate: string; companyId: string; companyName: string; product: string; reason: string;
+  responsibleName: string; amountCents: number; bankEntryId: string;
+};
 
 function scopeOf(request: Request) {
   const actor = identity(request);
@@ -39,6 +44,7 @@ export async function GET(request: Request) {
   const month = safeText(params.get("month"), 7);
   if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "INFORME O MÊS (AAAA-MM)." }, 400);
   const financeAccountId = safeText(params.get("financeAccountId"), 80);
+  const responsibleName = safeText(params.get("responsibleName"), 160).toLocaleUpperCase("pt-BR");
   const { from, to } = monthBounds(month);
   try {
     const database = await getD1();
@@ -59,7 +65,7 @@ export async function GET(request: Request) {
       database
         .prepare(
           `SELECT id, entry_date AS entryDate, company_id AS companyId, company_name AS companyName, product, reason,
-                  amount_cents AS amountCents, bank_entry_id AS bankEntryId
+                  responsible_name AS responsibleName, amount_cents AS amountCents, bank_entry_id AS bankEntryId
            FROM finance_replacement_entries
            WHERE ((entry_date >= ?1 AND entry_date <= ?2) OR bank_entry_id <> '')
            ${allStores ? "" : "AND company_id = ?3"}
@@ -69,7 +75,11 @@ export async function GET(request: Request) {
         .all<Replacement>(),
     ]);
     const exits = (exitsResult.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
-    const replacements = (replacementsResult.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
+    const allReplacements = (replacementsResult.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
+    const responsibles = [...new Set(allReplacements.map((row) => String(row.responsibleName || "").toLocaleUpperCase("pt-BR")).filter(Boolean))].sort();
+    const replacements = responsibleName
+      ? allReplacements.filter((row) => String(row.responsibleName || "").toLocaleUpperCase("pt-BR") === responsibleName)
+      : allReplacements;
     const byExit = new Map<string, Replacement[]>();
     for (const item of replacements) if (item.bankEntryId) byExit.set(item.bankEntryId, [...(byExit.get(item.bankEntryId) ?? []), item]);
     const free = replacements.filter((item) => !item.bankEntryId);
@@ -86,6 +96,7 @@ export async function GET(request: Request) {
       // Sem par: lançamentos do próprio mês ainda não ligados a nenhuma saída.
       unmatched: free.filter((item) => item.entryDate >= from && item.entryDate <= to),
       free,
+      responsibles,
     });
   } catch (error) {
     console.error("Não foi possível carregar o extrato da reposição.", error);

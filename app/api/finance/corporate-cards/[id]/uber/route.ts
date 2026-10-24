@@ -14,10 +14,15 @@ import type { Database } from "../../../card-fees/shared";
 //  - automatch { month } — casa de novo (ex.: depois de importar a fatura);
 //  - link { rideId, entryId } / unlink { rideId } — ajuste à mão;
 //  - delete { ids } — exclui corridas.
+//
+// Corridas da GORDURA (CORRIDA UBER, 23/10/2026): nascem sem cartão
+// (card_id '') e aparecem em todos os cartões até casarem com a cobrança de
+// um deles — aí passam a ser daquele cartão; desfazer devolve ao "sem
+// cartão". Só se excluem desmarcando/excluindo a gordura.
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-type Ride = { id: string; rideDate: string; amountCents: number; passenger: string; reason: string; cardEntryId: string };
+type Ride = { id: string; rideDate: string; amountCents: number; passenger: string; reason: string; cardEntryId: string; gdAdjustmentId: string; sourceName: string; companyId: string };
 type Charge = { id: string; entryDate: string; merchant: string; amountCents: number; holderName: string };
 
 function monthBounds(month: string) {
@@ -26,15 +31,21 @@ function monthBounds(month: string) {
   return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
 }
 
-async function loadMonth(database: Database, cardId: string, month: string) {
+async function loadMonth(database: Database, card: { id: string; companyId: string }, month: string) {
+  const cardId = card.id;
   const { from, to } = monthBounds(month);
+  // Corridas da gordura sem cartão: só as da loja do cartão (cartão sem loja vê todas).
+  const poolStore = card.companyId ? " AND company_id=?4" : "";
   const [rides, entries] = await Promise.all([
     database
       .prepare(
-        `SELECT id, ride_date AS rideDate, amount_cents AS amountCents, passenger, reason, card_entry_id AS cardEntryId
-         FROM finance_uber_rides WHERE card_id=?1 AND ride_date >= ?2 AND ride_date <= ?3 ORDER BY ride_date, id`,
+        `SELECT id, ride_date AS rideDate, amount_cents AS amountCents, passenger, reason, card_entry_id AS cardEntryId,
+                gd_adjustment_id AS gdAdjustmentId, source_name AS sourceName, company_id AS companyId
+         FROM finance_uber_rides
+         WHERE (card_id=?1 OR (card_id='' AND gd_adjustment_id <> ''${poolStore})) AND ride_date >= ?2 AND ride_date <= ?3
+         ORDER BY ride_date, id`,
       )
-      .bind(cardId, from, to)
+      .bind(...[cardId, from, to, ...(card.companyId ? [card.companyId] : [])])
       .all<Ride>(),
     database
       .prepare(
@@ -62,7 +73,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const month = safeText(new URL(request.url).searchParams.get("month"), 7);
   if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "INFORME O MÊS (AAAA-MM)." }, 400);
   try {
-    const { rides, charges } = await loadMonth(access.database, access.card.id, month);
+    const { rides, charges } = await loadMonth(access.database, access.card, month);
     const usedCharges = new Set(rides.map((ride) => ride.cardEntryId).filter(Boolean));
     const chargeById = new Map(charges.map((charge) => [charge.id, charge]));
     return jsonResponse({
@@ -97,14 +108,14 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const automatch = async (months: string[]) => {
     let matched = 0;
     for (const month of [...new Set(months)]) {
-      const { rides, charges } = await loadMonth(database, card.id, month);
+      const { rides, charges } = await loadMonth(database, card, month);
       const used = new Set(rides.map((ride) => ride.cardEntryId).filter(Boolean));
       const pairs = matchUberRides(
         rides.filter((ride) => !ride.cardEntryId).map((ride) => ({ id: ride.id, rideDate: ride.rideDate, amountCents: ride.amountCents })),
         charges.filter((charge) => !used.has(charge.id)),
       );
       if (pairs.length) {
-        await database.batch(pairs.map((pair) => database.prepare("UPDATE finance_uber_rides SET card_entry_id=?1 WHERE id=?2").bind(pair.chargeId, pair.rideId)));
+        await database.batch(pairs.map((pair) => database.prepare("UPDATE finance_uber_rides SET card_entry_id=?1, card_id=?2 WHERE id=?3").bind(pair.chargeId, card.id, pair.rideId)));
       }
       matched += pairs.length;
     }
@@ -156,7 +167,13 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return jsonResponse({ matched: await automatch([month]) });
     }
     const rideOf = async (rideId: string) =>
-      database.prepare("SELECT id, card_entry_id AS cardEntryId FROM finance_uber_rides WHERE id=?1 AND card_id=?2").bind(rideId, card.id).first<{ id: string; cardEntryId: string }>();
+      database
+        .prepare(
+          `SELECT id, card_entry_id AS cardEntryId, gd_adjustment_id AS gdAdjustmentId FROM finance_uber_rides
+           WHERE id=?1 AND (card_id=?2 OR (card_id='' AND gd_adjustment_id <> ''${card.companyId ? " AND company_id=?3" : ""}))`,
+        )
+        .bind(...[rideId, card.id, ...(card.companyId ? [card.companyId] : [])])
+        .first<{ id: string; cardEntryId: string; gdAdjustmentId: string }>();
     if (action === "link") {
       const ride = await rideOf(safeText(body.rideId, 80));
       if (!ride) return jsonResponse({ error: "CORRIDA NÃO ENCONTRADA." }, 404);
@@ -168,13 +185,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       if (!entry) return jsonResponse({ error: "COBRANÇA NÃO ENCONTRADA NA FATURA DESTE CARTÃO." }, 404);
       const taken = await database.prepare("SELECT id FROM finance_uber_rides WHERE card_entry_id=?1 AND id<>?2").bind(entryId, ride.id).first();
       if (taken) return jsonResponse({ error: "ESSA COBRANÇA JÁ ESTÁ BATIDA COM OUTRA CORRIDA." }, 409);
-      await database.prepare("UPDATE finance_uber_rides SET card_entry_id=?1 WHERE id=?2").bind(entryId, ride.id).run();
+      await database.prepare("UPDATE finance_uber_rides SET card_entry_id=?1, card_id=?2 WHERE id=?3").bind(entryId, card.id, ride.id).run();
       return jsonResponse({ applied: 1, skipped: [] });
     }
     if (action === "unlink") {
       const ride = await rideOf(safeText(body.rideId, 80));
       if (!ride) return jsonResponse({ error: "CORRIDA NÃO ENCONTRADA." }, 404);
-      await database.prepare("UPDATE finance_uber_rides SET card_entry_id='' WHERE id=?1").bind(ride.id).run();
+      // Corrida da gordura volta a ficar sem cartão (disponível para todos).
+      await database
+        .prepare(`UPDATE finance_uber_rides SET card_entry_id='', card_id=${ride.gdAdjustmentId ? "''" : "card_id"} WHERE id=?1`)
+        .bind(ride.id)
+        .run();
       return jsonResponse({ applied: 1, skipped: [] });
     }
     if (action === "delete") {
@@ -185,6 +206,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         .bind(card.id, ...ids)
         .all<{ id: string }>();
       if ((found.results ?? []).length !== ids.length) return jsonResponse({ error: "ALGUMA CORRIDA NÃO EXISTE MAIS. ATUALIZE A LISTA." }, 404);
+      const fromGd = await database
+        .prepare(`SELECT id FROM finance_uber_rides WHERE gd_adjustment_id <> '' AND id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`)
+        .bind(...ids)
+        .first<{ id: string }>();
+      if (fromGd) return jsonResponse({ error: "CORRIDA LANÇADA PELA GORDURA: DESMARQUE CORRIDA UBER (OU EXCLUA) NA GORDURA." }, 409);
       await database.batch(ids.map((rideId) => database.prepare("DELETE FROM finance_uber_rides WHERE id=?1").bind(rideId)));
       return jsonResponse({ applied: ids.length, skipped: [] });
     }

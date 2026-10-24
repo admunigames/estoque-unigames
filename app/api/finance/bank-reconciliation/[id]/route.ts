@@ -10,9 +10,13 @@ import {
   type JsonMap,
 } from "../../shared";
 import { planRuleLearning } from "../shared";
+import { loadPayable, planPayablePayment } from "../../payables/shared";
 
 // PATCH de um lançamento do extrato: classificar (categoria/subcategoria/
-// unidade/centro de custo/DRE/rateio), confirmar ou vincular a uma Despesa.
+// unidade/centro de custo/DRE/rateio/ATIVIDADE), confirmar, vincular a uma
+// Despesa ou BAIXAR uma conta a pagar ({ payPayableId }: registra o
+// pagamento na conta a pagar com a conta e a data deste lançamento e confirma
+// o lançamento — 23/10/2026).
 // Ao CONFIRMAR, faz upsert da regra de aprendizado por nome do
 // estabelecimento (finance_bank_classification_rules).
 
@@ -36,6 +40,11 @@ type EntryRow = {
   inRateio: number;
   expenseId: string;
   status: string;
+  activityId: string;
+  payableId: string;
+  entryDate: string;
+  amountCents: number;
+  description: string;
 };
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -58,7 +67,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         `SELECT id, finance_account_id AS financeAccountId, company_id AS companyId,
                 raw_merchant AS rawMerchant, category_item_id AS categoryItemId, subcategory,
                 cost_center_id AS costCenterId, in_dre AS inDre, in_rateio AS inRateio,
-                expense_id AS expenseId, status
+                expense_id AS expenseId, status, activity_id AS activityId, payable_id AS payableId,
+                entry_date AS entryDate, amount_cents AS amountCents, description
          FROM finance_bank_statement_entries WHERE id=?1`,
       )
       .bind(entryId)
@@ -88,7 +98,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       await database
         .prepare(
           `UPDATE finance_bank_statement_entries
-           SET expense_id=?1, status='expensed', updated_by=?2, updated_by_name=?3, updated_at=now()::text
+           SET expense_id=?1, status='expensed', updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP
            WHERE id=?4`,
         )
         .bind(expenseId, actor.id, who, entryId)
@@ -96,6 +106,40 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return jsonResponse({ updated: true, id: entryId, status: "expensed" });
     }
 
+    // Baixa de conta a pagar sugerida (mesmo valor) a partir desta saída.
+    const payPayableId = safeText(body.payPayableId, 80);
+    if (payPayableId) {
+      if (Number(entry.amountCents) >= 0) return jsonResponse({ error: "SÓ SAÍDAS DO EXTRATO BAIXAM CONTAS A PAGAR." }, 400);
+      if (entry.payableId || entry.expenseId || entry.status === "confirmed") {
+        return jsonResponse({ error: "ESTE LANÇAMENTO JÁ FOI CONCILIADO." }, 409);
+      }
+      const payable = await loadPayable(database, payPayableId);
+      if (!payable) return jsonResponse({ error: "CONTA A PAGAR NÃO ENCONTRADA." }, 404);
+      const plan = await planPayablePayment(database, payable, actor, {
+        idempotencyKey: `bank-entry:${entry.id}`,
+        amountCents: -Number(entry.amountCents),
+        paymentDate: entry.entryDate,
+        scheduled: false,
+        paymentMethod: "EXTRATO",
+        financeAccountId: entry.financeAccountId,
+        notes: `BAIXADO PELA CONCILIAÇÃO BANCÁRIA: ${entry.description || "SEM HISTÓRICO"}`.slice(0, 500),
+      });
+      if ("error" in plan) return jsonResponse({ error: plan.error }, plan.status);
+      await database.batch([
+        ...plan.statements.map(([sql, values]) => database.prepare(sql).bind(...values)),
+        database
+          .prepare(
+            `UPDATE finance_bank_statement_entries
+             SET payable_id=?1, status='confirmed', category_item_id=?2,
+                 updated_by=?3, updated_by_name=?4, updated_at=CURRENT_TIMESTAMP
+             WHERE id=?5`,
+          )
+          .bind(payable.id, entry.categoryItemId || payable.financeItemId || "", actor.id, who, entryId),
+      ]);
+      return jsonResponse({ updated: true, id: entryId, status: "confirmed", payableId: payable.id });
+    }
+
+    const activityId = body.activityId === undefined ? entry.activityId : safeText(body.activityId, 80);
     const categoryItemId = safeText(body.categoryItemId, 80);
     const subcategory = safeText(body.subcategory, 120);
     const costCenterId = safeText(body.costCenterId, 80);
@@ -120,7 +164,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       .prepare(
         `UPDATE finance_bank_statement_entries
          SET category_item_id=?1, subcategory=?2, cost_center_id=?3, company_id=?4,
-             in_dre=?5, in_rateio=?6, status=?7, updated_by=?8, updated_by_name=?9, updated_at=now()::text
+             in_dre=?5, in_rateio=?6, status=?7, updated_by=?8, updated_by_name=?9, updated_at=CURRENT_TIMESTAMP,
+             activity_id=?11
          WHERE id=?10`,
       )
       .bind(
@@ -134,6 +179,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         actor.id,
         who,
         entryId,
+        activityId,
       )
       .run();
 

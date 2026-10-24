@@ -92,8 +92,27 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!invoice.sentToFinanceAt) {
       return jsonResponse({ error: "ESTA NOTA FISCAL AINDA NÃO FOI ENVIADA AO FINANCEIRO." }, 409);
     }
+    const body = (await request.json()) as JsonMap;
+    // NF sem categoria: usa a CATEGORIA NA DRE escolhida nesta tela (e grava
+    // na NF) — antes isso bloqueava o cadastro das duplicatas.
+    let adoptedItem: { id: string; categoryId: string } | null = null;
     if (!invoice.financeItemId) {
-      return jsonResponse({ error: "DEFINA O ITEM FINANCEIRO DA NF ANTES DE CADASTRAR DUPLICATAS." }, 400);
+      const pickedItemId = safeText(body.dreFinanceItemId, 80);
+      adoptedItem = pickedItemId
+        ? await database
+            .prepare("SELECT id, category_id AS categoryId FROM finance_items WHERE id=?1")
+            .bind(pickedItemId)
+            .first<{ id: string; categoryId: string }>()
+        : null;
+      // NÃO INCLUIR na DRE (ex.: compra de mercadoria vinda de Compras sem
+      // categoria): segue sem categoria — não há célula de DRE para ela.
+      if (!adoptedItem && safeText(body.dreTarget, 20) !== "none") {
+        return jsonResponse({ error: "ESCOLHA A CATEGORIA DA NF (EM 'CATEGORIA NA DRE', LOGO ACIMA) ANTES DE CADASTRAR AS DUPLICATAS." }, 400);
+      }
+      if (adoptedItem) {
+        invoice.financeItemId = adoptedItem.id;
+        invoice.financeCategoryId = adoptedItem.categoryId;
+      }
     }
 
     const scopeActor = {
@@ -104,7 +123,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const accessError = assertInvoiceAccess(scopeActor, invoice);
     if (accessError) return jsonResponse({ error: accessError }, 403);
 
-    const body = (await request.json()) as JsonMap;
     const paymentMethod = safeText(body.paymentMethod, 40);
     const financeAccountId = safeText(body.financeAccountId, 80);
     const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, invoice.companyId);
@@ -112,7 +130,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     const mode = safeText(body.mode, 20) || "manual";
     let plans: Plan[];
-    let customAmountsUsed = false;
 
     if (mode === "generate") {
       const installmentTotal = Math.trunc(Number(body.installmentTotal));
@@ -140,7 +157,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       if (customAmounts && (customAmounts.length !== installmentTotal || customAmounts.some((value) => !Number.isInteger(value) || value <= 0))) {
         return jsonResponse({ error: "INFORME UM VALOR VÁLIDO PARA CADA PARCELA." }, 400);
       }
-      customAmountsUsed = Boolean(customAmounts);
       plans = generated.map((entry, index) => ({
         dueDate: entry.dueDate,
         amountCents: customAmounts ? customAmounts[index] : entry.amountCents,
@@ -159,20 +175,13 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const existing = await loadInstallments(database, id);
     const existingActive = existing.filter((installment) => !installment.canceled);
     const newInstallmentTotal = existingActive.length + plans.length;
-    if (customAmountsUsed) {
-      const distributed =
-        existingActive.reduce((sum, installment) => sum + installment.originalAmountCents, 0) +
-        plans.reduce((sum, plan) => sum + plan.amountCents, 0);
-      if (distributed !== invoice.totalAmountCents) {
-        const brl = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
-        return jsonResponse(
-          {
-            error: `A SOMA DAS PARCELAS (R$ ${brl(distributed)}) É DIFERENTE DO TOTAL DA NF (R$ ${brl(invoice.totalAmountCents)}) — DIFERENÇA DE R$ ${brl(invoice.totalAmountCents - distributed)}.`,
-          },
-          400,
-        );
-      }
-    }
+    // Soma das duplicatas diferente do total da NF NÃO bloqueia (frete,
+    // desconto, ST…): faltando, a NF segue AGUARDANDO DUPLICATAS; passando,
+    // fica COM DIVERGÊNCIA — e a tela avisa a diferença.
+    const distributedCents =
+      existingActive.reduce((sum, installment) => sum + installment.originalAmountCents, 0) +
+      plans.reduce((sum, plan) => sum + plan.amountCents, 0);
+    const divergenceCents = invoice.totalAmountCents - distributedCents;
 
     // Decisão de "Incluir na DRE?" (opcional, nível da NF inteira) — quando
     // não vem na requisição, as novas duplicatas ficam com
@@ -231,6 +240,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const boletoCode = safeText(body.boletoCode, 80);
     const notes = safeText(body.notes, 2000);
     const statements: [string, unknown[]][] = [];
+    if (adoptedItem) {
+      statements.push([
+        "UPDATE supplier_invoices SET finance_item_id=?1, finance_category_id=?2, updated_at=CURRENT_TIMESTAMP WHERE id=?3",
+        [adoptedItem.id, adoptedItem.categoryId, id],
+      ]);
+    }
     const createdIds: string[] = [];
 
     for (const existingInstallment of existingActive) {
@@ -371,14 +386,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
     }
     const entryId = crypto.randomUUID();
-    for (const [sql, values] of recalcPayableEntrySql(
-      entryId,
-      invoice.companyId,
-      invoice.financeItemId,
-      invoice.competenceMonth,
-      actor.id,
-      actorName,
-    )) {
+    // NF sem categoria (NÃO INCLUIR): não há célula de DRE para recalcular.
+    for (const [sql, values] of invoice.financeItemId
+      ? recalcPayableEntrySql(entryId, invoice.companyId, invoice.financeItemId, invoice.competenceMonth, actor.id, actorName)
+      : []) {
       statements.push([sql, values]);
     }
 
@@ -396,7 +407,13 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
     await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
 
-    return jsonResponse({ created: true, ids: createdIds, dreWarning }, 201);
+    const brl = (cents: number) => (Math.abs(cents) / 100).toFixed(2).replace(".", ",");
+    const divergenceWarning = !divergenceCents
+      ? null
+      : divergenceCents > 0
+        ? `DUPLICATAS SALVAS. FALTAM R$ ${brl(divergenceCents)} PARA FECHAR O TOTAL DA NF — CADASTRE O RESTANTE QUANDO TIVER.`
+        : `DUPLICATAS SALVAS. A SOMA PASSOU R$ ${brl(divergenceCents)} DO TOTAL DA NF — A NF FICA COM DIVERGÊNCIA ATÉ AJUSTAR.`;
+    return jsonResponse({ created: true, ids: createdIds, dreWarning, divergenceCents, divergenceWarning }, 201);
   } catch (error) {
     console.error("Não foi possível cadastrar as duplicatas.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CADASTRAR AS DUPLICATAS." }, 500);

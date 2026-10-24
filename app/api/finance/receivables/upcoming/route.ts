@@ -28,13 +28,19 @@ export async function GET(request: Request) {
     let company = "";
     if (scope.companyId) {
       values.push(scope.companyId);
-      company = "AND company_id = ?2";
+      company = `AND company_id = ?${values.length}`;
+    }
+    // Fluxo de Caixa por CONTA (23/10/2026).
+    const accountId = safeText(params.get("accountId"), 80);
+    if (accountId) {
+      values.push(accountId);
+      company += ` AND finance_account_id = ?${values.length}`;
     }
     const rows = await database
       .prepare(
         `SELECT id, company_id AS companyId, company_name AS companyName, operator_text AS operatorText,
                 competence_month AS competenceMonth, expected_date AS expectedDate,
-                expected_amount_cents AS expectedAmountCents
+                expected_amount_cents AS expectedAmountCents, finance_account_id AS financeAccountId
          FROM accounts_receivable
          WHERE canceled = 0 AND received_amount_cents IS NULL AND expected_date <> ''
            AND expected_date <= ?1 ${company}

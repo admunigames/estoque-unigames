@@ -4,7 +4,6 @@ import { actingStoresForMonth } from "../../../lib/acting-store";
 import {
   buildAccountingReport,
   commissionCarryChain,
-  computeOvertime,
   nextMonth,
   type AccountingPerson,
   type CommissionCarry,
@@ -15,20 +14,21 @@ import {
   canManagePayroll,
   identity,
   jsonResponse,
+  loadMonthValues,
   MONTH_PATTERN,
-  overtimeInputOf,
   safeText,
-  type OvertimePayoutRow,
 } from "../shared";
 
 // Relatório COMISSIONAMENTO / HORAS / PREMIAÇÃO para a contabilidade (RH >
-// Relatório Contabilidade; atalho no grupo RH Financeiro do menu). Um relatório
-// do mês com todos os funcionários, agrupado por EMPRESA (CNPJ do cadastro de
+// Relatório Contabilidade; atalho no grupo RH Financeiro do menu). Desde
+// 23/10/2026 só três colunas, agrupadas por EMPRESA (CNPJ do cadastro de
 // Lojas, pela loja atuante do mês):
-//   COMISSÃO BRUTA = comissão (Comercial ou digitada) + bônus + ajustes;
-//   DESCONTOS (com descrição) — sempre na comissão; a sobra vai para o mês
-//   seguinte (app/lib/hr-accounting-report.ts); PREMIAÇÃO = do Comercial +
-//   premiações do RH; HE = HORAS EXTRAS A PAGAR do Controle de Horas.
+//   COMISSIONAMENTO = comissão (Comercial ou digitada) + bônus + ajustes,
+//     com o desconto aplicado — se o desconto passar da comissão, a sobra vai
+//     para o mês seguinte (app/lib/hr-accounting-report.ts);
+//   HORAS EXTRAS = valor ÚNICO em R$ digitado à mão no próprio relatório
+//     (hr_employee_month_values, kind 'he');
+//   PREMIAÇÃO = do Comercial + premiações lançadas no RH.
 // Antes de montar, regrava a comissão/premiação do Comercial dos meses desde
 // COMMISSION_SYNC_FROM (o mesmo syncHrCommissions de cada lançamento do
 // Comercial): garante a premiação separada nos meses anteriores à migration.
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     for (let synced = COMMISSION_SYNC_FROM; synced <= month; synced = nextMonth(synced)) {
       await syncHrCommissions(database, synced, commercialIdentity(request));
     }
-    const [employeesResult, history, discountItems, payouts, actingStores, companies] = await Promise.all([
+    const [employeesResult, history, overtimeByEmployee, actingStores, companies] = await Promise.all([
       database.prepare("SELECT id, full_name AS fullName FROM hr_employees").all<{ id: string; fullName: string }>(),
       database
         .prepare(
@@ -69,23 +69,7 @@ export async function GET(request: Request) {
         )
         .bind(month)
         .all<CommissionHistoryRow>(),
-      database
-        .prepare(
-          `SELECT c.employee_id AS employeeId, i.label, i.amount_cents AS amountCents,
-                  i.installment_number AS installmentNumber, i.installment_total AS installmentTotal
-           FROM hr_commission_items i JOIN hr_commissions c ON c.id = i.commission_id
-           WHERE c.month = ?1 AND i.kind = 'desconto' ORDER BY i.created_at`,
-        )
-        .bind(month)
-        .all<{ employeeId: string; label: string; amountCents: number; installmentNumber: number; installmentTotal: number }>(),
-      database
-        .prepare(
-          `SELECT employee_id AS employeeId, he50_minutes AS he50Minutes, he100_minutes AS he100Minutes, night_minutes AS nightMinutes,
-                  he50_rate_cents AS he50RateCents, he100_rate_cents AS he100RateCents, night_rate_cents AS nightRateCents
-           FROM hr_time_tracking_payouts WHERE year_month = ?1`,
-        )
-        .bind(month)
-        .all<OvertimePayoutRow>(),
+      loadMonthValues(database, month, "he"),
       actingStoresForMonth(database, month),
       loadCompanyList(database) as Promise<Array<{ id: string; name: string; cnpj?: string }>>,
     ]);
@@ -96,14 +80,6 @@ export async function GET(request: Request) {
       list.push(row);
       historyByEmployee.set(row.employeeId, list);
     }
-    const labelsByEmployee = new Map<string, string[]>();
-    for (const item of discountItems.results ?? []) {
-      const parcela = Number(item.installmentTotal) >= 2 ? ` (${item.installmentNumber}/${item.installmentTotal})` : "";
-      const list = labelsByEmployee.get(item.employeeId) ?? [];
-      list.push(`${item.label}${parcela}`);
-      labelsByEmployee.set(item.employeeId, list);
-    }
-    const payoutByEmployee = new Map((payouts.results ?? []).map((row) => [row.employeeId, row]));
     const companyOf = (companyId: string) => companies.find((company) => company.id === companyId);
 
     const people: AccountingPerson[] = (employeesResult.results ?? []).map((employee) => {
@@ -121,9 +97,6 @@ export async function GET(request: Request) {
       const current = rows.find((row) => row.month === month);
       const store = actingStores.get(employee.id);
       const company = store ? companyOf(store.companyId) : undefined;
-      const labels = [...(labelsByEmployee.get(employee.id) ?? [])];
-      if (carry.carryInCents) labels.unshift("SOBRA DE DESCONTO DO MÊS ANTERIOR");
-      const payout = payoutByEmployee.get(employee.id);
       return {
         employeeId: employee.id,
         employeeName: employee.fullName,
@@ -131,9 +104,8 @@ export async function GET(request: Request) {
         companyName: company?.name ?? store?.companyName ?? "",
         cnpj: String(company?.cnpj || "").replace(/\D+/g, ""),
         carry,
-        discountLabels: labels,
         premiumCents: Number(current?.commercialPremiumCents || 0) + Number(current?.premiumsCents || 0),
-        overtime: computeOvertime(payout ? overtimeInputOf(payout) : {}),
+        overtimeCents: overtimeByEmployee.get(employee.id) ?? 0,
       };
     });
     return jsonResponse({ month, ...buildAccountingReport(people) });

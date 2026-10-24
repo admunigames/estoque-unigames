@@ -74,9 +74,10 @@ test("conta SEM loja: cria (PF), paga com conta de PF; login de loja não vê ne
   }, { id });
   assert.equal(payStore.status, 201);
 
-  // Conta de uma loja continua só para a própria loja.
+  // Conta bancária não é associada a unidade (23/10/2026): a conta "da BETA"
+  // paga conta da ALFA.
   const alfa = await create(ADMIN, { companyId: ALFA, companyName: "LOJA ALFA", financeAccountId: "acc-beta" });
-  assert.equal(alfa.status, 409);
+  assert.equal(alfa.status, 201);
   assert.equal((await create(ADMIN, { companyId: ALFA, companyName: "LOJA ALFA", financeAccountId: "acc-pf" })).status, 201);
 
   // Login de loja: não cria sem loja e não enxerga a conta sem loja.

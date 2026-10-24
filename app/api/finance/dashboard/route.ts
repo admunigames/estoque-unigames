@@ -185,7 +185,7 @@ export async function GET(request: Request) {
                effectiveCompanyId ? "AND ap.company_id=?3" : ""
              }
              GROUP BY COALESCE(cc.id, ''), COALESCE(cc.name, NULLIF(ap.cost_center, ''), 'SEM CENTRO DE CUSTO')
-             ORDER BY totalCents DESC`,
+             ORDER BY COALESCE(SUM(ap.original_amount_cents), 0) DESC`,
           )
           .bind(from, to, ...scopeParams)
           .all<CostCenterRow>(),

@@ -226,13 +226,14 @@ type CardSaleForDeposit = {
 type EntryRow = { id: string; entryDate: string; description: string; amountCents: number; salesReconStatus: string; salesReconNote: string; companyId: string };
 
 /**
- * Dias de depósito de [from, to]: parcelas esperadas das vendas da
- * maquineta (líquido = bruto − taxa cobrada, ou a cadastrada) × créditos do
- * extrato com o bank_keyword da adquirente. companyId '' = todas as lojas.
+ * Parcelas esperadas no banco em [from, to] das vendas da maquineta (líquido
+ * = bruto − taxa cobrada, ou a cadastrada). companyId '' = todas as lojas.
+ * Usada no CARTÃO × BANCO e na importação de RECEBIMENTOS PREVISTOS do Fluxo
+ * de Caixa.
  */
-export async function loadDepositDays(
+export async function loadExpectedCardDeposits(
   database: Database,
-  input: { from: string; to: string; companyId: string; today: string },
+  input: { from: string; to: string; companyId: string },
 ) {
   const acquirers = ((await database
     .prepare(
@@ -263,7 +264,7 @@ export async function loadDepositDays(
     )
     .bind(...saleValues)
     .all<CardSaleForDeposit>()).results ?? []);
-  const expected: ExpectedLine[] = [];
+  const expected: Array<ExpectedLine & { companyId: string; saleDate: string }> = [];
   const saleById = new Map<string, CardSaleForDeposit & { parcels: number }>();
   for (const sale of sales) {
     const acquirer = byId.get(sale.acquirerId);
@@ -280,10 +281,31 @@ export async function loadDepositDays(
     saleById.set(sale.id, { ...sale, parcels: lines.length });
     for (const line of lines) {
       if (line.date >= input.from && line.date <= input.to) {
-        expected.push({ saleId: sale.id, acquirerId: sale.acquirerId, date: line.date, netCents: line.netCents });
+        expected.push({
+          saleId: sale.id,
+          acquirerId: sale.acquirerId,
+          date: line.date,
+          netCents: line.netCents,
+          companyId: sale.companyId,
+          saleDate: sale.saleDate,
+        });
       }
     }
   }
+  return { acquirers, expected, saleById };
+}
+
+/**
+ * Dias de depósito de [from, to]: parcelas esperadas das vendas da
+ * maquineta (loadExpectedCardDeposits) × créditos do extrato com o
+ * bank_keyword da adquirente. companyId '' = todas as lojas.
+ */
+export async function loadDepositDays(
+  database: Database,
+  input: { from: string; to: string; companyId: string; today: string },
+) {
+  const { acquirers, expected: expectedLines, saleById } = await loadExpectedCardDeposits(database, input);
+  const expected: ExpectedLine[] = expectedLines.map(({ saleId, acquirerId, date, netCents }) => ({ saleId, acquirerId, date, netCents }));
 
   const keyed = acquirers.filter((row) => row.bankKeyword.trim());
   const entries = ((await database

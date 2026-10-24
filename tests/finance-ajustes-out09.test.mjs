@@ -87,7 +87,12 @@ test("Reposição × extrato: saídas do mês com sugestão, bater, desfazer, se
   rp("r1", { entry_date: "2026-10-03", product: "CONTROLE PS5", amount_cents: 15000 });
   rp("r2", { entry_date: "2026-10-07", product: "PEÇA A", amount_cents: 5000 });
   rp("r3", { entry_date: "2026-10-08", product: "PEÇA B", amount_cents: 3000 });
-  rp("r4", { entry_date: "2026-10-20", product: "SEM PAR", amount_cents: 999 });
+  rp("r4", { entry_date: "2026-10-20", product: "SEM PAR", amount_cents: 999, responsible_name: "BRUNO" });
+
+  // Reposição sem conta cadastrada (23/10/2026): filtro pelo RESPONSÁVEL.
+  const byResponsible = await json(await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10&responsibleName=bruno"));
+  assert.deepEqual(byResponsible.responsibles, ["BRUNO"]);
+  assert.deepEqual(byResponsible.unmatched.map((r) => r.id), ["r4"]);
 
   const view = await json(await get(rpBank.GET, "/api/finance/replacement-control/bank?month=2026-10&financeAccountId=acc-1"));
   assert.deepEqual(view.exits.map((e) => e.id), ["s1", "s2"]); // só saídas

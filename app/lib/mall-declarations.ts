@@ -29,6 +29,9 @@ export type MallDeclarationDerived = {
   breakpointCents: number;
   // Calculado sobre o DECLARADO: máx(0, declarado × % − mínimo).
   percentageRentCents: number;
+  // VALOR EFETIVAMENTE PAGO (23/10/2026): mínimo + percentual sobre o
+  // declarado = máx(mínimo, declarado × %). 0 quando a loja não tem percentual.
+  paidRentCents: number;
   // % do valor declarado sobre o faturamento real (pontos-base). 0 se sem real.
   declaredShareBps: number;
   alertLevel: "none" | "real" | "declared";
@@ -63,7 +66,8 @@ export function deriveMallDeclaration(input: MallDeclarationInput): MallDeclarat
       "O FATURAMENTO REAL ULTRAPASSA O PONTO DE VIRADA — POSSÍVEL INCIDÊNCIA DE ALUGUEL PERCENTUAL.";
   }
 
-  return { breakpointCents, percentageRentCents, declaredShareBps, alertLevel, alertMessage };
+  const paidRentCents = bps > 0 ? minimumRentCents + percentageRentCents : 0;
+  return { breakpointCents, percentageRentCents, paidRentCents, declaredShareBps, alertLevel, alertMessage };
 }
 
 // Soma 3 meses de calendário a uma data ISO (AAAA-MM-DD), preservando o

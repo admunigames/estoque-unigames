@@ -2,6 +2,7 @@ import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { todayInTimezone } from "../../../../lib/finance-status";
 import { DATE_PATTERN } from "../../../../lib/payables-recurrence";
+import { assertFinanceAccountBelongsToCompany } from "../../payables/shared";
 import {
   computeReceivableDisplayStatus,
   expectedDateFromCompetence,
@@ -125,6 +126,13 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       return jsonResponse({ error: "INFORME UM VALOR MAIOR QUE ZERO." }, 400);
     }
 
+    // Conta do recebimento: ausente no corpo = mantém a atual.
+    const financeAccountId = body.financeAccountId === undefined ? existing.financeAccountId || "" : safeText(body.financeAccountId, 80);
+    if (financeAccountId !== (existing.financeAccountId || "")) {
+      const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId);
+      if (accountError) return jsonResponse({ error: accountError }, 400);
+    }
+
     const received = parseReceived(body);
     if (received.error) return jsonResponse({ error: received.error }, 400);
 
@@ -138,7 +146,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         `UPDATE accounts_receivable
          SET company_name=?1, operator_text=?2, acquirer_id=?3, competence_month=?4, expected_date=?5,
              expected_amount_cents=?6, received_amount_cents=?7, received_date=?8, notes=?9,
-             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP
+             updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, finance_account_id=?13
          WHERE id=?12`,
       )
       .bind(
@@ -154,6 +162,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         actor.id,
         actor.displayName || "Administrador",
         id,
+        financeAccountId,
       )
       .run();
 
