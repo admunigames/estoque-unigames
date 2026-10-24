@@ -6503,6 +6503,7 @@
               <div id="comprasOrderDetailMeta"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-outline" id="btnComprasOrderListing" type="button" hidden>LISTAGEM DO PEDIDO (TXT)</button>
               <button class="btn-outline" id="btnCloneComprasOrder" type="button" hidden>CLONAR PEDIDO</button>
               <button class="btn-outline" id="btnEditComprasOrder" type="button">EDITAR PEDIDO</button>
               <button class="btn-danger-outline" id="btnCancelComprasOrder" type="button">CANCELAR PEDIDO</button>
@@ -41359,8 +41360,34 @@ function renderHomeTasks(){
       });
       showPurchaseToast('Compra efetuada — pedido aguardando chegada.');
       await refreshAfterAction(async () => { await loadComprasOrdersPage({silent:true}); await openComprasOrderDetail(comprasCurrentOrderId); });
+      // Listagem do pedido (quantidade, produto e custo) baixa na hora.
+      comprasDownloadOrderListing();
     }catch(error){ status.textContent = error.message; }
   });
+
+  // ----- LISTAGEM DO PEDIDO (TXT): baixa ao gerar o pedido e pelo botão -----
+  // Formato pedido pelo usuário (24/10/2026), um produto por bloco:
+  //   30 - PRODUTO 1
+  //   CUSTO: R$ 12,50 - VENDA: R$ -
+  // CUSTO = preço unitário do vencedor (sem preço: R$ -); VENDA fica em branco.
+  function comprasDownloadOrderListing(){
+    const order = comprasCurrentOrder || comprasOrders.find(o => o.id === comprasCurrentOrderId);
+    if(!comprasCurrentOrderItems.length) return showPurchaseToast('PEDIDO SEM PRODUTOS.', 'error');
+    const money = cents => Number(cents || 0) > 0 ? formatCentsBRL(cents).replace(/\s/g, ' ') : 'R$ -';
+    const linhas = comprasCurrentOrderItems.map(item =>
+      Number(item.quantity || 0)+' - '+(item.productName || item.productCode)+'\n'+
+      'CUSTO: '+money(item.unitPriceCents)+' - VENDA: R$ -');
+    const blob = new Blob(['\ufeff'+linhas.join('\n\n')+'\n'], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pedido-'+(order ? comprasOrderDisplayName(order) : comprasCurrentOrderId).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase()+'-'+todayDateKeyRecife()+'.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  if(el('btnComprasOrderListing')) el('btnComprasOrderListing').addEventListener('click', comprasDownloadOrderListing);
 
   // ----- "GERAR TXT DE ORÇAMENTO" -----
   if(el('btnGerarTxtOrcamento')) el('btnGerarTxtOrcamento').addEventListener('click', () => {
@@ -41713,6 +41740,7 @@ function renderHomeTasks(){
       // (o clone nasce com o mesmo fornecedor — um pedido 'aberto' sem
       // vencedor ainda não tem o que copiar como "já definido").
       el('btnCloneComprasOrder').hidden = order.origin !== 'native' || Boolean(order.canceled) || !order.supplierId;
+      el('btnComprasOrderListing').hidden = order.origin !== 'native' || !order.supplierId || Boolean(order.noItemsDetailed);
       comprasFillDivisionSection(order);
       if(!comprasCurrentOrderLinkedInvoice) await loadComprasOrderInvoiceCandidates();
       renderComprasOrderInvoiceLink();
