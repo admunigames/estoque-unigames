@@ -913,6 +913,8 @@
   .compras-quote-cell.best input{border-color:#54c48a;}
   .compras-quote-cell.best small{color:#54c48a;}
   .compras-quote-cell.saving{opacity:.6;}
+  .compras-quote-cell .compras-quote-total{display:block; margin-top:4px; font-size:12px; opacity:.85;}
+  .compras-quote-cell .compras-quote-total:focus{opacity:1;}
   .compras-quote-actions{white-space:nowrap; text-align:right;}
   .compras-quote-table tfoot th{font:800 13px/1.3 var(--sans); white-space:nowrap; border-bottom:0;}
   .compras-quote-table tfoot th.best{color:#54c48a;}
@@ -41014,6 +41016,7 @@ function renderHomeTasks(){
         const key = item.id+'|'+supplierId;
         return '<td data-label="'+escapeHtml(comprasSupplierName(supplierId))+'" class="compras-quote-cell" data-compras-cell="'+escapeHtml(key)+'">'+
           '<input type="text" inputmode="decimal" placeholder="R$ 0,00" data-compras-price="'+escapeHtml(key)+'" data-cents="'+(quote ? Number(quote.unitPriceCents || 0) : '')+'" aria-label="'+escapeHtml('Preço unitário de '+comprasSupplierName(supplierId))+'">'+
+          '<input type="text" inputmode="decimal" placeholder="TOTAL" class="compras-quote-total" data-compras-total="'+escapeHtml(key)+'" aria-label="'+escapeHtml('Valor total (quantidade × preço) de '+comprasSupplierName(supplierId))+'" title="Valor total do produto: digite e o preço unitário é calculado">'+
           '<small data-compras-line-total="'+escapeHtml(key)+'"></small></td>';
       }).join('')+
       '<td data-label="" class="compras-quote-actions"><button class="btn-outline btn-sm" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button> '+
@@ -41040,7 +41043,32 @@ function renderHomeTasks(){
       input.addEventListener('blur', () => {
         if(input.value === committed) return;
         committed = input.value;
+        input.dataset.typedTotal = '';
         comprasSaveQuoteCell(input);
+      });
+    });
+    // TOTAL do produto: digita o valor total e o preço unitário é calculado
+    // (total ÷ quantidade, arredondado no centavo) e gravado como sempre.
+    table.querySelectorAll('[data-compras-total]').forEach(input => {
+      attachCurrencyMask(input);
+      let committed = '';
+      input.addEventListener('focus', () => { committed = input.value; requestAnimationFrame(() => input.select()); });
+      input.addEventListener('keydown', event => { if(event.key === 'Enter'){ event.preventDefault(); input.blur(); } });
+      input.addEventListener('blur', () => {
+        if(input.value === committed) return;
+        const key = input.dataset.comprasTotal;
+        const [itemId] = key.split('|');
+        const item = comprasCurrentOrderItems.find(row => row.id === itemId);
+        const unitInput = table.querySelector('[data-compras-price="'+CSS.escape(key)+'"]');
+        if(!item || !unitInput) return;
+        const raw = getCurrencyValue(input);
+        const totalCents = raw ? parseBRLToCents(raw) : null;
+        const qty = Number(item.quantity || 0);
+        if(raw && (totalCents === null || qty <= 0)){ showPurchaseToast(qty <= 0 ? 'INFORME A QUANTIDADE ANTES DO TOTAL.' : 'INFORME UM VALOR TOTAL VÁLIDO.', 'error'); return; }
+        const unitCents = raw ? Math.round(totalCents / qty) : null;
+        unitInput.dataset.typedTotal = raw ? String(totalCents) : '';
+        attachCurrencyMask(unitInput).setValue(unitCents === null ? '' : (unitCents / 100).toFixed(2));
+        comprasSaveQuoteCell(unitInput);
       });
     });
     comprasRefreshQuoteTotals();
@@ -41061,7 +41089,13 @@ function renderHomeTasks(){
         const quote = comprasQuoteOf(item, supplierId);
         const small = table.querySelector('[data-compras-line-total="'+CSS.escape(key)+'"]');
         const cell = table.querySelector('[data-compras-cell="'+CSS.escape(key)+'"]');
-        if(small) small.textContent = quote ? '= '+formatCentsBRL(Number(quote.unitPriceCents || 0) * Number(item.quantity || 0)) : '';
+        const lineCents = quote ? Number(quote.unitPriceCents || 0) * Number(item.quantity || 0) : null;
+        const totalInput = table.querySelector('[data-compras-total="'+CSS.escape(key)+'"]');
+        if(totalInput && document.activeElement !== totalInput) attachCurrencyMask(totalInput).setValue(lineCents === null ? '' : (lineCents / 100).toFixed(2));
+        // Total que não divide exato pela quantidade: avisa a diferença do arredondamento.
+        const unitInput = table.querySelector('[data-compras-price="'+CSS.escape(key)+'"]');
+        const typed = unitInput && unitInput.dataset.typedTotal ? Number(unitInput.dataset.typedTotal) : null;
+        if(small) small.textContent = typed !== null && lineCents !== null && typed !== lineCents ? 'UNIT. ARREDONDADO · DIF. '+formatCentsBRL(Math.abs(typed - lineCents)) : '';
         if(cell) cell.classList.toggle('best', Boolean(quote && min !== null && Number(quote.unitPriceCents) === min));
       }
     }
@@ -41742,13 +41776,29 @@ function renderHomeTasks(){
       '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
         '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
-        '<input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)">'+
+        '<input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)" aria-label="Preço unitário">'+
+        '<input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) * Number(item.quantity || 0) / 100).toFixed(2)+'" data-compras-order-item-total="'+escapeHtml(item.id)+'" style="width:110px;" title="Valor total do produto (quantidade × preço): digite e o preço unitário é calculado" aria-label="Valor total">'+
         '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
         '<button class="btn-outline" type="button" data-compras-order-item-edit="'+escapeHtml(item.id)+'" title="Corrigir produto/quantidade/loja">EDITAR PRODUTO</button>'+
       '</span></td>'+
     '</tr>';
     }).join('');
-    body.querySelectorAll('[data-compras-order-item-price]').forEach(attachCurrencyMask);
+    body.querySelectorAll('[data-compras-order-item-price],[data-compras-order-item-total]').forEach(attachCurrencyMask);
+    // Unitário ↔ total da linha: um calcula o outro (total ÷ quantidade, no centavo).
+    body.querySelectorAll('[data-compras-order-item-price],[data-compras-order-item-total]').forEach(input => input.addEventListener('input', () => {
+      const itemId = input.dataset.comprasOrderItemPrice || input.dataset.comprasOrderItemTotal;
+      const item = comprasCurrentOrderItems.find(row => row.id === itemId);
+      const qty = Number(item && item.quantity || 0);
+      const cents = parseBRLToCents(getCurrencyValue(input) || '0');
+      if(!item || qty <= 0 || cents === null) return;
+      if(input.dataset.comprasOrderItemTotal){
+        const unit = body.querySelector('[data-compras-order-item-price="'+CSS.escape(itemId)+'"]');
+        attachCurrencyMask(unit).setValue((Math.round(cents / qty) / 100).toFixed(2));
+      }else{
+        const total = body.querySelector('[data-compras-order-item-total="'+CSS.escape(itemId)+'"]');
+        attachCurrencyMask(total).setValue((cents * qty / 100).toFixed(2));
+      }
+    }));
   }
 
   // ----- NF vinculada ao pedido nativo -----
