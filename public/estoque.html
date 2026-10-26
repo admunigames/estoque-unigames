@@ -3067,9 +3067,14 @@
     background:#244f83;color:#fff;font:800 14px/1 var(--mono);
   }
   .home-instruction-copy{min-width:0;}
-  .home-instruction-copy .instruction-badge{margin-bottom:5px;}
+  /* Etiqueta de categoria na Início (fundo claro): pequena, com cor própria
+     por categoria e contraste para o cartão claro. */
+  .home-instruction-copy .instruction-badge{display:inline-block;width:auto;margin:0 0 5px;padding:3px 8px;font:800 8px/1.2 var(--mono);letter-spacing:.04em;}
+  .home-instruction-copy .instruction-badge.category-geral{color:#244f83;border-color:rgba(36,79,131,.35);background:rgba(36,79,131,.08);}
+  .home-instruction-copy .instruction-badge.category-operacional{color:#8a5a00;border-color:rgba(201,138,20,.5);background:rgba(225,173,73,.16);}
+  .home-instruction-copy .instruction-badge.category-comercial{color:#1f6b45;border-color:rgba(46,150,96,.45);background:rgba(66,166,119,.13);}
   .home-instruction-copy strong{display:block;color:#10233a;font:800 12px/1.4 var(--sans);overflow-wrap:anywhere;}
-  .home-instruction-copy span{
+  .home-instruction-copy span:not(.instruction-badge){
     display:-webkit-box;margin-top:3px;overflow:hidden;color:#5c7187;font:600 10px/1.4 var(--sans);
     -webkit-box-orient:vertical;-webkit-line-clamp:2;
   }
