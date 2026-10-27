@@ -1,5 +1,5 @@
 import { getD1 } from "../../../../db";
-import { type CardFee } from "../../../lib/card-fees";
+import { normalizeBrand, type CardFee } from "../../../lib/card-fees";
 import { addDays } from "../../../lib/finance-status";
 import { safeText, type Identity } from "../shared";
 
@@ -64,7 +64,7 @@ export function planFeeVersion(
       row.acquirerId === fee.acquirerId &&
       (row.machineId || "") === fee.machineId &&
       (row.companyId || "") === fee.companyId &&
-      row.brand.trim().toLowerCase() === fee.brand.trim().toLowerCase() &&
+      normalizeBrand(row.brand) === normalizeBrand(fee.brand) &&
       row.modality === fee.modality &&
       Number(row.installments || 1) === fee.installments,
   );

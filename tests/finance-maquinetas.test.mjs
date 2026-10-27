@@ -239,3 +239,40 @@ test("repasse casa pela maquineta quando a linha traz o terminal", async () => {
   assert.equal(result.matched, 1);
   assert.equal(db.sqlite.prepare("SELECT received_amount_cents AS r FROM finance_card_sales WHERE nsu='N2'").get().r, 19800);
 });
+
+test("IMPORTAR PLANILHA DE TAXAS: tabela com bandeira por linha até 21x; MASTER/MASTERCARD é a mesma bandeira", async () => {
+  const { normalizeBrand, resolveCardFee } = await import("../app/lib/card-fees.ts");
+  assert.equal(normalizeBrand("Master"), "mastercard");
+  assert.equal(normalizeBrand("MAESTRO"), "mastercard");
+  assert.equal(normalizeBrand("Visa Electron"), "visa");
+  assert.equal(normalizeBrand("UNION PAY"), "unionpay");
+  assert.equal(normalizeBrand("American Express"), "amex");
+  assert.equal(normalizeBrand("Elo"), "elo");
+
+  const rows = [
+    { brand: "", modality: "pix", installments: 1, feeBps: 20 },
+    { brand: "MASTERCARD", modality: "debit", installments: 1, feeBps: 79 },
+    ...[19, 20, 21].map((installments) => ({ brand: "MASTERCARD", modality: "credit", installments, feeBps: 283 })),
+    { brand: "ELO", modality: "debit", installments: 1, feeBps: 153 },
+  ];
+  let response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-tacaruna", validFrom: "2026-10-27", rows });
+  assert.equal(response.status, 201);
+  assert.equal((await json(response)).saved, 6);
+  // Mesma vigência de novo: só atualiza (não duplica).
+  response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-tacaruna", validFrom: "2026-10-27", rows });
+  assert.equal(response.status, 201);
+  const imported = fees().filter((f) => f.machine_id === "m-tacaruna" && f.valid_from === "2026-10-27");
+  assert.equal(imported.length, 6);
+  // Mesma bandeira/modalidade/parcela repetida na tabela → 400 (MASTER = MASTERCARD).
+  response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", {
+    machineId: "m-tacaruna", validFrom: "2026-10-28",
+    rows: [{ brand: "MASTER", modality: "debit", feeBps: 1 }, { brand: "MASTERCARD", modality: "debit", feeBps: 2 }],
+  });
+  assert.equal(response.status, 400);
+
+  // Venda "Master" crédito 20x na maquineta casa com a taxa MASTERCARD 20x.
+  const all = fees().map((f) => ({ id: f.id, acquirerId: f.acquirer_id, machineId: f.machine_id, companyId: f.company_id, brand: f.brand,
+    modality: f.modality, installments: f.installments, feeBps: f.fee_bps, anticipationBps: 0, validFrom: f.valid_from, validTo: f.valid_to }));
+  const hit = resolveCardFee(all, { acquirerId: "stone", brand: "Master", modality: "credit", installments: 20, date: "2026-10-30", machineId: "m-tacaruna", companyId: TACARUNA });
+  assert.equal(hit.feeBps, 283);
+});

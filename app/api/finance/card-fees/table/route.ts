@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../../lib/access-scope";
-import { isCardModality } from "../../../../lib/card-fees";
+import { isCardModality, normalizeBrand } from "../../../../lib/card-fees";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
 import { loadCardFees, planFeeVersion, runStatements, scopeActorOf, type Statement } from "../shared";
 
@@ -9,7 +9,9 @@ import { loadCardFees, planFeeVersion, runStatements, scopeActorOf, type Stateme
 // VISTA · 2x…12x de uma maquineta (ou da adquirente, sem maquineta) salva
 // numa requisição só, numa transação. Cada linha vira uma versão nova da
 // taxa a partir de validFrom (a anterior recebe valid_to = véspera).
-// { machineId?, acquirerId?, brand, validFrom, rows: [{modality, installments, feeBps, anticipationBps}] }
+// { machineId?, acquirerId?, brand, validFrom, rows: [{modality, installments, feeBps, anticipationBps, brand?}] }
+// A linha pode trazer a própria bandeira (IMPORTAR PLANILHA DE TAXAS manda a
+// tabela inteira da maquineta, todas as bandeiras e parcelas até 21x).
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
     if (!DATE_RE.test(validFrom)) return jsonResponse({ error: "INFORME A VIGÊNCIA (A PARTIR DE)." }, 400);
     const rawRows = Array.isArray(body.rows) ? (body.rows as JsonMap[]) : [];
     if (!rawRows.length) return jsonResponse({ error: "PREENCHA AO MENOS UMA TAXA." }, 400);
-    if (rawRows.length > 30) return jsonResponse({ error: "TABELA GRANDE DEMAIS." }, 400);
+    if (rawRows.length > 200) return jsonResponse({ error: "TABELA GRANDE DEMAIS." }, 400);
 
     const database = await getD1();
     let companyId = allStores ? "" : scopeActor.companyId;
@@ -70,19 +72,20 @@ export async function POST(request: Request) {
       const modality = safeText(raw.modality, 12);
       if (!isCardModality(modality)) return jsonResponse({ error: "MODALIDADE INVÁLIDA." }, 400);
       const installments = modality === "credit" ? Math.round(Number(raw.installments) || 1) : 1;
-      if (installments < 1 || installments > 12) return jsonResponse({ error: "PARCELAS DEVEM SER DE 1 A 12." }, 400);
+      if (installments < 1 || installments > 48) return jsonResponse({ error: "PARCELAS DEVEM SER DE 1 A 48." }, 400);
+      const rowBrand = raw.brand === undefined ? brand : safeText(raw.brand, 40);
       const feeBps = bps(raw.feeBps);
       const anticipationBps = bps(raw.anticipationBps ?? 0);
       if (feeBps === null || anticipationBps === null) {
         return jsonResponse({ error: "INFORME TAXAS VÁLIDAS (0 A 100%)." }, 400);
       }
-      const key = `${modality}:${installments}`;
+      const key = `${normalizeBrand(rowBrand)}:${modality}:${installments}`;
       if (seen.has(key)) return jsonResponse({ error: "MODALIDADE/PARCELA REPETIDA NA TABELA." }, 400);
       seen.add(key);
       statements.push(
         ...planFeeVersion(
           existing,
-          { acquirerId, acquirerName: acquirer.name, companyId, machineId, brand, modality, installments, feeBps, anticipationBps, validFrom },
+          { acquirerId, acquirerName: acquirer.name, companyId, machineId, brand: rowBrand, modality, installments, feeBps, anticipationBps, validFrom },
           who,
         ),
       );

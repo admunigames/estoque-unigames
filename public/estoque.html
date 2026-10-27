@@ -3794,6 +3794,13 @@
   /* MAQUINETAS (Financeiro 5/9) */
   [data-mq-bulk-field][hidden],#cardGridAcquirerField[hidden]{display:none !important;}
   .card-fee-grid-dialog{width:min(640px,calc(100vw - 28px));}
+  .card-fee-import-dialog{width:min(900px,calc(100vw - 28px));}
+  .fee-import-block{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;}
+  .fee-import-block.has-issue{border-color:var(--neg);}
+  .fee-import-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;}
+  .fee-import-head strong{font-size:14px;}
+  .fee-import-summary{font-size:11px;color:var(--ink-soft);margin:6px 0 8px;line-height:1.5;}
+  .fee-import-machines{display:flex;flex-wrap:wrap;gap:6px 14px;}
   #cardFeeGridTable input{width:100%; min-width:90px;}
   .responsive-table tbody tr.row-muted{opacity:.6;}
   .responsive-table tbody td.neg{color:var(--neg); font-weight:700;}
@@ -9300,6 +9307,7 @@
           <div class="field"><label for="cardFeeAcquirerFilter">ADQUIRENTE</label><select id="cardFeeAcquirerFilter"><option value="">TODAS</option></select></div>
           <div class="field"><label for="cardFeeMachineFilter">MAQUINETA</label><select id="cardFeeMachineFilter"><option value="">TODAS</option></select></div>
           <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnCardFeeImport" type="button">IMPORTAR PLANILHA DE TAXAS</button>
             <button class="btn-outline" id="btnCardFeeGrid" type="button">TABELA DA MAQUINETA</button>
             <button class="btn-accent" id="btnNewCardFee" type="button">NOVA TAXA</button>
           </div>
@@ -11690,6 +11698,25 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCardFeeGrid" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR TABELA</button>
+    </div>
+  </form>
+</dialog>
+<dialog class="purchase-dialog card-fee-import-dialog" id="cardFeeImportDialog" aria-labelledby="cardFeeImportTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cardFeeImportTitle">IMPORTAR PLANILHA DE TAXAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseCardFeeImport" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cardFeeImportForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="cardFeeImportFile">PLANILHA (.xlsx / .xls)</label><input type="file" id="cardFeeImportFile" accept=".xlsx,.xls"></div>
+      <div class="purchase-field"><label for="cardFeeImportValidFrom">VIGÊNCIA A PARTIR DE *</label><input type="date" id="cardFeeImportValidFrom" required></div>
+    </div>
+    <p class="purchase-field-help">UM BLOCO "MAQUINETA …" POR LOJA OU PESSOA (TODAS AS ABAS): ADQUIRENTE, PIX E, POR BANDEIRA, DÉBITO E CRÉDITO EM FAIXAS (2X A 6X VIRA UMA TAXA PARA CADA PARCELA). MARQUE EM CADA BLOCO AS MAQUINETAS QUE USAM AQUELA TABELA. A TAXA ANTERIOR DE CADA UMA FICA VALENDO ATÉ A VÉSPERA.</p>
+    <div id="cardFeeImportPreview"></div>
+    <div class="user-form-status" id="cardFeeImportStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCardFeeImport" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmCardFeeImport" type="submit" disabled>IMPORTAR</button>
     </div>
   </form>
 </dialog>
@@ -36606,6 +36633,195 @@ function renderHomeTasks(){
       await Promise.all([loadCardFeesTab(), loadMachinesTab()]);
       showPurchaseToast(res.saved+' taxa(s) salva(s) na tabela.');
     }catch(error){ status.textContent = error.message; }
+  });
+
+  // ---------------------------------------------------------------------
+  // IMPORTAR PLANILHA DE TAXAS: blocos "MAQUINETA X" (abas PF/PJ da planilha
+  // de taxas negociadas). Cada bloco: adquirente, PIX e, por bandeira, DÉBITO
+  // e CRÉDITO em faixas ("2X A 6X"). Grava pela TABELA DA MAQUINETA (uma
+  // requisição por maquineta marcada, cada uma numa transação).
+  // ---------------------------------------------------------------------
+  let cardFeeImportBlocks = [];
+  function feeImportNorm(value){
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9%,.\s]/g,' ').replace(/\s+/g,' ').trim();
+  }
+  // Bandeira como gravada (o casamento com as vendas aceita os apelidos).
+  function feeImportBrand(label){
+    const name = feeImportNorm(label);
+    if(/^MASTER/.test(name)) return 'MASTERCARD';
+    if(/^UNION/.test(name)) return 'UNIONPAY';
+    if(/^AMERICAN/.test(name)) return 'AMEX';
+    return name;
+  }
+  // grid[linha][coluna] = {text, pct} (pct = número já em %, null se não for número).
+  function parseCardFeeSheet(sheetName, grid){
+    const blocks = [];
+    grid.forEach((row, r) => (row || []).forEach((cell, c) => {
+      const title = cell && /^MAQUINETA\s+(.+)/.exec(feeImportNorm(cell.text));
+      if(!title) return;
+      const block = {sheet: sheetName, title: title[1].trim(), acquirer: '', pix: null, groups: [], issues: []};
+      let group = null;
+      let blanks = 0;
+      for(let i = r + 1; i < grid.length && blanks < 3; i++){
+        const labelCell = (grid[i] || [])[c];
+        const label = feeImportNorm(labelCell && labelCell.text);
+        const valueCell = (grid[i] || [])[c + 1];
+        const pct = valueCell && typeof valueCell.pct === 'number' ? valueCell.pct : null;
+        if(!label){ blanks++; continue; }
+        blanks = 0;
+        if(/^MAQUINETA\s/.test(label)) break;
+        const credit = /^CREDITO\s*(\d+)\s*X(?:\s*A\s*(\d+)\s*X)?/.exec(label);
+        if(pct === null && (/^(PIX|DEBITO)/.test(label) || credit)) block.issues.push(label+' SEM TAXA');
+        else if(pct === null){
+          if(!block.acquirer) block.acquirer = label;
+          else{ group = {label, brands: label.split(/\s*(?:,|\/|\bE\b)\s*/).filter(Boolean).map(feeImportBrand), entries: []}; block.groups.push(group); }
+        }else if(/^PIX/.test(label)) block.pix = pct;
+        else if(!group) block.issues.push(label+' SEM BANDEIRA');
+        else if(/^DEBITO/.test(label)) group.entries.push({modality:'debit', from:1, to:1, pct});
+        else if(credit) group.entries.push({modality:'credit', from:Number(credit[1]), to:Number(credit[2] || credit[1]), pct});
+        else block.issues.push('LINHA NÃO RECONHECIDA: '+label);
+      }
+      blocks.push(block);
+    }));
+    return blocks;
+  }
+  function cardFeeImportRows(block){
+    const rows = [];
+    const bps = pct => Math.round(pct * 100);
+    if(block.pix !== null) rows.push({brand:'', modality:'pix', installments:1, feeBps:bps(block.pix), anticipationBps:0});
+    block.groups.forEach(group => group.brands.forEach(brand => group.entries.forEach(entry => {
+      for(let n = entry.from; n <= entry.to; n++) rows.push({brand, modality:entry.modality, installments:n, feeBps:bps(entry.pct), anticipationBps:0});
+    })));
+    return rows;
+  }
+  function cardFeeImportSummary(block){
+    const pct = v => v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})+'%';
+    const parts = block.pix !== null ? ['PIX '+pct(block.pix)] : [];
+    block.groups.forEach(group => parts.push(group.brands.join('/')+': '+group.entries.map(e =>
+      (e.modality === 'debit' ? 'DÉB' : (e.from === e.to ? e.from+'X' : e.from+'–'+e.to+'X'))+' '+pct(e.pct)).join(' · ')));
+    return parts.join(' — ');
+  }
+  // Marca sozinho a maquineta da mesma adquirente cujo nome (ou, com withCompany,
+  // nome + loja) tem as palavras do bloco (palavra igual, ou começo de palavra
+  // com 4+ letras: TACA → TACARUNA).
+  function cardFeeImportGuess(block, machine, withCompany){
+    if(machine.status && machine.status !== 'active') return false;
+    if(block.acquirer && !feeImportNorm(machine.acquirerName).includes(block.acquirer)) return false;
+    const words = feeImportNorm((machine.model || '')+(withCompany === false ? '' : ' '+(machine.companyName || fase8CompanyName(machine.companyId) || ''))).split(' ');
+    return feeImportNorm(block.title).replace(/[.,]/g,' ').split(' ').filter(Boolean)
+      .every(w => words.some(m => m === w || (w.length >= 4 && m.startsWith(w))));
+  }
+  function readCardFeeWorkbook(XLSX, wb){
+    return wb.SheetNames.flatMap(name => {
+      const sheet = wb.Sheets[name];
+      if(!sheet || !sheet['!ref']) return [];
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      const grid = [];
+      for(let r = range.s.r; r <= Math.min(range.e.r, 2000); r++){
+        const row = [];
+        for(let c = range.s.c; c <= Math.min(range.e.c, 60); c++){
+          const cell = sheet[XLSX.utils.encode_cell({r, c})];
+          if(!cell){ row.push(null); continue; }
+          let pct = null;
+          // Célula formatada como % (ex.: 0,0069 exibido "0,69%") vem como fração: × 100.
+          if(cell.t === 'n') pct = String(cell.z || '').includes('%') || String(cell.w || '').includes('%') ? cell.v * 100 : cell.v;
+          else if(/^\s*\d+([.,]\d+)?\s*%?\s*$/.test(String(cell.v))) pct = Number(String(cell.v).replace('%','').replace(',','.').trim());
+          row.push({text: String(cell.w !== undefined ? cell.w : cell.v), pct: cell.t === 'n' || pct !== null ? pct : null});
+        }
+        grid.push(row);
+      }
+      return parseCardFeeSheet(name, grid);
+    });
+  }
+  function renderCardFeeImport(){
+    const box = el('cardFeeImportPreview');
+    if(!cardFeeImportBlocks.length){ box.innerHTML = ''; el('btnConfirmCardFeeImport').disabled = true; return; }
+    box.innerHTML = cardFeeImportBlocks.map((block, b) => {
+      const sameAcquirer = machinesRows.filter(m => !block.acquirer || feeImportNorm(m.acquirerName).includes(block.acquirer));
+      const list = sameAcquirer.length ? sameAcquirer : machinesRows;
+      return '<div class="fee-import-block'+(block.issues.length ? ' has-issue' : '')+'">'+
+        '<div class="fee-import-head"><strong>'+escapeHtml(block.title)+'</strong><span class="status-pill">'+escapeHtml(block.acquirer || 'SEM ADQUIRENTE')+'</span>'+
+        '<span class="purchase-field-help">ABA '+escapeHtml(block.sheet)+' · '+cardFeeImportRows(block).length+' TAXA(S)</span></div>'+
+        '<div class="fee-import-summary">'+escapeHtml(cardFeeImportSummary(block))+'</div>'+
+        (block.issues.length ? '<div class="fee-import-summary" style="color:var(--neg)">'+escapeHtml(block.issues.join(' · '))+'</div>' : '')+
+        '<div class="fee-import-machines">'+(list.length ? list.map(m =>
+          '<label class="assist-check"><input type="checkbox" data-fee-import-block="'+b+'" value="'+escapeHtml(m.id)+'"'+(block.machineIds.includes(m.id) ? ' checked' : '')+'> '+
+          escapeHtml((m.model || m.serial || 'SEM NOME')+' — '+(m.companyName || fase8CompanyName(m.companyId) || '')+' · '+(m.acquirerName || ''))+'</label>').join('')
+          : '<span class="purchase-field-help">NENHUMA MAQUINETA CADASTRADA.</span>')+'</div></div>';
+    }).join('');
+    el('btnConfirmCardFeeImport').disabled = false;
+  }
+  el('btnCardFeeImport').addEventListener('click', async () => {
+    if(!machinesRows.length) await loadMachinesTab();
+    el('cardFeeImportForm').reset();
+    el('cardFeeImportValidFrom').value = financeCurrentDateKey();
+    el('cardFeeImportStatus').textContent = '';
+    cardFeeImportBlocks = [];
+    renderCardFeeImport();
+    el('cardFeeImportDialog').showModal();
+  });
+  el('btnCloseCardFeeImport').addEventListener('click', () => el('cardFeeImportDialog').close());
+  el('btnCancelCardFeeImport').addEventListener('click', () => el('cardFeeImportDialog').close());
+  el('cardFeeImportFile').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    const status = el('cardFeeImportStatus');
+    cardFeeImportBlocks = [];
+    renderCardFeeImport();
+    if(!file) return;
+    status.textContent = 'Lendo planilha…';
+    try{
+      const XLSX = await ensureXlsx();
+      const blocks = readCardFeeWorkbook(XLSX, XLSX.read(await readAsArrayBuffer(file), {type:'array', cellNF:true}));
+      // Nome da maquineta primeiro (NATHALIA na loja RIOMAR vai para o bloco NATHALIA); sem nenhum, a loja.
+      blocks.forEach(block => { block.machineIds = []; });
+      machinesRows.forEach(m => {
+        const byName = blocks.filter(block => cardFeeImportGuess(block, m, false));
+        (byName.length ? byName : blocks.filter(block => cardFeeImportGuess(block, m, true))).forEach(block => block.machineIds.push(m.id));
+      });
+      cardFeeImportBlocks = blocks;
+      renderCardFeeImport();
+      status.textContent = blocks.length
+        ? blocks.length+' BLOCO(S) LIDO(S). CONFIRA AS TAXAS E MARQUE AS MAQUINETAS DE CADA UM.'
+        : 'NENHUM BLOCO "MAQUINETA …" ENCONTRADO NA PLANILHA.';
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('cardFeeImportPreview').addEventListener('change', event => {
+    const box = event.target.closest('[data-fee-import-block]');
+    if(!box) return;
+    const block = cardFeeImportBlocks[Number(box.dataset.feeImportBlock)];
+    block.machineIds = box.checked ? [...new Set([...block.machineIds, box.value])] : block.machineIds.filter(id => id !== box.value);
+  });
+  el('cardFeeImportForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('cardFeeImportStatus');
+    const validFrom = el('cardFeeImportValidFrom').value;
+    if(!validFrom){ status.textContent = 'INFORME A VIGÊNCIA.'; return; }
+    const jobs = cardFeeImportBlocks.flatMap(block => block.machineIds.map(machineId => ({block, machineId})));
+    if(!jobs.length){ status.textContent = 'MARQUE AO MENOS UMA MAQUINETA.'; return; }
+    const twice = jobs.filter((job, i) => jobs.findIndex(other => other.machineId === job.machineId) !== i);
+    if(twice.length){
+      const name = id => { const m = machinesRows.find(x => x.id === id); return m ? (m.model || m.serial) : id; };
+      status.textContent = 'MAQUINETA MARCADA EM MAIS DE UM BLOCO: '+[...new Set(twice.map(job => name(job.machineId)))].join(', ')+'.';
+      return;
+    }
+    const button = el('btnConfirmCardFeeImport');
+    button.disabled = true;
+    let saved = 0;
+    try{
+      for(const [i, job] of jobs.entries()){
+        status.textContent = 'GRAVANDO '+(i + 1)+' DE '+jobs.length+'…';
+        const res = await financeApiRequest('/card-fees/table', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({machineId: job.machineId, validFrom, rows: cardFeeImportRows(job.block)})});
+        saved += Number(res.saved || 0);
+      }
+      el('cardFeeImportDialog').close();
+      showPurchaseToast(saved+' taxa(s) gravada(s) em '+jobs.length+' maquineta(s).');
+    }catch(error){
+      status.textContent = error.message+' (GRAVADAS ATÉ AQUI: '+saved+' TAXA(S); IMPORTAR DE NOVO NA MESMA VIGÊNCIA SÓ ATUALIZA.)';
+    }finally{
+      button.disabled = false;
+      await Promise.all([loadCardFeesTab(), loadMachinesTab()]);
+    }
   });
 
   // ---------------------------------------------------------------------

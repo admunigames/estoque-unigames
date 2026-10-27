@@ -5648,3 +5648,67 @@ test("Controle de Gorduras: PDF HISTÓRICO da loja (card, detalhes e resumo da l
   assert.match(html, /\?view=history&storeId=/);
   assert.match(html, /'GORDURAS-ASSISTENCIA' : 'GORDURAS'/);
 });
+
+test("Maquinetas > IMPORTAR PLANILHA DE TAXAS: blocos MAQUINETA, faixas de parcelas, bandeiras e maquinetas sugeridas", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  const fn = (name) => {
+    const start = html.indexOf(`function ${name}(`);
+    assert.notEqual(start, -1, name);
+    let depth = 0;
+    let end = html.indexOf("{", start);
+    for (; end < html.length; end++) {
+      if (html[end] === "{") depth++;
+      if (html[end] === "}" && --depth === 0) break;
+    }
+    return html.slice(start, end + 1);
+  };
+  const names = ["feeImportNorm", "feeImportBrand", "parseCardFeeSheet", "cardFeeImportRows", "cardFeeImportSummary", "cardFeeImportGuess"];
+  const api = new Function(`const fase8CompanyName = () => ''; ${names.map(fn).join("\n")}; return {${names.join(",")}};`)();
+  // Grade no formato da planilha (rótulo + valor em %): 2 blocos lado a lado e 1 abaixo.
+  const T = (text) => ({ text, pct: null });
+  const V = (pct) => ({ text: String(pct), pct });
+  const grid = [
+    [T("MAQUINETA RIOMAR"), null, T("MAQUINETA NATHALIA"), null],
+    [T("STONE"), null, T("STONE"), null],
+    [T("PIX"), V(0.2), T("PIX"), V(0.4)],
+    [T("MASTER, VISA"), null, T("ELO"), null],
+    [T("DEBITO"), V(0.79), T("DEBITO"), V(1.53)],
+    [T("CREDITO 1X"), V(2.13), T("CREDITO 2X A 6X"), V(3.05)],
+    [T("CREDITO 2X A 6X"), V(2.34), null, null],
+    [null, null, null, null],
+    [T("UNION PAY"), null, null, null],
+    [T("CREDITO 7X A 12X"), V(4), null, null],
+    [null, null, null, null],
+    [T("MAQUINETA P.A"), null, null, null],
+    [T("REDE"), null, null, null],
+    [T("PIX"), V(0.69), null, null],
+    [T("CABAL"), null, null, null],
+    [T("CREDITO 19X"), V(5.5), null, null],
+    [T("CREDITO 1X"), null, null, null],
+  ];
+  const blocks = api.parseCardFeeSheet("PJ", grid);
+  assert.deepEqual(blocks.map((b) => [b.title, b.acquirer, b.pix]), [["RIOMAR", "STONE", 0.2], ["NATHALIA", "STONE", 0.4], ["P.A", "REDE", 0.69]]);
+  const riomar = api.cardFeeImportRows(blocks[0]);
+  // PIX + (MASTERCARD e VISA: débito + 1x + 2..6x) + UNIONPAY 7..12x.
+  assert.equal(riomar.length, 1 + 2 * (1 + 1 + 5) + 6);
+  assert.deepEqual(riomar[0], { brand: "", modality: "pix", installments: 1, feeBps: 20, anticipationBps: 0 });
+  assert.ok(riomar.some((r) => r.brand === "VISA" && r.modality === "credit" && r.installments === 6 && r.feeBps === 234));
+  assert.ok(riomar.some((r) => r.brand === "UNIONPAY" && r.installments === 12 && r.feeBps === 400));
+  assert.deepEqual(blocks[2].issues, ["CREDITO 1X SEM TAXA"]);
+  assert.equal(api.cardFeeImportRows(blocks[2]).find((r) => r.brand === "CABAL").installments, 19);
+  assert.match(api.cardFeeImportSummary(blocks[0]), /^PIX 0,20% — MASTERCARD\/VISA: DÉB 0,79% · 1X 2,13% · 2–6X 2,34%/);
+  // Sugestão: mesma adquirente e palavras do bloco no nome/loja (TACA → TACARUNA; P.A não casa com PATTEO).
+  const machine = (model, companyName, acquirerName = "STONE", status = "active") => ({ model, companyName, acquirerName, status });
+  assert.equal(api.cardFeeImportGuess(blocks[0], machine("CAIXA 1", "RIOMAR")), true);
+  assert.equal(api.cardFeeImportGuess(blocks[0], machine("CAIXA 1", "RIOMAR", "CIELO")), false);
+  assert.equal(api.cardFeeImportGuess(blocks[0], machine("CAIXA 1", "RIOMAR", "STONE", "inactive")), false);
+  assert.equal(api.cardFeeImportGuess({ title: "TACA", acquirer: "STONE" }, machine("BALCÃO", "TACARUNA")), true);
+  assert.equal(api.cardFeeImportGuess(blocks[2], machine("PATTEO", "PATTEO OLINDA", "REDE")), false);
+  // Só pelo nome (sem a loja): NATHALIA da loja RIOMAR não casa com o bloco RIOMAR.
+  assert.equal(api.cardFeeImportGuess(blocks[0], machine("NATHALIA", "RIOMAR"), false), false);
+  assert.equal(api.cardFeeImportGuess(blocks[1], machine("NATHALIA", "RIOMAR"), false), true);
+  // Tela: botão na aba TAXAS, janela e envio pela TABELA DA MAQUINETA (uma por maquineta).
+  assert.match(html, /id="btnCardFeeImport" type="button">IMPORTAR PLANILHA DE TAXAS</);
+  assert.match(html, /id="cardFeeImportDialog"/);
+  assert.match(html, /financeApiRequest\('\/card-fees\/table', \{method:'POST'[\s\S]{0,140}machineId: job\.machineId, validFrom, rows: cardFeeImportRows\(job\.block\)/);
+});

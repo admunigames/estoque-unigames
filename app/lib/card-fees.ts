@@ -40,8 +40,20 @@ export type SaleKey = {
   companyId?: string;
 };
 
-function normalizeBrand(value: string): string {
-  return value.trim().toLowerCase();
+// A mesma bandeira escrita de jeitos diferentes (planilha de taxas × arquivo
+// da adquirente): MASTER/MASTERCARD/MAESTRO, VISA/VISA ELECTRON, AMEX/AMERICAN
+// EXPRESS, UNION PAY/UNIONPAY, HIPER/HIPERCARD. Demais: minúsculas.
+const BRAND_ALIASES: Array<[RegExp, string]> = [
+  [/\b(master|mastercard|maestro)\b/, "mastercard"],
+  [/\b(visa|electron)\b/, "visa"],
+  [/\b(amex|american)\b/, "amex"],
+  [/\bunion\s*pay\b|\bunionpay\b/, "unionpay"],
+  [/\bhiper(card)?\b/, "hipercard"],
+];
+
+export function normalizeBrand(value: string): string {
+  const brand = String(value ?? "").trim().toLowerCase();
+  return BRAND_ALIASES.find(([pattern]) => pattern.test(brand))?.[1] ?? brand;
 }
 
 /**
