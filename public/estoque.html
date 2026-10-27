@@ -9280,12 +9280,11 @@
             <button class="btn-accent" id="btnNewCardFee" type="button">NOVA TAXA</button>
           </div>
         </div>
-        <p class="purchase-field-help">MAQUINETA SEM TAXA PRÓPRIA USA A TAXA DA ADQUIRENTE (PADRÃO). TAXA NOVA ENCERRA A ANTERIOR NA VÉSPERA — VENDAS ANTIGAS MANTÊM O CÁLCULO DO DIA.</p>
+        <p class="purchase-field-help">MAQUINETA SEM TAXA PRÓPRIA USA A TAXA DA ADQUIRENTE (PADRÃO). SEM VIGÊNCIA: CADA TAXA VALE PARA QUALQUER DATA, SALVAR SUBSTITUI A ANTERIOR E AS VENDAS JÁ IMPORTADAS SÃO RECALCULADAS NA HORA.</p>
         <div class="bulk-bar" id="cardFeesBulkBar">
           <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
           <div class="bulk-bar-actions" data-bulk-actions hidden>
             <strong class="bulk-bar-count" data-bulk-count></strong>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="close">ENCERRAR VIGÊNCIA</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
             <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
           </div>
@@ -9293,8 +9292,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="cardFeesTable">
-              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Adquirente</th><th>Maquineta</th><th>Bandeira</th><th>Modalidade</th><th>Parcelas</th><th>Taxa</th><th>Antecipação</th><th>Vigência</th><th></th></tr></thead>
-              <tbody id="cardFeesTableBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Adquirente</th><th>Maquineta</th><th>Bandeira</th><th>Modalidade</th><th>Parcelas</th><th>Taxa</th><th>Antecipação</th><th></th></tr></thead>
+              <tbody id="cardFeesTableBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -11630,8 +11629,6 @@
       <div class="purchase-field" id="cardFeeInstallmentsField"><label for="cardFeeInstallments">PARCELAS</label><input type="number" id="cardFeeInstallments" min="1" max="48" value="1"></div>
       <div class="purchase-field"><label for="cardFeePercent">TAXA (%) *</label><input type="number" id="cardFeePercent" min="0" max="100" step="0.01" required></div>
       <div class="purchase-field"><label for="cardFeeAnticipation">ANTECIPAÇÃO (%)</label><input type="number" id="cardFeeAnticipation" min="0" max="100" step="0.01" placeholder="0"></div>
-      <div class="purchase-field"><label for="cardFeeValidFrom">VIGÊNCIA — INÍCIO</label><input type="date" id="cardFeeValidFrom"></div>
-      <div class="purchase-field"><label for="cardFeeValidTo">VIGÊNCIA — FIM</label><input type="date" id="cardFeeValidTo" placeholder="Vazio = vigente"></div>
     </div>
     <div class="user-form-status" id="cardFeeFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -11651,9 +11648,8 @@
       <div class="purchase-field"><label for="cardGridMachine">MAQUINETA</label><select id="cardGridMachine"><option value="">PADRÃO DA ADQUIRENTE</option></select></div>
       <div class="purchase-field" id="cardGridAcquirerField"><label for="cardGridAcquirer">ADQUIRENTE *</label><select id="cardGridAcquirer"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="cardGridBrand">BANDEIRA</label><input id="cardGridBrand" maxlength="40" placeholder="Vazio = todas"></div>
-      <div class="purchase-field"><label for="cardGridValidFrom">VIGÊNCIA A PARTIR DE *</label><input type="date" id="cardGridValidFrom" required></div>
     </div>
-    <p class="purchase-field-help">VEM PREENCHIDA COM A TABELA VIGENTE. LINHA EM BRANCO NÃO É ALTERADA; A TAXA ANTERIOR DE CADA LINHA ALTERADA FICA VALENDO ATÉ A VÉSPERA.</p>
+    <p class="purchase-field-help">VEM PREENCHIDA COM A TABELA ATUAL. LINHA EM BRANCO NÃO É ALTERADA; CADA LINHA PREENCHIDA SUBSTITUI A TAXA ANTERIOR (VALE PARA QUALQUER DATA) E AS VENDAS JÁ IMPORTADAS SÃO RECALCULADAS.</p>
     <div class="table-panel responsive-table">
       <div class="table-scroll">
         <table id="cardFeeGridTable">
@@ -11696,11 +11692,9 @@
   <form class="purchase-form" id="mqBulkForm">
     <div class="purchase-form-grid">
       <div class="purchase-field" data-mq-bulk-field="copy_fees"><label for="mqBulkSource">MAQUINETA-MODELO *</label><select id="mqBulkSource"><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field" data-mq-bulk-field="copy_fees"><label for="mqBulkValidFrom">VIGÊNCIA A PARTIR DE</label><input type="date" id="mqBulkValidFrom"></div>
-      <div class="purchase-field" data-mq-bulk-field="close"><label for="mqBulkValidTo">VIGENTE ATÉ *</label><input type="date" id="mqBulkValidTo"></div>
       <div class="purchase-field full" data-mq-bulk-field="review"><label for="mqBulkNote">OBSERVAÇÃO</label><textarea id="mqBulkNote" rows="2" maxlength="300" placeholder="Por que a taxa está ok ou o que foi ajustado"></textarea></div>
     </div>
-    <p class="purchase-field-help" data-mq-bulk-field="copy_fees">COPIA A TABELA VIGENTE DA MODELO (VIGÊNCIA EM BRANCO = A MESMA DA MODELO). A TAXA ANTERIOR DE CADA MAQUINETA FICA VALENDO ATÉ A VÉSPERA.</p>
+    <p class="purchase-field-help" data-mq-bulk-field="copy_fees">COPIA A TABELA DA MODELO: SUBSTITUI AS MESMAS TAXAS DE CADA MAQUINETA (VALE PARA QUALQUER DATA) E RECALCULA AS VENDAS JÁ IMPORTADAS.</p>
     <div class="user-form-status" id="mqBulkStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelMqBulk" type="button">CANCELAR</button>
@@ -36307,7 +36301,7 @@ function renderHomeTasks(){
       renderAcquirerSelect(id, {placeholder:'<option value="">TODAS</option>', includeInactive:true}));
   }
 
-  // --- Lote: diálogo único (copiar taxas, encerrar vigência, revisar) ---
+  // --- Lote: diálogo único (copiar taxas, revisar) ---
   let mqBulkPending = null; // {action, ids, endpoint, done}
   function openMqBulkDialog(action, ids, endpoint, title, done){
     mqBulkPending = {action, ids, endpoint, done};
@@ -36315,7 +36309,6 @@ function renderHomeTasks(){
     el('mqBulkTitle').textContent = title+' — '+ids.length+(ids.length === 1 ? ' ITEM' : ' ITENS');
     document.querySelectorAll('[data-mq-bulk-field]').forEach(node => { node.hidden = node.dataset.mqBulkField !== action; });
     if(action === 'copy_fees') fillSelect('mqBulkSource', '<option value="">SELECIONE</option>', machinesRows.filter(m => m.feeSource === 'machine').map(m => '<option value="'+escapeHtml(m.id)+'">'+escapeHtml(machineLabel(m))+'</option>').join(''));
-    if(action === 'close') el('mqBulkValidTo').value = financeCurrentDateKey();
     el('mqBulkStatus').textContent = '';
     el('mqBulkDialog').showModal();
   }
@@ -36325,11 +36318,8 @@ function renderHomeTasks(){
     event.preventDefault();
     if(!mqBulkPending) return;
     const {action, ids, endpoint, done} = mqBulkPending;
-    const fields = action === 'copy_fees' ? {sourceMachineId: el('mqBulkSource').value, validFrom: el('mqBulkValidFrom').value}
-      : action === 'close' ? {validTo: el('mqBulkValidTo').value}
-      : {note: el('mqBulkNote').value};
+    const fields = action === 'copy_fees' ? {sourceMachineId: el('mqBulkSource').value} : {note: el('mqBulkNote').value};
     if(action === 'copy_fees' && !fields.sourceMachineId){ el('mqBulkStatus').textContent = 'ESCOLHA A MAQUINETA-MODELO (SÓ APARECEM AS QUE TÊM TAXA PRÓPRIA).'; return; }
-    if(action === 'close' && !fields.validTo){ el('mqBulkStatus').textContent = 'INFORME A DATA.'; return; }
     try{
       const res = await mqBulkRequest(endpoint, action, ids, fields);
       el('mqBulkDialog').close();
@@ -36339,7 +36329,7 @@ function renderHomeTasks(){
   async function mqBulkRequest(endpoint, action, ids, fields){
     const res = await financeApiRequest(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids, fields: fields || {}})});
     const skipped = Array.isArray(res.skipped) ? res.skipped : [];
-    showPurchaseToast(res.applied+' item(ns) atualizado(s).'+(skipped.length ? ' Pulados: '+skipped.map(s => s.description+' ('+s.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
+    showPurchaseToast(res.applied+' item(ns) atualizado(s).'+(Number(res.recalculated) ? ' '+res.recalculated+' venda(s) recalculada(s).' : '')+(skipped.length ? ' Pulados: '+skipped.map(s => s.description+' ('+s.reason+')').join('; ')+'.' : ''), skipped.length && !res.applied ? 'error' : undefined);
     return res;
   }
 
@@ -36404,8 +36394,9 @@ function renderHomeTasks(){
     if(n.indexOf('pix') !== -1) return 'pix';
     return 'credit';
   }
-  function cardFeeIsCurrent(f, date){
-    return (!f.validFrom || f.validFrom <= date) && (!f.validTo || f.validTo >= date);
+  // Sem vigência: só não vale a versão antiga (valid_to preenchido).
+  function cardFeeIsCurrent(f){
+    return !f.validTo;
   }
   function cardFeeMachineLabel(f){
     if(!f.machineId) return 'PADRÃO DA ADQUIRENTE';
@@ -36418,11 +36409,10 @@ function renderHomeTasks(){
     if(!body) return;
     const acq = el('cardFeeAcquirerFilter').value;
     const machine = el('cardFeeMachineFilter').value;
-    const today = financeCurrentDateKey();
-    const rows = cardFeesRows.filter(f => (!acq || f.acquirerId === acq) &&
+    const rows = cardFeesRows.filter(f => cardFeeIsCurrent(f) && (!acq || f.acquirerId === acq) &&
       (!machine || (machine === '__acquirer' ? !f.machineId : f.machineId === machine)));
     body.innerHTML = rows.length ? rows.map(f =>
-      '<tr'+(cardFeeIsCurrent(f, today) ? '' : ' class="row-muted"')+'>'+
+      '<tr>'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(f.id, 'Selecionar taxa')+'</td>'+
         '<td data-label="Adquirente">'+escapeHtml(f.acquirerName || '—')+'</td>'+
         '<td data-label="Maquineta">'+escapeHtml(cardFeeMachineLabel(f))+'</td>'+
@@ -36431,9 +36421,8 @@ function renderHomeTasks(){
         '<td data-label="Parcelas">'+(f.modality === 'credit' ? escapeHtml(String(f.installments)) : '—')+'</td>'+
         '<td data-label="Taxa">'+taxPct(f.feeBps)+'</td>'+
         '<td data-label="Antecipação">'+(Number(f.anticipationBps) ? taxPct(f.anticipationBps) : '—')+'</td>'+
-        '<td data-label="Vigência">'+escapeHtml((formatDateBR(f.validFrom) || 'SEMPRE')+(f.validTo ? ' → '+formatDateBR(f.validTo) : ' → VIGENTE'))+'</td>'+
         '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-card-fee-edit="'+escapeHtml(f.id)+'">EDITAR</button></td>'+
-      '</tr>').join('') : '<tr><td colspan="10" class="responsive-empty">Nenhuma taxa para os filtros.</td></tr>';
+      '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma taxa para os filtros.</td></tr>';
     cardFeesBulk.sync();
   }
 
@@ -36444,23 +36433,19 @@ function renderHomeTasks(){
       cardFeeMachinePending = '';
     }
     renderAcquirerSelect('cardFeeAcquirer');
-    el('cardFeesTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">Carregando…</td></tr>';
+    el('cardFeesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
     try{
       const data = await financeApiRequest('/card-fees');
       cardFeesRows = Array.isArray(data.fees) ? data.fees : [];
       renderCardFeesTable();
     }catch(error){
-      el('cardFeesTableBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('cardFeesTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   ['cardFeeAcquirerFilter','cardFeeMachineFilter'].forEach(id => el(id).addEventListener('change', renderCardFeesTable));
 
   const cardFeesBulk = setupBulkSelection(el('cardFeesBulkBar'), el('cardFeesTableBody'), async (action, ids) => {
     const done = async () => { cardFeesBulk.clear(); await Promise.all([loadCardFeesTab(), loadMachinesTab()]); };
-    if(action === 'close'){
-      openMqBulkDialog('close', ids, '/card-fees/bulk', 'ENCERRAR VIGÊNCIA', done);
-      return false;
-    }
     await mqBulkRequest('/card-fees/bulk', 'delete', ids);
     await done();
   });
@@ -36489,8 +36474,6 @@ function renderHomeTasks(){
     el('cardFeeInstallments').value = row ? (row.installments || 1) : 1;
     el('cardFeePercent').value = row ? ((row.feeBps||0)/100).toFixed(2) : '';
     el('cardFeeAnticipation').value = row && row.anticipationBps ? (row.anticipationBps/100).toFixed(2) : '';
-    el('cardFeeValidFrom').value = row ? (row.validFrom || '') : financeCurrentDateKey();
-    el('cardFeeValidTo').value = row ? (row.validTo || '') : '';
     el('cardFeeFormStatus').textContent = '';
     syncCardFeeInstallments();
     el('cardFeeDialog').showModal();
@@ -36521,9 +36504,7 @@ function renderHomeTasks(){
       modality: el('cardFeeModality').value,
       installments: Number(el('cardFeeInstallments').value) || 1,
       feeBps: Math.round(Number(el('cardFeePercent').value) * 100),
-      anticipationBps: Math.round(Number(el('cardFeeAnticipation').value || 0) * 100),
-      validFrom: el('cardFeeValidFrom').value,
-      validTo: el('cardFeeValidTo').value
+      anticipationBps: Math.round(Number(el('cardFeeAnticipation').value || 0) * 100)
     };
     if(!payload.acquirerId){ status.textContent = 'SELECIONE A ADQUIRENTE.'; return; }
     if(!Number.isFinite(payload.feeBps) || payload.feeBps < 0){ status.textContent = 'INFORME UMA TAXA VÁLIDA.'; return; }
@@ -36548,7 +36529,7 @@ function renderHomeTasks(){
         '<td data-label="Antecipação (%)"><input type="number" min="0" max="100" step="0.01" data-grid-anticipation aria-label="Antecipação '+label+'"></td>'+
       '</tr>').join('');
   }
-  // Preenche com a tabela vigente da seleção (maquineta, ou padrão da adquirente).
+  // Preenche com a tabela atual da seleção (maquineta, ou padrão da adquirente).
   function fillCardFeeGrid(){
     const machineId = el('cardGridMachine').value;
     const machine = machinesRows.find(m => m.id === machineId);
@@ -36556,11 +36537,10 @@ function renderHomeTasks(){
     el('cardGridAcquirerField').hidden = Boolean(machine);
     const acquirerId = el('cardGridAcquirer').value;
     const brand = el('cardGridBrand').value.trim().toLowerCase();
-    const today = financeCurrentDateKey();
     el('cardFeeGridBody').querySelectorAll('tr').forEach(tr => {
       const fee = cardFeesRows.find(f => (f.machineId || '') === machineId && f.acquirerId === acquirerId &&
         String(f.brand || '').trim().toLowerCase() === brand && f.modality === tr.dataset.gridModality &&
-        Number(f.installments || 1) === Number(tr.dataset.gridInstallments) && cardFeeIsCurrent(f, today));
+        Number(f.installments || 1) === Number(tr.dataset.gridInstallments) && cardFeeIsCurrent(f));
       tr.querySelector('[data-grid-fee]').value = fee ? (fee.feeBps/100).toFixed(2) : '';
       tr.querySelector('[data-grid-anticipation]').value = fee && fee.anticipationBps ? (fee.anticipationBps/100).toFixed(2) : '';
     });
@@ -36572,7 +36552,6 @@ function renderHomeTasks(){
     renderAcquirerSelect('cardGridAcquirer');
     const filterMachine = el('cardFeeMachineFilter').value;
     el('cardGridMachine').value = filterMachine && filterMachine !== '__acquirer' ? filterMachine : '';
-    el('cardGridValidFrom').value = financeCurrentDateKey();
     el('cardFeeGridStatus').textContent = '';
     fillCardFeeGrid();
     el('cardFeeGridDialog').showModal();
@@ -36591,14 +36570,14 @@ function renderHomeTasks(){
         feeBps: Math.round(Number(tr.querySelector('[data-grid-fee]').value) * 100),
         anticipationBps: Math.round(Number(tr.querySelector('[data-grid-anticipation]').value || 0) * 100)
       }));
-    const payload = {machineId: el('cardGridMachine').value, acquirerId: el('cardGridAcquirer').value, brand: el('cardGridBrand').value.trim(), validFrom: el('cardGridValidFrom').value, rows};
+    const payload = {machineId: el('cardGridMachine').value, acquirerId: el('cardGridAcquirer').value, brand: el('cardGridBrand').value.trim(), rows};
     if(!payload.machineId && !payload.acquirerId){ status.textContent = 'SELECIONE A MAQUINETA OU A ADQUIRENTE.'; return; }
     if(!rows.length){ status.textContent = 'PREENCHA AO MENOS UMA TAXA.'; return; }
     try{
       const res = await financeApiRequest('/card-fees/table', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('cardFeeGridDialog').close();
       await Promise.all([loadCardFeesTab(), loadMachinesTab()]);
-      showPurchaseToast(res.saved+' taxa(s) salva(s) na tabela.');
+      showPurchaseToast(res.saved+' taxa(s) salva(s) na tabela.'+(Number(res.recalculated) ? ' '+res.recalculated+' venda(s) recalculada(s).' : ''));
     }catch(error){ status.textContent = error.message; }
   });
 
@@ -36776,7 +36755,7 @@ function renderHomeTasks(){
       for(const [i, job] of jobs.entries()){
         status.textContent = 'GRAVANDO '+(i + 1)+' DE '+jobs.length+'…';
         const res = await financeApiRequest('/card-fees/table', {method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({machineId: job.machineId, replace: true, rows: cardFeeImportRows(job.block)})});
+          body: JSON.stringify({machineId: job.machineId, rows: cardFeeImportRows(job.block)})});
         saved += Number(res.saved || 0);
         recalculated += Number(res.recalculated || 0);
       }

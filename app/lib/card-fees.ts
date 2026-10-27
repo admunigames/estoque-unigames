@@ -62,11 +62,11 @@ export function normalizeBrand(value: string): string {
  * adquirente (machine_id '', globais ou da unidade da venda). Em cada nível:
  * 1. Adquirente tem que bater exatamente.
  * 2. Modalidade tem que bater. Para crédito, o número de parcelas também.
- * 3. A vigência tem que cobrir a data da venda (valid_from <= data, e
- *    valid_to vazio OU >= data).
+ * 3. Sem vigência: vale para qualquer data (valid_to preenchido = versão
+ *    antiga, ignorada).
  * 4. Entre as candidatas, a de bandeira específica ganha da de bandeira
- *    curinga (''); depois a da unidade ganha da global; em empate, a de
- *    valid_from mais recente.
+ *    curinga (''); depois a da unidade ganha da global; em empate (dados
+ *    antigos), a de valid_from mais recente.
  * Devolve null quando nenhuma taxa cadastrada cobre a venda — a rota trata
  * isso como "taxa não encontrada" (a linha entra com fee 0 e é sinalizada).
  */
@@ -94,8 +94,9 @@ function pickCardFee(fees: CardFee[], sale: SaleKey): CardFee | null {
     }
     const feeBrand = normalizeBrand(fee.brand);
     if (feeBrand && feeBrand !== brand) return false;
-    if (fee.validFrom && fee.validFrom > sale.date) return false;
-    if (fee.validTo && fee.validTo < sale.date) return false;
+    // Sem vigência: a taxa vale para qualquer data. valid_to preenchido = versão
+    // antiga (de antes de tirar a vigência), fica só como histórico.
+    if (fee.validTo) return false;
     return true;
   });
   if (!candidates.length) return null;
@@ -388,7 +389,6 @@ export function refreshSaleFee(fees: CardFee[], sale: StoredSale) {
 }
 
 const MODALITY_LABELS: Record<string, string> = { debit: "DÉBITO", credit: "CRÉDITO", pix: "PIX" };
-const brDate = (iso: string) => iso.split("-").reverse().join("/");
 
 /**
  * Por que a venda ficou SEM TAXA CADASTRADA (mostrado na prévia do arquivo de
@@ -398,7 +398,7 @@ const brDate = (iso: string) => iso.split("-").reverse().join("/");
 export function explainMissingFee(fees: CardFee[], sale: SaleKey): string {
   if (resolveCardFee(fees, sale)) return "";
   if (!sale.acquirerId) return "SEM ADQUIRENTE (MAQUINETA NÃO IDENTIFICADA E ARQUIVO SEM A COLUNA ADQUIRENTE)";
-  const scoped = fees.filter((fee) => fee.acquirerId === sale.acquirerId &&
+  const scoped = fees.filter((fee) => !fee.validTo && fee.acquirerId === sale.acquirerId &&
     (fee.machineId ? fee.machineId === (sale.machineId || "") : !fee.companyId || fee.companyId === sale.companyId));
   if (!scoped.length) return "NENHUMA TAXA CADASTRADA PARA ESTA MAQUINETA NEM PARA A ADQUIRENTE";
   const installments = sale.modality === "credit" ? Number(sale.installments || 1) : 1;
@@ -408,8 +408,5 @@ export function explainMissingFee(fees: CardFee[], sale: SaleKey): string {
   const brand = normalizeBrand(sale.brand);
   const byBrand = byModality.filter((fee) => !normalizeBrand(fee.brand) || normalizeBrand(fee.brand) === brand);
   if (!byBrand.length) return `SEM TAXA DE ${what} PARA A BANDEIRA ${String(sale.brand || "").toUpperCase() || "(VAZIA)"}`;
-  const later = byBrand.filter((fee) => fee.validFrom && fee.validFrom > sale.date).map((fee) => fee.validFrom).sort()[0];
-  if (later) return `A TAXA DE ${what} SÓ VALE A PARTIR DE ${brDate(later)} (VENDA DE ${brDate(sale.date)})`;
-  const ended = byBrand.map((fee) => fee.validTo).filter(Boolean).sort().reverse()[0];
-  return ended ? `A TAXA DE ${what} FOI ENCERRADA EM ${brDate(ended)}` : `SEM TAXA DE ${what} NA DATA ${brDate(sale.date)}`;
+  return `SEM TAXA DE ${what}`;
 }

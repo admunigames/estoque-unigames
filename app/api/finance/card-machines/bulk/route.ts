@@ -1,21 +1,17 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../../lib/access-scope";
-import { todayInTimezone } from "../../../../lib/finance-status";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
-import { loadCardFees, planFeeVersion, runStatements, scopeActorOf, type Statement } from "../../card-fees/shared";
+import { loadCardFees, planFeeUpsert, refreshCardSales, runStatements, scopeActorOf, type Statement } from "../../card-fees/shared";
 
 // Ações em lote na aba MAQUINETAS (Financeiro 5/9):
 // { action: 'inactivate' | 'reactivate' | 'copy_fees', ids, fields }.
 // - inactivate / reactivate: ativa ↔ inativa (transferida/cancelada é
 //   pulada — transferência continua só pelo histórico, que grava o evento);
-// - copy_fees: copia a tabela VIGENTE da maquineta-modelo
-//   (fields.sourceMachineId) para as selecionadas, como versão nova a partir
-//   de fields.validFrom (vazio = a mesma vigência da modelo). É o "cadastrar
-//   em lote" das taxas.
+// - copy_fees: copia a tabela da maquineta-modelo (fields.sourceMachineId)
+//   para as selecionadas (sem vigência: substitui as mesmas chaves) e
+//   recalcula as vendas delas. É o "cadastrar em lote" das taxas.
 // Todos os ids conferidos antes (404/403); gravação numa transação.
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type MachineRow = {
   id: string;
@@ -47,9 +43,7 @@ export async function POST(request: Request) {
     if (ids.length > 300) return jsonResponse({ error: "SELEÇÃO GRANDE DEMAIS (MÁX. 300)." }, 400);
     const fields = (body.fields && typeof body.fields === "object" ? body.fields : {}) as JsonMap;
     const sourceMachineId = safeText(fields.sourceMachineId, 80);
-    const validFrom = safeText(fields.validFrom, 10);
     if (action === "copy_fees" && !sourceMachineId) return jsonResponse({ error: "ESCOLHA A MAQUINETA-MODELO." }, 400);
-    if (validFrom && !DATE_RE.test(validFrom)) return jsonResponse({ error: "DATA DE VIGÊNCIA INVÁLIDA." }, 400);
 
     const database = await getD1();
     const lookup = [...ids, ...(sourceMachineId ? [sourceMachineId] : [])];
@@ -75,13 +69,10 @@ export async function POST(request: Request) {
     let applied = 0;
 
     if (action === "copy_fees") {
-      const today = todayInTimezone();
       const allFees = await loadCardFees(database);
-      const sourceFees = allFees.filter(
-        (fee) => fee.machineId === sourceMachineId && (!fee.validTo || fee.validTo >= today) && (fee.validFrom || "") <= today,
-      );
+      const sourceFees = allFees.filter((fee) => fee.machineId === sourceMachineId && !fee.validTo);
       if (!sourceFees.length) {
-        return jsonResponse({ error: "A MAQUINETA-MODELO NÃO TEM TAXAS PRÓPRIAS VIGENTES." }, 400);
+        return jsonResponse({ error: "A MAQUINETA-MODELO NÃO TEM TAXAS PRÓPRIAS." }, 400);
       }
       for (const id of ids) {
         const target = byId.get(id)!;
@@ -91,7 +82,7 @@ export async function POST(request: Request) {
         }
         for (const fee of sourceFees) {
           statements.push(
-            ...planFeeVersion(
+            ...planFeeUpsert(
               allFees,
               {
                 acquirerId: target.acquirerId,
@@ -103,7 +94,6 @@ export async function POST(request: Request) {
                 installments: fee.installments,
                 feeBps: fee.feeBps,
                 anticipationBps: fee.anticipationBps,
-                validFrom: validFrom || fee.validFrom || today,
               },
               who,
             ),
@@ -127,7 +117,11 @@ export async function POST(request: Request) {
       }
     }
     await runStatements(database, statements);
-    return jsonResponse({ applied, skipped });
+    let recalculated = 0;
+    if (action === "copy_fees") {
+      for (const id of ids) if (id !== sourceMachineId) recalculated += await refreshCardSales(database, "machine_id", id);
+    }
+    return jsonResponse({ applied, skipped, recalculated });
   } catch (error) {
     console.error("Não foi possível aplicar o lote de maquinetas.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL APLICAR O LOTE DE MAQUINETAS." }, 500);

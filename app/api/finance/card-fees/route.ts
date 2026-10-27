@@ -10,13 +10,14 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
-import { CARD_FEE_COLUMNS, loadCardFees, planFeeVersion, runStatements } from "./shared";
+import { CARD_FEE_COLUMNS, loadCardFees, planFeeUpsert, refreshCardSales, runStatements, type Statement } from "./shared";
 
 // Tabela de Taxas de Cartão (Financeiro Fase 7; aba TAXAS de Maquinetas no
 // 5/9). Mesma permissão e escopo do resto do módulo. company_id vazio ('') =
 // taxa global; machine_id preenchido = taxa própria da maquineta (gravada com
-// a unidade da maquineta). Taxa NOVA encerra a anterior da mesma chave na
-// véspera (planFeeVersion) — editar continua alterando a linha.
+// a unidade da maquineta). Sem vigência: uma taxa por chave, sempre valendo
+// (planFeeUpsert substitui a da mesma chave) e as vendas já importadas da
+// adquirente são recalculadas na hora.
 
 function scopeActorOf(request: Request, actor: ReturnType<typeof identity>) {
   return {
@@ -48,17 +49,18 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
     const values: unknown[] = [];
-    let where = "";
+    // valid_to preenchido = versão antiga (de quando havia vigência): não aparece.
+    let where = "WHERE valid_to=''";
     if (!allStores) {
       values.push(scopeActor.companyId);
-      where = `WHERE company_id='' OR company_id=?1
-        OR machine_id IN (SELECT id FROM finance_card_machines WHERE company_id=?1)`;
+      where += ` AND (company_id='' OR company_id=?1
+        OR machine_id IN (SELECT id FROM finance_card_machines WHERE company_id=?1))`;
     }
     const result = await database
       .prepare(
         `SELECT ${CARD_FEE_COLUMNS} FROM finance_card_fees
          ${where}
-         ORDER BY lower(acquirer_name) ASC, modality ASC, installments ASC, valid_from DESC`,
+         ORDER BY lower(acquirer_name) ASC, modality ASC, installments ASC`,
       )
       .bind(...values)
       .all();
@@ -91,8 +93,6 @@ export async function POST(request: Request) {
     const acquirerId = safeText(body.acquirerId, 80);
     const modality = safeText(body.modality, 12);
     const brand = safeText(body.brand, 40);
-    const validFrom = safeText(body.validFrom, 10);
-    const validTo = safeText(body.validTo, 10);
     if (!acquirerId) return jsonResponse({ error: "SELECIONE A ADQUIRENTE." }, 400);
     if (!isCardModality(modality)) return jsonResponse({ error: "MODALIDADE INVÁLIDA." }, 400);
 
@@ -106,15 +106,6 @@ export async function POST(request: Request) {
     const anticipationBps = toBps(body.anticipationBps ?? 0);
     if (anticipationBps === null) {
       return jsonResponse({ error: "INFORME UMA TAXA DE ANTECIPAÇÃO VÁLIDA." }, 400);
-    }
-    if (validFrom && !/^\d{4}-\d{2}-\d{2}$/.test(validFrom)) {
-      return jsonResponse({ error: "DATA DE INÍCIO DA VIGÊNCIA INVÁLIDA." }, 400);
-    }
-    if (validTo && !/^\d{4}-\d{2}-\d{2}$/.test(validTo)) {
-      return jsonResponse({ error: "DATA DE FIM DA VIGÊNCIA INVÁLIDA." }, 400);
-    }
-    if (validFrom && validTo && validTo < validFrom) {
-      return jsonResponse({ error: "A VIGÊNCIA TERMINA ANTES DE COMEÇAR." }, 400);
     }
 
     const database = await getD1();
@@ -147,50 +138,30 @@ export async function POST(request: Request) {
     }
 
     const who = actor.displayName || "Administrador";
+    const statements: Statement[] = [];
+    let previousAcquirerId = "";
     if (editId) {
       const existing = await database
-        .prepare("SELECT company_id AS companyId FROM finance_card_fees WHERE id=?1")
+        .prepare("SELECT company_id AS companyId, acquirer_id AS acquirerId FROM finance_card_fees WHERE id=?1")
         .bind(editId)
-        .first<{ companyId: string }>();
+        .first<{ companyId: string; acquirerId: string }>();
       if (!existing) return jsonResponse({ error: "TAXA NÃO ENCONTRADA." }, 404);
       if (!allStores && existing.companyId !== scopeActor.companyId) {
         return jsonResponse({ error: "VOCÊ NÃO PODE EDITAR ESTA TAXA." }, 403);
       }
-      await database
-        .prepare(
-          `UPDATE finance_card_fees
-           SET acquirer_id=?1, acquirer_name=?2, company_id=?3, brand=?4, modality=?5, installments=?6,
-               fee_bps=?7, anticipation_bps=?8, valid_from=?9, valid_to=?10,
-               updated_by=?11, updated_by_name=?12, updated_at=CURRENT_TIMESTAMP, machine_id=?14
-           WHERE id=?13`,
-        )
-        .bind(
-          acquirerId,
-          acquirer.name,
-          companyId,
-          brand,
-          modality,
-          installments,
-          feeBps,
-          anticipationBps,
-          validFrom,
-          validTo,
-          actor.id,
-          who,
-          editId,
-          machineId,
-        )
-        .run();
-      return jsonResponse({ updated: true, id: editId });
+      previousAcquirerId = existing.acquirerId;
+      statements.push(["DELETE FROM finance_card_fees WHERE id=?1", [editId]]);
     }
-
-    const statements = planFeeVersion(
-      await loadCardFees(database),
-      { acquirerId, acquirerName: acquirer.name, companyId, machineId, brand, modality, installments, feeBps, anticipationBps, validFrom, validTo },
+    const others = (await loadCardFees(database)).filter((row) => row.id !== editId);
+    statements.push(...planFeeUpsert(
+      others,
+      { acquirerId, acquirerName: acquirer.name, companyId, machineId, brand, modality, installments, feeBps, anticipationBps },
       { id: actor.id, name: who },
-    );
+    ));
     await runStatements(database, statements);
-    return jsonResponse({ created: true, closedPrevious: statements.length - 1 }, 201);
+    let recalculated = await refreshCardSales(database, "acquirer_id", acquirerId);
+    if (previousAcquirerId && previousAcquirerId !== acquirerId) recalculated += await refreshCardSales(database, "acquirer_id", previousAcquirerId);
+    return jsonResponse(editId ? { updated: true, recalculated } : { created: true, recalculated }, editId ? 200 : 201);
   } catch (error) {
     console.error("Não foi possível salvar a taxa de cartão.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR A TAXA DE CARTÃO." }, 500);
@@ -215,15 +186,15 @@ export async function DELETE(request: Request) {
   try {
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT company_id AS companyId FROM finance_card_fees WHERE id=?1")
+      .prepare("SELECT company_id AS companyId, acquirer_id AS acquirerId FROM finance_card_fees WHERE id=?1")
       .bind(id)
-      .first<{ companyId: string }>();
+      .first<{ companyId: string; acquirerId: string }>();
     if (!existing) return jsonResponse({ deleted: true });
     if (!allStores && existing.companyId !== scopeActor.companyId) {
       return jsonResponse({ error: "VOCÊ NÃO PODE EXCLUIR ESTA TAXA." }, 403);
     }
     await database.prepare("DELETE FROM finance_card_fees WHERE id=?1").bind(id).run();
-    return jsonResponse({ deleted: true });
+    return jsonResponse({ deleted: true, recalculated: await refreshCardSales(database, "acquirer_id", existing.acquirerId) });
   } catch (error) {
     console.error("Não foi possível excluir a taxa de cartão.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR A TAXA DE CARTÃO." }, 500);

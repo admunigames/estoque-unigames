@@ -22,7 +22,7 @@ test("resolveCardFee: adquirente e modalidade têm que bater; parcelas só para 
   assert.equal(fees.resolveCardFee(table, { acquirerId: "stone", brand: "", modality: "credit", installments: 1, date: "2026-08-01" }), null);
 });
 
-test("resolveCardFee: bandeira específica ganha da curinga e vigência é respeitada", () => {
+test("resolveCardFee: bandeira específica ganha da curinga; sem vigência (vale qualquer data, versão encerrada é ignorada)", () => {
   const table = [
     { id: "wild", acquirerId: "cielo", brand: "", modality: "credit", installments: 1, feeBps: 200, anticipationBps: 0, validFrom: "2026-01-01", validTo: "" },
     { id: "visa", acquirerId: "cielo", brand: "Visa", modality: "credit", installments: 1, feeBps: 150, anticipationBps: 0, validFrom: "2026-01-01", validTo: "" },
@@ -30,8 +30,9 @@ test("resolveCardFee: bandeira específica ganha da curinga e vigência é respe
   ];
   assert.equal(fees.resolveCardFee(table, { acquirerId: "cielo", brand: "visa", modality: "credit", installments: 1, date: "2026-08-01" })?.id, "visa");
   assert.equal(fees.resolveCardFee(table, { acquirerId: "cielo", brand: "Elo", modality: "credit", installments: 1, date: "2026-08-01" })?.id, "wild");
-  // Antes da vigência da taxa nova: cai na curinga (a 'old' já expirou).
-  assert.equal(fees.resolveCardFee(table, { acquirerId: "cielo", brand: "visa", modality: "credit", installments: 1, date: "2024-06-01" }), null);
+  // Sem vigência: venda de antes do valid_from antigo usa a taxa atual; a 'old' (encerrada) nunca vale.
+  assert.equal(fees.resolveCardFee(table, { acquirerId: "cielo", brand: "visa", modality: "credit", installments: 1, date: "2024-06-01" })?.id, "visa");
+  assert.equal(fees.resolveCardFee(table.filter((f) => f.id !== "visa"), { acquirerId: "cielo", brand: "visa", modality: "credit", installments: 1, date: "2025-06-01" })?.id, "wild");
 });
 
 test("computeSaleFinance: taxa + antecipação em bps sobre o bruto", () => {
@@ -96,8 +97,8 @@ test("resolveCardFee: taxa da maquineta ganha da adquirente; sem cobertura cai n
   const sale = { acquirerId: "cielo", brand: "Elo", modality: "credit", installments: 1, date: "2026-08-01" };
   assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1" })?.id, "maq");
   assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1", brand: "visa" })?.id, "maq-visa");
-  // Vigência vale no nível da maquineta: em 2025 vale a versão antiga.
-  assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1", date: "2025-06-01" })?.id, "maq-antiga");
+  // Sem vigência: em 2025 vale a taxa atual da maquineta (a encerrada é histórico).
+  assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1", date: "2025-06-01" })?.id, "maq");
   // Maquineta sem taxa própria / parcela sem taxa própria → adquirente.
   assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m2" })?.id, "adq");
   assert.equal(fees.resolveCardFee(table, { ...sale, machineId: "m1", installments: 3 }), null);
@@ -188,16 +189,18 @@ test("Financeiro Fase 7: Taxas de Cartão (hoje dentro de Maquinetas) + religaç
   assert.match(html, /id="receivableAcquirer"/);
 });
 
-test("SEM TAXA CADASTRADA explica o motivo: vigência, bandeira, parcela, adquirente", () => {
+test("SEM TAXA CADASTRADA explica o motivo: bandeira, parcela, adquirente; sem vigência", () => {
   const base = { acquirerId: "rede", machineId: "m-guara", companyId: "", anticipationBps: 0, validTo: "" };
   const table = [
     { ...base, id: "pix", brand: "", modality: "pix", installments: 1, feeBps: 69, validFrom: "2026-10-27" },
     { ...base, id: "mc1", brand: "MASTERCARD", modality: "credit", installments: 1, feeBps: 210, validFrom: "2026-10-27" },
   ];
   const sale = { acquirerId: "rede", machineId: "m-guara", companyId: "cguara", brand: "MASTERCARD", modality: "credit", installments: 1, date: "2026-10-25" };
-  // Taxa importada com vigência a partir de 27/10 e venda de 25/10.
-  assert.equal(fees.explainMissingFee(table, sale), "A TAXA DE CRÉDITO 1X SÓ VALE A PARTIR DE 27/10/2026 (VENDA DE 25/10/2026)");
+  // Taxa gravada com valid_from 27/10 (de quando havia vigência) vale para a venda de 25/10.
+  assert.equal(fees.explainMissingFee(table, sale), "");
   assert.equal(fees.explainMissingFee(table, { ...sale, date: "2026-10-28" }), "");
+  // Versão encerrada (valid_to) não conta.
+  assert.equal(fees.explainMissingFee(table.map((f) => ({ ...f, validTo: "2026-10-26" })), sale), "NENHUMA TAXA CADASTRADA PARA ESTA MAQUINETA NEM PARA A ADQUIRENTE");
   assert.equal(fees.explainMissingFee(table, { ...sale, installments: 3, date: "2026-10-28" }), "SEM TAXA DE CRÉDITO 3X");
   assert.equal(fees.explainMissingFee(table, { ...sale, brand: "Hipercard", date: "2026-10-28" }), "SEM TAXA DE CRÉDITO 1X PARA A BANDEIRA HIPERCARD");
   assert.equal(fees.explainMissingFee(table, { ...sale, acquirerId: "" }), "SEM ADQUIRENTE (MAQUINETA NÃO IDENTIFICADA E ARQUIVO SEM A COLUNA ADQUIRENTE)");

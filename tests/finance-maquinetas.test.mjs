@@ -71,18 +71,19 @@ test("sem finance:manage recebe 403 nas rotas novas", async () => {
   }
 });
 
-test("tabela da maquineta + nova versão encerra a anterior na véspera + copiar em lote + encerrar vigência", async () => {
+test("tabela da maquineta sem vigência (salvar de novo substitui) + copiar em lote + excluir em lote", async () => {
   let response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", {
-    machineId: "m-riomar", validFrom: "2026-01-01",
+    machineId: "m-riomar",
     rows: [{ modality: "debit", feeBps: 100 }, { modality: "credit", installments: 1, feeBps: 250 }],
   });
   assert.equal(response.status, 201);
   response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", {
-    machineId: "m-riomar", validFrom: "2026-08-01", rows: [{ modality: "credit", installments: 1, feeBps: 200 }],
+    machineId: "m-riomar", rows: [{ modality: "credit", installments: 1, feeBps: 200 }],
   });
   assert.equal(response.status, 201);
+  // Uma taxa só por chave, sem datas.
   const riomar = fees().filter((f) => f.machine_id === "m-riomar" && f.modality === "credit");
-  assert.deepEqual(riomar.map((f) => [f.fee_bps, f.valid_from, f.valid_to]), [[250, "2026-01-01", "2026-07-31"], [200, "2026-08-01", ""]]);
+  assert.deepEqual(riomar.map((f) => [f.fee_bps, f.valid_from, f.valid_to]), [[200, "", ""]]);
 
   // Coluna TAXAS: própria × da adquirente.
   const list = await json(await get(machinesRoute.GET, ADMIN, "/api/finance/card-machines"));
@@ -98,13 +99,11 @@ test("tabela da maquineta + nova versão encerra a anterior na véspera + copiar
   const copied = fees().filter((f) => f.machine_id === "m-tacaruna");
   assert.deepEqual(copied.map((f) => [f.modality, f.fee_bps, f.company_id]).sort(), [["credit", 200, TACARUNA], ["debit", 100, TACARUNA]]);
 
-  // Encerrar vigência em lote (a taxa da m-tacaruna de débito).
+  // ENCERRAR VIGÊNCIA não existe mais.
   const debit = copied.find((f) => f.modality === "debit");
-  const closed = await json(await post(feesBulk.POST, ADMIN, "/api/finance/card-fees/bulk", {
+  assert.equal((await post(feesBulk.POST, ADMIN, "/api/finance/card-fees/bulk", {
     action: "close", ids: [debit.id], fields: { validTo: "2026-12-31" },
-  }));
-  assert.equal(closed.applied, 1);
-  assert.equal(fees().find((f) => f.id === debit.id).valid_to, "2026-12-31");
+  })).status, 400);
   assert.equal((await post(feesBulk.POST, ADMIN, "/api/finance/card-fees/bulk", { action: "delete", ids: ["nao-existe"] })).status, 404);
   // Login com loja não mexe em taxa global nem de outra loja.
   assert.equal((await post(feesBulk.POST, STORE_LOGIN, "/api/finance/card-fees/bulk", { action: "delete", ids: [debit.id] })).status, 403);
@@ -255,17 +254,17 @@ test("IMPORTAR PLANILHA DE TAXAS: tabela com bandeira por linha até 21x; MASTER
     ...[19, 20, 21].map((installments) => ({ brand: "MASTERCARD", modality: "credit", installments, feeBps: 283 })),
     { brand: "ELO", modality: "debit", installments: 1, feeBps: 153 },
   ];
-  let response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-tacaruna", validFrom: "2026-10-27", rows });
+  let response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-tacaruna", rows });
   assert.equal(response.status, 201);
   assert.equal((await json(response)).saved, 6);
-  // Mesma vigência de novo: só atualiza (não duplica).
-  response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-tacaruna", validFrom: "2026-10-27", rows });
+  // De novo: substitui (não duplica).
+  response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-tacaruna", rows });
   assert.equal(response.status, 201);
-  const imported = fees().filter((f) => f.machine_id === "m-tacaruna" && f.valid_from === "2026-10-27");
+  const imported = fees().filter((f) => f.machine_id === "m-tacaruna" && ["MASTERCARD", "ELO"].includes(f.brand) || (f.machine_id === "m-tacaruna" && f.modality === "pix"));
   assert.equal(imported.length, 6);
   // Mesma bandeira/modalidade/parcela repetida na tabela → 400 (MASTER = MASTERCARD).
   response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", {
-    machineId: "m-tacaruna", validFrom: "2026-10-28",
+    machineId: "m-tacaruna",
     rows: [{ brand: "MASTER", modality: "debit", feeBps: 1 }, { brand: "MASTERCARD", modality: "debit", feeBps: 2 }],
   });
   assert.equal(response.status, 400);
@@ -277,7 +276,7 @@ test("IMPORTAR PLANILHA DE TAXAS: tabela com bandeira por linha até 21x; MASTER
   assert.equal(hit.feeBps, 283);
 });
 
-test("IMPORTAR PLANILHA DE TAXAS sem vigência: substitui a tabela da maquineta para qualquer data e recalcula as vendas já importadas", async () => {
+test("sem vigência: taxa vale para qualquer data, substitui versões antigas e recalcula as vendas já importadas", async () => {
   db.insert("finance_card_sales", {
     id: "venda-antiga", import_id: "imp-x", company_id: RIOMAR, sale_date: "2026-02-10", acquirer_id: "stone", acquirer_name: "STONE",
     brand: "Elo", modality: "debit", installments: 1, gross_cents: 10000, fee_bps: 0, expected_fee_cents: 0, net_cents: 10000,
@@ -290,11 +289,18 @@ test("IMPORTAR PLANILHA DE TAXAS sem vigência: substitui a tabela da maquineta 
     const { recalculated } = await json(response);
     assert.ok(i === 0 ? recalculated >= 1 : recalculated === 0, `rodada ${i}: ${recalculated}`); // de novo: nada muda
   }
-  // Crédito 1x da maquineta: as versões com vigência (jan e ago) viram uma só, sem data.
+  // Crédito 1x da maquineta: uma só, sem data.
   assert.deepEqual(fees().filter((f) => f.machine_id === "m-riomar" && f.modality === "credit" && f.installments === 1)
     .map((f) => [f.brand, f.fee_bps, f.valid_from, f.valid_to]), [["", 213, "", ""]]);
   const sale = db.sqlite.prepare("SELECT * FROM finance_card_sales WHERE id='venda-antiga'").get();
   assert.deepEqual([sale.fee_bps, sale.expected_fee_cents, sale.net_cents, sale.fee_missing, sale.fee_check, sale.recon_status], [153, 153, 9847, 0, "ok", "ok"]);
-  // Sem maquineta não há substituição (planilha é sempre por maquineta).
-  assert.equal((await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { acquirerId: "stone", replace: true, rows })).status, 400);
+  // Versão antiga com data (de quando havia vigência) é substituída e deixa de valer.
+  db.insert("finance_card_fees", { id: "f-velha", acquirer_id: "stone", acquirer_name: "STONE", machine_id: "m-riomar", company_id: RIOMAR,
+    brand: "ELO", modality: "debit", installments: 1, fee_bps: 999, valid_from: "2026-10-27", valid_to: "" });
+  await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-riomar", rows: rows.slice(0, 1) });
+  assert.deepEqual(fees().filter((f) => f.machine_id === "m-riomar" && f.brand === "ELO").map((f) => [f.fee_bps, f.valid_from]), [[153, ""]]);
+  // NOVA TAXA avulsa da adquirente também recalcula as vendas dela.
+  const single = await json(await post(feesRoute.POST, ADMIN, "/api/finance/card-fees", { acquirerId: "stone", modality: "credit", installments: 2, feeBps: 330 }));
+  assert.equal(single.created, true);
+  assert.equal(typeof single.recalculated, "number");
 });

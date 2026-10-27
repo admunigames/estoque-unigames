@@ -5241,7 +5241,9 @@ test("Financeiro > Maquinetas: Taxas de Cartão em abas, taxa por maquineta, arq
   assert.match(html, /'\?aba='\+mqTab/);
   // Barras de lote (componente reutilizado) nas três listas.
   assert.match(html, /id="machinesBulkBar"[\s\S]*?data-bulk-action="copy_fees"(?: data-bulk-confirm="[^"]*")?>COPIAR TAXAS DE…[\s\S]*?data-bulk-action="inactivate"(?: data-bulk-confirm="[^"]*")?>INATIVAR[\s\S]*?data-bulk-action="reactivate"(?: data-bulk-confirm="[^"]*")?>REATIVAR/);
-  assert.match(html, /id="cardFeesBulkBar"[\s\S]*?data-bulk-action="close"(?: data-bulk-confirm="[^"]*")?>ENCERRAR VIGÊNCIA[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
+  // Taxas sem vigência: lote só exclui; nenhum campo de data nas telas de taxa.
+  assert.match(html, /id="cardFeesBulkBar"[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
+  assert.doesNotMatch(html, /ENCERRAR VIGÊNCIA|id="cardFeeValidFrom"|id="cardFeeValidTo"|id="cardGridValidFrom"|id="mqBulkValidFrom"|id="mqBulkValidTo"|data-label="Vigência"/);
   assert.match(html, /id="cardConfBulkBar"[\s\S]*?data-bulk-action="review"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO REVISADA[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR VENDAS/);
   for (const name of ["machinesBulk", "cardFeesBulk", "cardConfBulk"]) {
     assert.match(html, new RegExp(`const ${name} = setupBulkSelection\\(`), name);
@@ -5709,8 +5711,8 @@ test("Maquinetas > IMPORTAR PLANILHA DE TAXAS: blocos MAQUINETA, faixas de parce
   // Tela: botão na aba TAXAS, janela e envio pela TABELA DA MAQUINETA (uma por maquineta).
   assert.match(html, /id="btnCardFeeImport" type="button">IMPORTAR PLANILHA DE TAXAS</);
   assert.match(html, /id="cardFeeImportDialog"/);
-  // Sem vigência: replace (vale para qualquer data e recalcula as vendas já importadas).
-  assert.match(html, /financeApiRequest\('\/card-fees\/table', \{method:'POST'[\s\S]{0,140}machineId: job\.machineId, replace: true, rows: cardFeeImportRows\(job\.block\)/);
+  // Sem vigência (vale para qualquer data e recalcula as vendas já importadas).
+  assert.match(html, /financeApiRequest\('\/card-fees\/table', \{method:'POST'[\s\S]{0,140}machineId: job\.machineId, rows: cardFeeImportRows\(job\.block\)/);
   assert.doesNotMatch(html, /id="cardFeeImportValidFrom"/);
 });
 
