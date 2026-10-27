@@ -33,6 +33,7 @@ const migration0079 = await readFile(new URL("../drizzle/0079_assistencia_eletro
 const migration0080 = await readFile(new URL("../drizzle/0080_assistencia_mao_de_obra.sql", import.meta.url), "utf8");
 const migration0081 = await readFile(new URL("../drizzle/0081_assistencia_pagamentos.sql", import.meta.url), "utf8");
 const migration0082 = await readFile(new URL("../drizzle/0082_assistencia_categorias.sql", import.meta.url), "utf8");
+const migration0116 = await readFile(new URL("../drizzle/0116_assistencia_observacao_defeito.sql", import.meta.url), "utf8");
 const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
 function createFakeD1() {
@@ -72,7 +73,7 @@ function createFakeD1() {
   // 0080: MÃO DE OBRA (R$ 99,99) em todos os aparelhos.
   sqlite.exec(migration0080);
   // 0081: formas de pagamento + desconto por item (RLS/REVOKE são só do Postgres).
-  for (const statement of [migration0081, migration0082].join("--> statement-breakpoint").split("--> statement-breakpoint")) {
+  for (const statement of [migration0081, migration0082, migration0116].join("--> statement-breakpoint").split("--> statement-breakpoint")) {
     if (!/ROW LEVEL SECURITY|REVOKE ALL/.test(statement)) sqlite.exec(statement.replace(" USING btree", ""));
   }
   sqlite
@@ -633,4 +634,37 @@ test("observações gravadas com o JSON em maiúsculas (CAIXA ALTA, 19–22/10) 
   // A coluna é JSON: não pode voltar para a lista da CAIXA ALTA.
   const { UPPER_TEXT_COLUMNS } = await import("../app/lib/upper-text.ts");
   assert.ok(!UPPER_TEXT_COLUMNS.assist_quotes.includes("observations"));
+});
+
+test("OBSERVAÇÃO do defeito: cadastrar/editar na tabela, cópia na linha do orçamento e no PDF", async () => {
+  const created = await postDefect(NO_STORE_USER, {
+    category: "CONSOLES", device: "PS4 SLIM", name: "LUZ AZUL DA MORTE", minCents: 30000, maxCents: 45000,
+    note: "o console liga, pisca azul e desliga: falha na placa ou na fonte",
+  });
+  assert.equal(created.status, 201);
+  let defect = (await getDefects(NO_STORE_USER)).body.defects.find((item) => item.id === created.body.id);
+  assert.equal(defect.note, "O CONSOLE LIGA, PISCA AZUL E DESLIGA: FALHA NA PLACA OU NA FONTE");
+  assert.equal((await patchDefect(NO_STORE_USER, { id: defect.id, name: defect.name, minCents: 30000, maxCents: 45000, note: "Falha de vídeo (APU)" })).status, 200);
+  defect = (await getDefects(NO_STORE_USER)).body.defects.find((item) => item.id === created.body.id);
+  assert.equal(defect.note, "FALHA DE VÍDEO (APU)");
+
+  const saved = await createQuote(NO_STORE_USER, quote({
+    osNumber: "OBS-116",
+    equipments: [{
+      category: "CONSOLES", device: "PS4 SLIM", serialNumber: "", service: "",
+      lines: [
+        { defectName: defect.name, defectNote: defect.note, description: "", quantity: 1, unitCents: 30000 },
+        { defectName: "", defectNote: "não vale para item avulso", description: "Cabo HDMI", quantity: 1, unitCents: 5000 },
+      ],
+    }],
+  }));
+  assert.equal(saved.status, 201);
+  // A tabela muda depois: o orçamento salvo mantém a cópia.
+  await patchDefect(NO_STORE_USER, { id: defect.id, name: defect.name, minCents: 30000, maxCents: 45000, note: "outro texto" });
+  const lines = (await getQuote(NO_STORE_USER, saved.body.id)).body.equipments[0].lines;
+  assert.deepEqual(lines.map((line) => line.defectNote), ["FALHA DE VÍDEO (APU)", ""]);
+
+  // PDF: a observação sai embaixo do nome do defeito.
+  assert.match(html, /\(line\.defectName && line\.defectNote \? '<div class="assist-doc-note">'\+escapeHtml\(line\.defectNote\)\+'<\/div>' : ''\)/);
+  assert.match(html, /defectNote:defect\.note \|\| '',/);
 });

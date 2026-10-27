@@ -85,6 +85,8 @@ export function cents(value: unknown): number | null {
 
 export type ParsedLine = {
   defectName: string;
+  /** Cópia da OBSERVAÇÃO do defeito (tabela de valores), impressa no PDF. */
+  defectNote: string;
   description: string;
   quantity: number;
   unitCents: number;
@@ -163,6 +165,7 @@ function parseLines(raw: unknown, label: string): { lines: ParsedLine[] } | { er
   for (const [index, value] of raw.entries()) {
     const entry = (value && typeof value === "object" ? value : {}) as JsonMap;
     const defectName = upper(text(entry.defectName, 160));
+    const defectNote = defectName ? upper(text(entry.defectNote, NOTE_MAX)) : "";
     const description = text(entry.description, 600);
     const lineLabel = `${label} · ${defectName || `ITEM ${index + 1}`}`;
     if (!defectName && description.length < 2) {
@@ -178,7 +181,7 @@ function parseLines(raw: unknown, label: string): { lines: ParsedLine[] } | { er
     const discountCents = rawDiscount === null || rawDiscount === undefined || rawDiscount === "" ? 0 : cents(rawDiscount);
     if (discountCents === null) return { error: `${lineLabel}: DESCONTO INVÁLIDO.` };
     if (discountCents > quantity * unitCents) return { error: `${lineLabel}: O DESCONTO NÃO PODE SER MAIOR QUE O VALOR DO ITEM.` };
-    lines.push({ defectName, description, quantity, unitCents, discountCents });
+    lines.push({ defectName, defectNote, description, quantity, unitCents, discountCents });
   }
   return { lines };
 }
@@ -285,7 +288,11 @@ export type ParsedDefect = {
   minCents: number;
   maxCents: number;
   quoteOnly: boolean;
+  note: string;
 };
+
+/** Tamanho máximo da OBSERVAÇÃO do defeito. */
+export const NOTE_MAX = 600;
 
 /**
  * Valores da tabela: "SOB ORÇAMENTO" grava 0/0 (o valor é sempre digitado no
@@ -313,7 +320,7 @@ export function parseNewDefect(body: unknown): { defect: ParsedDefect } | { erro
   if (name.length < 2) return { error: "INFORME O NOME DO DEFEITO." };
   const values = parseDefectValues(entry);
   if ("error" in values) return values;
-  return { defect: { category, device, name, ...values } };
+  return { defect: { category, device, name, ...values, note: upper(text(entry.note, NOTE_MAX)) } };
 }
 
 /** Violação de índice único no Postgres (23505) ou no SQLite dos testes. */

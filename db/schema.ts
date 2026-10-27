@@ -4302,6 +4302,8 @@ export const assistDefects = pgTable(
     minCents: integer("min_cents").notNull().default(0),
     maxCents: integer("max_cents").notNull().default(0),
     quoteOnly: integer("quote_only").notNull().default(0),
+    // OBSERVAÇÃO: explica o defeito; sai no PDF do orçamento (migration 0116).
+    note: text("note").notNull().default(""),
     active: integer("active").notNull().default(1),
     sortOrder: integer("sort_order").notNull().default(0),
     createdBy: text("created_by").notNull().default(""),
@@ -4366,6 +4368,8 @@ export const assistQuoteItems = pgTable(
     serialNumber: text("serial_number").notNull().default(""),
     service: text("service").notNull().default(""),
     defectName: text("defect_name").notNull().default(""),
+    // Cópia da OBSERVAÇÃO do defeito na hora de salvar (migration 0116).
+    defectNote: text("defect_note").notNull().default(""),
     description: text("description").notNull().default(""),
     quantity: integer("quantity").notNull().default(1),
     unitCents: integer("unit_cents").notNull().default(0),

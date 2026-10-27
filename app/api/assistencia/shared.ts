@@ -175,7 +175,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
   const result = await database
     .prepare(
       `SELECT equipment_index AS equipmentIndex, category, device, model, serial_number AS serialNumber, service,
-              defect_name AS defectName, description, quantity, unit_cents AS unitCents,
+              defect_name AS defectName, defect_note AS defectNote, description, quantity, unit_cents AS unitCents,
               discount_cents AS discountCents
        FROM assist_quote_items WHERE quote_id=?1 ORDER BY equipment_index, sort_order, id`,
     )
@@ -190,6 +190,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
     subtotalCents: number;
     lines: Array<{
       defectName: string;
+      defectNote: string;
       description: string;
       quantity: number;
       unitCents: number;
@@ -217,6 +218,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
     const quantity = Number(item.quantity) || 0;
     const line = {
       defectName: String(item.defectName || ""),
+      defectNote: String(item.defectNote || ""),
       description: String(item.description || ""),
       quantity,
       unitCents: Number(item.unitCents) || 0,
@@ -251,8 +253,8 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
           .prepare(
             `INSERT INTO assist_quote_items
               (id, quote_id, equipment_index, category, device, serial_number, service, defect_name,
-               description, quantity, unit_cents, discount_cents, sort_order, model)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
+               description, quantity, unit_cents, discount_cents, sort_order, model, defect_note)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
           )
           .bind(
             crypto.randomUUID(),
@@ -269,6 +271,7 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
             line.discountCents,
             linePosition,
             equipment.model,
+            line.defectNote,
           ),
       );
     }

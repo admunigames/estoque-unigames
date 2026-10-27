@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { isUniqueViolation, parseDefectValues, parseNewDefect, upper } from "../../../lib/assistencia";
+import { isUniqueViolation, NOTE_MAX, parseDefectValues, parseNewDefect, upper } from "../../../lib/assistencia";
 import { canManage, FORBIDDEN, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
 
 // Tabela de valores da assistência (defeitos por aparelho). Excluir é seguro:
@@ -14,6 +14,7 @@ type DefectRow = {
   minCents: number;
   maxCents: number;
   quoteOnly: number;
+  note: string;
   active: number;
   sortOrder: number;
 };
@@ -24,7 +25,7 @@ const LABOR_CENTS = 9999;
 
 const DEFECT_SELECT = `
   SELECT id, category, device, name, min_cents AS minCents, max_cents AS maxCents,
-         quote_only AS quoteOnly, active, sort_order AS sortOrder
+         quote_only AS quoteOnly, note, active, sort_order AS sortOrder
   FROM assist_defects`;
 
 function normalizeDefect(row: DefectRow) {
@@ -36,6 +37,7 @@ function normalizeDefect(row: DefectRow) {
     minCents: Number(row.minCents) || 0,
     maxCents: Number(row.maxCents) || 0,
     quoteOnly: Number(row.quoteOnly) === 1,
+    note: String(row.note || ""),
     active: Number(row.active) === 1,
     sortOrder: Number(row.sortOrder) || 0,
   };
@@ -100,20 +102,20 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID();
     const at = new Date().toISOString();
     const sortOrder = (Number(order?.maxOrder) || 0) + 1;
-    const insert = (rowId: string, name: string, minCents: number, maxCents: number, quoteOnly: boolean) =>
+    const insert = (rowId: string, name: string, minCents: number, maxCents: number, quoteOnly: boolean, note: string) =>
       database
         .prepare(
           `INSERT INTO assist_defects
             (id, category, device, name, min_cents, max_cents, quote_only, active, sort_order,
-             created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?9, ?10, ?11, ?9, ?10, ?11)`,
+             created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, note)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, ?9, ?10, ?11, ?9, ?10, ?11, ?12)`,
         )
         .bind(rowId, defect.category, defect.device, name, minCents, maxCents, quoteOnly ? 1 : 0, sortOrder,
-          actor.id, actor.displayName, at);
-    const statements = [insert(id, defect.name, defect.minCents, defect.maxCents, defect.quoteOnly)];
+          actor.id, actor.displayName, at, note);
+    const statements = [insert(id, defect.name, defect.minCents, defect.maxCents, defect.quoteOnly, defect.note)];
     // Aparelho novo já nasce com a MÃO DE OBRA padrão (mesma regra da migration 0080).
     if (!sameDevice && defect.name !== LABOR_NAME) {
-      statements.push(insert(crypto.randomUUID(), LABOR_NAME, LABOR_CENTS, LABOR_CENTS, false));
+      statements.push(insert(crypto.randomUUID(), LABOR_NAME, LABOR_CENTS, LABOR_CENTS, false, ""));
     }
     await database.batch(statements);
     return jsonResponse({ created: true, id }, 201);
@@ -124,7 +126,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Edita nome, valores, "sob orçamento" e ativo de UMA linha (SALVAR por linha).
+// Edita nome, observação, valores, "sob orçamento" e ativo de UMA linha (SALVAR por linha).
 export async function PATCH(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -146,6 +148,7 @@ export async function PATCH(request: Request) {
     const values = parseDefectValues(body);
     if ("error" in values) return jsonResponse({ error: values.error }, 400);
     const active = body.active === false || body.active === 0 || body.active === "0" ? 0 : 1;
+    const note = upper(safeText(body.note, NOTE_MAX));
     duplicate = duplicateMessage(current.device, name);
     const clash = await database
       .prepare("SELECT id FROM assist_defects WHERE device=?1 AND name=?2 AND id<>?3 LIMIT 1")
@@ -156,7 +159,7 @@ export async function PATCH(request: Request) {
       .prepare(
         `UPDATE assist_defects
          SET name=?1, min_cents=?2, max_cents=?3, quote_only=?4, active=?5,
-             updated_by=?6, updated_by_name=?7, updated_at=?8
+             updated_by=?6, updated_by_name=?7, updated_at=?8, note=?10
          WHERE id=?9`,
       )
       .bind(
@@ -169,6 +172,7 @@ export async function PATCH(request: Request) {
         actor.displayName,
         new Date().toISOString(),
         id,
+        note,
       )
       .run();
     return jsonResponse({ updated: true });
