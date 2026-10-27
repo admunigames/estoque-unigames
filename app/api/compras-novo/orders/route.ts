@@ -40,7 +40,7 @@ type OrderRow = {
 
 type SupplierRow = { id: string; name: string };
 type ItemCountRow = { orderId: string; itemCount: number };
-type ItemStoresRow = { orderId: string; targetStores: string };
+type ItemStoresRow = { orderId: string; targetStores: string; productCode: string; productName: string };
 
 // Fase B: lista pedidos nativos (origin='native') e importados do Notion
 // (origin='notion_import') JUNTOS — a importação do Notion existe
@@ -168,11 +168,14 @@ export async function GET(request: Request) {
     // chegada" ser um dado de item, não do pedido), então agrega os nomes
     // distintos encontrados nos target_stores de cada item.
     const storeNamesByOrderId = new Map<string, Set<string>>();
+    // Busca da lista (como a do Controle de Compras do Notion): o texto dos
+    // produtos de cada pedido também é pesquisável.
+    const productsByOrderId = new Map<string, string[]>();
     if (orderIds.length) {
       const placeholders = orderIds.map((_, index) => `?${index + 1}`).join(",");
       const storesResult = await database
         .prepare(
-          `SELECT order_id AS orderId, target_stores AS targetStores
+          `SELECT order_id AS orderId, target_stores AS targetStores, product_code AS productCode, product_name AS productName
            FROM purchase_order_items WHERE order_id IN (${placeholders})`,
         )
         .bind(...orderIds)
@@ -191,6 +194,9 @@ export async function GET(request: Request) {
           if (name) set.add(name);
         }
         storeNamesByOrderId.set(row.orderId, set);
+        const products = productsByOrderId.get(row.orderId) || [];
+        products.push([row.productCode, row.productName].filter(Boolean).join(" "));
+        productsByOrderId.set(row.orderId, products);
       }
     }
 
@@ -198,6 +204,7 @@ export async function GET(request: Request) {
       ...order,
       supplierName: order.origin === "native" ? supplierNameById.get(order.supplierId) || "" : order.supplierNameRaw,
       itemCount: itemCountByOrderId.get(order.id) || 0,
+      productsText: (productsByOrderId.get(order.id) || []).join(" · "),
       orderedQty: unitsByOrderId.get(order.id)?.orderedQty || 0,
       receivedQty: unitsByOrderId.get(order.id)?.receivedQty || 0,
       // Nativo: a loja que fatura (escolhida no fechamento) manda; pedidos

@@ -2342,7 +2342,7 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   // nem fornecedor por produto), mapa de cotação com fornecedor por coluna e
   // fechamento com vencedor + loja que fatura (CNPJ) + previsão.
   assert.match(html, /<form class="compras-quick-add" id="comprasQuickAddForm" novalidate>/);
-  assert.match(html, /\['comprasItemProductCode','comprasProdutoBusca','comprasPesquisaProduto','comprasQuickProduct'\]/);
+  assert.match(html, /\['comprasItemProductCode','comprasProdutoBusca','comprasQuickProduct'\]/);
   assert.match(html, /<table class="compras-quote-table" id="comprasQuoteTable"><\/table>/);
   assert.match(html, /id="comprasOrderBillingCompany"/);
   assert.match(html, /id="comprasOrderWinnerExpected"/);
@@ -3449,7 +3449,6 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
     stockBalanceRoute,
     comprasNovoShared,
     notionRoute,
-    pesquisaRoute,
   ] = await Promise.all([
     readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
@@ -3464,7 +3463,6 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
     readFile(new URL("../app/api/compras-novo/estoque-saldo/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras-novo/shared.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/compras/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/compras-novo/pesquisa/route.ts", import.meta.url), "utf8"),
   ]);
 
   // Nav/rotas: nada muda em relação às fases anteriores (mesmo módulo,
@@ -3572,13 +3570,14 @@ test("Módulo Compras nativo (Fase F): rascunho e pedido fundidos, pipeline aber
   // Pesquisa fica DENTRO da aba Pedidos (filtros sempre visíveis), não
   // como aba própria.
   assert.doesNotMatch(html, /data-compras-section-tab="pesquisa"/);
-  assert.match(html, /id="comprasSectionPedidos" hidden>[\s\S]*?id="comprasPesquisaForm"[\s\S]*?id="comprasOrdersCardGrid"/);
+  // Busca única que filtra os próprios pedidos (como a do Controle de Compras do Notion).
+  assert.match(html, /id="comprasSectionPedidos" hidden>[\s\S]*?id="comprasOrdersSearch"[\s\S]*?id="comprasOrdersCardGrid"/);
+  assert.doesNotMatch(html, /id="comprasPesquisaForm"/);
+  assert.match(html, /function comprasOrderMatchesSearch\(order, words\)/);
+  assert.match(ordersRoute, /productsText:/);
   // Produtos de pedido 'aguardando_chegada' começam ocultos, com botão.
   assert.match(html, /id="btnToggleComprasOrderItems">MOSTRAR PRODUTOS</);
   assert.match(html, /const togglable = order\.status === 'aguardando_chegada' && !order\.noItemsDetailed;/);
-  assert.match(pesquisaRoute, /canManageComprasDraft\(actor\)/);
-  assert.match(pesquisaRoute, /resolveProductCodes\(database, produto\)/);
-  assert.match(pesquisaRoute, /INFORME AO MENOS UM FILTRO\./);
   assert.doesNotMatch(html, /data-compras-section-tab="rascunhos"/);
   assert.doesNotMatch(html, /id="comprasSectionRascunhos"/);
   assert.doesNotMatch(html, /id="comprasConvertDialog"/);
