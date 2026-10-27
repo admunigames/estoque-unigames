@@ -11677,9 +11677,8 @@
   <form class="purchase-form" id="cardFeeImportForm">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="cardFeeImportFile">PLANILHA (.xlsx / .xls)</label><input type="file" id="cardFeeImportFile" accept=".xlsx,.xls"></div>
-      <div class="purchase-field"><label for="cardFeeImportValidFrom">VIGÊNCIA A PARTIR DE *</label><input type="date" id="cardFeeImportValidFrom" required></div>
     </div>
-    <p class="purchase-field-help">UM BLOCO "MAQUINETA …" POR LOJA OU PESSOA (TODAS AS ABAS): ADQUIRENTE, PIX E, POR BANDEIRA, DÉBITO E CRÉDITO EM FAIXAS (2X A 6X VIRA UMA TAXA PARA CADA PARCELA). MARQUE EM CADA BLOCO AS MAQUINETAS QUE USAM AQUELA TABELA. A TAXA ANTERIOR DE CADA UMA FICA VALENDO ATÉ A VÉSPERA.</p>
+    <p class="purchase-field-help">UM BLOCO "MAQUINETA …" POR LOJA OU PESSOA (TODAS AS ABAS): ADQUIRENTE, PIX E, POR BANDEIRA, DÉBITO E CRÉDITO EM FAIXAS (2X A 6X VIRA UMA TAXA PARA CADA PARCELA). MARQUE EM CADA BLOCO AS MAQUINETAS QUE USAM AQUELA TABELA. SEM VIGÊNCIA: A PLANILHA PASSA A SER A TABELA DA MAQUINETA PARA QUALQUER DATA E AS VENDAS JÁ IMPORTADAS SÃO RECALCULADAS NA HORA.</p>
     <div id="cardFeeImportPreview"></div>
     <div class="user-form-status" id="cardFeeImportStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -36722,7 +36721,6 @@ function renderHomeTasks(){
   el('btnCardFeeImport').addEventListener('click', async () => {
     if(!machinesRows.length) await loadMachinesTab();
     el('cardFeeImportForm').reset();
-    el('cardFeeImportValidFrom').value = financeCurrentDateKey();
     el('cardFeeImportStatus').textContent = '';
     cardFeeImportBlocks = [];
     renderCardFeeImport();
@@ -36762,8 +36760,6 @@ function renderHomeTasks(){
   el('cardFeeImportForm').addEventListener('submit', async event => {
     event.preventDefault();
     const status = el('cardFeeImportStatus');
-    const validFrom = el('cardFeeImportValidFrom').value;
-    if(!validFrom){ status.textContent = 'INFORME A VIGÊNCIA.'; return; }
     const jobs = cardFeeImportBlocks.flatMap(block => block.machineIds.map(machineId => ({block, machineId})));
     if(!jobs.length){ status.textContent = 'MARQUE AO MENOS UMA MAQUINETA.'; return; }
     const twice = jobs.filter((job, i) => jobs.findIndex(other => other.machineId === job.machineId) !== i);
@@ -36775,17 +36771,19 @@ function renderHomeTasks(){
     const button = el('btnConfirmCardFeeImport');
     button.disabled = true;
     let saved = 0;
+    let recalculated = 0;
     try{
       for(const [i, job] of jobs.entries()){
         status.textContent = 'GRAVANDO '+(i + 1)+' DE '+jobs.length+'…';
         const res = await financeApiRequest('/card-fees/table', {method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({machineId: job.machineId, validFrom, rows: cardFeeImportRows(job.block)})});
+          body: JSON.stringify({machineId: job.machineId, replace: true, rows: cardFeeImportRows(job.block)})});
         saved += Number(res.saved || 0);
+        recalculated += Number(res.recalculated || 0);
       }
       el('cardFeeImportDialog').close();
-      showPurchaseToast(saved+' taxa(s) gravada(s) em '+jobs.length+' maquineta(s).');
+      showPurchaseToast(saved+' taxa(s) gravada(s) em '+jobs.length+' maquineta(s) · '+recalculated+' venda(s) recalculada(s).');
     }catch(error){
-      status.textContent = error.message+' (GRAVADAS ATÉ AQUI: '+saved+' TAXA(S); IMPORTAR DE NOVO NA MESMA VIGÊNCIA SÓ ATUALIZA.)';
+      status.textContent = error.message+' (GRAVADAS ATÉ AQUI: '+saved+' TAXA(S); IMPORTAR DE NOVO SÓ SUBSTITUI.)';
     }finally{
       button.disabled = false;
       await Promise.all([loadCardFeesTab(), loadMachinesTab()]);

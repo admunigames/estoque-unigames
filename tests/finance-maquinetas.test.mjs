@@ -276,3 +276,25 @@ test("IMPORTAR PLANILHA DE TAXAS: tabela com bandeira por linha até 21x; MASTER
   const hit = resolveCardFee(all, { acquirerId: "stone", brand: "Master", modality: "credit", installments: 20, date: "2026-10-30", machineId: "m-tacaruna", companyId: TACARUNA });
   assert.equal(hit.feeBps, 283);
 });
+
+test("IMPORTAR PLANILHA DE TAXAS sem vigência: substitui a tabela da maquineta para qualquer data e recalcula as vendas já importadas", async () => {
+  db.insert("finance_card_sales", {
+    id: "venda-antiga", import_id: "imp-x", company_id: RIOMAR, sale_date: "2026-02-10", acquirer_id: "stone", acquirer_name: "STONE",
+    brand: "Elo", modality: "debit", installments: 1, gross_cents: 10000, fee_bps: 0, expected_fee_cents: 0, net_cents: 10000,
+    fee_missing: 1, recon_status: "attention", machine_id: "m-riomar", charged_fee_cents: 150,
+  });
+  const rows = [{ brand: "ELO", modality: "debit", installments: 1, feeBps: 153 }, { brand: "", modality: "credit", installments: 1, feeBps: 213 }];
+  for (let i = 0; i < 2; i++) {
+    const response = await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { machineId: "m-riomar", replace: true, rows });
+    assert.equal(response.status, 201);
+    const { recalculated } = await json(response);
+    assert.ok(i === 0 ? recalculated >= 1 : recalculated === 0, `rodada ${i}: ${recalculated}`); // de novo: nada muda
+  }
+  // Crédito 1x da maquineta: as versões com vigência (jan e ago) viram uma só, sem data.
+  assert.deepEqual(fees().filter((f) => f.machine_id === "m-riomar" && f.modality === "credit" && f.installments === 1)
+    .map((f) => [f.brand, f.fee_bps, f.valid_from, f.valid_to]), [["", 213, "", ""]]);
+  const sale = db.sqlite.prepare("SELECT * FROM finance_card_sales WHERE id='venda-antiga'").get();
+  assert.deepEqual([sale.fee_bps, sale.expected_fee_cents, sale.net_cents, sale.fee_missing, sale.fee_check, sale.recon_status], [153, 153, 9847, 0, "ok", "ok"]);
+  // Sem maquineta não há substituição (planilha é sempre por maquineta).
+  assert.equal((await post(feesTable.POST, ADMIN, "/api/finance/card-fees/table", { acquirerId: "stone", replace: true, rows })).status, 400);
+});

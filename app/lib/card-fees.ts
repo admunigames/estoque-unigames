@@ -340,3 +340,44 @@ function accumulate(row: FeeTotalsRow, grossCents: number, feeCents: number, dif
 function withBps(row: FeeTotalsRow): FeeTotalsRow {
   return { ...row, feeBps: row.grossCents ? Math.round((row.feeCents / row.grossCents) * 10000) : 0 };
 }
+
+export type StoredSale = {
+  saleDate: string;
+  acquirerId: string;
+  brand: string;
+  modality: string;
+  installments: number;
+  grossCents: number;
+  machineId: string;
+  companyId: string;
+  chargedFeeCents: number | null;
+  receivedAmountCents: number | null;
+  reviewedAt: string;
+};
+
+/**
+ * Venda já importada recalculada com a tabela de taxas atual (IMPORTAR
+ * PLANILHA DE TAXAS): mesmas contas da importação do arquivo de vendas —
+ * sem repasse, o "recebido" é bruto − taxa cobrada no arquivo.
+ */
+export function refreshSaleFee(fees: CardFee[], sale: StoredSale) {
+  const fee = sale.acquirerId
+    ? resolveCardFee(fees, {
+        acquirerId: sale.acquirerId, brand: sale.brand, modality: sale.modality, installments: sale.installments,
+        date: sale.saleDate, machineId: sale.machineId, companyId: sale.companyId,
+      })
+    : null;
+  const feeBps = fee ? fee.feeBps + fee.anticipationBps : 0;
+  const feeMissing = !fee;
+  const { expectedFeeCents, netCents } = computeSaleFinance({ grossCents: sale.grossCents, feeBps });
+  const received = sale.receivedAmountCents ?? (sale.chargedFeeCents === null ? null : sale.grossCents - sale.chargedFeeCents);
+  return {
+    feeBps,
+    feeMissing,
+    expectedFeeCents,
+    netCents,
+    feeCheck: computeFeeCheck({ grossCents: sale.grossCents, expectedFeeCents, chargedFeeCents: sale.chargedFeeCents, feeMissing }),
+    reconStatus: computeCardReconStatus({ feeMissing, grossCents: sale.grossCents, expectedFeeCents, receivedCents: received, reviewedAt: sale.reviewedAt }),
+    divergenceCents: computeDivergenceCents(netCents, sale.receivedAmountCents),
+  };
+}

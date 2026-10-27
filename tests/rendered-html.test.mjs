@@ -5709,5 +5709,7 @@ test("Maquinetas > IMPORTAR PLANILHA DE TAXAS: blocos MAQUINETA, faixas de parce
   // Tela: botão na aba TAXAS, janela e envio pela TABELA DA MAQUINETA (uma por maquineta).
   assert.match(html, /id="btnCardFeeImport" type="button">IMPORTAR PLANILHA DE TAXAS</);
   assert.match(html, /id="cardFeeImportDialog"/);
-  assert.match(html, /financeApiRequest\('\/card-fees\/table', \{method:'POST'[\s\S]{0,140}machineId: job\.machineId, validFrom, rows: cardFeeImportRows\(job\.block\)/);
+  // Sem vigência: replace (vale para qualquer data e recalcula as vendas já importadas).
+  assert.match(html, /financeApiRequest\('\/card-fees\/table', \{method:'POST'[\s\S]{0,140}machineId: job\.machineId, replace: true, rows: cardFeeImportRows\(job\.block\)/);
+  assert.doesNotMatch(html, /id="cardFeeImportValidFrom"/);
 });
