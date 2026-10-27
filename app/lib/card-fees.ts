@@ -190,7 +190,12 @@ export function feeOutsideTolerance(
 
 export type FeeCheck = "" | "ok" | "divergent";
 
-/** Taxa cobrada em centavos pelo que o arquivo trouxe; null = sem taxa/líquido. */
+/**
+ * Taxa cobrada em centavos pelo que o arquivo trouxe; null = sem taxa/líquido.
+ * Com bruto e líquido, é bruto − líquido (tudo o que a adquirente descontou:
+ * MDR + recebimento automático/antecipação — o mesmo que a taxa cadastrada +
+ * antecipação). Sem líquido: a coluna de taxa (R$, depois %).
+ */
 export function resolveChargedFeeCents(input: {
   grossCents: number;
   feeCents?: number | null;
@@ -201,9 +206,9 @@ export function resolveChargedFeeCents(input: {
   const has = (value: number | null | undefined): value is number =>
     value !== null && value !== undefined && Number.isFinite(Number(value));
   let charged: number | null = null;
-  if (has(input.feeCents)) charged = Math.round(Math.abs(input.feeCents));
+  if (has(input.netCents) && input.netCents > 0 && input.netCents <= gross) charged = gross - Math.round(input.netCents);
+  else if (has(input.feeCents)) charged = Math.round(Math.abs(input.feeCents));
   else if (has(input.feeBps)) charged = Math.round((gross * Math.abs(input.feeBps)) / 10000);
-  else if (has(input.netCents) && input.netCents > 0) charged = gross - Math.round(input.netCents);
   return charged !== null && charged >= 0 && charged <= gross ? charged : null;
 }
 

@@ -5713,3 +5713,26 @@ test("Maquinetas > IMPORTAR PLANILHA DE TAXAS: blocos MAQUINETA, faixas de parce
   assert.match(html, /financeApiRequest\('\/card-fees\/table', \{method:'POST'[\s\S]{0,140}machineId: job\.machineId, replace: true, rows: cardFeeImportRows\(job\.block\)/);
   assert.doesNotMatch(html, /id="cardFeeImportValidFrom"/);
 });
+
+test("Maquinetas > arquivo de vendas da REDE: estabelecimento liga à maquineta e o recebimento automático não é a taxa", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  const slice = (start, endMarker) => html.slice(html.indexOf(start), html.indexOf(endMarker, html.indexOf(start)) + endMarker.length);
+  const fn = (name) => {
+    const start = html.indexOf(`function ${name}(`);
+    let depth = 0;
+    let end = html.indexOf("{", start);
+    for (; end < html.length; end++) {
+      if (html[end] === "{") depth++;
+      if (html[end] === "}" && --depth === 0) break;
+    }
+    return html.slice(start, end + 1);
+  };
+  const map = new Function(`${slice("const CARD_SALES_COLUMNS = {", "};")} ${fn("normHeader")} ${fn("findColumn")} ${fn("mapCardSalesColumns")}; return mapCardSalesColumns;`)();
+  const header = ["Data da venda", "Valor da venda original", "Número de parcelas", "Bandeira", "Modalidade", "Taxa MDR", "Valor taxa de recebimento automático",
+    "Valor líquido", "NSU/CV", "Número do estabelecimento"];
+  const col = map(header);
+  assert.equal(header[col.gross], "Valor da venda original");
+  assert.equal(header[col.net], "Valor líquido");
+  assert.equal(header[col.establishment], "Número do estabelecimento");
+  assert.notEqual(header[col.fee], "Valor taxa de recebimento automático");
+});

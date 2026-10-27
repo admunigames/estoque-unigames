@@ -36816,8 +36816,10 @@ function renderHomeTasks(){
   function mapCardSalesColumns(header){
     const col = {};
     const used = [];
+    // "VALOR TAXA DE RECEBIMENTO AUTOMÁTICO" (REDE) é a antecipação, não a taxa da venda.
+    const advance = header.map((h, i) => /recebimentoautomatico|antecipa/.test(normHeader(h)) ? i : -1).filter(i => i !== -1);
     ['date','net','fee','gross','installments','acquirer','brand','modality','nsu','terminal','serial','establishment'].forEach(key => {
-      col[key] = findColumn(header, CARD_SALES_COLUMNS[key], used);
+      col[key] = findColumn(header, CARD_SALES_COLUMNS[key], key === 'fee' ? used.concat(advance) : used);
       if(col[key] !== -1) used.push(col[key]);
     });
     return col;

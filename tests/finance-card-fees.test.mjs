@@ -113,6 +113,10 @@ test("conferência na importação: taxa cobrada do arquivo × cadastrada pela t
   assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, netCents: 9700 }), 300);
   assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000 }), null);
   assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, netCents: 12000 }), null);
+  // Bruto e líquido no arquivo: bruto − líquido ganha da coluna de taxa (REDE: a "VALOR TAXA DE
+  // RECEBIMENTO AUTOMÁTICO" é só a antecipação; o líquido já desconta MDR + antecipação).
+  assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, feeCents: 0, netCents: 9790 }), 210);
+  assert.equal(fees.resolveChargedFeeCents({ grossCents: 10000, feeCents: 250, netCents: 12000 }), 250);
 
   const check = (charged, expected = 200, gross = 10000, feeMissing = false) =>
     fees.computeFeeCheck({ grossCents: gross, expectedFeeCents: expected, chargedFeeCents: charged, feeMissing });
