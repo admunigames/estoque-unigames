@@ -6,6 +6,7 @@ import {
   computeDivergenceCents,
   computeFeeCheck,
   computeSaleFinance,
+  explainMissingFee,
   isCardModality,
   isCardReconStatus,
   resolveCardFee,
@@ -324,9 +325,8 @@ async function importSales(
     const modality: CardModality = isCardModality(modalityRaw) ? modalityRaw : "credit";
     const installments = modality === "credit" ? Math.max(1, Math.round(num(raw.installments) || 1)) : 1;
     const brand = safeText(raw.brand, 40);
-    const fee = acquirerId
-      ? resolveCardFee(fees, { acquirerId, brand, modality, installments, date: saleDate, machineId: machine?.id, companyId })
-      : null;
+    const saleKey = { acquirerId, brand, modality, installments, date: saleDate, machineId: machine?.id, companyId };
+    const fee = acquirerId ? resolveCardFee(fees, saleKey) : null;
     const feeBps = fee ? fee.feeBps + fee.anticipationBps : 0;
     const { expectedFeeCents, netCents } = computeSaleFinance({ grossCents, feeBps });
     const feeMissing = !fee;
@@ -360,6 +360,7 @@ async function importSales(
       expectedFeeCents,
       netCents,
       feeMissing,
+      feeHint: feeMissing ? explainMissingFee(fees, saleKey) : "",
       chargedFeeCents,
       differenceCents: chargedFeeCents === null || feeMissing ? null : chargedFeeCents - expectedFeeCents,
       feeCheck,

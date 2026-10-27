@@ -386,3 +386,30 @@ export function refreshSaleFee(fees: CardFee[], sale: StoredSale) {
     divergenceCents: computeDivergenceCents(netCents, sale.receivedAmountCents),
   };
 }
+
+const MODALITY_LABELS: Record<string, string> = { debit: "DÉBITO", credit: "CRÉDITO", pix: "PIX" };
+const brDate = (iso: string) => iso.split("-").reverse().join("/");
+
+/**
+ * Por que a venda ficou SEM TAXA CADASTRADA (mostrado na prévia do arquivo de
+ * vendas): sem adquirente, sem taxa da modalidade/parcela, sem a bandeira ou
+ * fora da vigência. "" quando há taxa.
+ */
+export function explainMissingFee(fees: CardFee[], sale: SaleKey): string {
+  if (resolveCardFee(fees, sale)) return "";
+  if (!sale.acquirerId) return "SEM ADQUIRENTE (MAQUINETA NÃO IDENTIFICADA E ARQUIVO SEM A COLUNA ADQUIRENTE)";
+  const scoped = fees.filter((fee) => fee.acquirerId === sale.acquirerId &&
+    (fee.machineId ? fee.machineId === (sale.machineId || "") : !fee.companyId || fee.companyId === sale.companyId));
+  if (!scoped.length) return "NENHUMA TAXA CADASTRADA PARA ESTA MAQUINETA NEM PARA A ADQUIRENTE";
+  const installments = sale.modality === "credit" ? Number(sale.installments || 1) : 1;
+  const what = `${MODALITY_LABELS[sale.modality] ?? sale.modality.toUpperCase()}${sale.modality === "credit" ? ` ${installments}X` : ""}`;
+  const byModality = scoped.filter((fee) => fee.modality === sale.modality && (sale.modality !== "credit" || Number(fee.installments || 1) === installments));
+  if (!byModality.length) return `SEM TAXA DE ${what}`;
+  const brand = normalizeBrand(sale.brand);
+  const byBrand = byModality.filter((fee) => !normalizeBrand(fee.brand) || normalizeBrand(fee.brand) === brand);
+  if (!byBrand.length) return `SEM TAXA DE ${what} PARA A BANDEIRA ${String(sale.brand || "").toUpperCase() || "(VAZIA)"}`;
+  const later = byBrand.filter((fee) => fee.validFrom && fee.validFrom > sale.date).map((fee) => fee.validFrom).sort()[0];
+  if (later) return `A TAXA DE ${what} SÓ VALE A PARTIR DE ${brDate(later)} (VENDA DE ${brDate(sale.date)})`;
+  const ended = byBrand.map((fee) => fee.validTo).filter(Boolean).sort().reverse()[0];
+  return ended ? `A TAXA DE ${what} FOI ENCERRADA EM ${brDate(ended)}` : `SEM TAXA DE ${what} NA DATA ${brDate(sale.date)}`;
+}

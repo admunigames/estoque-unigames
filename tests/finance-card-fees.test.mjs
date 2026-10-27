@@ -187,3 +187,21 @@ test("Financeiro Fase 7: Taxas de Cartão (hoje dentro de Maquinetas) + religaç
   assert.match(receivablesRoute, /resolveReceivableOperator/);
   assert.match(html, /id="receivableAcquirer"/);
 });
+
+test("SEM TAXA CADASTRADA explica o motivo: vigência, bandeira, parcela, adquirente", () => {
+  const base = { acquirerId: "rede", machineId: "m-guara", companyId: "", anticipationBps: 0, validTo: "" };
+  const table = [
+    { ...base, id: "pix", brand: "", modality: "pix", installments: 1, feeBps: 69, validFrom: "2026-10-27" },
+    { ...base, id: "mc1", brand: "MASTERCARD", modality: "credit", installments: 1, feeBps: 210, validFrom: "2026-10-27" },
+  ];
+  const sale = { acquirerId: "rede", machineId: "m-guara", companyId: "cguara", brand: "MASTERCARD", modality: "credit", installments: 1, date: "2026-10-25" };
+  // Taxa importada com vigência a partir de 27/10 e venda de 25/10.
+  assert.equal(fees.explainMissingFee(table, sale), "A TAXA DE CRÉDITO 1X SÓ VALE A PARTIR DE 27/10/2026 (VENDA DE 25/10/2026)");
+  assert.equal(fees.explainMissingFee(table, { ...sale, date: "2026-10-28" }), "");
+  assert.equal(fees.explainMissingFee(table, { ...sale, installments: 3, date: "2026-10-28" }), "SEM TAXA DE CRÉDITO 3X");
+  assert.equal(fees.explainMissingFee(table, { ...sale, brand: "Hipercard", date: "2026-10-28" }), "SEM TAXA DE CRÉDITO 1X PARA A BANDEIRA HIPERCARD");
+  assert.equal(fees.explainMissingFee(table, { ...sale, acquirerId: "" }), "SEM ADQUIRENTE (MAQUINETA NÃO IDENTIFICADA E ARQUIVO SEM A COLUNA ADQUIRENTE)");
+  assert.equal(fees.explainMissingFee(table, { ...sale, machineId: "outra", date: "2026-10-28" }), "NENHUMA TAXA CADASTRADA PARA ESTA MAQUINETA NEM PARA A ADQUIRENTE");
+  // PIX da planilha (bandeira vazia) vale para a venda PIX com bandeira "-".
+  assert.equal(fees.explainMissingFee(table, { ...sale, brand: "-", modality: "pix", date: "2026-10-28" }), "");
+});

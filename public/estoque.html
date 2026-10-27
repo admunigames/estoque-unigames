@@ -36900,7 +36900,7 @@ function renderHomeTasks(){
     const tags = [];
     if(row.duplicate) tags.push('<span class="status-pill waiting">JÁ IMPORTADA</span>');
     if(!row.machineId) tags.push('<span class="status-pill waiting">MAQUINETA NÃO CADASTRADA</span>');
-    if(row.feeMissing) tags.push('<span class="status-pill alert">SEM TAXA CADASTRADA</span>');
+    if(row.feeMissing) tags.push('<span class="status-pill alert">SEM TAXA CADASTRADA</span>'+(row.feeHint ? '<br><small class="purchase-field-help">'+escapeHtml(row.feeHint)+'</small>' : ''));
     if(row.feeCheck === 'divergent') tags.push('<span class="status-pill alert">TAXA DIVERGENTE</span>');
     if(row.feeCheck === 'ok') tags.push('<span class="status-pill done">TAXA OK</span>');
     return tags.join(' ') || '<span class="status-pill progress">SEM TAXA NO ARQUIVO</span>';
