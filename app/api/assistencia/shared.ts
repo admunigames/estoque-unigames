@@ -160,6 +160,7 @@ type ItemRow = {
   serialNumber: string;
   service: string;
   defectName: string;
+  defectNote: string;
   description: string;
   quantity: number;
   unitCents: number;
