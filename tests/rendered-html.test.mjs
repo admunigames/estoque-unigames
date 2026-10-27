@@ -5738,3 +5738,14 @@ test("Maquinetas > arquivo de vendas da REDE: estabelecimento liga à maquineta 
   assert.equal(header[col.establishment], "Número do estabelecimento");
   assert.notEqual(header[col.fee], "Valor taxa de recebimento automático");
 });
+
+test("Maquinetas > ARQUIVO DE VENDAS: filtros na prévia para escolher o que importar", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  for (const id of ["csfModality", "csfBrand", "csfInstallments", "csfCompany", "csfMachine", "csfStatus", "csfFrom", "csfTo"]) {
+    assert.match(html, new RegExp(`id="${id}" data-csf`), id);
+  }
+  assert.match(html, /id="btnCsfMark" type="button">MARCAR AS FILTRADAS[\s\S]*?id="btnCsfUnmark" type="button">DESMARCAR AS FILTRADAS[\s\S]*?id="btnCsfOnly" type="button">SÓ AS FILTRADAS/);
+  // A importação manda só as linhas marcadas (cardSalesExcluded), filtradas ou não.
+  assert.match(html, /const rows = file\.rows\.filter\(row => !cardSalesExcluded\.has\(f\+':'\+row\.line\)\);/);
+  assert.match(html, /\['missing', 'SEM TAXA CADASTRADA'/);
+});

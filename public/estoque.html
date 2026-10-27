@@ -9307,6 +9307,26 @@
         </div>
         <p class="page-desc">A UNIDADE DE CADA VENDA VEM DA MAQUINETA DO ARQUIVO (TERMINAL / Nº LÓGICO / SERIAL / ESTABELECIMENTO), NA DATA DA VENDA. COLUNAS RECONHECIDAS PELO CABEÇALHO: DATA, ADQUIRENTE, BANDEIRA, MODALIDADE, PARCELAS, NSU/AUTORIZAÇÃO, VALOR BRUTO, TERMINAL, SERIAL, ESTABELECIMENTO/EC, TAXA (R$ OU %), VALOR LÍQUIDO.</p>
         <div class="user-form-status" id="cardSalesImportStatus" role="status" aria-live="polite"></div>
+        <!-- Filtros da prévia: escolher o que vai ser importado (o número ao lado de cada opção é quantas linhas tem). -->
+        <div id="cardSalesFilters" hidden>
+          <div class="dre-toolbar">
+            <div class="field"><label for="csfModality">MODALIDADE</label><select id="csfModality" data-csf></select></div>
+            <div class="field"><label for="csfBrand">BANDEIRA</label><select id="csfBrand" data-csf></select></div>
+            <div class="field"><label for="csfInstallments">PARCELAS</label><select id="csfInstallments" data-csf></select></div>
+            <div class="field"><label for="csfCompany">UNIDADE</label><select id="csfCompany" data-csf></select></div>
+            <div class="field"><label for="csfMachine">MAQUINETA</label><select id="csfMachine" data-csf></select></div>
+            <div class="field"><label for="csfStatus">SITUAÇÃO</label><select id="csfStatus" data-csf></select></div>
+            <div class="field"><label for="csfFrom">DE</label><input type="date" id="csfFrom" data-csf></div>
+            <div class="field"><label for="csfTo">ATÉ</label><input type="date" id="csfTo" data-csf></div>
+          </div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-outline" id="btnCsfMark" type="button">MARCAR AS FILTRADAS</button>
+            <button class="btn-outline" id="btnCsfUnmark" type="button">DESMARCAR AS FILTRADAS</button>
+            <button class="btn-outline" id="btnCsfOnly" type="button">SÓ AS FILTRADAS</button>
+            <button class="btn-outline" id="btnCsfClear" type="button">LIMPAR FILTROS</button>
+          </div>
+          <div class="user-form-status" id="cardSalesFilterSummary" role="status" aria-live="polite"></div>
+        </div>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="cardSalesPreviewTable">
@@ -36884,10 +36904,62 @@ function renderHomeTasks(){
     if(row.feeCheck === 'ok') tags.push('<span class="status-pill done">TAXA OK</span>');
     return tags.join(' ') || '<span class="status-pill progress">SEM TAXA NO ARQUIVO</span>';
   }
-  function renderCardSalesPreview(){
+  // --- Filtros da prévia do arquivo de vendas (antes de importar) ---
+  const CSF_STATUS = [
+    ['ok', 'TAXA OK', r => !r.rejected && r.feeCheck === 'ok'],
+    ['divergent', 'TAXA DIVERGENTE', r => !r.rejected && r.feeCheck === 'divergent'],
+    ['missing', 'SEM TAXA CADASTRADA', r => !r.rejected && r.feeMissing],
+    ['no_charged', 'SEM TAXA NO ARQUIVO', r => !r.rejected && !r.feeMissing && r.chargedFeeCents == null],
+    ['no_machine', 'MAQUINETA NÃO CADASTRADA', r => !r.rejected && !r.machineId],
+    ['duplicate', 'JÁ IMPORTADA', r => r.duplicate],
+    ['rejected', 'RECUSADA', r => Boolean(r.rejected)]
+  ];
+  const csfBrand = r => String(r.brand || '').trim().toUpperCase().replace(/^-+$/, '') || '(SEM BANDEIRA)';
+  const csfMachine = r => r.machineLabel || r.terminalRef || '(SEM MAQUINETA)';
+  const csfCompany = r => r.companyName || '(SEM UNIDADE)';
+  const csfInstallments = r => r.modality !== 'credit' ? '' : (Number(r.installments || 1) > 1 ? 'parcelado' : 'avista');
+  function cardSalesMatches(row){
+    const v = id => el(id).value;
+    if(v('csfModality') && row.modality !== v('csfModality')) return false;
+    if(v('csfBrand') && csfBrand(row) !== v('csfBrand')) return false;
+    if(v('csfInstallments') && csfInstallments(row) !== v('csfInstallments')) return false;
+    if(v('csfCompany') && csfCompany(row) !== v('csfCompany')) return false;
+    if(v('csfMachine') && csfMachine(row) !== v('csfMachine')) return false;
+    const status = CSF_STATUS.find(([key]) => key === v('csfStatus'));
+    if(status && !status[2](row)) return false;
+    if(v('csfFrom') && String(row.saleDate || '') < v('csfFrom')) return false;
+    if(v('csfTo') && String(row.saleDate || '') > v('csfTo')) return false;
+    return true;
+  }
+  // Opções com a quantidade de linhas do arquivo (mantém a escolha se ainda existir).
+  function renderCardSalesFilters(all){
+    el('cardSalesFilters').hidden = !all.length;
+    const fill = (id, options) => {
+      const current = el(id).value;
+      el(id).innerHTML = '<option value="">TODAS ('+all.length+')</option>'+options
+        .filter(([, , n]) => n > 0)
+        .map(([value, label, n]) => '<option value="'+escapeHtml(value)+'">'+escapeHtml(label)+' ('+n+')</option>').join('');
+      el(id).value = [...el(id).options].some(o => o.value === current) ? current : '';
+    };
+    const count = fn => all.filter(({row}) => fn(row)).length;
+    const distinct = fn => [...new Set(all.map(({row}) => fn(row)))].sort().map(value => [value, value, count(r => fn(r) === value)]);
+    fill('csfModality', ['debit','credit','pix'].map(m => [m, CARD_MODALITY_LABELS[m] || m, count(r => r.modality === m)]));
+    fill('csfBrand', distinct(csfBrand));
+    fill('csfInstallments', [['avista','CRÉDITO À VISTA', count(r => csfInstallments(r) === 'avista')], ['parcelado','CRÉDITO PARCELADO', count(r => csfInstallments(r) === 'parcelado')]]);
+    fill('csfCompany', distinct(csfCompany));
+    fill('csfMachine', distinct(csfMachine));
+    fill('csfStatus', CSF_STATUS.map(([key, label, fn]) => [key, label, count(fn)]));
+  }
+  function cardSalesAllRows(){
     const all = [];
     cardSalesFiles.forEach((file, f) => file.preview.rows.forEach(row => all.push({key: f+':'+row.line, row})));
-    const shown = all.slice(0, 400);
+    return all;
+  }
+  function renderCardSalesPreview(){
+    const all = cardSalesAllRows();
+    renderCardSalesFilters(all);
+    const filtered = all.filter(({row}) => cardSalesMatches(row));
+    const shown = filtered.slice(0, 400);
     el('cardSalesPreviewBody').innerHTML = shown.map(({key, row}) => {
       const pickable = !row.rejected;
       const diff = row.differenceCents;
@@ -36907,16 +36979,43 @@ function renderHomeTasks(){
         '<td data-label="Diferença"'+(diff > 0 ? ' class="neg"' : '')+'>'+(diff == null ? '—' : formatCentsBRL(diff))+'</td>'+
         '<td data-label="Situação">'+cardSalesBadges(row)+'</td>'+
       '</tr>';
-    }).join('') || '<tr><td colspan="14" class="responsive-empty">Nenhuma linha.</td></tr>';
+    }).join('') || '<tr><td colspan="14" class="responsive-empty">Nenhuma linha para os filtros.</td></tr>';
     const ready = all.filter(({key, row}) => !row.rejected && !cardSalesExcluded.has(key));
+    const gross = list => formatCentsBRL(list.reduce((sum, {row}) => sum + Number(row.grossCents || 0), 0));
+    const readyFiltered = filtered.filter(({key, row}) => !row.rejected && !cardSalesExcluded.has(key));
+    el('cardSalesFilterSummary').textContent = all.length
+      ? 'FILTRADAS: '+filtered.length+' ('+gross(filtered)+'), DESSAS '+readyFiltered.length+' MARCADA(S) · VÃO SER IMPORTADAS: '+ready.length+' LINHA(S) ('+gross(ready)+').'
+      : '';
     const count = fn => all.filter(({row}) => fn(row)).length;
     el('cardSalesImportStatus').textContent =
       cardSalesFiles.map(f => f.name+': '+f.columns.join(', ')).join(' · ')+' — '+
       all.length+' linha(s) · '+ready.length+' marcada(s) para importar · '+count(r => r.duplicate)+' já importada(s) · '+
       count(r => r.rejected)+' recusada(s) · '+count(r => !r.rejected && r.feeCheck === 'divergent')+' com taxa divergente · '+
-      count(r => !r.rejected && !r.machineId)+' sem maquineta.'+(all.length > shown.length ? ' Mostrando '+shown.length+' de '+all.length+'.' : '');
+      count(r => !r.rejected && !r.machineId)+' sem maquineta.'+(filtered.length > shown.length ? ' Mostrando '+shown.length+' de '+filtered.length+' filtrada(s).' : '');
     el('btnConfirmCardSales').disabled = !ready.length;
   }
+  document.querySelectorAll('[data-csf]').forEach(node => node.addEventListener('change', renderCardSalesPreview));
+  // Marcar/desmarcar o que está filtrado (JÁ IMPORTADA e RECUSADA nunca são marcadas).
+  function cardSalesFilteredKeys(){
+    return cardSalesAllRows().filter(({row}) => cardSalesMatches(row));
+  }
+  el('btnCsfMark').addEventListener('click', () => {
+    cardSalesFilteredKeys().forEach(({key, row}) => { if(!row.rejected && !row.duplicate) cardSalesExcluded.delete(key); });
+    renderCardSalesPreview();
+  });
+  el('btnCsfUnmark').addEventListener('click', () => {
+    cardSalesFilteredKeys().forEach(({key}) => cardSalesExcluded.add(key));
+    renderCardSalesPreview();
+  });
+  el('btnCsfOnly').addEventListener('click', () => {
+    const keep = new Set(cardSalesFilteredKeys().filter(({row}) => !row.rejected && !row.duplicate).map(({key}) => key));
+    cardSalesAllRows().forEach(({key}) => { if(keep.has(key)) cardSalesExcluded.delete(key); else cardSalesExcluded.add(key); });
+    renderCardSalesPreview();
+  });
+  el('btnCsfClear').addEventListener('click', () => {
+    document.querySelectorAll('[data-csf]').forEach(node => { node.value = ''; });
+    renderCardSalesPreview();
+  });
   el('cardSalesPreviewBody').addEventListener('change', event => {
     const box = event.target.closest('[data-sales-key]');
     if(!box) return;
