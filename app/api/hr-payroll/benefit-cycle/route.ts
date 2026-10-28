@@ -35,6 +35,8 @@ import {
 //        ajuste ± da alimentação e motivo por funcionário). Cada um vira um
 //        hr_benefits comum (origin = 'ciclo') com uma linha 'alimentacao'
 //        e/ou 'mobilidade' — Folha, DRE e Fluxo de Caixa já leem sem mudança.
+//        Quem JÁ foi gerado e vem com ajuste tem o lançamento atualizado
+//        (valores, linhas e observação), mantendo forma/data de pagamento.
 // PUT  = salva as regras (alimentação cheia e transporte/dia por escala). O
 //        índice único parcial hr_benefits_cycle_employee_month_idx impede
 //        gerar duas vezes o mesmo funcionário/competência.
@@ -46,6 +48,10 @@ type GeneratedRow = {
   grossCents: number;
   paymentMethod: string;
   paymentDate: string;
+  notes: string;
+  /** Dias de passagem e alimentação gravados (base da revisão na tela). */
+  transportDays: number | null;
+  foodCents: number;
 };
 
 type CycleRow = {
@@ -75,8 +81,10 @@ async function buildCycleRows(
   const generatedResult = await database
     .prepare(
       `SELECT id, employee_id AS employeeId, amount_cents AS amountCents, gross_cents AS grossCents,
-              payment_method AS paymentMethod, payment_date AS paymentDate
-       FROM hr_benefits WHERE origin='ciclo' AND month=?1`,
+              payment_method AS paymentMethod, payment_date AS paymentDate, notes,
+              (SELECT MAX(working_days) FROM hr_benefit_items i WHERE i.benefit_id=b.id AND i.type='mobilidade') AS transportDays,
+              COALESCE((SELECT SUM(amount_cents) FROM hr_benefit_items i WHERE i.benefit_id=b.id AND i.type='alimentacao'), 0) AS foodCents
+       FROM hr_benefits b WHERE origin='ciclo' AND month=?1`,
     )
     .bind(cycle.month)
     .all<GeneratedRow>();
@@ -223,18 +231,55 @@ export async function POST(request: Request) {
     const skipped = rows.filter(
       (row) => row.status === "active" && !row.generated && row.totalCents <= 0 && (!onlyIds || onlyIds.has(row.employeeId)),
     ).length;
-    if (!toGenerate.length) {
-      return jsonResponse({ created: 0, skipped });
+    const adjusted = body.adjustments && typeof body.adjustments === "object" ? (body.adjustments as JsonMap) : {};
+    const toUpdate = rows.filter(
+      (row) => row.status === "active" && row.generated && row.totalCents > 0 && adjusted[row.employeeId] &&
+        (!onlyIds || onlyIds.has(row.employeeId)),
+    );
+    if (!toGenerate.length && !toUpdate.length) {
+      return jsonResponse({ created: 0, updated: 0, skipped });
     }
 
     const note = `Gerado pelo ciclo ${cycle.start.split("-").reverse().join("/")} a ${cycle.end.split("-").reverse().join("/")}`;
     const statements = [];
+    const itemsOf = (row: (typeof rows)[number]) => [
+      { type: "alimentacao", mode: "fixed", perDay: 0, days: 0, amount: row.foodCents },
+      { type: "mobilidade", mode: "per_day", perDay: row.transportPerDayCents, days: row.workingDays, amount: row.transportCents },
+    ].filter((item) => item.amount > 0);
+    const insertItems = (benefitId: string, items: ReturnType<typeof itemsOf>) => {
+      for (const item of items) {
+        statements.push(
+          database
+            .prepare(
+              `INSERT INTO hr_benefit_items
+                (id, benefit_id, type, amount_mode, per_day_rate_cents, working_days,
+                 amount_cents, discount_cents, created_by, created_at)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, CURRENT_TIMESTAMP)`,
+            )
+            .bind(crypto.randomUUID(), benefitId, item.type, item.mode, item.perDay, item.days, item.amount, actor.id),
+        );
+      }
+    };
+    for (const row of toUpdate) {
+      const benefitId = row.generated!.id;
+      const items = itemsOf(row);
+      const base = row.generated!.notes.split(" · REVISÃO:")[0].split(" · ")[0] || note;
+      const notes = [base, row.reviewNote, row.benefitNotes].filter(Boolean).join(" · ").slice(0, 500);
+      statements.push(
+        database
+          .prepare(
+            `UPDATE hr_benefits SET type=?2, amount_cents=?3, gross_cents=?3, discount_cents=0, notes=?4,
+               updated_by=?5, updated_by_name=?6, updated_at=CURRENT_TIMESTAMP
+             WHERE id=?1 AND origin='ciclo'`,
+          )
+          .bind(benefitId, items.length === 1 ? items[0].type : "multiplo", row.totalCents, notes, actor.id, actorName(actor)),
+        database.prepare("DELETE FROM hr_benefit_items WHERE benefit_id=?1").bind(benefitId),
+      );
+      insertItems(benefitId, items);
+    }
     for (const row of toGenerate) {
       const benefitId = crypto.randomUUID();
-      const items = [
-        { type: "alimentacao", mode: "fixed", perDay: 0, days: 0, amount: row.foodCents },
-        { type: "mobilidade", mode: "per_day", perDay: row.transportPerDayCents, days: row.workingDays, amount: row.transportCents },
-      ].filter((item) => item.amount > 0);
+      const items = itemsOf(row);
       const headerType = items.length === 1 ? items[0].type : "multiplo";
       const notes = [note, row.reviewNote, row.benefitNotes].filter(Boolean).join(" · ").slice(0, 500);
       statements.push(
@@ -263,23 +308,12 @@ export async function POST(request: Request) {
             actorName(actor),
           ),
       );
-      for (const item of items) {
-        statements.push(
-          database
-            .prepare(
-              `INSERT INTO hr_benefit_items
-                (id, benefit_id, type, amount_mode, per_day_rate_cents, working_days,
-                 amount_cents, discount_cents, created_by, created_at)
-               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, CURRENT_TIMESTAMP)`,
-            )
-            .bind(crypto.randomUUID(), benefitId, item.type, item.mode, item.perDay, item.days, item.amount, actor.id),
-        );
-      }
+      insertItems(benefitId, items);
     }
     // Tudo ou nada: se outra geração simultânea já criou algum lançamento,
     // o índice único derruba o batch inteiro e nada fica pela metade.
     await database.batch(statements);
-    return jsonResponse({ created: toGenerate.length, skipped }, 201);
+    return jsonResponse({ created: toGenerate.length, updated: toUpdate.length, skipped }, 201);
   } catch (error) {
     const message = String((error as { message?: unknown })?.message ?? error);
     if (message.includes("hr_benefits_cycle_employee_month_idx") || message.includes("duplicate key")) {

@@ -6998,7 +6998,7 @@
           <div class="field"><label for="rhCicloForma">FORMA DE PAGAMENTO</label><select id="rhCicloForma"><option value="cartao">CARTÃO</option><option value="pix">PIX</option><option value="plataforma">PLATAFORMA</option><option value="outros">OUTROS</option></select></div>
           <div class="field"><label for="rhCicloData">DATA DO PAGAMENTO</label><input type="date" id="rhCicloData"></div>
           <div class="dre-toolbar-actions">
-            <button class="btn-accent" id="btnRhCicloGerar" type="button">GERAR BENEFÍCIOS DO CICLO</button>
+            <button class="btn-accent" id="btnRhCicloGerar" type="button">GERAR / SALVAR AJUSTES</button>
           </div>
         </div>
         <datalist id="rhCicloMotivos"><option value="FALTA"><option value="ATESTADO"><option value="FERIADO"><option value="FOLGA REMUNERADA"><option value="AUMENTO DE PASSAGEM"><option value="REAJUSTE"><option value="ADMISSÃO NO CICLO"><option value="DESLIGAMENTO NO CICLO"></datalist>
@@ -48414,9 +48414,41 @@ function renderHomeTasks(){
   let rhCicloReview = {};
   let rhCicloReviewMonth = '';
   let rhCicloData = null;
+  let rhCicloSaved = {};
 
+  // Gerado continua revisável: a linha abre com o que está gravado e
+  // "SALVAR AJUSTES" atualiza o lançamento existente.
   function rhCicloEditable(row){
-    return !row.generated && row.status === 'active';
+    return row.status === 'active';
+  }
+
+  function rhCicloSeedGenerated(){
+    rhCicloSaved = {};
+    rhCicloRows.forEach(row => {
+      if(!row.generated) return;
+      const generated = row.generated;
+      const review = String(generated.notes || '').split('REVISÃO: ')[1] || '';
+      const benefitNotes = String(row.benefitNotes || '').toUpperCase();
+      const reason = review.split(' · ').find(part => part && !/^(PASSAGEM|ALIMENTAÇÃO) /.test(part) && part !== benefitNotes) || '';
+      const saved = {
+        transportDays: generated.transportDays === null || generated.transportDays === undefined ? 0 : Number(generated.transportDays),
+        foodAdjustCents: Number(generated.foodCents || 0) - Number(row.ruleFoodCents || 0),
+        reason
+      };
+      rhCicloSaved[row.employeeId] = saved;
+      if(!rhCicloReview[row.employeeId]) rhCicloReview[row.employeeId] = {...saved};
+    });
+  }
+
+  function rhCicloDirty(row){
+    const saved = rhCicloSaved[row.employeeId];
+    if(!row.generated || !saved) return false;
+    const calc = rhCicloCalc(row);
+    return calc.transportDays !== saved.transportDays || calc.foodAdjustCents !== saved.foodAdjustCents || calc.reason.trim().toUpperCase() !== saved.reason;
+  }
+
+  function rhCicloChanged(){
+    return rhCicloRows.filter(row => rhCicloEditable(row) && rhCicloDirty(row) && rhCicloCalc(row).totalCents > 0);
   }
 
   function rhCicloCalc(row){
@@ -48430,6 +48462,7 @@ function renderHomeTasks(){
   }
 
   function rhCicloSituacaoCell(row, calc){
+    if(row.generated && rhCicloDirty(row)) return '<span class="status-pill warn" title="Clique em GERAR / SALVAR AJUSTES para gravar.">AJUSTE NÃO SALVO</span>';
     if(row.generated) return '<span class="status-pill done">GERADO · '+formatCentsBRL(row.generated.amountCents)+'</span>';
     if(row.status !== 'active') return '<span class="status-pill">INATIVO</span>';
     if(calc.totalCents <= 0) return '<span class="status-pill alert" title="Confira os valores na aba REGRAS.">SEM VALOR</span>';
@@ -48438,7 +48471,7 @@ function renderHomeTasks(){
   }
 
   function rhCicloPending(){
-    return rhCicloRows.filter(row => rhCicloEditable(row) && rhCicloCalc(row).totalCents > 0);
+    return rhCicloRows.filter(row => rhCicloEditable(row) && !row.generated && rhCicloCalc(row).totalCents > 0);
   }
 
   function renderRhCicloResumo(){
@@ -48454,8 +48487,9 @@ function renderHomeTasks(){
       ' · Alimentação: <strong>'+formatCentsBRL(sum('foodCents'))+'</strong>'+
       ' · Transporte: <strong>'+formatCentsBRL(sum('transportCents'))+'</strong>'+
       ' · Total: <strong>'+formatCentsBRL(sum('totalCents'))+'</strong>'+
-      ' · Pendentes de geração: <strong>'+pending.length+'</strong>';
-    el('btnRhCicloGerar').disabled = !pending.length;
+      ' · Pendentes de geração: <strong>'+pending.length+'</strong>'+
+      ' · Ajustes não salvos: <strong>'+rhCicloChanged().length+'</strong>';
+    el('btnRhCicloGerar').disabled = !pending.length && !rhCicloChanged().length;
   }
 
   function rhCicloRowCells(row){
@@ -48502,6 +48536,7 @@ function renderHomeTasks(){
     try{
       const data = await rhApiRequest('/benefit-cycle?'+params.toString());
       rhCicloRows = Array.isArray(data.rows) ? data.rows : [];
+      rhCicloSeedGenerated();
       renderRhCicloTable(data);
     }catch(error){
       rhCicloRows = [];
@@ -48588,12 +48623,15 @@ function renderHomeTasks(){
 
   if(el('btnRhCicloGerar')) el('btnRhCicloGerar').addEventListener('click', async event => {
     const pending = rhCicloPending();
-    if(!pending.length) return;
+    const changed = rhCicloChanged();
+    if(!pending.length && !changed.length) return;
     const total = pending.reduce((sum, row) => sum + rhCicloCalc(row).totalCents, 0);
-    const reviewed = pending.filter(row => { const calc = rhCicloCalc(row); return calc.transportDays !== row.workingDays || calc.foodAdjustCents; }).length;
-    if(!confirm('Gerar os benefícios do ciclo para '+pending.length+' colaborador(es) ('+reviewed+' com ajuste), total de '+formatCentsBRL(total)+'?')) return;
+    const parts = [];
+    if(pending.length) parts.push('gerar '+pending.length+' lançamento(s), total de '+formatCentsBRL(total));
+    if(changed.length) parts.push('atualizar '+changed.length+' lançamento(s) já gerado(s)');
+    if(!confirm('Confirma '+parts.join(' e ')+'?')) return;
     const adjustments = {};
-    pending.forEach(row => {
+    [...pending, ...changed].forEach(row => {
       const calc = rhCicloCalc(row);
       adjustments[row.employeeId] = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, reason: calc.reason};
     });
@@ -48605,12 +48643,12 @@ function renderHomeTasks(){
         companyId: el('rhBeneficioFiltroLoja').value,
         paymentMethod: el('rhCicloForma').value,
         paymentDate: el('rhCicloData').value,
-        employeeIds: pending.map(row => row.employeeId),
+        employeeIds: [...pending, ...changed].map(row => row.employeeId),
         adjustments
       })});
-      pending.forEach(row => { delete rhCicloReview[row.employeeId]; });
+      [...pending, ...changed].forEach(row => { delete rhCicloReview[row.employeeId]; });
       await loadRhBeneficioCiclo();
-      showPurchaseToast(Number(data.created || 0)+' lançamento(s) de benefício gerado(s).');
+      showPurchaseToast(Number(data.created || 0)+' gerado(s) · '+Number(data.updated || 0)+' atualizado(s).');
     }catch(error){
       showPurchaseToast(error.message,'error');
       button.disabled = false;
