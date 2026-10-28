@@ -46,6 +46,18 @@ test("resolveActingStore: mês registrado, herda o anterior, sem registro = admi
   assert.equal(resolveActingStore([], "2026-10", admission).companyId, "a");
 });
 
+test("só admitido numa loja: sem mês lançado vale a loja atuante do cadastro, não a de admissão", async () => {
+  const current = { companyId: "r", companyName: "RIOMAR" };
+  assert.equal(resolveActingStore([], "2026-10", { companyId: "p", companyName: "PATTEO" }, current).companyId, "r");
+  db.insert("hr_employees", {
+    id: "e9", full_name: "ASAFE", company_id: BETA, company_name: "LOJA BETA", status: "active",
+    admission_company_id: ALFA, admission_company_name: "LOJA ALFA", cpf: "9",
+  });
+  db.insert("commercial_monthly", { id: "m-e9", month: "2026-10", employee_id: "e9", employee_name: "ASAFE", company_id: ALFA, company_name: "LOJA ALFA", target_revenue_cents: 100, revenue_cents: 100 });
+  const item = (await (await callRoute(rankingRoute.GET, ADMIN, "GET", "/api/commercial/ranking?month=2026-10")).json()).items.find((row) => row.employeeId === "e9");
+  assert.equal(item.companyName, "LOJA BETA");
+});
+
 test("muda de loja em novembro → outubro continua na loja antiga no Comercial e na DRE", async () => {
   const response = await callRoute(actingRoute.PUT, ADMIN, "PUT", "/api/hr-payroll/employees/acting-stores", { employeeId: "e1", month: "2026-11", companyId: BETA });
   assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));

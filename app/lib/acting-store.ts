@@ -7,8 +7,10 @@
 // colaborador no mês" das Escalas. Regra:
 //   - mês com registro      → a loja registrada;
 //   - mês sem registro      → herda o último mês anterior com registro;
-//   - sem nenhum registro   → a loja do cadastro de admissão (onde está
-//     registrado), senão a loja atual do cadastro.
+//   - mês antes do primeiro registro → a loja de admissão (melhor palpite de
+//     onde atuava antes da primeira troca), senão a loja atual do cadastro;
+//   - sem NENHUM registro   → a loja atuante do cadastro (company_id). Só ser
+//     admitido numa loja não muda o Comercial (usuário, 28/10/2026).
 // Por herdar só para frente, trocar a loja do mês corrente nunca muda os
 // meses passados.
 
@@ -24,7 +26,9 @@ export function resolveActingStore(
   assignments: MonthAssignment[],
   month: string,
   fallback: StoreRef,
+  current: StoreRef = fallback,
 ): StoreRef {
+  if (!assignments.some((row) => row.companyId)) return current;
   let best: MonthAssignment | null = null;
   for (const row of assignments) {
     if (!row.companyId || row.referenceMonth > month) continue;
@@ -40,6 +44,10 @@ type EmployeeStoreRow = {
   admissionCompanyId: string;
   admissionCompanyName: string;
 };
+
+function currentOf(employee: EmployeeStoreRow): StoreRef {
+  return employee.companyId ? { companyId: employee.companyId, companyName: employee.companyName } : fallbackOf(employee);
+}
 
 function fallbackOf(employee: EmployeeStoreRow): StoreRef {
   return employee.admissionCompanyId
@@ -60,9 +68,8 @@ export async function actingStoresForMonth(database: Database, month: string): P
     database
       .prepare(
         `SELECT employee_id AS employeeId, reference_month AS referenceMonth, company_id AS companyId, company_name AS companyName
-         FROM hr_schedule_assignments WHERE reference_month <= ?1 AND company_id <> ''`,
+         FROM hr_schedule_assignments WHERE company_id <> ''`,
       )
-      .bind(month)
       .all<MonthAssignment & { employeeId: string }>(),
   ]);
   const byEmployee = new Map<string, MonthAssignment[]>();
@@ -73,7 +80,7 @@ export async function actingStoresForMonth(database: Database, month: string): P
   }
   const result = new Map<string, StoreRef>();
   for (const employee of employees.results ?? []) {
-    result.set(employee.id, resolveActingStore(byEmployee.get(employee.id) ?? [], month, fallbackOf(employee)));
+    result.set(employee.id, resolveActingStore(byEmployee.get(employee.id) ?? [], month, fallbackOf(employee), currentOf(employee)));
   }
   return result;
 }
@@ -92,9 +99,9 @@ export async function actingStoreFor(database: Database, employeeId: string, mon
   const assignments = await database
     .prepare(
       `SELECT reference_month AS referenceMonth, company_id AS companyId, company_name AS companyName
-       FROM hr_schedule_assignments WHERE employee_id=?1 AND reference_month <= ?2 AND company_id <> ''`,
+       FROM hr_schedule_assignments WHERE employee_id=?1 AND company_id <> ''`,
     )
-    .bind(employeeId, month)
+    .bind(employeeId)
     .all<MonthAssignment>();
-  return resolveActingStore(assignments.results ?? [], month, fallbackOf(employee));
+  return resolveActingStore(assignments.results ?? [], month, fallbackOf(employee), currentOf(employee));
 }
