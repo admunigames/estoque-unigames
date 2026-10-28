@@ -300,6 +300,7 @@ export type RulesRow = {
   premiumTiersJson: string;
   warrantyRateBps: number;
   warrantyAttachTarget: number;
+  attachExemptJson: string;
   creditRateBps: number;
   partnerSaleRateBps: number;
   rolesJson: string;
@@ -326,6 +327,7 @@ export function rulesFromRow(row: RulesRow): CommercialRules & { id: string; not
     premiumTiers,
     warrantyRateBps: Number(row.warrantyRateBps) || 0,
     warrantyAttachTarget: Number(row.warrantyAttachTarget) || 0,
+    attachExemptStoreIds: idList(row.attachExemptJson),
     creditRateBps: Number(row.creditRateBps) || 0,
     partnerSaleRateBps: Number(row.partnerSaleRateBps) || 0,
     // JSON vazio ou corrompido = vigência sem regras de líder/operacional.
@@ -345,13 +347,22 @@ function rolesFromJson(json: string) {
   }
 }
 
+function idList(json: string): string[] {
+  try {
+    const list = JSON.parse(json || "[]");
+    return Array.isArray(list) ? list.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Todas as vigências cadastradas, mais recente primeiro (tabela pequena). */
 export async function loadRules(database: Database) {
   const result = await database
     .prepare(
       `SELECT id, valid_from AS validFrom, revenue_rate_high_bps AS revenueRateHighBps,
               revenue_rate_low_bps AS revenueRateLowBps, premium_tiers_json AS premiumTiersJson,
-              warranty_rate_bps AS warrantyRateBps, warranty_attach_target AS warrantyAttachTarget,
+              warranty_rate_bps AS warrantyRateBps, warranty_attach_target AS warrantyAttachTarget, attach_exempt_json AS attachExemptJson,
               credit_rate_bps AS creditRateBps, partner_sale_rate_bps AS partnerSaleRateBps, roles_json AS rolesJson, notes, updated_by_name AS updatedByName, updated_at AS updatedAt
        FROM commercial_rules ORDER BY valid_from DESC`,
     )
@@ -470,7 +481,8 @@ export async function loadSellers(
       newcomer,
       role,
       inactive: row.currentStatus !== "active",
-      metrics: computeSellerMetrics(goal, realized, clock, rules, newcomer),
+      // Loja sem o critério do anexo de garantia (Regras de Comissão).
+      metrics: computeSellerMetrics(goal, realized, clock, rules, newcomer, rules.attachExemptStoreIds.includes(companyId)),
     };
   });
   const sellers = everyone.filter((seller) => seller.role !== "operacional");

@@ -7,6 +7,7 @@ import {
   canManageCommercialRules,
   identity,
   jsonResponse,
+  loadCompanyNames,
   loadRules,
   safeText,
   sameOrigin,
@@ -26,10 +27,13 @@ export async function GET(request: Request) {
     return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR O COMERCIAL." }, 403);
   }
   try {
-    const items = await loadRules(await getD1());
+    const database = await getD1();
+    const [items, companyNames] = await Promise.all([loadRules(database), loadCompanyNames(database)]);
+    // Lojas para escolher as que ficam sem o critério do anexo de garantia.
+    const stores = [...companyNames.entries()].map(([companyId, name]) => ({ companyId, name }));
     // Os textos das regras servem a todas as abas; a aba Regras em si é
     // comercial:rules_view (ver) / comercial:rules (editar).
-    return jsonResponse({ items, defaults: DEFAULT_COMMERCIAL_RULES, roleDefaults: DEFAULT_ROLE_RULES, canManage: canManageCommercialRules(actor) });
+    return jsonResponse({ items, stores, defaults: DEFAULT_COMMERCIAL_RULES, roleDefaults: DEFAULT_ROLE_RULES, canManage: canManageCommercialRules(actor) });
   } catch (error) {
     console.error("Não foi possível carregar as regras de comissão.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR AS REGRAS DE COMISSÃO." }, 500);
@@ -68,6 +72,7 @@ async function save(request: Request, method: "POST" | "PUT") {
       rules.warrantyRateBps, rules.warrantyAttachTarget, rules.creditRateBps, notes,
       actor.id, actorName(actor), new Date().toISOString(), id, rules.partnerSaleRateBps,
       rules.roles ? JSON.stringify(rules.roles) : "",
+      JSON.stringify(rules.attachExemptStoreIds),
     ];
     await database
       .prepare(
@@ -75,11 +80,11 @@ async function save(request: Request, method: "POST" | "PUT") {
           ? `INSERT INTO commercial_rules
               (valid_from, revenue_rate_high_bps, revenue_rate_low_bps, premium_tiers_json, warranty_rate_bps,
                warranty_attach_target, credit_rate_bps, notes, updated_by, updated_by_name, updated_at, id,
-               partner_sale_rate_bps, roles_json)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`
+               partner_sale_rate_bps, roles_json, attach_exempt_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`
           : `UPDATE commercial_rules SET valid_from=?1, revenue_rate_high_bps=?2, revenue_rate_low_bps=?3,
                premium_tiers_json=?4, warranty_rate_bps=?5, warranty_attach_target=?6, credit_rate_bps=?7,
-               notes=?8, updated_by=?9, updated_by_name=?10, updated_at=?11, partner_sale_rate_bps=?13, roles_json=?14
+               notes=?8, updated_by=?9, updated_by_name=?10, updated_at=?11, partner_sale_rate_bps=?13, roles_json=?14, attach_exempt_json=?15
              WHERE id=?12`,
       )
       .bind(...values)

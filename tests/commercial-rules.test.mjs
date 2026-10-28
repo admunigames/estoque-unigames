@@ -110,7 +110,7 @@ test("seed da migration: 2026-10 com garantia 6% e crediário 2%; tabelas novas 
     {
       validFrom: "2026-10", revenueRateHighBps: 60, revenueRateLowBps: 40,
       premiumTiers: [{ percent: 110, cents: 50_000 }, { percent: 120, cents: 150_000 }],
-      warrantyRateBps: 600, warrantyAttachTarget: 30, creditRateBps: 200, partnerSaleRateBps: 200, updatedByName: "SISTEMA", roles: null,
+      warrantyRateBps: 600, warrantyAttachTarget: 30, attachExemptStoreIds: [], creditRateBps: 200, partnerSaleRateBps: 200, updatedByName: "SISTEMA", roles: null,
       id: undefined, updatedAt: undefined, notes: undefined,
     },
   );

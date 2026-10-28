@@ -10113,6 +10113,10 @@
       </div>
       <div class="purchase-field"><label for="comRuleWarranty">% GARANTIA ESTENDIDA</label><input type="number" id="comRuleWarranty" min="0" max="100" step="0.01" inputmode="decimal" required></div>
       <div class="purchase-field"><label for="comRuleAttach">ANEXO DE GARANTIA MÍNIMO (%)</label><input type="number" id="comRuleAttach" min="0" max="100" step="1" inputmode="numeric" required></div>
+      <div class="purchase-field full">
+        <label>LOJAS SEM O CRITÉRIO DE ANEXO DE GARANTIA (O CRITÉRIO CONTA COMO BATIDO; A % DA GARANTIA CONTINUA PAGA)</label>
+        <div class="permission-grid" id="comRuleAttachExempt"></div>
+      </div>
       <div class="purchase-field"><label for="comRuleCredit">% CREDIÁRIO FEITO</label><input type="number" id="comRuleCredit" min="0" max="100" step="0.01" inputmode="decimal" required></div>
       <div class="purchase-field"><label for="comRulePartner">% VENDA P.A / VENDA UNIGAMES</label><input type="number" id="comRulePartner" min="0" max="100" step="0.01" inputmode="decimal" required></div>
       <div class="purchase-field full">
@@ -53071,13 +53075,15 @@ function renderHomeTasks(){
   function comWarrantyBlockHtml(warranty){
     const attach = warranty.attachPercent;
     const target = warranty.attachTarget;
-    const width = attach === null ? 0 : target > 0 ? Math.min(100, attach / target * 100) : 100;
+    // Loja sem o critério do anexo (Regras de Comissão): conta como batido.
+    const width = warranty.exempt ? 100 : attach === null ? 0 : target > 0 ? Math.min(100, attach / target * 100) : 100;
     let text;
-    if(attach === null) text = 'Nenhum notebook/PC vendido no mês — o critério de '+target+'% ainda não conta.';
+    if(warranty.exempt) text = 'O critério de '+target+'% dos notebooks/PC não vale para esta loja — conta como batido.';
+    else if(attach === null) text = 'Nenhum notebook/PC vendido no mês — o critério de '+target+'% ainda não conta.';
     else if(warranty.met) text = 'Critério de '+target+'% batido.';
     else text = 'Falta'+(warranty.missingQty === 1 ? '' : 'm')+' '+warranty.missingQty+' garantia'+(warranty.missingQty === 1 ? '' : 's')+' para chegar a '+target+'% dos notebooks/PC.';
     return '<section class="com-block tier-'+warranty.tier+'">'+
-      '<div class="com-block-head"><span class="com-block-title">Garantia estendida</span><strong class="com-pct">'+(attach === null ? 'SEM PC' : comFormatPct(attach))+'</strong></div>'+
+      '<div class="com-block-head"><span class="com-block-title">Garantia estendida</span><strong class="com-pct">'+(warranty.exempt ? 'SEM CRITÉRIO' : attach === null ? 'SEM PC' : comFormatPct(attach))+'</strong></div>'+
       '<div class="com-bar simple" role="img" aria-label="'+escapeHtml('Anexo de garantia: '+comFormatPct(attach)+' de '+target+'%')+'">'+
         '<div class="com-bar-track"><div class="com-bar-fill" style="width:'+width+'%"></div></div></div>'+
       '<dl class="com-figures">'+
@@ -53354,7 +53360,7 @@ function renderHomeTasks(){
     const tiers = rules.premiumTiers;
     const rule = (title, value, note) =>
       '<div class="com-rule"><span>'+escapeHtml(title)+'</span><strong>'+escapeHtml(value)+'</strong><small>'+escapeHtml(note)+'</small></div>';
-    return rule('Critérios para '+high, 'Itens · Celular · Garantia', 'Itens 100% da meta, Celular 100% da meta e garantia em '+rules.warrantyAttachTarget+'% dos notebooks/PC vendidos')+
+    return rule('Critérios para '+high, 'Itens · Celular · Garantia', 'Itens 100% da meta, Celular 100% da meta e garantia em '+rules.warrantyAttachTarget+'% dos notebooks/PC vendidos'+comAttachExemptText(rules))+
       rule('Comissão por vendas (Faturamento)', high+' / '+low, high+' batendo os 3 critérios; '+low+' sem eles'+(rules.creditRateBps > 0 ? ' — sobre o faturado sem o crediário' : ''))+
       rule('Premiação por faturamento', tiers.length ? tiers.map(tier => comMoneyShort(tier.cents)).join(' / ') : 'Sem premiação',
         tiers.length ? tiers.map(tier => tier.percent+'%').join(' / ')+' da meta de faturamento, só batendo os 3 critérios (não cumulativa)' : 'Nenhuma faixa nesta regra')+
@@ -54793,6 +54799,15 @@ function renderHomeTasks(){
     return year && monthNumber ? monthNumber+'/'+year : '—';
   }
 
+  // " · SEM CRITÉRIO: QUIOSQUE P.A" — lojas sem o anexo mínimo de garantia.
+  function comAttachExemptText(rule){
+    const ids = rule.attachExemptStoreIds || [];
+    if(!ids.length) return '';
+    const names = new Map(((comRulesData && comRulesData.stores) || []).map(store => [store.companyId, store.name]));
+    ((comOverview && comOverview.sellers) || []).forEach(seller => { if(!names.has(seller.companyId)) names.set(seller.companyId, seller.companyName); });
+    return ' · SEM CRITÉRIO: '+ids.map(id => names.get(id) || id).join(', ');
+  }
+
   function comTiersText(tiers){
     return tiers.length ? tiers.map(tier => tier.percent+'% → '+comMoneyShort(tier.cents)).join(' · ') : 'SEM PREMIAÇÃO';
   }
@@ -54807,7 +54822,7 @@ function renderHomeTasks(){
       '<td data-label="Faturamento">'+escapeHtml(comFormatBps(rule.revenueRateHighBps)+' / '+comFormatBps(rule.revenueRateLowBps))+'</td>'+
       '<td data-label="Premiação">'+escapeHtml(comTiersText(rule.premiumTiers))+'</td>'+
       '<td data-label="Garantia">'+escapeHtml(comFormatBps(rule.warrantyRateBps))+'</td>'+
-      '<td data-label="Anexo mínimo">'+escapeHtml(rule.warrantyAttachTarget+'%')+'</td>'+
+      '<td data-label="Anexo mínimo">'+escapeHtml(rule.warrantyAttachTarget+'%'+comAttachExemptText(rule))+'</td>'+
       '<td data-label="Crediário">'+escapeHtml(comFormatBps(rule.creditRateBps))+'</td>'+
       '<td data-label="Venda P.A / Unigames">'+escapeHtml(comFormatBps(rule.partnerSaleRateBps || 0))+'</td>'+
       '<td data-label="Líder / Operacional">'+escapeHtml(rule.roles
@@ -54861,6 +54876,9 @@ function renderHomeTasks(){
     el('comRuleLow').value = pct(base.revenueRateLowBps);
     el('comRuleWarranty').value = pct(base.warrantyRateBps);
     el('comRuleAttach').value = base.warrantyAttachTarget;
+    const exempt = new Set(base.attachExemptStoreIds || []);
+    el('comRuleAttachExempt').innerHTML = ((comRulesData && comRulesData.stores) || []).map(store =>
+      '<label class="permission-option"><input type="checkbox" data-com-attach-exempt value="'+escapeHtml(store.companyId)+'"'+(exempt.has(store.companyId) ? ' checked' : '')+'> '+escapeHtml(store.name)+'</label>').join('');
     el('comRuleCredit').value = pct(base.creditRateBps);
     el('comRulePartner').value = pct(base.partnerSaleRateBps || 0);
     el('comRuleNotes').value = rule ? (rule.notes || '') : '';
@@ -54918,6 +54936,7 @@ function renderHomeTasks(){
     }
     return {
       roles,
+      attachExemptStoreIds: Array.from(document.querySelectorAll('[data-com-attach-exempt]:checked')).map(input => input.value),
       validFrom,
       revenueRateHighBps: bps('comRuleHigh', '% DO FATURAMENTO BATENDO OS CRITÉRIOS'),
       revenueRateLowBps: bps('comRuleLow', '% DO FATURAMENTO SEM OS CRITÉRIOS'),

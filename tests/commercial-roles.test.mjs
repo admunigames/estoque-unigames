@@ -477,6 +477,36 @@ test("Crediários: lança também para OPERACIONAL do mês — SÓ REGISTRO (nã
   }
 });
 
+test("Regras: lojas sem o critério de ANEXO DE GARANTIA (ex.: QUIOSQUE P.A) por vigência — conta como batido, garantia segue paga", async () => {
+  // lib: anexo 0 de 10 notebooks; isenta → critério batido.
+  const plain = lib.warrantyBlock({ warrantyQty: 0, notebookQty: 10, warrantyCents: 1000 }, 30);
+  const exempt = lib.warrantyBlock({ warrantyQty: 0, notebookQty: 10, warrantyCents: 1000 }, 30, true);
+  assert.deepEqual([plain.met, exempt.met, exempt.exempt, exempt.missingQty], [false, true, true, 0]);
+  assert.equal(lib.parseCommercialRules({ ...BASE_RULE, validFrom: "2027-01", attachExemptStoreIds: "x" }).rules, null);
+
+  assert.equal((await postRule({ ...BASE_RULE, validFrom: "2027-01", attachExemptStoreIds: [STORE_B] })).status, 201);
+  const rules = await (await callRoute(rulesRoute.GET, RULES, "GET", "/api/commercial/rules")).json();
+  assert.deepEqual(rules.items.find((rule) => rule.validFrom === "2027-01").attachExemptStoreIds, [STORE_B]);
+  assert.deepEqual(rules.items.find((rule) => rule.validFrom === "2026-10").attachExemptStoreIds, []);
+  assert.ok(rules.stores.some((store) => store.companyId === STORE_B));
+  // Mesmo anexo (0 de 10), lojas diferentes: só a isenta bate os critérios.
+  for (const employeeId of ["emp-v4", "emp-v5"]) {
+    await putSeller(sellerBody("2027-01", employeeId, 10_000_000, 10_000_000, { warrantyQty: 0, notebookQty: 10, warrantyCents: 100_000 }));
+  }
+  const data = await getOverview(ADMIN, "2027-01");
+  const store = data.sellers.find((item) => item.employeeId === "emp-v5");
+  const other = data.sellers.find((item) => item.employeeId === "emp-v4");
+  assert.deepEqual([store.metrics.warranty.met, store.metrics.warranty.exempt, store.metrics.commission.allCriteriaMet, store.metrics.commission.revenueRateBps], [true, true, true, 60]);
+  assert.deepEqual([other.metrics.warranty.met, other.metrics.commission.allCriteriaMet, other.metrics.commission.revenueRateBps], [false, false, 40]);
+  assert.equal(store.metrics.commission.warrantyCommissionCents, 6_000, "a % da garantia continua paga");
+});
+
+test("migration 0117: só ADD COLUMN", async () => {
+  const sql = await readFile(new URL("../drizzle/0117_comercial_anexo_lojas_isentas.sql", import.meta.url), "utf8");
+  assert.match(sql, /ALTER TABLE "commercial_rules" ADD COLUMN IF NOT EXISTS "attach_exempt_json" text DEFAULT '\[\]' NOT NULL;/);
+  assert.doesNotMatch(sql, /\b(DROP|DELETE|UPDATE|INSERT|TRUNCATE|RENAME)\b/i);
+});
+
 test("migration 0098: só ADD COLUMN / CREATE TABLE/INDEX (e RLS nas tabelas novas) — nada apagado ou reescrito", () => {
   const statements = migration.split("--> statement-breakpoint").map((part) => part.replace(/^--.*$/gm, "").trim()).filter(Boolean);
   for (const statement of statements) {

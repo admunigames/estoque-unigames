@@ -58,7 +58,7 @@ function createFakeD1() {
     CREATE TABLE commercial_rules (
       id text PRIMARY KEY, valid_from text, revenue_rate_high_bps integer, revenue_rate_low_bps integer,
       premium_tiers_json text, warranty_rate_bps integer, warranty_attach_target integer, credit_rate_bps integer,
-      notes text, updated_by_name text, updated_at text, partner_sale_rate_bps integer DEFAULT 0, roles_json text DEFAULT ''
+      notes text, updated_by_name text, updated_at text, partner_sale_rate_bps integer DEFAULT 0, roles_json text DEFAULT '', attach_exempt_json text DEFAULT '[]'
     );
     CREATE TABLE commercial_roles (id text PRIMARY KEY, employee_id text, month text, role text);
     CREATE TABLE commercial_store_goals (

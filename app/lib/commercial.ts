@@ -51,6 +51,9 @@ export type CommercialRules = {
   premiumTiers: PremiumTier[]; // % da meta crescente → prêmio
   warrantyRateBps: number;
   warrantyAttachTarget: number; // % de notebooks/PC vendidos com garantia
+  // Lojas (ids) em que o critério do anexo mínimo não vale (conta como batido;
+  // a % da garantia continua paga). Ex.: QUIOSQUE P.A (pedido de 2026-10-28).
+  attachExemptStoreIds: string[];
   creditRateBps: number;
   partnerSaleRateBps: number; // VENDA P.A / VENDA UNIGAMES
   // LÍDER COMERCIAL e OPERACIONAL — null = vigência sem essas regras: o líder
@@ -131,6 +134,7 @@ export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
   ],
   warrantyRateBps: 400,
   warrantyAttachTarget: 30,
+  attachExemptStoreIds: [],
   creditRateBps: 0,
   partnerSaleRateBps: 0,
   roles: null,
@@ -274,6 +278,10 @@ export function parseCommercialRules(input: Record<string, unknown>):
     }
     premiumTiers.push({ percent, cents });
   }
+  const exempt = input.attachExemptStoreIds ?? [];
+  if (!Array.isArray(exempt) || exempt.length > 50 || exempt.some((id) => typeof id !== "string" || !id || id.length > 80)) {
+    return fail("LOJAS SEM O CRITÉRIO DE ANEXO INVÁLIDAS.");
+  }
   const roles = parseRoleRules(input.roles);
   if (roles.error) return fail(roles.error);
   return {
@@ -284,6 +292,7 @@ export function parseCommercialRules(input: Record<string, unknown>):
       premiumTiers,
       warrantyRateBps: values.warrantyRateBps,
       warrantyAttachTarget,
+      attachExemptStoreIds: [...new Set(exempt as string[])],
       creditRateBps: values.creditRateBps,
       partnerSaleRateBps: values.partnerSaleRateBps,
       roles: roles.roles,
@@ -453,6 +462,8 @@ export type WarrantyBlock = {
   // Quantas garantias faltam para chegar ao anexo mínimo (0 quando já chegou).
   missingQty: number | null;
   attachTarget: number;
+  // Loja sem o critério do anexo: conta como batido.
+  exempt: boolean;
 };
 
 export type CommissionBreakdown = {
@@ -518,15 +529,15 @@ function metricBlock(
   };
 }
 
-export function warrantyBlock(realized: Realized, attachTarget: number): WarrantyBlock {
+export function warrantyBlock(realized: Realized, attachTarget: number, exempt = false): WarrantyBlock {
   const { warrantyQty, notebookQty } = realized;
   const attachPercent = notebookQty > 0 ? Math.floor((warrantyQty / notebookQty) * 1000) / 10 : null;
   // Compara em quantidade (sem arredondar o %): 3 de 10 = exatamente 30%.
-  const met = notebookQty > 0 && warrantyQty * 100 >= attachTarget * notebookQty;
+  const met = exempt || (notebookQty > 0 && warrantyQty * 100 >= attachTarget * notebookQty);
   const needed = notebookQty > 0 ? Math.ceil((attachTarget * notebookQty) / 100) : null;
   let tier: Tier = "none";
-  if (attachPercent !== null) {
-    tier = met ? "green" : attachPercent >= attachTarget * 0.8 ? "yellow" : "red";
+  if (attachPercent !== null || exempt) {
+    tier = met ? "green" : attachPercent !== null && attachPercent >= attachTarget * 0.8 ? "yellow" : "red";
   }
   return {
     realizedCents: realized.warrantyCents,
@@ -535,8 +546,9 @@ export function warrantyBlock(realized: Realized, attachTarget: number): Warrant
     attachPercent,
     tier,
     met,
-    missingQty: needed === null ? null : Math.max(0, needed - warrantyQty),
+    missingQty: exempt ? 0 : needed === null ? null : Math.max(0, needed - warrantyQty),
     attachTarget,
+    exempt,
   };
 }
 
@@ -546,11 +558,12 @@ export function computeSellerMetrics(
   clock: MonthClock,
   rules: CommercialRules = DEFAULT_COMMERCIAL_RULES,
   newcomer = false,
+  attachExempt = false,
 ): SellerMetrics {
   const revenue = metricBlock(goal.targetRevenueCents, realized.revenueCents, revenueTargets(rules), clock);
   const itemsBase = metricBlock(goal.targetItems, realized.items, [100], clock);
   const realme = metricBlock(goal.targetRealme, realized.realme, [100], clock);
-  const warranty = warrantyBlock(realized, rules.warrantyAttachTarget);
+  const warranty = warrantyBlock(realized, rules.warrantyAttachTarget, attachExempt);
 
   const allCriteriaMet = itemsBase.met && realme.met && warranty.met;
   const revenueRateBps = allCriteriaMet ? rules.revenueRateHighBps : rules.revenueRateLowBps;

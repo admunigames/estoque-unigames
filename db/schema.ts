@@ -3924,6 +3924,8 @@ export const commercialRules = pgTable(
     // LÍDER COMERCIAL e OPERACIONAL (RoleRules em app/lib/commercial.ts);
     // '' = vigência sem essas regras (líder é vendedor comum, sem operacionais).
     rolesJson: text("roles_json").notNull().default(""),
+    // Lojas (ids) sem o critério de ANEXO MÍNIMO DE GARANTIA nesta vigência.
+    attachExemptJson: text("attach_exempt_json").notNull().default("[]"),
     notes: text("notes").notNull().default(""),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
