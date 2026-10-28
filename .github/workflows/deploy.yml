@@ -45,6 +45,9 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      # Necessário para criar a etiqueta da versão publicada (ver último passo).
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,3 +77,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Cada versão que entra no ar ganha uma etiqueta "producao-AAAA-MM-DD-HHMMSS"
+      # (horário de Brasília). É o que o workflow "Restaurar versão do site"
+      # usa para voltar o site a qualquer publicação anterior.
+      - name: Marcar versão publicada
+        run: |
+          TAG="producao-$(TZ=America/Sao_Paulo date +%Y-%m-%d-%H%M%S)"
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "$TAG"
+          echo "Versão publicada marcada como $TAG" >> "$GITHUB_STEP_SUMMARY"

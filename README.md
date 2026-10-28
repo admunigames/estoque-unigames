@@ -84,6 +84,12 @@ configurada em `wrangler.jsonc`. Todo push na branch `main` dispara lint,
 tipos, testes, build e deploy automático via GitHub Actions
 (`.github/workflows/deploy.yml`).
 
+Cada publicação ganha uma etiqueta `producao-AAAA-MM-DD-HHMMSS`, e o workflow
+**Restaurar versão do site** publica de novo qualquer versão anterior. Os dados
+do Supabase são copiados todo dia para o R2 (workflow **Backup do banco**).
+Configuração e passo a passo em
+[`docs/BACKUP-E-RESTAURACAO.md`](docs/BACKUP-E-RESTAURACAO.md).
+
 ## Configuração segura
 
 Copie `.env.example` para um arquivo `.env` local e preencha:
