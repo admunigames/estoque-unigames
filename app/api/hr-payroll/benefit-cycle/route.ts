@@ -1,5 +1,11 @@
 import { getD1 } from "../../../../db";
-import { benefitCycle, cycleBenefitAmounts, type BenefitCycle } from "../../../lib/hr-benefit-cycle";
+import {
+  benefitCycle,
+  cycleBenefitAmounts,
+  parseBenefitRules,
+  type BenefitCycle,
+  type BenefitRules,
+} from "../../../lib/hr-benefit-cycle";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
   BENEFIT_PAYMENT_METHODS,
@@ -11,7 +17,7 @@ import {
   identity,
   isOneOf,
   jsonResponse,
-  loadScheduleDataForCycle,
+  loadBenefitRules,
   safeText,
   sameOrigin,
   workingDaysForEmployee,
@@ -22,13 +28,14 @@ import {
 
 // Fechamento do ciclo de benefícios (20 do mês → 19 do mês seguinte).
 //
-// GET  = prévia por colaborador ativo: escala, dias trabalhados no ciclo
-//        (fórmula ou folgas reais do módulo Escalas), alimentação e
-//        transporte (valor padrão por dia do cadastro × dias) e se o
-//        lançamento do ciclo já foi gerado.
-// POST = gera os lançamentos. Cada um vira um hr_benefits comum (origin =
-//        'ciclo') com uma linha 'alimentacao' e/ou 'mobilidade' por dia
-//        trabalhado — Folha, DRE e Fluxo de Caixa já leem sem mudança. O
+// GET  = prévia por colaborador ativo: escala, dias exatos do ciclo
+//        (5x2 seg–sex, 6x1 seg–sáb), alimentação cheia e transporte por dia
+//        da aba REGRAS, e se o lançamento do ciclo já foi gerado.
+// POST = gera os lançamentos já revisados (adjustments: dias de passagem,
+//        ajuste ± da alimentação e motivo por funcionário). Cada um vira um
+//        hr_benefits comum (origin = 'ciclo') com uma linha 'alimentacao'
+//        e/ou 'mobilidade' — Folha, DRE e Fluxo de Caixa já leem sem mudança.
+// PUT  = salva as regras (alimentação cheia e transporte/dia por escala). O
 //        índice único parcial hr_benefits_cycle_employee_month_idx impede
 //        gerar duas vezes o mesmo funcionário/competência.
 
@@ -49,12 +56,8 @@ type CycleRow = {
   companyName: string;
   status: string;
   workSchedule: string;
-  inEscalas: boolean;
   workingDays: number;
-  source: string;
-  offDays: number;
-  holidays: number;
-  foodPerDayCents: number;
+  ruleFoodCents: number;
   transportPerDayCents: number;
   foodCents: number;
   transportCents: number;
@@ -67,6 +70,7 @@ async function buildCycleRows(
   database: Database,
   cycle: BenefitCycle,
   companyId: string,
+  rules: BenefitRules,
 ): Promise<CycleRow[]> {
   const generatedResult = await database
     .prepare(
@@ -97,16 +101,11 @@ async function buildCycleRows(
     .all<EmployeeRow>();
   const employees = employeesResult.results ?? [];
 
-  const schedules = await loadScheduleDataForCycle(database, cycle);
-  const holidays = new Map<string, string[]>();
-  const rows: CycleRow[] = [];
-  for (const employee of employees) {
-    const days = await workingDaysForEmployee(database, employee, cycle.month, { holidays, schedules });
-    const food = Number(employee.foodPerDayCents || 0);
-    const transport = Number(employee.transportPerDayCents || 0);
-    const amounts = cycleBenefitAmounts(days.workingDays, food, transport);
-    const scheduleData = schedules.get(employee.id);
-    rows.push({
+  return employees.map((employee) => {
+    const days = workingDaysForEmployee(employee, cycle.month);
+    const rule = rules[days.schedule];
+    const amounts = cycleBenefitAmounts(rule, days.workingDays);
+    return {
       employeeId: employee.id,
       fullName: employee.fullName,
       admissionDate: employee.admissionDate,
@@ -114,23 +113,39 @@ async function buildCycleRows(
       companyName: employee.companyName,
       status: employee.status,
       workSchedule: days.schedule,
-      // Tem loja lançada no Escalas em algum mês do ciclo — o módulo de
-      // Escalas é 6x1; a tela avisa quando o cadastro diz 5x2.
-      inEscalas: Boolean(scheduleData && scheduleData.assignedMonths.length),
       workingDays: days.workingDays,
-      source: days.source,
-      offDays: days.offDays,
-      holidays: days.holidays,
-      foodPerDayCents: food,
-      transportPerDayCents: transport,
+      ruleFoodCents: rule.foodCents,
+      transportPerDayCents: rule.transportPerDayCents,
       foodCents: amounts.foodCents,
       transportCents: amounts.transportCents,
       totalCents: amounts.totalCents,
       benefitNotes: employee.benefitNotes || "",
       generated: generatedByEmployee.get(employee.id) ?? null,
-    });
-  }
-  return rows;
+    };
+  });
+}
+
+// Revisão antes do pagamento: dias de passagem, ajuste ± da alimentação e
+// motivo (FALTA, ATESTADO, FERIADO…) vindos da tabela do ciclo.
+function reviewed(row: CycleRow, adjustments: unknown): CycleRow & { reviewNote: string } {
+  const input = (adjustments && typeof adjustments === "object" ? (adjustments as JsonMap)[row.employeeId] : null) as JsonMap | null;
+  if (!input || typeof input !== "object") return { ...row, reviewNote: "" };
+  const days = Number(input.transportDays);
+  const transportDays = Number.isInteger(days) && days >= 0 && days <= 31 ? days : row.workingDays;
+  const adjust = Number(input.foodAdjustCents);
+  const foodAdjustCents = Number.isInteger(adjust) && Math.abs(adjust) <= 10_000_000 ? adjust : 0;
+  const reason = safeText(input.reason, 200).toUpperCase();
+  const amounts = cycleBenefitAmounts(
+    { foodCents: row.ruleFoodCents, transportPerDayCents: row.transportPerDayCents },
+    transportDays,
+    foodAdjustCents,
+  );
+  const changes = [
+    transportDays !== row.workingDays ? `PASSAGEM ${transportDays} DE ${row.workingDays} DIAS` : "",
+    foodAdjustCents ? `ALIMENTAÇÃO ${foodAdjustCents > 0 ? "+" : "−"}R$ ${(Math.abs(foodAdjustCents) / 100).toFixed(2).replace(".", ",")}` : "",
+  ].filter(Boolean);
+  const reviewNote = changes.length || reason ? `REVISÃO: ${[...changes, reason].filter(Boolean).join(" · ")}` : "";
+  return { ...row, workingDays: transportDays, ...amounts, reviewNote };
 }
 
 export async function GET(request: Request) {
@@ -148,9 +163,11 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const rows = await buildCycleRows(database, cycle, companyId);
+    const rules = await loadBenefitRules(database);
+    const rows = await buildCycleRows(database, cycle, companyId, rules);
     return jsonResponse({
       month,
+      rules,
       cycleStart: cycle.start,
       cycleEnd: cycle.end,
       rows,
@@ -194,7 +211,8 @@ export async function POST(request: Request) {
     }
 
     const database = await getD1();
-    const rows = await buildCycleRows(database, cycle, companyId);
+    const rules = await loadBenefitRules(database);
+    const rows = (await buildCycleRows(database, cycle, companyId, rules)).map((row) => reviewed(row, body.adjustments));
     const toGenerate = rows.filter(
       (row) =>
         row.status === "active" &&
@@ -214,11 +232,11 @@ export async function POST(request: Request) {
     for (const row of toGenerate) {
       const benefitId = crypto.randomUUID();
       const items = [
-        { type: "alimentacao", perDay: row.foodPerDayCents, amount: row.foodCents },
-        { type: "mobilidade", perDay: row.transportPerDayCents, amount: row.transportCents },
+        { type: "alimentacao", mode: "fixed", perDay: 0, days: 0, amount: row.foodCents },
+        { type: "mobilidade", mode: "per_day", perDay: row.transportPerDayCents, days: row.workingDays, amount: row.transportCents },
       ].filter((item) => item.amount > 0);
       const headerType = items.length === 1 ? items[0].type : "multiplo";
-      const notes = row.benefitNotes ? `${note} · ${row.benefitNotes}`.slice(0, 500) : note;
+      const notes = [note, row.reviewNote, row.benefitNotes].filter(Boolean).join(" · ").slice(0, 500);
       statements.push(
         database
           .prepare(
@@ -252,9 +270,9 @@ export async function POST(request: Request) {
               `INSERT INTO hr_benefit_items
                 (id, benefit_id, type, amount_mode, per_day_rate_cents, working_days,
                  amount_cents, discount_cents, created_by, created_at)
-               VALUES (?1, ?2, ?3, 'per_day', ?4, ?5, ?6, 0, ?7, CURRENT_TIMESTAMP)`,
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, CURRENT_TIMESTAMP)`,
             )
-            .bind(crypto.randomUUID(), benefitId, item.type, item.perDay, row.workingDays, item.amount, actor.id),
+            .bind(crypto.randomUUID(), benefitId, item.type, item.mode, item.perDay, item.days, item.amount, actor.id),
         );
       }
     }
@@ -272,5 +290,35 @@ export async function POST(request: Request) {
     }
     console.error("Não foi possível gerar os benefícios do ciclo.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL GERAR OS BENEFÍCIOS DO CICLO." }, 500);
+  }
+}
+
+export async function PUT(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManagePayroll(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ALTERAR AS REGRAS DE BENEFÍCIOS." }, 403);
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+  try {
+    const body = (await request.json()) as JsonMap;
+    const rules = parseBenefitRules(body.rules);
+    const database = await getD1();
+    await database
+      .prepare(
+        `INSERT INTO hr_settings (key, value_json, updated_by, updated_by_name, updated_at)
+         VALUES ('benefit_rules', ?1, ?2, ?3, ?4)
+         ON CONFLICT (key) DO UPDATE SET value_json=excluded.value_json, updated_by=excluded.updated_by,
+           updated_by_name=excluded.updated_by_name, updated_at=excluded.updated_at`,
+      )
+      .bind(JSON.stringify(rules), actor.id, actorName(actor), new Date().toISOString())
+      .run();
+    return jsonResponse({ saved: true, rules });
+  } catch (error) {
+    console.error("Não foi possível salvar as regras de benefícios.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR AS REGRAS DE BENEFÍCIOS." }, 500);
   }
 }

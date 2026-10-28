@@ -4308,7 +4308,11 @@ test("RH Financeiro: ciclo 20→19 de Benefícios e DRE Funcionário ligados a p
   assert.match(html, /rhDreFuncionario:'payroll'/);
   assert.match(html, /data-rh-beneficio-tab="ciclo"/);
   assert.match(html, /rhApiRequest\('\/benefit-cycle\?'/);
-  assert.match(html, /id="rhEmployeeFoodPerDay"/);
+  assert.doesNotMatch(html, /id="rhEmployeeFoodPerDay"/);
+  assert.match(html, /data-rh-beneficio-tab="regras"/);
+  assert.match(html, /id="rhBeneficioRegrasForm"/);
+  assert.match(html, /data-rh-ciclo-field="transportDays"/);
+  assert.match(html, /adjustments\n      \}\)\}\);/);
   assert.match(html, /id="recAsoDate"/);
 
   assert.match(workerSource, /"\/rh\/dre-funcionario"/);

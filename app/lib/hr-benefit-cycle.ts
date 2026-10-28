@@ -1,24 +1,14 @@
 // Ciclo de benefícios (RH Financeiro) — lógica pura, sem banco.
 //
-// Regras confirmadas com o usuário:
+// Regras confirmadas com o usuário (28/10/2026):
 //  - A competência AAAA-MM cobre do dia 20 desse mês ao dia 19 do mês
 //    seguinte (ex.: 2026-09 = 20/09/2026 a 19/10/2026) — não o mês civil.
-//  - 5x2: dias trabalhados = segunda a sexta do ciclo, menos feriados que
-//    caem em dia útil.
-//  - 6x1: quando o funcionário tem loja lançada no módulo Escalas e Folgas
-//    em TODOS os meses que o ciclo toca, usa as folgas reais de lá
-//    (domingos fora da escala de domingo trabalhado + folgas seg–sáb
-//    lançadas) — dias = dias do ciclo − folgas − feriados que não caíram em
-//    folga. Sem esses dados, cai na fórmula dias do ciclo × 6/7 (arredondado)
-//    menos feriados do ciclo.
-// A mesma regra de "folga de domingo" do relatório de Escalas é repetida
-// aqui de propósito só como leitura (domingo sem registro de trabalho =
-// folga), sem gravar nada no módulo de Escalas.
+//  - Alimentação = valor cheio da escala; transporte = valor por dia × dias
+//    exatos do ciclo (5x2: seg–sex; 6x1: seg–sáb). Ver countedDaysInCycle.
 
 import type { WorkSchedule } from "./working-days";
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
-const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
 export const BENEFIT_CYCLE_START_DAY = 20;
 export const BENEFIT_CYCLE_END_DAY = 19;
@@ -75,102 +65,50 @@ function weekdayOf(date: string) {
   return new Date(`${date}T00:00:00Z`).getUTCDay();
 }
 
-export function dateInCycle(date: string, cycle: BenefitCycle) {
-  return DATE_PATTERN.test(date) && date >= cycle.start && date <= cycle.end;
+export type BenefitRule = {
+  /** Alimentação: valor CHEIO do ciclo. */
+  foodCents: number;
+  /** Transporte: valor por dia contado. */
+  transportPerDayCents: number;
+};
+export type BenefitRules = Record<WorkSchedule, BenefitRule>;
+
+// Valores da aba REGRAS de Benefícios (hr_settings, chave "benefit_rules").
+export const DEFAULT_BENEFIT_RULES: BenefitRules = {
+  "5x2": { foodCents: 24500, transportPerDayCents: 900 },
+  "6x1": { foodCents: 50000, transportPerDayCents: 900 },
+};
+
+function cents(value: unknown, fallback: number) {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 0 ? number : fallback;
 }
 
-function holidaysInCycle(cycle: BenefitCycle, holidayDates: string[]) {
-  return [...new Set(holidayDates)].filter((date) => dateInCycle(date, cycle));
-}
-
-/** Dias trabalhados pela fórmula (sem dados reais de escala). */
-export function formulaWorkingDaysInCycle(
-  cycle: BenefitCycle,
-  schedule: WorkSchedule,
-  holidayDates: string[] = [],
-): number {
-  const dates = cycleDates(cycle);
-  const holidays = holidaysInCycle(cycle, holidayDates);
-  if (schedule === "5x2") {
-    const weekdays = dates.filter((date) => {
-      const wd = weekdayOf(date);
-      return wd !== 0 && wd !== 6;
-    }).length;
-    const holidaysOnWeekdays = holidays.filter((date) => {
-      const wd = weekdayOf(date);
-      return wd !== 0 && wd !== 6;
-    }).length;
-    return Math.max(0, weekdays - holidaysOnWeekdays);
+/** Regras salvas (JSON) com os padrões para o que faltar ou for inválido. */
+export function parseBenefitRules(value: unknown): BenefitRules {
+  let data: Record<string, Record<string, unknown>> = {};
+  try {
+    data = typeof value === "string" ? JSON.parse(value) : (value as typeof data) ?? {};
+  } catch {
+    data = {};
   }
-  const worked = Math.round((dates.length * 6) / 7);
-  return Math.max(0, worked - holidays.length);
+  const rule = (schedule: WorkSchedule): BenefitRule => ({
+    foodCents: cents(data?.[schedule]?.foodCents, DEFAULT_BENEFIT_RULES[schedule].foodCents),
+    transportPerDayCents: cents(data?.[schedule]?.transportPerDayCents, DEFAULT_BENEFIT_RULES[schedule].transportPerDayCents),
+  });
+  return { "5x2": rule("5x2"), "6x1": rule("6x1") };
 }
-
-export type ScheduleData = {
-  /** Meses (AAAA-MM) em que o funcionário tem loja lançada no Escalas. */
-  assignedMonths: string[];
-  /** Domingos (AAAA-MM-DD) em que está escalado para trabalhar. */
-  sundayWorkDates: string[];
-  /** Folgas de segunda a sábado lançadas (AAAA-MM-DD). */
-  weekdayOffDates: string[];
-};
-
-export type CycleWorkingDays = {
-  workingDays: number;
-  /** 'escalas' = folgas reais do módulo Escalas; 'formula' = aproximação. */
-  source: "escalas" | "formula";
-  /** Folgas consideradas (só quando source = 'escalas'). */
-  offDays: number;
-  holidays: number;
-};
 
 /**
- * Escalas só é usado quando cobre o ciclo inteiro — loja lançada nos dois
- * meses que o ciclo toca. Cobertura parcial misturaria dia real com
- * aproximação no mesmo número, então cai tudo na fórmula.
+ * Dias exatos do ciclo: 5x2 = segunda a sexta; 6x1 = segunda a sábado.
+ * Feriados, faltas, atestados e folgas NÃO saem daqui — são ajustados na
+ * revisão do ciclo antes do pagamento (decisão do usuário, 28/10/2026).
  */
-export function scheduleCoversCycle(cycle: BenefitCycle, data: ScheduleData | null | undefined) {
-  if (!data) return false;
-  const assigned = new Set(data.assignedMonths);
-  return cycle.months.every((month) => assigned.has(month));
-}
-
-export function workingDaysInCycle(
-  cycle: BenefitCycle,
-  schedule: WorkSchedule,
-  holidayDates: string[] = [],
-  scheduleData?: ScheduleData | null,
-): CycleWorkingDays {
-  const holidays = holidaysInCycle(cycle, holidayDates);
-  if (schedule !== "6x1" || !scheduleCoversCycle(cycle, scheduleData)) {
-    return {
-      workingDays: formulaWorkingDaysInCycle(cycle, schedule, holidayDates),
-      source: "formula",
-      offDays: 0,
-      holidays: schedule === "5x2"
-        ? holidays.filter((date) => weekdayOf(date) !== 0 && weekdayOf(date) !== 6).length
-        : holidays.length,
-    };
-  }
-
-  const sundayWork = new Set(scheduleData!.sundayWorkDates);
-  const weekdayOff = new Set(scheduleData!.weekdayOffDates);
-  const offDates = new Set<string>();
-  for (const date of cycleDates(cycle)) {
-    if (weekdayOf(date) === 0) {
-      if (!sundayWork.has(date)) offDates.add(date);
-    } else if (weekdayOff.has(date)) {
-      offDates.add(date);
-    }
-  }
-  const holidaysOnWorkDays = holidays.filter((date) => !offDates.has(date)).length;
-  const total = cycleDates(cycle).length;
-  return {
-    workingDays: Math.max(0, total - offDates.size - holidaysOnWorkDays),
-    source: "escalas",
-    offDays: offDates.size,
-    holidays: holidaysOnWorkDays,
-  };
+export function countedDaysInCycle(cycle: BenefitCycle, schedule: WorkSchedule): number {
+  return cycleDates(cycle).filter((date) => {
+    const wd = weekdayOf(date);
+    return wd !== 0 && (schedule === "6x1" || wd !== 6);
+  }).length;
 }
 
 export type CycleBenefitAmounts = {
@@ -179,13 +117,10 @@ export type CycleBenefitAmounts = {
   totalCents: number;
 };
 
-export function cycleBenefitAmounts(
-  workingDays: number,
-  foodPerDayCents: number,
-  transportPerDayCents: number,
-): CycleBenefitAmounts {
-  const days = Math.max(0, Math.round(workingDays) || 0);
-  const foodCents = days * Math.max(0, Math.round(foodPerDayCents) || 0);
-  const transportCents = days * Math.max(0, Math.round(transportPerDayCents) || 0);
+/** Alimentação cheia ± ajuste da revisão; transporte = dias × valor do dia. */
+export function cycleBenefitAmounts(rule: BenefitRule, transportDays: number, foodAdjustCents = 0): CycleBenefitAmounts {
+  const days = Math.max(0, Math.round(transportDays) || 0);
+  const foodCents = Math.max(0, rule.foodCents + (Math.round(foodAdjustCents) || 0));
+  const transportCents = days * rule.transportPerDayCents;
   return { foodCents, transportCents, totalCents: foodCents + transportCents };
 }

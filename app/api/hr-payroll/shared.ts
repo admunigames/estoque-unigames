@@ -1,10 +1,10 @@
 import { getD1 } from "../../../db";
 import {
   benefitCycle,
-  workingDaysInCycle,
+  countedDaysInCycle,
+  parseBenefitRules,
   type BenefitCycle,
-  type CycleWorkingDays,
-  type ScheduleData,
+  type BenefitRules,
 } from "../../lib/hr-benefit-cycle";
 import { isWorkSchedule } from "../../lib/working-days";
 import { normalizeChecklist, terminationError } from "../../lib/hr-rh";
@@ -444,102 +444,26 @@ export async function loadCommissionRuleText(database: Database): Promise<string
   return typeof row?.text === "string" ? row.text : "";
 }
 
-/**
- * Datas de feriado (AAAA-MM-DD) entre `start` e `end` (inclusive) que valem
- * para a loja informada: todos os 'nacional' + os 'local' daquela loja.
- */
-export async function holidayDatesBetween(
-  database: Database,
-  companyId: string,
-  start: string,
-  end: string,
-): Promise<string[]> {
-  const result = await database
-    .prepare(
-      `SELECT date FROM hr_holidays
-       WHERE date >= ?1 AND date <= ?2
-         AND (scope = 'nacional' OR (scope = 'local' AND company_id = ?3))`,
-    )
-    .bind(start, end, companyId || "")
-    .all<{ date: string }>();
-  return (result.results ?? []).map((row) => row.date);
+/** Regras da aba REGRAS de Benefícios (padrões quando nunca foram salvas). */
+export async function loadBenefitRules(database: Database): Promise<BenefitRules> {
+  const row = await database
+    .prepare("SELECT value_json AS value FROM hr_settings WHERE key='benefit_rules'")
+    .first<{ value: string }>();
+  return parseBenefitRules(row?.value ?? "{}");
 }
 
 /**
- * Lançamentos do módulo Escalas e Folgas (só leitura) dos funcionários
- * informados nos meses que o ciclo toca — base dos dias trabalhados reais
- * de quem é 6x1. Uma consulta por tabela, para o ciclo inteiro de uma vez.
+ * Dias exatos do funcionário no CICLO de benefícios da competência (20 do
+ * mês → 19 do mês seguinte) pela escala cadastrada: 5x2 = seg–sex, 6x1 =
+ * seg–sáb. Ajustes (faltas, feriados…) são feitos na revisão do ciclo.
  */
-export async function loadScheduleDataForCycle(
-  database: Database,
-  cycle: BenefitCycle,
-): Promise<Map<string, ScheduleData>> {
-  const [first, second] = cycle.months;
-  const [assignments, sundays, weekdayOffs] = await Promise.all([
-    database
-      .prepare(
-        `SELECT employee_id AS employeeId, reference_month AS referenceMonth
-         FROM hr_schedule_assignments WHERE reference_month IN (?1, ?2)`,
-      )
-      .bind(first, second)
-      .all<{ employeeId: string; referenceMonth: string }>(),
-    database
-      .prepare(
-        `SELECT employee_id AS employeeId, work_date AS date
-         FROM hr_schedule_sunday_work WHERE work_date >= ?1 AND work_date <= ?2`,
-      )
-      .bind(cycle.start, cycle.end)
-      .all<{ employeeId: string; date: string }>(),
-    database
-      .prepare(
-        `SELECT employee_id AS employeeId, off_date AS date
-         FROM hr_schedule_weekday_off WHERE off_date >= ?1 AND off_date <= ?2`,
-      )
-      .bind(cycle.start, cycle.end)
-      .all<{ employeeId: string; date: string }>(),
-  ]);
-  const byEmployee = new Map<string, ScheduleData>();
-  const entry = (employeeId: string) => {
-    let data = byEmployee.get(employeeId);
-    if (!data) {
-      data = { assignedMonths: [], sundayWorkDates: [], weekdayOffDates: [] };
-      byEmployee.set(employeeId, data);
-    }
-    return data;
-  };
-  for (const row of assignments.results ?? []) entry(row.employeeId).assignedMonths.push(row.referenceMonth);
-  for (const row of sundays.results ?? []) entry(row.employeeId).sundayWorkDates.push(row.date);
-  for (const row of weekdayOffs.results ?? []) entry(row.employeeId).weekdayOffDates.push(row.date);
-  return byEmployee;
-}
-
-/**
- * Dias trabalhados do funcionário no CICLO de benefícios da competência
- * (20 do mês → 19 do mês seguinte), pela escala cadastrada, pelos feriados
- * da loja e — para 6x1 — pelas folgas reais do módulo Escalas quando elas
- * cobrem o ciclo inteiro. Usado nos benefícios pagos por dia trabalhado.
- */
-export async function workingDaysForEmployee(
-  database: Database,
-  employee: { id: string; companyId: string; workSchedule: string },
+export function workingDaysForEmployee(
+  employee: { workSchedule: string },
   month: string,
-  preloaded?: { holidays?: Map<string, string[]>; schedules?: Map<string, ScheduleData> },
-): Promise<CycleWorkingDays & { cycle: BenefitCycle | null; schedule: "5x2" | "6x1" }> {
+): { workingDays: number; cycle: BenefitCycle | null; schedule: "5x2" | "6x1" } {
   const schedule = isWorkSchedule(employee.workSchedule) ? employee.workSchedule : "5x2";
   const cycle = benefitCycle(month);
-  if (!cycle) return { workingDays: 0, source: "formula", offDays: 0, holidays: 0, cycle, schedule };
-  const companyKey = employee.companyId || "";
-  let holidays = preloaded?.holidays?.get(companyKey);
-  if (!holidays) {
-    holidays = await holidayDatesBetween(database, companyKey, cycle.start, cycle.end);
-    preloaded?.holidays?.set(companyKey, holidays);
-  }
-  let scheduleData: ScheduleData | null = null;
-  if (schedule === "6x1") {
-    const schedules = preloaded?.schedules ?? (await loadScheduleDataForCycle(database, cycle));
-    scheduleData = schedules.get(employee.id) ?? null;
-  }
-  return { ...workingDaysInCycle(cycle, schedule, holidays, scheduleData), cycle, schedule };
+  return { workingDays: cycle ? countedDaysInCycle(cycle, schedule) : 0, cycle, schedule };
 }
 
 /**

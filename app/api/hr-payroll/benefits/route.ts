@@ -193,10 +193,9 @@ export async function POST(request: Request) {
     const employee = await loadEmployeeForMonth(database, employeeId, month);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
 
-    // Benefício pago por dia trabalhado: os dias vêm do ciclo 20→19 da
-    // competência, pela escala do funcionário, feriados da loja e (6x1) as
-    // folgas reais do módulo Escalas.
-    const { workingDays } = await workingDaysForEmployee(database, employee, month);
+    // Benefício pago por dia trabalhado: dias exatos do ciclo 20→19 da
+    // competência pela escala do funcionário (5x2 seg–sex, 6x1 seg–sáb).
+    const { workingDays } = workingDaysForEmployee(employee, month);
 
     const { items, error: itemsError } = parseBenefitItems(
       body.items,

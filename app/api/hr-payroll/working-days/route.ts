@@ -34,15 +34,12 @@ export async function GET(request: Request) {
     const database = await getD1();
     const employee = await loadEmployee(database, employeeId);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
-    const result = await workingDaysForEmployee(database, employee, month);
+    const result = workingDaysForEmployee(employee, month);
     return jsonResponse({
       employeeId,
       month,
       workSchedule: result.schedule,
       workingDays: result.workingDays,
-      source: result.source,
-      offDays: result.offDays,
-      holidays: result.holidays,
       cycleStart: result.cycle?.start ?? "",
       cycleEnd: result.cycle?.end ?? "",
     });
