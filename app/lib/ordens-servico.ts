@@ -29,6 +29,19 @@ export const OS_APPROVED_STATUS = "APROVADA";
 // depois de enviar ao cliente, a pessoa muda para PASSADO ORÇAMENTO.
 export const OS_QUOTE_PENDING_STATUS = "ORÇAMENTO PENDENTE";
 export const OS_QUOTE_READY_STATUS = "ORÇAMENTO PRONTO";
+
+/**
+ * 23612.01, 23612.02, 23612.03 são a mesma O.S. com produtos diferentes: o
+ * orçamento é um só, gravado no nº base (23612). Outros formatos ficam iguais.
+ */
+export function osBaseNumber(osNumber: string) {
+  return osNumber.replace(/^(\d+)\.\d+$/, "$1");
+}
+
+/** SQL: o orçamento q é o da O.S. (mesmo nº ou nº base + ".NN"). */
+export function quoteOfOsSql(osColumn: string) {
+  return `(q.os_number=${osColumn} OR ${osColumn} LIKE (q.os_number || '.%'))`;
+}
 // Sem conserto: o produto segue para a loja só para devolver ao cliente (a
 // loja não testa). Finaliza na hora, com SEGUE PARA A LOJA = sim (15/10/2026).
 export const OS_RETURN_STATUSES = ["NÃO AUTORIZADO", "SEM SOLUÇÃO"];

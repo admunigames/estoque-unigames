@@ -744,3 +744,39 @@ test("aba O.S. AGUARDANDO ORÇAMENTO: lista as pendentes (mais antiga primeiro) 
   assert.equal((await createQuote(NO_STORE_USER, quote({ osNumber: "FILA-1" }))).status, 201);
   assert.deepEqual((await list()).map((order) => order.osNumber), ["FILA-2"]);
 });
+
+test("O.S. 23612.01/.02/.03: um orçamento só, no nº base, e todas viram ORÇAMENTO PRONTO", async () => {
+  const insertOs = db.sqlite.prepare("INSERT INTO assist_service_orders (id, os_number, status, closed) VALUES (?, ?, ?, ?)");
+  insertOs.run("base-1", "77612.01", "ORÇAMENTO PENDENTE", 0);
+  insertOs.run("base-2", "77612.02", "ORÇAMENTO PENDENTE", 0);
+  insertOs.run("base-3", "77612.03", "ORÇAMENTO PENDENTE", 0);
+  insertOs.run("base-x", "776120.01", "ORÇAMENTO PENDENTE", 0);
+  const pending = async () => (await call(quotesRoute.GET, NO_STORE_USER, { path: "/quotes?pendingOs=1" })).body.orders
+    .filter((order) => order.osNumber.startsWith("7761"));
+  assert.equal((await pending()).length, 4);
+  // Digitado com o sufixo, grava no nº base; o segundo produto não abre outro orçamento.
+  assert.equal((await createQuote(NO_STORE_USER, quote({ osNumber: "77612.02" }))).status, 201);
+  assert.equal((await getQuotes(NO_STORE_USER, "?q=77612")).body.quotes[0].osNumber, "77612");
+  assert.equal((await createQuote(NO_STORE_USER, quote({ osNumber: "77612.03" }))).status, 409);
+  const status = (id) => db.sqlite.prepare("SELECT status FROM assist_service_orders WHERE id=?").get(id).status;
+  assert.deepEqual(["base-1", "base-2", "base-3", "base-x"].map(status),
+    ["ORÇAMENTO PRONTO", "ORÇAMENTO PRONTO", "ORÇAMENTO PRONTO", "ORÇAMENTO PENDENTE"]);
+  assert.deepEqual((await pending()).map((order) => [order.osNumber, order.quoteId]), [["776120.01", ""]]);
+});
+
+test("tela: FAZER ORÇAMENTO de 23612.01 abre o orçamento 23612 com os produtos irmãos", async () => {
+  const { runInNewContext } = await import("node:vm");
+  const base = html.match(/  function osBaseNumber\(value\)\{.*\}\n/)[0];
+  const start = html.indexOf("  function assistPendingFromOs(");
+  const ctx = {};
+  runInNewContext(base + html.slice(start, html.indexOf("\n  }\n", start) + 4) + "\nthis.from = assistPendingFromOs;", ctx);
+  const list = [
+    { osNumber: "23612.01", storeId: "s1", equipment: "SWITCH OLED" },
+    { osNumber: "23612.02", storeId: "s1", equipment: "JOY-CON" },
+    { osNumber: "23613", storeId: "s1", equipment: "PS4" },
+  ];
+  const pending = ctx.from(list[1], list);
+  assert.equal(pending.osNumber, "23612");
+  assert.equal(pending.info, "23612.01: SWITCH OLED | 23612.02: JOY-CON");
+  assert.equal(ctx.from(list[2], list).info, "PS4");
+});

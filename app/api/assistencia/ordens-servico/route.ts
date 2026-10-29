@@ -12,6 +12,8 @@ import {
   OS_RETURN_STATUSES,
   OS_STATUSES,
   OS_STORE_REJECTED_STATUS,
+  osBaseNumber,
+  quoteOfOsSql,
   recifeDate,
   type ShipToStore,
   type StoreCheck,
@@ -146,7 +148,7 @@ export async function GET(request: Request) {
       return jsonResponse({ updates: result.results ?? [] });
     }
 
-    // PDF do orçamento ligado à O.S. (mesmo nº): quem vê a O.S. abre o PDF —
+    // PDF do orçamento ligado à O.S. (mesmo nº ou nº base de 23612.01…): quem vê a O.S. abre o PDF —
     // inclusive a loja da O.S., para enviar ao cliente (29/10/2026).
     const quoteFor = safeText(url.searchParams.get("quote"), 80);
     if (quoteFor) {
@@ -155,7 +157,7 @@ export async function GET(request: Request) {
         ? await database.prepare("SELECT os_number AS osNumber FROM assist_service_orders WHERE id=?1").bind(order.id).first<{ osNumber: string }>()
         : null;
       const quote = osRow
-        ? await database.prepare(`${QUOTE_SELECT} WHERE os_number=?1 LIMIT 1`).bind(String(osRow.osNumber)).first<QuoteRow>()
+        ? await database.prepare(`${QUOTE_SELECT} WHERE os_number=?1 LIMIT 1`).bind(osBaseNumber(String(osRow.osNumber))).first<QuoteRow>()
         : null;
       if (!quote) return jsonResponse({ error: "ORÇAMENTO NÃO ENCONTRADO PARA ESTA O.S." }, 404);
       return jsonResponse(await loadQuoteDetail(database, quote));
@@ -170,8 +172,8 @@ export async function GET(request: Request) {
               ship_to_store AS shipToStore, ship_by_name AS shipByName, ship_at AS shipAt,
               store_check AS storeCheck, store_check_by_name AS storeCheckByName, store_check_at AS storeCheckAt,
               store_check_note AS storeCheckNote,
-              (SELECT q.id FROM assist_quotes q WHERE q.os_number=assist_service_orders.os_number LIMIT 1) AS quoteId,
-              (SELECT q.total_cents FROM assist_quotes q WHERE q.os_number=assist_service_orders.os_number LIMIT 1) AS quoteTotalCents,
+              (SELECT q.id FROM assist_quotes q WHERE ${quoteOfOsSql("assist_service_orders.os_number")} LIMIT 1) AS quoteId,
+              (SELECT q.total_cents FROM assist_quotes q WHERE ${quoteOfOsSql("assist_service_orders.os_number")} LIMIT 1) AS quoteTotalCents,
               created_by_name AS createdByName, created_at AS createdAt, updated_by_name AS updatedByName, updated_at AS updatedAt
        FROM assist_service_orders WHERE canceled=0 AND closed=?1${storeFilter}
        ORDER BY ${closed ? "closed_at DESC LIMIT 300" : "deadline"}`,

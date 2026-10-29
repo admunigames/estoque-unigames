@@ -24292,7 +24292,7 @@ function renderHomeTasks(){
     try{
       const {orders} = await assistApi('/quotes?pendingOs=1');
       assistState.pending = orders;
-      el('assistPendingCount').textContent = '('+orders.length+')';
+      el('assistPendingCount').textContent = '('+assistPendingGroups().length+')';
       setAssistStatus('assistPendingStatus', '');
       assistRenderPending();
     }catch(error){
@@ -24305,27 +24305,52 @@ function renderHomeTasks(){
     return days <= 0 ? 'HOJE' : days === 1 ? 'HÁ 1 DIA' : 'HÁ '+days+' DIAS';
   }
 
+  // 23612.01, 23612.02… = mesma O.S. com produtos diferentes: um orçamento só,
+  // gravado no nº base (23612), e uma linha só na fila.
+  function osBaseNumber(value){ return String(value || '').replace(/^(\d+)\.\d+$/, '$1'); }
+  function assistPendingGroups(){
+    const groups = [];
+    (assistState.pending || []).forEach(order => {
+      const base = osBaseNumber(order.osNumber);
+      let group = groups.find(item => item.base === base);
+      if(!group) groups.push(group = {base, orders:[]});
+      group.orders.push(order);
+    });
+    return groups;
+  }
+  function assistPendingFromOs(order, list){
+    const base = osBaseNumber(order.osNumber);
+    const group = list.filter(item => osBaseNumber(item.osNumber) === base);
+    const describe = item => [item.equipment || item.category, item.situation, item.lastUpdateText].filter(Boolean).join(' · ');
+    return {osNumber:base, companyId:order.storeId,
+      info:group.length > 1 ? group.map(item => item.osNumber+': '+describe(item)).join(' | ') : describe(order)};
+  }
+
   function assistRenderPending(){
     const body = el('assistPendingBody');
-    const rows = assistState.pending || [];
-    if(!rows.length){
+    const groups = assistPendingGroups();
+    if(!groups.length){
       body.innerHTML = '<tr><td colspan="6" class="responsive-empty">NENHUMA O.S. AGUARDANDO ORÇAMENTO.</td></tr>';
       return;
     }
-    body.innerHTML = rows.map(order =>
-      '<tr>'+
-        '<td data-label="O.S."><strong>'+escapeHtml(order.osNumber)+'</strong></td>'+
-        '<td data-label="LOJA">'+escapeHtml(order.storeName || '—')+'</td>'+
-        '<td data-label="EQUIPAMENTO"><div>'+escapeHtml(order.equipment || '—')+'<span class="div-cell-sub">'+escapeHtml(order.category || '')+'</span></div></td>'+
-        '<td data-label="OBSERVAÇÕES"><div>'+escapeHtml(order.situation || '—')+(order.lastUpdateText ? '<span class="div-cell-sub">'+escapeHtml(order.lastUpdateText)+'</span>' : '')+'</div></td>'+
-        '<td data-label="AGUARDANDO DESDE"><div>'+escapeHtml(formatDateBR(String(order.since).slice(0, 10)) || '—')+'<span class="div-cell-sub">'+assistWaitingLabel(order.since)+'</span></div></td>'+
+    const each = (orders, cell) => orders.map(order => '<div>'+cell(order)+'</div>').join('');
+    body.innerHTML = groups.map(({base, orders}) => {
+      const first = orders[0];
+      const quoteId = (orders.find(order => order.quoteId) || {}).quoteId;
+      const prefix = order => orders.length > 1 ? escapeHtml(order.osNumber)+': ' : '';
+      return '<tr>'+
+        '<td data-label="O.S."><div><strong>'+escapeHtml(base)+'</strong>'+(orders.length > 1 ? '<span class="div-cell-sub">'+orders.length+' PRODUTOS · UM ORÇAMENTO</span>' : '')+'</div></td>'+
+        '<td data-label="LOJA">'+escapeHtml(first.storeName || '—')+'</td>'+
+        '<td data-label="EQUIPAMENTO">'+each(orders, order => prefix(order)+escapeHtml(order.equipment || '—')+'<span class="div-cell-sub">'+escapeHtml(order.category || '')+'</span>')+'</td>'+
+        '<td data-label="OBSERVAÇÕES">'+each(orders, order => prefix(order)+escapeHtml(order.situation || '—')+(order.lastUpdateText ? '<span class="div-cell-sub">'+escapeHtml(order.lastUpdateText)+'</span>' : ''))+'</td>'+
+        '<td data-label="AGUARDANDO DESDE"><div>'+escapeHtml(formatDateBR(String(first.since).slice(0, 10)) || '—')+'<span class="div-cell-sub">'+assistWaitingLabel(first.since)+'</span></div></td>'+
         '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
-          (order.quoteId
-            ? '<button class="btn-outline" type="button" data-assist-pending-edit="'+escapeHtml(order.quoteId)+'">ABRIR ORÇAMENTO</button>'
-            : '<button class="btn-accent" type="button" data-assist-pending="'+escapeHtml(order.id)+'">FAZER ORÇAMENTO</button>')+
+          (quoteId
+            ? '<button class="btn-outline" type="button" data-assist-pending-edit="'+escapeHtml(quoteId)+'">ABRIR ORÇAMENTO</button>'
+            : '<button class="btn-accent" type="button" data-assist-pending="'+escapeHtml(first.id)+'">FAZER ORÇAMENTO</button>')+
         '</div></td>'+
-      '</tr>'
-    ).join('');
+      '</tr>';
+    }).join('');
   }
 
   el('assistPendingBody').addEventListener('click', event => {
@@ -24334,8 +24359,7 @@ function renderHomeTasks(){
     const button = event.target.closest('[data-assist-pending]');
     const order = button && (assistState.pending || []).find(item => item.id === button.dataset.assistPending);
     if(!order) return;
-    assistPendingOs = {osNumber:order.osNumber, companyId:order.storeId,
-      info:[order.equipment || order.category, order.situation, order.lastUpdateText].filter(Boolean).join(' · ')};
+    assistPendingOs = assistPendingFromOs(order, assistState.pending || []);
     assistApplyPendingOs();
     window.scrollTo({top:0, behavior:'smooth'});
   });
@@ -24354,7 +24378,7 @@ function renderHomeTasks(){
     setAssistTab('novo');
     assistRenderCompanySelects();
     assistSchedulePreview();
-    el('assistOsBannerText').textContent = 'ORÇAMENTO DA O.S. '+pending.osNumber+(pending.info ? ' · '+pending.info : '')+' — AO SALVAR, A O.S. VOLTA PARA ORDENS DE SERVIÇO COMO ORÇAMENTO PRONTO.';
+    el('assistOsBannerText').textContent = 'ORÇAMENTO DA O.S. '+pending.osNumber+(pending.info ? ' · '+pending.info : '')+' — AO SALVAR, A(S) O.S. VOLTA(M) PARA ORDENS DE SERVIÇO COMO ORÇAMENTO PRONTO.';
     el('assistOsBanner').hidden = false;
     el('assistClientName').focus();
   }
@@ -30782,8 +30806,7 @@ function renderHomeTasks(){
     const order = ((osData && osData.orders) || []).find(row => row.id === id);
     if(!order) return;
     if(button.dataset.osQuoteNew){
-      assistPendingOs = {osNumber:order.osNumber, companyId:order.storeId,
-        info:[order.equipment || order.category, order.situation, order.lastUpdateText].filter(Boolean).join(' · ')};
+      assistPendingOs = assistPendingFromOs(order, osData.orders);
       navigateToPage('assistenciaOrcamentos');
       return;
     }

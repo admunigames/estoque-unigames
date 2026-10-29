@@ -2,7 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { hasCompany } from "../../../lib/access-scope";
 import { isDateOnly, isUniqueViolation, parseQuote, upper } from "../../../lib/assistencia";
-import { OS_QUOTE_PENDING_STATUS } from "../../../lib/ordens-servico";
+import { OS_QUOTE_PENDING_STATUS, quoteOfOsSql } from "../../../lib/ordens-servico";
 import {
   buildPayments,
   canManage,
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
                   o.deadline, o.situation, o.last_update_text AS lastUpdateText,
                   COALESCE((SELECT MAX(u.created_at) FROM assist_service_order_updates u
                             WHERE u.order_id=o.id AND u.update_text LIKE ?2), o.created_at) AS since,
-                  (SELECT q.id FROM assist_quotes q WHERE q.os_number=o.os_number LIMIT 1) AS quoteId
+                  (SELECT q.id FROM assist_quotes q WHERE ${quoteOfOsSql("o.os_number")} LIMIT 1) AS quoteId
            FROM assist_service_orders o
            WHERE o.status=?1 AND o.canceled=0 AND o.closed=0
            ORDER BY since, o.os_number`,

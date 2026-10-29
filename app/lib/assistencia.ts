@@ -1,4 +1,5 @@
 import { isValidCpfOrCnpj } from "./br-documents";
+import { osBaseNumber } from "./ordens-servico";
 
 // Assistência > Orçamentos — regras puras (sem banco), usadas pelas rotas de
 // app/api/assistencia/** e testadas direto em tests/assistencia.test.mjs.
@@ -191,7 +192,7 @@ export function parseQuote(body: unknown): { quote: ParsedQuote } | { error: str
   const entry = (body && typeof body === "object" ? body : {}) as JsonMap;
   const companyId = text(entry.companyId, 80);
   if (!companyId) return { error: "ESCOLHA A LOJA." };
-  const osNumber = normalizeOsNumber(entry.osNumber);
+  const osNumber = osBaseNumber(normalizeOsNumber(entry.osNumber));
   if (!osNumber) return { error: "INFORME O Nº DA OS." };
   if (!isValidOsNumber(osNumber)) return { error: "Nº DA OS INVÁLIDO (USE SÓ NÚMEROS E LETRAS)." };
   const entryDate = text(entry.entryDate, 10);

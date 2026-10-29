@@ -282,15 +282,16 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
 }
 
 /**
- * O.S. em ORÇAMENTO PENDENTE com o mesmo nº vira ORÇAMENTO PRONTO quando o
- * orçamento é salvo (criar ou editar), com o registro no histórico da O.S.
+ * O.S. em ORÇAMENTO PENDENTE com o mesmo nº (ou nº base + ".NN": 23612.01,
+ * 23612.02…) vira ORÇAMENTO PRONTO quando o orçamento é salvo (criar ou
+ * editar), com o registro no histórico da O.S.
  */
 export async function serviceOrderQuoteStatements(
   database: D1Database, osNumber: string, totalCents: number, actor: Identity, now: string,
 ) {
   const result = await database
-    .prepare("SELECT id FROM assist_service_orders WHERE os_number=?1 AND status=?2 AND canceled=0 AND closed=0")
-    .bind(osNumber, OS_QUOTE_PENDING_STATUS)
+    .prepare("SELECT id FROM assist_service_orders WHERE (os_number=?1 OR os_number LIKE ?3) AND status=?2 AND canceled=0 AND closed=0")
+    .bind(osNumber, OS_QUOTE_PENDING_STATUS, `${osNumber}.%`)
     .all<{ id: string }>();
   const total = (totalCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   return (result.results ?? []).flatMap(({ id }) => [

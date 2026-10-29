@@ -202,4 +202,15 @@ test("ligação com Orçamentos: status novos, valor e PDF do orçamento na O.S.
   assert.equal((await call(LOJA_B_TESTE, "GET", undefined, `?quote=${withQuote.id}`)).status, 404);
   const other = data.orders.find((row) => row.osNumber === "ORC-2");
   assert.equal((await call(TECNICO, "GET", undefined, `?quote=${other.id}`)).status, 404);
+  // 23612.01 / 23612.02: o orçamento do nº base vale para os dois produtos.
+  assert.equal((await call(TECNICO, "POST", order("88612.01", shift(4)))).status, 201);
+  assert.equal((await call(TECNICO, "POST", order("88612.02", shift(4)))).status, 201);
+  db.insert("assist_quotes", {
+    id: "q-base", os_number: "88612", company_id: A, company_name: "LOJA ALFA", entry_date: "2026-10-29",
+    client_name: "CLIENTE", total_cents: 30000, created_at: "2026-10-29T10:00:00Z", updated_at: "2026-10-29T10:00:00Z",
+  });
+  const rows = (await (await call(TECNICO, "GET")).json()).orders.filter((row) => row.osNumber.startsWith("88612"));
+  assert.deepEqual(rows.map((row) => [row.osNumber, row.quoteId, row.quoteTotalCents]).sort(),
+    [["88612.01", "q-base", 30000], ["88612.02", "q-base", 30000]]);
+  assert.equal((await (await call(LOJA_A, "GET", undefined, `?quote=${rows[1].id}`)).json()).quote.osNumber, "88612");
 });
