@@ -4046,6 +4046,17 @@
       display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
     }
     body.rma-printing #rmaPrintBody{display:block !important; width:100%; color:#111827;}
+    /* Lista de peças do Estoque Assistência: só a lista. */
+    body.ast-printing > :not(.shell),
+    body.ast-printing .shell > :not(.content),
+    body.ast-printing .content > :not(#pageAssistenciaEstoque),
+    body.ast-printing #pageAssistenciaEstoque > :not(#astPrintBody){display:none !important;}
+    body.ast-printing .shell,body.ast-printing .content,body.ast-printing #pageAssistenciaEstoque{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.ast-printing #astPrintBody{display:block !important; width:100%; color:#111827;}
+    .ast-print-list{margin:0; padding:0 0 0 28px; columns:2; column-gap:28px; font-size:10px; line-height:1.45;}
+    .ast-print-list li{break-inside:avoid; padding:2px 0; border-bottom:1px solid #d1d5db;}
     /* PDFs do Inventário (diretor, recontagem, Pontti): só o relatório. */
     body.inv-printing > :not(.shell),
     body.inv-printing .shell > :not(.content),
@@ -8011,6 +8022,7 @@
         </div>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnAstReload" type="button">ATUALIZAR</button>
+          <button class="btn-outline" id="btnAstPrint" type="button">LISTA DE PEÇAS (PDF)</button>
           <button class="btn-accent" id="btnAstNew" type="button" hidden>NOVO ITEM</button>
         </div>
       </header>
@@ -8034,6 +8046,7 @@
           </table>
         </div>
       </div>
+      <div class="print-only" id="astPrintBody"></div>
     </section>
 
     <!-- ================= ASSISTÊNCIA / CONSULTA DE PREÇOS ================= -->
@@ -29658,6 +29671,36 @@ function renderHomeTasks(){
   el('astSearch') && el('astSearch').addEventListener('input', debounce(renderAst, 120));
   el('astFilter') && el('astFilter').addEventListener('change', renderAst);
   el('btnAstReload') && el('btnAstReload').addEventListener('click', loadAstPage);
+
+  // PDF (A4): só a nomenclatura das peças, por categoria e em ordem alfabética,
+  // sem quantidade. Aba TODOS = todas as categorias; aba de categoria = só ela.
+  function astPrintList(){
+    if(!astData) return;
+    const categories = astTab ? [astTab] : astData.categories;
+    const groups = categories
+      .map(category => ({category, names: astData.items.filter(item => item.category === category).map(item => item.name).sort((a, b) => a.localeCompare(b, 'pt-BR'))}))
+      .filter(group => group.names.length);
+    if(!groups.length) return showPurchaseToast('NENHUMA PEÇA CADASTRADA.', 'error');
+    const total = groups.reduce((sum, group) => sum + group.names.length, 0);
+    el('astPrintBody').innerHTML =
+      '<header class="print-report-header"><div class="print-report-kicker">ASSISTÊNCIA · ESTOQUE</div>'+
+      '<h1>LISTA DE PEÇAS'+(astTab ? ' — '+escapeHtml(astTab) : '')+'</h1>'+
+      '<div class="print-report-meta">'+total+' PEÇAS · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></header>'+
+      groups.map(group => '<section class="os-print-section"><h2>'+escapeHtml(group.category)+' ('+group.names.length+')</h2>'+
+        '<ol class="ast-print-list">'+group.names.map(name => '<li>'+escapeHtml(name)+'</li>').join('')+'</ol></section>').join('');
+    astPrintTitleBefore = document.title;
+    document.title = 'PECAS-ASSISTENCIA-'+(astTab ? astTab.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-')+'-' : '')+todayDateKeyRecife();
+    document.body.classList.add('pdf-export', 'ast-printing');
+    window.print();
+  }
+  let astPrintTitleBefore = '';
+  window.addEventListener('afterprint', () => {
+    if(!astPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export', 'ast-printing');
+    document.title = astPrintTitleBefore;
+    astPrintTitleBefore = '';
+  });
+  el('btnAstPrint') && el('btnAstPrint').addEventListener('click', astPrintList);
   el('btnAstNew') && el('btnAstNew').addEventListener('click', () => astOpenItem(null));
   document.querySelectorAll('#astItemDialog [data-ast-close],#astMoveDialog [data-ast-close],#astHistoryDialog [data-ast-close]').forEach(button =>
     button.addEventListener('click', () => { const dialog = button.closest('dialog'); if(dialog.open) dialog.close(); }));

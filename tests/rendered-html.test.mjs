@@ -5753,3 +5753,31 @@ test("Maquinetas > ARQUIVO DE VENDAS: filtros na prévia para escolher o que imp
   assert.match(html, /const rows = file\.rows\.filter\(row => !cardSalesExcluded\.has\(f\+':'\+row\.line\)\);/);
   assert.match(html, /\['missing', 'SEM TAXA CADASTRADA'/);
 });
+
+test("Estoque Assistência: LISTA DE PEÇAS (PDF) só com os nomes, por categoria e em ordem alfabética", async () => {
+  const { runInNewContext } = await import("node:vm");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /<button class="btn-outline" id="btnAstPrint" type="button">LISTA DE PEÇAS \(PDF\)<\/button>/);
+  const nodes = {};
+  const node = (id) => (nodes[id] ||= { innerHTML: "", addEventListener() {} });
+  const printed = [];
+  const context = {
+    el: node, astTab: "", currentSession: { displayName: "TESTE" },
+    astData: { categories: ["PROCESSADOR", "SSD", "FONTE"], items: [
+      { category: "SSD", name: "SSD 480GB", quantity: 0 }, { category: "PROCESSADOR", name: "RYZEN 5 4500", quantity: 20 },
+      { category: "PROCESSADOR", name: "I3-4130", quantity: 76 }, { category: "SSD", name: "SSD 240GB", quantity: 3 },
+    ] },
+    escapeHtml: String, formatDateTimeBR: () => "29/10/2026 10:00", todayDateKeyRecife: () => "2026-10-29",
+    showPurchaseToast() {}, document: { title: "UNIGAMES", body: { classList: { add() {}, remove() {} } } },
+  };
+  context.window = { addEventListener() {}, print: () => printed.push({ title: context.document.title, body: node("astPrintBody").innerHTML }) };
+  const fn = html.slice(html.indexOf("  function astPrintList("), html.indexOf("  el('btnAstPrint')"));
+  runInNewContext(fn + "\nthis.print = astPrintList;", context);
+  context.print();
+  assert.equal(printed[0].title, "PECAS-ASSISTENCIA-2026-10-29");
+  const body = printed[0].body;
+  assert.match(body, /LISTA DE PEÇAS<\/h1>[\s\S]*4 PEÇAS/);
+  assert.deepEqual([...body.matchAll(/<h2>([^<]+)<\/h2>/g)].map((m) => m[1]), ["PROCESSADOR (2)", "SSD (2)"]);
+  assert.deepEqual([...body.matchAll(/<li>([^<]+)<\/li>/g)].map((m) => m[1]), ["I3-4130", "RYZEN 5 4500", "SSD 240GB", "SSD 480GB"]);
+  assert.doesNotMatch(body, /\b(76|20)\b/); // sem quantidade
+});
