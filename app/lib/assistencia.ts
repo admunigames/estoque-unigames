@@ -1,4 +1,4 @@
-import { isValidCpf } from "./br-documents";
+import { isValidCpfOrCnpj } from "./br-documents";
 
 // Assistência > Orçamentos — regras puras (sem banco), usadas pelas rotas de
 // app/api/assistencia/** e testadas direto em tests/assistencia.test.mjs.
@@ -204,7 +204,8 @@ export function parseQuote(body: unknown): { quote: ParsedQuote } | { error: str
     return { error: "INFORME O TELEFONE DO CLIENTE COM DDD." };
   }
   const clientCpf = onlyDigits(entry.clientCpf);
-  if (clientCpf && !isValidCpf(clientCpf)) return { error: "CPF DO CLIENTE INVÁLIDO." };
+  // Cliente pessoa física (CPF) ou empresa (CNPJ); a coluna continua client_cpf.
+  if (clientCpf && !isValidCpfOrCnpj(clientCpf)) return { error: "CPF OU CNPJ DO CLIENTE INVÁLIDO." };
   const clientAddress = text(entry.clientAddress, 400);
 
   const keys = Array.isArray(entry.observations) ? entry.observations : [];

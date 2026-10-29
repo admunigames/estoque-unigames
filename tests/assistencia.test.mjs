@@ -366,7 +366,9 @@ test("validação: diz o que falta", async () => {
     [{ companyId: "cnaoexiste1" }, "LOJA NÃO ENCONTRADA."],
     [{ osNumber: "" }, "INFORME O Nº DA OS."],
     [{ clientPhone: "9999" }, "INFORME O TELEFONE DO CLIENTE COM DDD."],
-    [{ clientCpf: "111.111.111-11" }, "CPF DO CLIENTE INVÁLIDO."],
+    [{ clientCpf: "111.111.111-11" }, "CPF OU CNPJ DO CLIENTE INVÁLIDO."],
+    [{ clientCpf: "59.601.284/0001-15" }, "CPF OU CNPJ DO CLIENTE INVÁLIDO."],
+    [{ clientCpf: "1234567" }, "CPF OU CNPJ DO CLIENTE INVÁLIDO."],
     [{ equipments: [] }, "INCLUA PELO MENOS UM EQUIPAMENTO."],
     [{ equipments: [{ category: "CONSOLES", device: "PS5 PRO", lines: [] }] }, "EQUIPAMENTO 1: INCLUA PELO MENOS UM DEFEITO OU ITEM AVULSO."],
     // "Sob orçamento" sem valor digitado
@@ -385,6 +387,11 @@ test("validação: diz o que falta", async () => {
   assert.equal(ok.status, 201);
   assert.equal(db.sqlite.prepare("SELECT client_cpf AS cpf FROM assist_quotes WHERE id=?").get(ok.body.id).cpf, "52998224725");
   assert.equal((await deleteQuote(NO_STORE_USER, ok.body.id)).status, 200);
+  // Cliente empresa: CNPJ válido também é aceito.
+  const company = await createQuote(NO_STORE_USER, quote({ osNumber: "70001", clientCpf: "59.601.284/0001-14" }));
+  assert.equal(company.status, 201);
+  assert.equal(db.sqlite.prepare("SELECT client_cpf AS cpf FROM assist_quotes WHERE id=?").get(company.body.id).cpf, "59601284000114");
+  assert.equal((await deleteQuote(NO_STORE_USER, company.body.id)).status, 200);
 });
 
 test("editar orçamento com vários equipamentos e defeitos (regressão do React #31) e excluir", async () => {
@@ -667,4 +674,19 @@ test("OBSERVAÇÃO do defeito: cadastrar/editar na tabela, cópia na linha do or
   // PDF: a observação sai embaixo do nome do defeito.
   assert.match(html, /\(line\.defectName && line\.defectNote \? '<div class="assist-doc-note">'\+escapeHtml\(line\.defectNote\)\+'<\/div>' : ''\)/);
   assert.match(html, /defectNote:defect\.note \|\| '',/);
+});
+
+test("tela: CPF OU CNPJ do cliente e DIAGNÓSTICO OU DEFEITO no equipamento (formulário e PDF)", async () => {
+  const { runInNewContext } = await import("node:vm");
+  const fns = ["assistDigits", "assistGroupDigits", "assistFormatCpf", "assistFormatCnpj", "assistFormatDoc"]
+    .map((name) => { const start = html.indexOf(`  function ${name}(`); return html.slice(start, html.indexOf("\n  }\n", start) + 4); }).join("\n");
+  const ctx = {};
+  runInNewContext(fns + "\nthis.fmt = assistFormatDoc;", ctx);
+  assert.equal(ctx.fmt("52998224725"), "529.982.247-25");
+  assert.equal(ctx.fmt("59601284000114"), "59.601.284/0001-14");
+  assert.match(html, /<label for="assistClientCpf">CPF OU CNPJ \(OPCIONAL\)<\/label><input id="assistClientCpf" inputmode="numeric" maxlength="18"/);
+  assert.match(html, /\(assistDigits\(data\.clientCpf\)\.length === 14 \? 'CNPJ' : 'CPF'\)/);
+  assert.match(html, /DIAGNÓSTICO OU DEFEITO \(OPCIONAL\)/);
+  assert.match(html, /<b>DIAGNÓSTICO OU DEFEITO:<\/b>/);
+  assert.doesNotMatch(html, /SERVIÇO REALIZADO/);
 });

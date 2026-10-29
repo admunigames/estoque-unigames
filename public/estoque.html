@@ -5255,7 +5255,7 @@
             <div class="purchase-form-grid">
               <div class="purchase-field full"><label for="assistClientName">NOME *</label><input id="assistClientName" maxlength="160" autocomplete="off"></div>
               <div class="purchase-field"><label for="assistClientPhone">TELEFONE *</label><input id="assistClientPhone" inputmode="tel" maxlength="16" autocomplete="off" placeholder="(81) 99999-9999"></div>
-              <div class="purchase-field"><label for="assistClientCpf">CPF (OPCIONAL)</label><input id="assistClientCpf" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="000.000.000-00"></div>
+              <div class="purchase-field"><label for="assistClientCpf">CPF OU CNPJ (OPCIONAL)</label><input id="assistClientCpf" inputmode="numeric" maxlength="18" autocomplete="off" placeholder="CPF OU CNPJ"></div>
               <div class="purchase-field full"><label for="assistClientAddress">ENDEREÇO (OPCIONAL)</label><textarea id="assistClientAddress" rows="2" maxlength="400"></textarea></div>
             </div>
           </section>
@@ -23124,6 +23124,11 @@ function renderHomeTasks(){
     return assistGroupDigits(assistDigits(value).slice(0, 14), [2,3,3,4,2], ['.','.','/','-']);
   }
 
+  // Cliente pessoa física (CPF, 11 dígitos) ou empresa (CNPJ, 14 dígitos).
+  function assistFormatDoc(value){
+    return assistDigits(value).length > 11 ? assistFormatCnpj(value) : assistFormatCpf(value);
+  }
+
   function assistIsValidCpf(value){
     const digits = assistDigits(value);
     if(digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
@@ -23327,7 +23332,7 @@ function renderHomeTasks(){
           ? '<div class="purchase-field full"><label for="'+id+'Model">MODELO (OPCIONAL)</label><input id="'+id+'Model" data-eq-field="model" maxlength="120" autocomplete="off" placeholder="EX.: IPHONE 13 PRO / DELL INSPIRON 15 3520 / PC I5 12ª GERAÇÃO" value="'+escapeHtml(equipment.model || '')+'"></div>'
           : '')+
         '<div class="purchase-field"><label for="'+id+'Serial">Nº DE SÉRIE (OPCIONAL)</label><input id="'+id+'Serial" data-eq-field="serialNumber" maxlength="80" autocomplete="off" value="'+escapeHtml(equipment.serialNumber)+'"></div>'+
-        '<div class="purchase-field"><label for="'+id+'Service">SERVIÇO REALIZADO (OPCIONAL)</label><input id="'+id+'Service" data-eq-field="service" maxlength="600" autocomplete="off" value="'+escapeHtml(equipment.service)+'"></div>'+
+        '<div class="purchase-field"><label for="'+id+'Service">DIAGNÓSTICO OU DEFEITO (OPCIONAL)</label><input id="'+id+'Service" data-eq-field="service" maxlength="600" autocomplete="off" value="'+escapeHtml(equipment.service)+'"></div>'+
       '</div>'+
       '<div class="assist-picker">'+
         '<div class="purchase-field"><label for="'+id+'Defect">ADICIONAR DEFEITO DA TABELA</label><select id="'+id+'Defect" data-eq-field="addDefect"'+(equipment.device && available.length ? '' : ' disabled')+'>'+
@@ -23431,7 +23436,7 @@ function renderHomeTasks(){
     const phone = assistDigits(el('assistClientPhone').value);
     if(phone.length < 10 || phone.length > 11) flag(el('assistClientPhone'), 'TELEFONE DO CLIENTE COM DDD');
     const cpf = assistDigits(el('assistClientCpf').value);
-    if(cpf && !assistIsValidCpf(cpf)) flag(el('assistClientCpf'), 'CPF VÁLIDO (OU DEIXE EM BRANCO)');
+    if(cpf && !(cpf.length === 14 ? assistIsValidCnpj(cpf) : assistIsValidCpf(cpf))) flag(el('assistClientCpf'), 'CPF OU CNPJ VÁLIDO (OU DEIXE EM BRANCO)');
     if(!assistState.equipments.length) flag(el('btnAssistAddEquipment'), 'PELO MENOS UM EQUIPAMENTO');
     assistState.equipments.forEach((equipment, index) => {
       const label = 'EQUIPAMENTO '+(index + 1);
@@ -23489,7 +23494,7 @@ function renderHomeTasks(){
           (equipment.model ? '<div class="full"><b>MODELO:</b> '+escapeHtml(equipment.model)+'</div>' : '')+
           '<div><b>Nº DE SÉRIE:</b> '+dash(equipment.serialNumber)+'</div>'+
           '<div><b>CATEGORIA:</b> '+dash(equipment.category)+'</div>'+
-          '<div class="full"><b>SERVIÇO REALIZADO:</b> '+dash(equipment.service)+'</div>'+
+          '<div class="full"><b>DIAGNÓSTICO OU DEFEITO:</b> '+dash(equipment.service)+'</div>'+
         '</div>'+
         '<table class="assist-doc-table"><thead><tr><th class="item">Item</th><th>Descrição</th><th class="num qty">Qtd</th><th class="num money">Valor unit.</th><th class="num money">Desconto</th><th class="num money">Valor total</th></tr></thead>'+
         '<tbody>'+rows+'</tbody>'+
@@ -23515,7 +23520,7 @@ function renderHomeTasks(){
       '<section class="assist-doc-block"><h2>Dados do cliente</h2><div class="assist-doc-fields">'+
         '<div class="full"><b>NOME:</b> '+dash(data.clientName)+'</div>'+
         '<div><b>TELEFONE:</b> '+dash(assistFormatPhone(data.clientPhone))+'</div>'+
-        '<div><b>CPF:</b> '+dash(assistFormatCpf(data.clientCpf))+'</div>'+
+        '<div><b>'+(assistDigits(data.clientCpf).length === 14 ? 'CNPJ' : 'CPF')+':</b> '+dash(assistFormatDoc(data.clientCpf))+'</div>'+
         '<div class="full"><b>ENDEREÇO:</b> '+dash(data.clientAddress)+'</div>'+
       '</div></section>'+
       equipmentsHtml+
@@ -23618,7 +23623,7 @@ function renderHomeTasks(){
     el('assistEntryDate').value = String(quote.entryDate || '');
     el('assistClientName').value = String(quote.clientName || '');
     el('assistClientPhone').value = assistFormatPhone(quote.clientPhone);
-    el('assistClientCpf').value = assistFormatCpf(quote.clientCpf);
+    el('assistClientCpf').value = assistFormatDoc(quote.clientCpf);
     el('assistClientAddress').value = String(quote.clientAddress || '');
     const keys = (Array.isArray(quote.observations) ? quote.observations : []).map(observation => String(observation && observation.key || ''));
     document.querySelectorAll('input[name="assistObservation"]').forEach(input => { input.checked = keys.includes(input.value); });
@@ -24225,7 +24230,7 @@ function renderHomeTasks(){
     button.addEventListener('click', () => setAssistTab(button.dataset.assistTab));
   });
   assistBindMask(el('assistClientPhone'), assistFormatPhone);
-  assistBindMask(el('assistClientCpf'), assistFormatCpf);
+  assistBindMask(el('assistClientCpf'), assistFormatDoc);
   el('assistOsNumber').addEventListener('input', () => el('assistOsNumber').classList.remove('input-error'));
   el('assistQuoteForm').addEventListener('input', event => {
     if(!event.target.closest('#assistEquipments')) assistSchedulePreview();
