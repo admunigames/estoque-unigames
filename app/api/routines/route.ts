@@ -273,6 +273,31 @@ async function notifyRoutineCreator(
   }
 }
 
+// A mesma rotina não feita em vários dias vira UMA linha por loja (usuário,
+// 28/10/2026): pendingCount = cópias pendentes, pendingSince = a mais antiga.
+// Marcar FEITA conclui todas elas (PATCH).
+function groupPendingCopies(tasks: RoutineTaskRow[]) {
+  const groups = new Map<string, RoutineTaskRow[]>();
+  for (const task of tasks) {
+    const key = `${task.routineId}|${task.companyId}`;
+    groups.set(key, [...(groups.get(key) ?? []), task]);
+  }
+  return [...groups.values()].map((copies) => {
+    const pending = copies.filter((task) => task.status !== "completed");
+    const newest = (list: RoutineTaskRow[]) => list.reduce((a, b) => (b.originDate > a.originDate ? b : a));
+    const representative = newest(pending.length ? pending : copies);
+    const pendingSince = pending.reduce((min, task) => (task.originDate < min ? task.originDate : min), representative.originDate);
+    return {
+      ...representative,
+      carriedOver: representative.carriedOver || (pending.length > 1 ? 1 : 0),
+      pendingCount: pending.length,
+      pendingSince: pending.length ? pendingSince : "",
+      completed: !pending.length,
+      status: pending.length ? "todo" : "completed",
+    };
+  });
+}
+
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -306,10 +331,7 @@ export async function GET(request: Request) {
       tasks = tasks.filter((task) => task.companyId === actor.companyId);
     }
 
-    const payload: JsonMap = {
-      date,
-      tasks: tasks.map((task) => ({ ...task, completed: task.status === "completed" })),
-    };
+    const payload: JsonMap = { date, tasks: groupPendingCopies(tasks) };
 
     if (can(actor, "missions:create") || can(actor, "missions:delete")) {
       const definitionsResult = await database
@@ -391,14 +413,14 @@ export async function PATCH(request: Request) {
     const database = await getD1();
     const task = await database
       .prepare(
-        `SELECT t.id, t.routine_id AS routineId, t.company_id AS companyId, t.status,
+        `SELECT t.id, t.routine_id AS routineId, t.company_id AS companyId, t.status, t.due_date AS dueDate,
                 r.title, r.created_by AS createdBy
          FROM operational_routine_tasks t
          JOIN operational_routines r ON r.id = t.routine_id
          WHERE t.id=?1 LIMIT 1`,
       )
       .bind(taskId)
-      .first<{ id: string; routineId: string; companyId: string; status: RoutineStatus; title: string; createdBy: string }>();
+      .first<{ id: string; routineId: string; companyId: string; status: RoutineStatus; dueDate: string; title: string; createdBy: string }>();
     if (!task) return jsonResponse({ error: "TAREFA NÃO ENCONTRADA." }, 404);
     if (task.companyId !== actor.companyId) {
       return jsonResponse({ error: "ESTA TAREFA PERTENCE A OUTRA LOJA." }, 403);
@@ -408,11 +430,13 @@ export async function PATCH(request: Request) {
       .prepare(
         `UPDATE operational_routine_tasks SET
            status=?1, completed_by=?2, completed_by_name=?3,
-           completed_at=CASE WHEN ?1='completed' THEN now()::text ELSE '' END,
+           completed_at=CASE WHEN ?1='completed' THEN CAST(CURRENT_TIMESTAMP AS TEXT) ELSE '' END,
            updated_at=CURRENT_TIMESTAMP
-         WHERE id=?4`,
+         WHERE id=?4
+            OR (?1='completed' AND routine_id=?5 AND company_id=?6 AND due_date=?7 AND status<>'completed')`,
       )
-      .bind(status, status === "completed" ? actor.id : "", status === "completed" ? actor.displayName : "", taskId)
+      .bind(status, status === "completed" ? actor.id : "", status === "completed" ? actor.displayName : "", taskId,
+        task.routineId, task.companyId, task.dueDate)
       .run();
 
     if (status === "completed" && task.status !== "completed") {

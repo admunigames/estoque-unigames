@@ -3146,10 +3146,11 @@ test("Rotina Operacional: marcar como feita não quebra mais com erro de tipo do
   // de marcar como feita quebrava com "invalid input syntax for type
   // timestamp with time zone: ''", mascarada como erro genérico pro
   // usuário. completed_at é coluna text — os dois ramos do CASE precisam
-  // ser text também (now()::text), não CURRENT_TIMESTAMP cru.
+  // ser text também (CAST(CURRENT_TIMESTAMP AS TEXT), que também roda no
+  // SQLite dos testes de rota), não CURRENT_TIMESTAMP cru.
   assert.match(
     routinesRoute,
-    /completed_at=CASE WHEN \?1='completed' THEN now\(\)::text ELSE '' END/,
+    /completed_at=CASE WHEN \?1='completed' THEN CAST\(CURRENT_TIMESTAMP AS TEXT\) ELSE '' END/,
   );
   assert.doesNotMatch(
     routinesRoute,

@@ -239,13 +239,13 @@ async function completeLinkedRoutineTask(
   const target = ROUTINE_TITLE_MATCH[kind];
   const tasksResult = await database
     .prepare(
-      `SELECT t.id, t.status, r.title, r.created_by AS createdBy
+      `SELECT t.id, t.routine_id AS routineId, t.status, r.title, r.created_by AS createdBy
        FROM operational_routine_tasks t
        JOIN operational_routines r ON r.id = t.routine_id
        WHERE t.due_date=?1 AND t.company_id=?2`,
     )
     .bind(date, actor.companyId)
-    .all<{ id: string; status: string; title: string; createdBy: string }>();
+    .all<{ id: string; routineId: string; status: string; title: string; createdBy: string }>();
 
   const match = (tasksResult.results ?? []).find(
     (task) => task.status !== "completed" && normalizeTitle(task.title).includes(target),
@@ -257,9 +257,9 @@ async function completeLinkedRoutineTask(
       `UPDATE operational_routine_tasks SET
          status='completed', completed_by=?1, completed_by_name=?2,
          completed_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
-       WHERE id=?3`,
+       WHERE routine_id=?3 AND company_id=?4 AND due_date=?5 AND status<>'completed'`,
     )
-    .bind(actor.id, actor.displayName, match.id)
+    .bind(actor.id, actor.displayName, match.routineId, actor.companyId, date)
     .run();
 
   const storeName = (await companyName(database, actor.companyId)) || "Loja";

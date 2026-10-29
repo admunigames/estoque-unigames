@@ -2257,6 +2257,29 @@
     min-height:32px;padding:7px 9px;border:1px solid color-mix(in srgb,var(--neg) 40%,transparent);border-radius:8px;
     background:var(--neg-bg);color:var(--neg);font:800 8px/1 var(--mono);
   }
+  /* Rotina operacional compacta: cadastro em uma linha, lista recolhível e
+     o dia agrupado por loja (uma linha por rotina). */
+  .routine-form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+  .routine-form-row .field{flex:1 1 260px;margin:0;}
+  .routine-form-row .routine-weekday-picker{flex:0 1 auto;}
+  .routine-form-row .routine-weekday-chip{padding:5px 8px;font-size:10px;}
+  .routine-defs{margin-top:14px;}
+  .routine-def-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:9px;}
+  .routine-def-title{font:700 12px/1.3 var(--sans);color:var(--ink);overflow-wrap:anywhere;}
+  .routine-days{display:flex;gap:3px;}
+  .routine-day{width:22px;padding:3px 0;border-radius:5px;text-align:center;font:800 8px/1 var(--mono);color:var(--ink-soft);opacity:.35;border:1px solid var(--line);}
+  .routine-day.on{opacity:1;color:var(--accent);border-color:var(--accent);background:rgba(101,184,255,.1);}
+  .routine-store-summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .routine-store-progress{font:800 10px var(--mono);color:var(--ink-soft);}
+  .routine-store-progress.ok{color:#66d49e;}
+  .routine-store-progress.late{color:#ff7667;}
+  .routine-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:9px;}
+  .routine-row .mission-check{margin:0;width:20px;height:20px;font-size:11px;}
+  .routine-row-title{font:700 12px/1.35 var(--sans);color:var(--ink);overflow-wrap:anywhere;}
+  .routine-row.completed .routine-row-title{text-decoration:line-through;opacity:.58;}
+  .routine-row .mission-badges{margin-top:4px;}
+  .routine-row .btn-accent,.routine-row .btn-outline{min-height:30px;padding:6px 10px;font-size:9px;}
+  @media (max-width:640px){.routine-def-row{grid-template-columns:1fr auto;}.routine-days{grid-column:1 / -1;order:3;}}
   .mission-empty{padding:28px 18px;text-align:center;color:var(--ink-soft);font-size:12px;line-height:1.55;}
   .home-missions{
     margin-top:16px;padding:18px;border-color:rgba(255,255,255,.78);
@@ -4705,9 +4728,9 @@
             <div><h3>CADASTRAR ROTINA OPERACIONAL</h3><p>Rotinas são gerais para todas as lojas e se repetem toda semana nos dias escolhidos. Se não forem concluídas, migram automaticamente como pendência para o dia seguinte.</p></div>
           </div>
           <form id="routineForm">
-            <div class="mission-form-grid">
-              <div class="field double"><label for="routineTitle">TÍTULO DA ROTINA</label><input id="routineTitle" maxlength="160" required placeholder="Ex.: Conferir caixa da loja"></div>
-              <div class="field full">
+            <div class="routine-form-row">
+              <div class="field"><label for="routineTitle">TÍTULO DA ROTINA</label><input id="routineTitle" maxlength="160" required placeholder="Ex.: Conferir caixa da loja"></div>
+              <div class="field" style="flex:0 1 auto;">
                 <label>DIAS DA SEMANA</label>
                 <div class="routine-weekday-picker" id="routineWeekdayGrid">
                   <label class="routine-weekday-chip" title="Segunda-feira"><input type="checkbox" name="routineWeekday" value="1"> SEG</label>
@@ -4719,11 +4742,14 @@
                   <label class="routine-weekday-chip" title="Domingo"><input type="checkbox" name="routineWeekday" value="0"> DOM</label>
                 </div>
               </div>
+              <button class="btn-accent" id="btnSaveRoutine" type="submit">CADASTRAR ROTINA</button>
             </div>
-            <div class="mission-form-actions"><button class="btn-accent" id="btnSaveRoutine" type="submit">CADASTRAR ROTINA</button></div>
             <div class="user-form-status" id="routineFormStatus" role="status" aria-live="polite"></div>
           </form>
-          <div class="mission-list" id="routineDefinitionsList" aria-live="polite"></div>
+          <details class="dre-category routine-defs" id="routineDefinitionsBox">
+            <summary><span>ROTINAS CADASTRADAS</span><span class="mission-count" id="routineDefinitionsCount">0</span></summary>
+            <div class="dre-category-body" id="routineDefinitionsList" aria-live="polite"></div>
+          </details>
         </section>
 
         <section class="mission-board">
@@ -21201,48 +21227,73 @@ function renderHomeTasks(){
       '" data-current-status="'+status+'">'+(completed ? 'DESFAZER' : 'MARCAR COMO FEITA')+'</button>';
   }
 
-  function routineCardHtml(task){
-    const status = routineTaskStatus(task);
-    const completed = status === 'completed';
-    const marker = '<span class="mission-check '+status+'" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>';
-    return '<article class="mission-card'+(completed ? ' completed' : '')+'">'+
-      marker+
-      '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(task.title || '')+'</strong>'+
-        '<div class="mission-badges">'+
-          '<span class="mission-badge">'+escapeHtml(task.companyName || 'LOJA')+'</span>'+
-          (task.carriedOver ? '<span class="mission-badge overdue">MIGROU DE '+escapeHtml(formatDateBR(task.originDate))+'</span>' : '')+
-        '</div></div>'+
-      '<div class="mission-card-actions">'+
-        (isRoutineTaskMine(task)
-          ? routineStatusToggleHtml(task,false)
-          : '<span class="mission-status'+(completed ? ' done' : '')+'">'+
-            (completed ? 'FEITA' : 'NÃO FEITA')+' · '+escapeHtml(task.companyName || '')+'</span>')+
-      '</div></article>';
+  function routinePendingLabel(task){
+    if(task.completed || !task.pendingSince) return '';
+    const date = el('routineDate').value || todayDateKey();
+    const days = Math.round((Date.parse(date+'T12:00:00Z') - Date.parse(task.pendingSince+'T12:00:00Z'))/86400000);
+    return days > 0 ? 'PENDENTE DESDE '+formatDateBR(task.pendingSince)+' · '+days+' DIA'+(days === 1 ? '' : 'S') : '';
   }
 
+  function routineRowHtml(task){
+    const completed = routineTaskStatus(task) === 'completed';
+    const late = routinePendingLabel(task);
+    return '<div class="routine-row'+(completed ? ' completed' : '')+'">'+
+      '<span class="mission-check '+(completed ? 'completed' : 'todo')+'" aria-hidden="true">'+(completed ? '✓' : '○')+'</span>'+
+      '<div><span class="routine-row-title">'+escapeHtml(task.title || '')+'</span>'+
+        (late ? '<div class="mission-badges"><span class="mission-badge overdue">'+escapeHtml(late)+'</span></div>' : '')+'</div>'+
+      (isRoutineTaskMine(task)
+        ? routineStatusToggleHtml(task,false)
+        : '<span class="mission-status'+(completed ? ' done' : '')+'">'+(completed ? 'FEITA' : 'NÃO FEITA')+'</span>')+
+    '</div>';
+  }
+
+  // Uma caixa por loja com FEITAS/TOTAL e atrasadas; não feitas primeiro.
   function renderRoutineList(){
     const list = el('routineList');
     if(!list) return;
-    el('routineCount').textContent = routineRows.length+' TAREFA'+(routineRows.length === 1 ? '' : 'S');
-    list.innerHTML = routineRows.length
-      ? routineRows.map(routineCardHtml).join('')
-      : '<div class="mission-empty">Nenhuma tarefa de rotina para esta data.</div>';
+    const stores = new Map();
+    routineRows.forEach(task => {
+      const key = task.companyName || 'LOJA';
+      if(!stores.has(key)) stores.set(key,[]);
+      stores.get(key).push(task);
+    });
+    const done = routineRows.filter(task => routineTaskStatus(task) === 'completed').length;
+    el('routineCount').textContent = done+'/'+routineRows.length+' FEITAS · '+stores.size+' LOJA'+(stores.size === 1 ? '' : 'S');
+    if(!routineRows.length){
+      list.innerHTML = '<div class="mission-empty">Nenhuma tarefa de rotina para esta data.</div>';
+      return;
+    }
+    const single = stores.size === 1;
+    list.innerHTML = Array.from(stores.entries()).sort((a,b) => a[0].localeCompare(b[0],'pt-BR')).map(([store,tasks]) => {
+      tasks.sort((a,b) => Number(routineTaskStatus(a) === 'completed') - Number(routineTaskStatus(b) === 'completed') || String(a.pendingSince || '9').localeCompare(String(b.pendingSince || '9')));
+      const storeDone = tasks.filter(task => routineTaskStatus(task) === 'completed').length;
+      const late = tasks.filter(task => routinePendingLabel(task)).length;
+      const progressClass = storeDone === tasks.length ? ' ok' : (late ? ' late' : '');
+      return '<details class="dre-category"'+(single ? ' open' : '')+' data-routine-store="'+escapeHtml(store)+'">'+
+        '<summary><span>'+escapeHtml(store)+'</span><span class="routine-store-summary">'+
+          '<span class="routine-store-progress'+progressClass+'">'+storeDone+'/'+tasks.length+' FEITAS</span>'+
+          (late ? '<span class="mission-badge overdue">'+late+' ATRASADA'+(late === 1 ? '' : 'S')+'</span>' : '')+
+        '</span></summary>'+
+        '<div class="dre-category-body">'+tasks.map(routineRowHtml).join('')+'</div></details>';
+    }).join('');
   }
 
   function renderRoutineDefinitions(){
     const list = el('routineDefinitionsList');
     if(!list) return;
+    if(el('routineDefinitionsCount')) el('routineDefinitionsCount').textContent = routineDefinitions.length+' ROTINA'+(routineDefinitions.length === 1 ? '' : 'S');
+    // Seg → Dom, uma letra por dia (aceso = dia da rotina).
+    const days = [[1,'S'],[2,'T'],[3,'Q'],[4,'Q'],[5,'S'],[6,'S'],[0,'D']];
     list.innerHTML = routineDefinitions.length
-      ? routineDefinitions.map(routine =>
-          '<article class="mission-card">'+
-            '<div class="mission-card-copy"><strong class="mission-card-title">'+escapeHtml(routine.title)+'</strong>'+
-              '<div class="mission-badges">'+
-                '<span class="mission-badge">↻ '+escapeHtml(routineWeekdaysLabel(routine.weekdays))+'</span>'+
-              '</div></div>'+
-            '<div class="mission-card-actions">'+
-              (canAccess('missions:delete') ? '<button class="mission-delete" type="button" data-routine-delete="'+escapeHtml(routine.id)+'">EXCLUIR</button>' : '')+
-            '</div></article>'
-        ).join('')
+      ? routineDefinitions.map(routine => {
+          const on = new Set(Array.isArray(routine.weekdays) ? routine.weekdays : []);
+          return '<div class="routine-def-row">'+
+            '<span class="routine-def-title">'+escapeHtml(routine.title)+'</span>'+
+            '<span class="routine-days" title="'+escapeHtml(routineWeekdaysLabel(routine.weekdays))+'">'+
+              days.map(([day,letter]) => '<span class="routine-day'+(on.has(day) ? ' on' : '')+'">'+letter+'</span>').join('')+'</span>'+
+            (canAccess('missions:delete') ? '<button class="mission-delete" type="button" data-routine-delete="'+escapeHtml(routine.id)+'">EXCLUIR</button>' : '<span></span>')+
+          '</div>';
+        }).join('')
       : '<div class="mission-empty">Nenhuma rotina cadastrada.</div>';
   }
 
@@ -21256,7 +21307,9 @@ function renderHomeTasks(){
       const data = await missionApiRequest('/api/routines?'+new URLSearchParams({date}));
       routineRows = Array.isArray(data.tasks) ? data.tasks : [];
       routineDefinitions = Array.isArray(data.routines) ? data.routines : [];
+      const openStores = new Set(Array.from(document.querySelectorAll('#routineList details[open]')).map(box => box.dataset.routineStore));
       renderRoutineList();
+      document.querySelectorAll('#routineList details[data-routine-store]').forEach(box => { if(openStores.has(box.dataset.routineStore)) box.open = true; });
       renderRoutineDefinitions();
     }catch(error){
       routineRows = [];
@@ -21275,6 +21328,7 @@ function renderHomeTasks(){
     return '<div class="home-mission-row'+(completed ? ' completed' : '')+'">'+marker+
       '<div class="home-mission-copy"><strong class="home-mission-title">'+escapeHtml(task.title || '')+'</strong>'+
       '<span class="home-mission-meta">'+escapeHtml(task.companyName || 'MINHA LOJA')+
+      (task.pendingCount > 1 && !completed ? ' · PENDENTE DESDE '+escapeHtml(formatDateBR(task.pendingSince)) : '')+
       (mine ? '' : ' · '+(completed ? 'FEITA' : 'NÃO FEITA'))+'</span></div>'+
       '<div class="home-mission-actions">'+
       (mine ? routineStatusToggleHtml(task,true) : '')+
