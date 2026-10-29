@@ -2,7 +2,7 @@ import webPush from "web-push";
 import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 import { canSeeAllStores } from "../../lib/access-scope";
-import { isSellingStore } from "../../lib/selling-stores";
+import { isRoutineStore } from "../../lib/selling-stores";
 
 type JsonMap = Record<string, unknown>;
 type Identity = {
@@ -168,7 +168,7 @@ async function storeCompanies(database: D1Database): Promise<CompanyRecord[]> {
         typeof item === "object" &&
         typeof item.id === "string" &&
         typeof item.name === "string" &&
-        isSellingStore(item.name),
+        isRoutineStore(item),
     );
   } catch {
     return [];

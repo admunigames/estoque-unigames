@@ -9,3 +9,12 @@ export function isSellingStore(name: string): boolean {
     normalized.includes("centro de distribuicao")
   );
 }
+
+// Lojas fora da Rotina Operacional (rotinas, Check-in/Check-out/Troca de
+// Turno): P.A LOJA deixou de ser loja e virou estoque (usuário, 29/10/2026).
+// Por id, para não depender do nome.
+const NON_ROUTINE_STORE_IDS = new Set(["cmrvhi891nt7hz"]);
+
+export function isRoutineStore(company: { id: string; name: string }): boolean {
+  return isSellingStore(company.name) && !NON_ROUTINE_STORE_IDS.has(company.id);
+}

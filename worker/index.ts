@@ -18,7 +18,7 @@ import {
 } from "./live-updates";
 
 import { isSellerRole, roleFromTitle } from "../app/lib/commercial";
-import { isSellingStore } from "../app/lib/selling-stores";
+import { isRoutineStore } from "../app/lib/selling-stores";
 import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } from "../app/lib/audit";
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
 import { upperText } from "../app/lib/upper-text";
@@ -2826,7 +2826,7 @@ async function routineStoreCompanies(env: Env): Promise<RoutineCompanyRecord[]> 
         typeof item === "object" &&
         typeof item.id === "string" &&
         typeof item.name === "string" &&
-        isSellingStore(item.name),
+        isRoutineStore(item),
     );
   } catch {
     return [];

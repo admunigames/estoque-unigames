@@ -32,3 +32,10 @@ test("pendências acumuladas viram uma linha e FEITA conclui todas", async () =>
   assert.equal(after[0].completed, true);
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM operational_routine_tasks WHERE status<>'completed'").get().n, 0);
 });
+
+test("P.A LOJA virou estoque: fora da Rotina Operacional", async () => {
+  const { isRoutineStore } = await import("../app/lib/selling-stores.ts");
+  assert.equal(isRoutineStore({ id: "cmrvhi891nt7hz", name: "P.A LOJA" }), false);
+  assert.equal(isRoutineStore({ id: "cmrvhi891w9tc1", name: "QUIOSQUE P.A" }), true);
+  assert.equal(isRoutineStore({ id: "x", name: "DEPÓSITO" }), false);
+});
