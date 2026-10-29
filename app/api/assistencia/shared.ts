@@ -1,4 +1,5 @@
 import { hasCompany } from "../../lib/access-scope";
+import { OS_QUOTE_PENDING_STATUS, OS_QUOTE_READY_STATUS } from "../../lib/ordens-servico";
 import {
   equipmentSubtotal,
   lineNetCents,
@@ -278,6 +279,32 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
     }
   }
   return statements;
+}
+
+/**
+ * O.S. em ORÇAMENTO PENDENTE com o mesmo nº vira ORÇAMENTO PRONTO quando o
+ * orçamento é salvo (criar ou editar), com o registro no histórico da O.S.
+ */
+export async function serviceOrderQuoteStatements(
+  database: D1Database, osNumber: string, totalCents: number, actor: Identity, now: string,
+) {
+  const result = await database
+    .prepare("SELECT id FROM assist_service_orders WHERE os_number=?1 AND status=?2 AND canceled=0 AND closed=0")
+    .bind(osNumber, OS_QUOTE_PENDING_STATUS)
+    .all<{ id: string }>();
+  const total = (totalCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return (result.results ?? []).flatMap(({ id }) => [
+    database
+      .prepare("UPDATE assist_service_orders SET status=?1, updated_by=?2, updated_by_name=?3, updated_at=?4 WHERE id=?5 AND status=?6")
+      .bind(OS_QUOTE_READY_STATUS, actor.id, actor.displayName, now, id, OS_QUOTE_PENDING_STATUS),
+    database
+      .prepare(
+        `INSERT INTO assist_service_order_updates (id, order_id, update_text, created_by, created_by_name, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+      )
+      .bind(crypto.randomUUID(), id, `STATUS: ${OS_QUOTE_READY_STATUS} · ORÇAMENTO DE ${total} FEITO (ENVIAR AO CLIENTE)`,
+        actor.id, actor.displayName, now),
+  ]);
 }
 
 export async function osTaken(database: D1Database, osNumber: string, exceptId = "") {

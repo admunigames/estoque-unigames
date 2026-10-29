@@ -16,6 +16,7 @@ import {
   QUOTE_SELECT,
   safeText,
   sameOrigin,
+  serviceOrderQuoteStatements,
   type JsonMap,
   type QuoteRow,
 } from "../shared";
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
           JSON.stringify(built.payments),
         ),
       ...itemStatements(database, id, quote),
+      ...(await serviceOrderQuoteStatements(database, quote.osNumber, quote.totalCents, actor, at)),
     ]);
     return jsonResponse({ created: true, id, totalCents: quote.totalCents }, 201);
   } catch (error) {

@@ -11,8 +11,10 @@ export const OS_CATEGORIES = ["CONSOLE", "INFORMÁTICA", "CONTROLE", "CELULAR", 
 // para a assistência como REPROVADO EM LOJA).
 export const OS_STATUSES = [
   "ORÇAMENTO PENDENTE",
+  "ORÇAMENTO PRONTO",
   "PASSADO ORÇAMENTO",
   "AUTORIZADA",
+  "AGUARDANDO PEÇA",
   "NÃO AUTORIZADO",
   "PREVENTIVA",
   "SETOR QUALIDADE",
@@ -22,6 +24,11 @@ export const OS_STATUSES = [
   "APROVADA",
 ] as const;
 export const OS_APPROVED_STATUS = "APROVADA";
+// Ligação com Assistência > Orçamentos (29/10/2026): a O.S. em ORÇAMENTO
+// PENDENTE vira ORÇAMENTO PRONTO quando o orçamento com o mesmo nº é salvo;
+// depois de enviar ao cliente, a pessoa muda para PASSADO ORÇAMENTO.
+export const OS_QUOTE_PENDING_STATUS = "ORÇAMENTO PENDENTE";
+export const OS_QUOTE_READY_STATUS = "ORÇAMENTO PRONTO";
 // Sem conserto: o produto segue para a loja só para devolver ao cliente (a
 // loja não testa). Finaliza na hora, com SEGUE PARA A LOJA = sim (15/10/2026).
 export const OS_RETURN_STATUSES = ["NÃO AUTORIZADO", "SEM SOLUÇÃO"];

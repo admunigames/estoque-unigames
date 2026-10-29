@@ -64,6 +64,18 @@ function createFakeD1() {
       quantity integer DEFAULT 1 NOT NULL, unit_cents integer DEFAULT 0 NOT NULL, sort_order integer DEFAULT 0 NOT NULL
     );
   `);
+  // O.S. (só as colunas que a ligação com o orçamento usa).
+  sqlite.exec(`
+    CREATE TABLE assist_service_orders (
+      id text PRIMARY KEY, os_number text NOT NULL, status text NOT NULL, canceled integer DEFAULT 0 NOT NULL,
+      closed integer DEFAULT 0 NOT NULL, updated_by text DEFAULT '' NOT NULL, updated_by_name text DEFAULT '' NOT NULL,
+      updated_at text DEFAULT '' NOT NULL
+    );
+    CREATE TABLE assist_service_order_updates (
+      id text PRIMARY KEY, order_id text NOT NULL, update_text text NOT NULL, created_by text DEFAULT '' NOT NULL,
+      created_by_name text DEFAULT '' NOT NULL, created_at text NOT NULL
+    );
+  `);
   // Seed exatamente como está na migration (o INSERT é SQL válido nos dois bancos).
   const seed = migration.split("--> statement-breakpoint").map((part) => part.trim()).filter((part) => part.startsWith("INSERT INTO"));
   assert.equal(seed.length, 1, "a migration tem um INSERT de seed");
@@ -689,4 +701,26 @@ test("tela: CPF OU CNPJ do cliente e DIAGNÓSTICO OU DEFEITO no equipamento (for
   assert.match(html, /DIAGNÓSTICO OU DEFEITO \(OPCIONAL\)/);
   assert.match(html, /<b>DIAGNÓSTICO OU DEFEITO:<\/b>/);
   assert.doesNotMatch(html, /SERVIÇO REALIZADO/);
+});
+
+test("orçamento salvo leva a O.S. de ORÇAMENTO PENDENTE para ORÇAMENTO PRONTO (com histórico)", async () => {
+  const insertOs = db.sqlite.prepare("INSERT INTO assist_service_orders (id, os_number, status, closed) VALUES (?, ?, ?, ?)");
+  insertOs.run("os-pend", "OSLINK-1", "ORÇAMENTO PENDENTE", 0);
+  insertOs.run("os-aut", "OSLINK-2", "AUTORIZADA", 0);
+  insertOs.run("os-fech", "OSLINK-3", "ORÇAMENTO PENDENTE", 1);
+  for (const osNumber of ["OSLINK-1", "OSLINK-2", "OSLINK-3"]) {
+    assert.equal((await createQuote(NO_STORE_USER, quote({ osNumber }))).status, 201);
+  }
+  const status = (id) => db.sqlite.prepare("SELECT status FROM assist_service_orders WHERE id=?").get(id).status;
+  assert.equal(status("os-pend"), "ORÇAMENTO PRONTO");
+  assert.equal(status("os-aut"), "AUTORIZADA");
+  assert.equal(status("os-fech"), "ORÇAMENTO PENDENTE");
+  const history = db.sqlite.prepare("SELECT order_id AS orderId, update_text AS text FROM assist_service_order_updates").all();
+  assert.equal(history.length, 1);
+  assert.equal(history[0].orderId, "os-pend");
+  assert.match(history[0].text, /^STATUS: ORÇAMENTO PRONTO · ORÇAMENTO DE R\$\s?[\d.,]+ FEITO \(ENVIAR AO CLIENTE\)$/);
+  // Editar o orçamento depois não mexe mais na O.S. (já não está pendente).
+  const saved = (await getQuotes(NO_STORE_USER, "?q=OSLINK-1")).body.quotes[0];
+  assert.equal((await patchQuote(NO_STORE_USER, saved.id, quote({ osNumber: "OSLINK-1" }))).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM assist_service_order_updates").get().n, 1);
 });

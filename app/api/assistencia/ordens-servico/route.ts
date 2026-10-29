@@ -16,7 +16,7 @@ import {
   type ShipToStore,
   type StoreCheck,
 } from "../../../lib/ordens-servico";
-import { identity as baseIdentity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
+import { identity as baseIdentity, jsonResponse, loadQuoteDetail, QUOTE_SELECT, safeText, sameOrigin, type JsonMap, type QuoteRow } from "../shared";
 
 // Assistência > Ordens de Serviço (permissões ordens_servico:view/create/
 // edit/delete/store_test). Login com loja vinculada só VISUALIZA as O.S. da
@@ -146,6 +146,21 @@ export async function GET(request: Request) {
       return jsonResponse({ updates: result.results ?? [] });
     }
 
+    // PDF do orçamento ligado à O.S. (mesmo nº): quem vê a O.S. abre o PDF —
+    // inclusive a loja da O.S., para enviar ao cliente (29/10/2026).
+    const quoteFor = safeText(url.searchParams.get("quote"), 80);
+    if (quoteFor) {
+      const order = await findOrder(database, actor, quoteFor, "ordens_servico:view");
+      const osRow = order
+        ? await database.prepare("SELECT os_number AS osNumber FROM assist_service_orders WHERE id=?1").bind(order.id).first<{ osNumber: string }>()
+        : null;
+      const quote = osRow
+        ? await database.prepare(`${QUOTE_SELECT} WHERE os_number=?1 LIMIT 1`).bind(String(osRow.osNumber)).first<QuoteRow>()
+        : null;
+      if (!quote) return jsonResponse({ error: "ORÇAMENTO NÃO ENCONTRADO PARA ESTA O.S." }, 404);
+      return jsonResponse(await loadQuoteDetail(database, quote));
+    }
+
     const closed = url.searchParams.get("closed") === "1" ? 1 : 0;
     const storeFilter = scope.allStores ? "" : " AND store_id=?2";
     const statement = database.prepare(
@@ -155,6 +170,8 @@ export async function GET(request: Request) {
               ship_to_store AS shipToStore, ship_by_name AS shipByName, ship_at AS shipAt,
               store_check AS storeCheck, store_check_by_name AS storeCheckByName, store_check_at AS storeCheckAt,
               store_check_note AS storeCheckNote,
+              (SELECT q.id FROM assist_quotes q WHERE q.os_number=assist_service_orders.os_number LIMIT 1) AS quoteId,
+              (SELECT q.total_cents FROM assist_quotes q WHERE q.os_number=assist_service_orders.os_number LIMIT 1) AS quoteTotalCents,
               created_by_name AS createdByName, created_at AS createdAt, updated_by_name AS updatedByName, updated_at AS updatedAt
        FROM assist_service_orders WHERE canceled=0 AND closed=?1${storeFilter}
        ORDER BY ${closed ? "closed_at DESC LIMIT 300" : "deadline"}`,
@@ -172,6 +189,8 @@ export async function GET(request: Request) {
           deadline: String(row.deadline || ""),
           closed: Number(row.closed),
           closedAt: String(row.closedAt || ""),
+          quoteId: String(row.quoteId || ""),
+          quoteTotalCents: Number(row.quoteTotalCents) || 0,
         };
         const info = deadlineInfo(order.deadline, today);
         return {

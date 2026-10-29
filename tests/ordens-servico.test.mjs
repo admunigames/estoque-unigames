@@ -5,7 +5,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Assistência > Ordens de Serviço: criticidade da data limite, ordem da lista,
 // atualização diária com histórico, permissões e loja só visualiza.
 
-const db = await setupRouteDb(["shared_state", "assist_service_orders", "assist_service_order_updates"]);
+const db = await setupRouteDb(["shared_state", "assist_service_orders", "assist_service_order_updates", "assist_quotes", "assist_quote_items"]);
 const route = await import("../app/api/assistencia/ordens-servico/route.ts");
 const { approvalState, compareOrders, deadlineInfo, recifeDate } = await import("../app/lib/ordens-servico.ts");
 
@@ -176,4 +176,30 @@ test("segue para a loja: loja testa; reprovado em loja volta para a assistência
   const texts = history.updates.map((item) => item.text);
   assert.ok(texts.includes("STATUS: APROVADA · SEGUE PARA A LOJA"));
   assert.ok(texts.some((text) => text.startsWith("APROVADA NA LOJA POR GERENTE ALFA")));
+});
+
+test("ligação com Orçamentos: status novos, valor e PDF do orçamento na O.S. (loja da O.S. também abre)", async () => {
+  const { OS_STATUSES } = await import("../app/lib/ordens-servico.ts");
+  assert.ok(OS_STATUSES.includes("ORÇAMENTO PRONTO") && OS_STATUSES.includes("AGUARDANDO PEÇA"));
+  assert.equal((await call(TECNICO, "POST", order("ORC-1", shift(4), { status: "AGUARDANDO PEÇA" }))).status, 201);
+  assert.equal((await call(TECNICO, "POST", order("ORC-2", shift(4), { status: "ORÇAMENTO PENDENTE" }))).status, 201);
+  db.insert("assist_quotes", {
+    id: "q-orc-1", os_number: "ORC-1", company_id: A, company_name: "LOJA ALFA", entry_date: "2026-10-29",
+    client_name: "CLIENTE", total_cents: 15000, created_at: "2026-10-29T10:00:00Z", updated_at: "2026-10-29T10:00:00Z",
+  });
+  db.insert("assist_quote_items", { id: "qi-1", quote_id: "q-orc-1", device: "PS5 SLIM", defect_name: "HDMI", defect_note: "SEM IMAGEM", quantity: 1, unit_cents: 15000 });
+
+  const data = await (await call(TECNICO, "GET")).json();
+  const withQuote = data.orders.find((row) => row.osNumber === "ORC-1");
+  assert.equal(withQuote.quoteId, "q-orc-1");
+  assert.equal(withQuote.quoteTotalCents, 15000);
+  assert.equal(data.orders.find((row) => row.osNumber === "ORC-2").quoteId, "");
+
+  // A loja da O.S. abre o PDF; outra loja não.
+  const detail = await (await call(LOJA_A, "GET", undefined, `?quote=${withQuote.id}`)).json();
+  assert.equal(detail.quote.osNumber, "ORC-1");
+  assert.equal(detail.equipments[0].lines[0].defectNote, "SEM IMAGEM");
+  assert.equal((await call(LOJA_B_TESTE, "GET", undefined, `?quote=${withQuote.id}`)).status, 404);
+  const other = data.orders.find((row) => row.osNumber === "ORC-2");
+  assert.equal((await call(TECNICO, "GET", undefined, `?quote=${other.id}`)).status, 404);
 });

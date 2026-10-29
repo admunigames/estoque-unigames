@@ -16,6 +16,7 @@ import {
   osTaken,
   routeParam,
   sameOrigin,
+  serviceOrderQuoteStatements,
   type JsonMap,
 } from "../../shared";
 
@@ -100,6 +101,7 @@ export async function PATCH(request: Request, context: Context) {
         ),
       database.prepare("DELETE FROM assist_quote_items WHERE quote_id=?1").bind(id),
       ...itemStatements(database, id, quote),
+      ...(await serviceOrderQuoteStatements(database, quote.osNumber, quote.totalCents, actor, at)),
     ]);
     return jsonResponse({ updated: true, id, totalCents: quote.totalCents });
   } catch (error) {
