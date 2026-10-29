@@ -5228,6 +5228,7 @@
 
       <div class="supply-tabs no-print" role="tablist" aria-label="Seções de orçamentos">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-assist-tab="novo" id="assistTabNovo">NOVO ORÇAMENTO</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="pendentes">O.S. AGUARDANDO ORÇAMENTO <span id="assistPendingCount"></span></button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="historico">HISTÓRICO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="tabela">TABELA DE VALORES</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-assist-tab="pagamentos">PAGAMENTOS</button>
@@ -5239,6 +5240,7 @@
           <span id="assistEditBannerText">EDITANDO ORÇAMENTO</span>
           <button class="btn-outline" id="btnAssistCancelEdit" type="button">CANCELAR EDIÇÃO</button>
         </div>
+        <div class="assist-edit-banner" id="assistOsBanner" hidden><span id="assistOsBannerText"></span></div>
         <form class="purchase-form assist-form" id="assistQuoteForm" novalidate>
           <section class="table-panel assist-panel">
             <h3 class="assist-panel-title">1. LOJA E OS</h3>
@@ -5287,6 +5289,19 @@
             </div>
           </section>
         </form>
+      </section>
+
+      <section class="no-print assist-section" id="assistSectionPendentes" hidden>
+        <p class="purchase-field-help">O.S. QUE A ASSISTÊNCIA COLOCOU EM ORÇAMENTO PENDENTE (TODAS AS LOJAS), DA QUE ESPERA HÁ MAIS TEMPO PARA A MAIS NOVA. AO SALVAR O ORÇAMENTO, A O.S. SAI DAQUI E VOLTA PARA ORDENS DE SERVIÇO COMO ORÇAMENTO PRONTO.</p>
+        <div class="user-form-status" id="assistPendingStatus" role="status" aria-live="polite"></div>
+        <div class="table-panel responsive-table assist-history-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>O.S.</th><th>Loja</th><th>Equipamento</th><th>Observações</th><th>Aguardando desde</th><th>Ações</th></tr></thead>
+              <tbody id="assistPendingBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <section class="no-print assist-section" id="assistSectionHistorico" hidden>
@@ -23582,6 +23597,7 @@ function renderHomeTasks(){
     assistState.editingId = id || '';
     assistState.editingOs = osNumber || '';
     el('assistEditBanner').hidden = !id;
+    el('assistOsBanner').hidden = true;
     el('assistEditBannerText').textContent = id ? 'EDITANDO O ORÇAMENTO DA OS '+osNumber+' — SALVAR SUBSTITUI O ORÇAMENTO ANTERIOR.' : '';
     el('assistTabNovo').textContent = id ? 'EDITAR ORÇAMENTO' : 'NOVO ORÇAMENTO';
   }
@@ -23686,6 +23702,7 @@ function renderHomeTasks(){
       let detail = null;
       if(withPdf) detail = await assistApi('/quotes/'+encodeURIComponent(id));
       showPurchaseToast(editingId ? 'Orçamento atualizado.' : 'Orçamento salvo.');
+      assistLoadPending();
       assistResetForm();
       if(editingId) setAssistTab('historico');
       if(detail) assistPrintQuote(detail);
@@ -24177,7 +24194,7 @@ function renderHomeTasks(){
 
   // ---------- ABAS / ENTRADA DA PÁGINA ----------
   function setAssistTab(tab){
-    const next = ['novo','historico','tabela','pagamentos','categorias'].includes(tab) ? tab : 'novo';
+    const next = ['novo','pendentes','historico','tabela','pagamentos','categorias'].includes(tab) ? tab : 'novo';
     assistState.tab = next;
     document.querySelectorAll('[data-assist-tab]').forEach(button => {
       const active = button.dataset.assistTab === next;
@@ -24185,6 +24202,7 @@ function renderHomeTasks(){
       button.setAttribute('aria-selected', String(active));
     });
     el('assistSectionNovo').hidden = next !== 'novo';
+    el('assistSectionPendentes').hidden = next !== 'pendentes';
     el('assistSectionHistorico').hidden = next !== 'historico';
     el('assistSectionTabela').hidden = next !== 'tabela';
     el('assistSectionPagamentos').hidden = next !== 'pagamentos';
@@ -24192,12 +24210,68 @@ function renderHomeTasks(){
     if(next === 'categorias') assistRenderCategoryTable();
     if(next === 'pagamentos') assistRenderPaymentTable();
     if(next === 'historico') assistLoadHistory();
+    if(next === 'pendentes') assistLoadPending();
     if(next === 'tabela'){
       assistRenderDefectFilters();
       assistRenderDefectTable();
     }
     if(next === 'novo') assistSchedulePreview();
   }
+
+  // ---------- O.S. AGUARDANDO ORÇAMENTO ----------
+  // Fila das O.S. em ORÇAMENTO PENDENTE (todas as lojas): o ADM dos orçamentos
+  // faz daqui; ao salvar, a O.S. vira ORÇAMENTO PRONTO e sai da fila.
+  async function assistLoadPending(){
+    try{
+      const {orders} = await assistApi('/quotes?pendingOs=1');
+      assistState.pending = orders;
+      el('assistPendingCount').textContent = '('+orders.length+')';
+      setAssistStatus('assistPendingStatus', '');
+      assistRenderPending();
+    }catch(error){
+      setAssistStatus('assistPendingStatus', error.message, 'error');
+    }
+  }
+
+  function assistWaitingLabel(since){
+    const days = Math.floor((new Date(todayDateKeyRecife()+'T12:00:00Z') - new Date(String(since).slice(0, 10)+'T12:00:00Z')) / 86400000);
+    return days <= 0 ? 'HOJE' : days === 1 ? 'HÁ 1 DIA' : 'HÁ '+days+' DIAS';
+  }
+
+  function assistRenderPending(){
+    const body = el('assistPendingBody');
+    const rows = assistState.pending || [];
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">NENHUMA O.S. AGUARDANDO ORÇAMENTO.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(order =>
+      '<tr>'+
+        '<td data-label="O.S."><strong>'+escapeHtml(order.osNumber)+'</strong></td>'+
+        '<td data-label="LOJA">'+escapeHtml(order.storeName || '—')+'</td>'+
+        '<td data-label="EQUIPAMENTO"><div>'+escapeHtml(order.equipment || '—')+'<span class="div-cell-sub">'+escapeHtml(order.category || '')+'</span></div></td>'+
+        '<td data-label="OBSERVAÇÕES"><div>'+escapeHtml(order.situation || '—')+(order.lastUpdateText ? '<span class="div-cell-sub">'+escapeHtml(order.lastUpdateText)+'</span>' : '')+'</div></td>'+
+        '<td data-label="AGUARDANDO DESDE"><div>'+escapeHtml(formatDateBR(String(order.since).slice(0, 10)) || '—')+'<span class="div-cell-sub">'+assistWaitingLabel(order.since)+'</span></div></td>'+
+        '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
+          (order.quoteId
+            ? '<button class="btn-outline" type="button" data-assist-pending-edit="'+escapeHtml(order.quoteId)+'">ABRIR ORÇAMENTO</button>'
+            : '<button class="btn-accent" type="button" data-assist-pending="'+escapeHtml(order.id)+'">FAZER ORÇAMENTO</button>')+
+        '</div></td>'+
+      '</tr>'
+    ).join('');
+  }
+
+  el('assistPendingBody').addEventListener('click', event => {
+    const edit = event.target.closest('[data-assist-pending-edit]');
+    if(edit){ assistEditQuote(edit.dataset.assistPendingEdit); return; }
+    const button = event.target.closest('[data-assist-pending]');
+    const order = button && (assistState.pending || []).find(item => item.id === button.dataset.assistPending);
+    if(!order) return;
+    assistPendingOs = {osNumber:order.osNumber, companyId:order.storeId,
+      info:[order.equipment || order.category, order.situation, order.lastUpdateText].filter(Boolean).join(' · ')};
+    assistApplyPendingOs();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
 
   // "FAZER ORÇAMENTO" na O.S.: abre o NOVO ORÇAMENTO com o nº e a loja da O.S.
   let assistPendingOs = null;
@@ -24213,6 +24287,8 @@ function renderHomeTasks(){
     setAssistTab('novo');
     assistRenderCompanySelects();
     assistSchedulePreview();
+    el('assistOsBannerText').textContent = 'ORÇAMENTO DA O.S. '+pending.osNumber+(pending.info ? ' · '+pending.info : '')+' — AO SALVAR, A O.S. VOLTA PARA ORDENS DE SERVIÇO COMO ORÇAMENTO PRONTO.';
+    el('assistOsBanner').hidden = false;
     el('assistClientName').focus();
   }
 
@@ -24242,6 +24318,7 @@ function renderHomeTasks(){
     assistRenderEquipments();
     setAssistTab(assistState.tab);
     assistApplyPendingOs();
+    if(assistState.tab !== 'pendentes') assistLoadPending();
   }
 
   document.querySelectorAll('[data-assist-tab]').forEach(button => {
@@ -30608,7 +30685,8 @@ function renderHomeTasks(){
     const order = ((osData && osData.orders) || []).find(row => row.id === id);
     if(!order) return;
     if(button.dataset.osQuoteNew){
-      assistPendingOs = {osNumber:order.osNumber, companyId:order.storeId};
+      assistPendingOs = {osNumber:order.osNumber, companyId:order.storeId,
+        info:[order.equipment || order.category, order.situation, order.lastUpdateText].filter(Boolean).join(' · ')};
       navigateToPage('assistenciaOrcamentos');
       return;
     }

@@ -2,6 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { hasCompany } from "../../../lib/access-scope";
 import { isDateOnly, isUniqueViolation, parseQuote, upper } from "../../../lib/assistencia";
+import { OS_QUOTE_PENDING_STATUS } from "../../../lib/ordens-servico";
 import {
   buildPayments,
   canManage,
@@ -33,6 +34,34 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
+    // Aba O.S. AGUARDANDO ORÇAMENTO: O.S. que a assistência colocou em
+    // ORÇAMENTO PENDENTE (todas as lojas), com o orçamento já salvo, se houver.
+    // "since" = quando entrou no status (histórico) ou o cadastro da O.S.
+    if (url.searchParams.get("pendingOs") === "1") {
+      const database = await getD1();
+      const result = await database
+        .prepare(
+          `SELECT o.id, o.os_number AS osNumber, o.category, o.equipment, o.store_id AS storeId, o.store_name AS storeName,
+                  o.deadline, o.situation, o.last_update_text AS lastUpdateText,
+                  COALESCE((SELECT MAX(u.created_at) FROM assist_service_order_updates u
+                            WHERE u.order_id=o.id AND u.update_text LIKE ?2), o.created_at) AS since,
+                  (SELECT q.id FROM assist_quotes q WHERE q.os_number=o.os_number LIMIT 1) AS quoteId
+           FROM assist_service_orders o
+           WHERE o.status=?1 AND o.canceled=0 AND o.closed=0
+           ORDER BY since, o.os_number`,
+        )
+        .bind(OS_QUOTE_PENDING_STATUS, `STATUS: ${OS_QUOTE_PENDING_STATUS}%`)
+        .all<Record<string, unknown>>();
+      return jsonResponse({
+        orders: (result.results ?? []).map((row) => ({
+          ...row,
+          osNumber: String(row.osNumber),
+          deadline: String(row.deadline || ""),
+          since: String(row.since || ""),
+          quoteId: String(row.quoteId || ""),
+        })),
+      });
+    }
     const conditions: string[] = [];
     const params: unknown[] = [];
     const add = (condition: string, value: unknown) => {

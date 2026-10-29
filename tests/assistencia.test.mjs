@@ -69,7 +69,9 @@ function createFakeD1() {
     CREATE TABLE assist_service_orders (
       id text PRIMARY KEY, os_number text NOT NULL, status text NOT NULL, canceled integer DEFAULT 0 NOT NULL,
       closed integer DEFAULT 0 NOT NULL, updated_by text DEFAULT '' NOT NULL, updated_by_name text DEFAULT '' NOT NULL,
-      updated_at text DEFAULT '' NOT NULL
+      updated_at text DEFAULT '' NOT NULL, category text DEFAULT '' NOT NULL, equipment text DEFAULT '' NOT NULL,
+      store_id text DEFAULT '' NOT NULL, store_name text DEFAULT '' NOT NULL, deadline text DEFAULT '' NOT NULL,
+      situation text DEFAULT '' NOT NULL, last_update_text text DEFAULT '' NOT NULL, created_at text DEFAULT '' NOT NULL
     );
     CREATE TABLE assist_service_order_updates (
       id text PRIMARY KEY, order_id text NOT NULL, update_text text NOT NULL, created_by text DEFAULT '' NOT NULL,
@@ -723,4 +725,22 @@ test("orçamento salvo leva a O.S. de ORÇAMENTO PENDENTE para ORÇAMENTO PRONTO
   const saved = (await getQuotes(NO_STORE_USER, "?q=OSLINK-1")).body.quotes[0];
   assert.equal((await patchQuote(NO_STORE_USER, saved.id, quote({ osNumber: "OSLINK-1" }))).status, 200);
   assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM assist_service_order_updates").get().n, 1);
+});
+
+test("aba O.S. AGUARDANDO ORÇAMENTO: lista as pendentes (mais antiga primeiro) e a O.S. sai ao salvar o orçamento", async () => {
+  const insertOs = db.sqlite.prepare(
+    "INSERT INTO assist_service_orders (id, os_number, status, closed, equipment, store_id, store_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  insertOs.run("fila-1", "FILA-1", "ORÇAMENTO PENDENTE", 0, "PS5 SLIM", STORE_B, "GUARARAPES", "2026-10-20T10:00:00Z");
+  insertOs.run("fila-2", "FILA-2", "ORÇAMENTO PENDENTE", 0, "XBOX ONE", STORE_A, "RIOMAR", "2026-10-10T10:00:00Z");
+  insertOs.run("fila-3", "FILA-3", "AUTORIZADA", 0, "PS4", STORE_A, "RIOMAR", "2026-10-01T10:00:00Z");
+  // Entrou em ORÇAMENTO PENDENTE depois do cadastro: vale a data do histórico.
+  db.sqlite.prepare("INSERT INTO assist_service_order_updates (id, order_id, update_text, created_at) VALUES (?, ?, ?, ?)")
+    .run("h-fila-2", "fila-2", "STATUS: ORÇAMENTO PENDENTE", "2026-10-25T10:00:00Z");
+  const list = async () => (await call(quotesRoute.GET, NO_STORE_USER, { path: "/quotes?pendingOs=1" })).body.orders
+    .filter((order) => order.osNumber.startsWith("FILA-"));
+  assert.deepEqual((await list()).map((order) => [order.osNumber, order.since.slice(0, 10), order.quoteId]),
+    [["FILA-1", "2026-10-20", ""], ["FILA-2", "2026-10-25", ""]]);
+  assert.equal((await call(quotesRoute.GET, STORE_LOGIN, { path: "/quotes?pendingOs=1" })).status, 403);
+  assert.equal((await createQuote(NO_STORE_USER, quote({ osNumber: "FILA-1" }))).status, 201);
+  assert.deepEqual((await list()).map((order) => order.osNumber), ["FILA-2"]);
 });
