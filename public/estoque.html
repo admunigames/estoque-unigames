@@ -29201,12 +29201,14 @@ function renderHomeTasks(){
 
   // Diferença na hora em que digita (antes de salvar).
   function invUpdateDiffCell(itemId, value){
-    const cell = document.querySelector('[data-inv-diff="'+CSS.escape(itemId)+'"]');
     const item = invData && invData.items.find(row => row.id === itemId);
-    if(!cell || !item) return;
+    if(!item) return;
     const diff = value === '' || value === null ? null : Number(value) - item.systemQty;
-    cell.className = gdMoneyClass(diff || 0);
-    cell.innerHTML = '<strong>'+invDiffLabel(diff)+'</strong>';
+    // Mesma célula nas abas CONTAGEM e DIVERGENTES.
+    document.querySelectorAll('[data-inv-diff="'+CSS.escape(itemId)+'"]').forEach(cell => {
+      cell.className = gdMoneyClass(diff || 0);
+      cell.innerHTML = '<strong>'+invDiffLabel(diff)+'</strong>';
+    });
   }
 
   function renderInvResult(){
@@ -29243,6 +29245,8 @@ function renderHomeTasks(){
   function renderInvDivergent(live){
     const showRemoved = el('invDivView').value === 'removed';
     const canManage = invCan('manage') && invOpen();
+    // Recontagem dos divergentes: quem só conta corrige o contado aqui mesmo.
+    const canCount = (invCan('count') || invCan('manage')) && invOpen();
     const rows = invDivergent().filter(item => Boolean(item.removed) === showRemoved).sort((a, b) => a.category.localeCompare(b.category) || a.product.localeCompare(b.product));
     const body = el('invDivBody');
     if(live && body.contains(document.activeElement)) return;
@@ -29251,9 +29255,9 @@ function renderHomeTasks(){
       return '<tr>'+
         '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong><small class="os-update-meta">'+escapeHtml(item.code || '')+'</small></td>'+
-        '<td data-label="Contado">'+item.countedQty+'</td>'+
+        '<td data-label="Contado">'+(canCount && !item.removed ? '<input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+item.countedQty+'">' : item.countedQty)+'</td>'+
         '<td data-label="Sistema">'+item.systemQty+'</td>'+
-        '<td data-label="Diferença" class="'+gdMoneyClass(diff)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
+        '<td data-label="Diferença" class="'+gdMoneyClass(diff)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
         '<td data-label="Valor" class="'+gdMoneyClass(diff || 0)+'">'+invMoney(value)+'</td>'+
         '<td data-label="Motivo da divergência"><input type="text" class="inv-reason" maxlength="1000" data-inv-reason="'+escapeHtml(item.id)+'" value="'+escapeHtml(item.reason || '')+'" placeholder="Motivo"'+(canManage ? '' : ' disabled')+'>'+
           (item.removed ? '<small class="os-update-meta">RETIRADO POR '+escapeHtml(item.removedByName+' · '+(formatDateTimeBR(item.removedAt) || ''))+'</small>' : '')+'</td>'+
@@ -29493,9 +29497,7 @@ function renderHomeTasks(){
   });
   el('invCountCategory') && el('invCountCategory').addEventListener('change', () => renderInvCount());
   el('invCountSearch') && el('invCountSearch').addEventListener('input', debounce(() => renderInvCount(), 120));
-  el('invCountBody') && el('invCountBody').addEventListener('change', async event => {
-    const input = event.target.closest('[data-inv-item]');
-    if(!input) return;
+  async function invSaveCount(input){
     const item = invData.items.find(row => row.id === input.dataset.invItem);
     const value = input.value === '' ? null : Number(input.value);
     try{
@@ -29504,19 +29506,27 @@ function renderHomeTasks(){
       input.classList.add('inv-saved');
       setTimeout(() => input.classList.remove('inv-saved'), 900);
     }catch(error){ showPurchaseToast(error.message, 'error'); }
-  });
-  el('invCountBody') && el('invCountBody').addEventListener('input', event => {
-    const input = event.target.closest('[data-inv-item]');
-    if(input) invUpdateDiffCell(input.dataset.invItem, input.value);
-  });
-  // Enter passa para o próximo produto (contagem rápida).
-  el('invCountBody') && el('invCountBody').addEventListener('keydown', event => {
-    if(event.key !== 'Enter' || !event.target.matches('[data-inv-item]')) return;
-    event.preventDefault();
-    const inputs = [...el('invCountBody').querySelectorAll('[data-inv-item]')];
-    const next = inputs[inputs.indexOf(event.target) + 1];
-    event.target.blur();
-    if(next){ next.focus(); next.select(); }
+  }
+  ['invCountBody','invDivBody'].forEach(id => {
+    const body = el(id);
+    if(!body) return;
+    body.addEventListener('change', event => {
+      const input = event.target.closest('[data-inv-item]');
+      if(input) invSaveCount(input);
+    });
+    body.addEventListener('input', event => {
+      const input = event.target.closest('[data-inv-item]');
+      if(input) invUpdateDiffCell(input.dataset.invItem, input.value);
+    });
+    // Enter passa para o próximo produto (contagem rápida).
+    body.addEventListener('keydown', event => {
+      if(event.key !== 'Enter' || !event.target.matches('[data-inv-item]')) return;
+      event.preventDefault();
+      const inputs = [...body.querySelectorAll('[data-inv-item]')];
+      const next = inputs[inputs.indexOf(event.target) + 1];
+      event.target.blur();
+      if(next){ next.focus(); next.select(); }
+    });
   });
   // PRODUTO FORA DA LISTA (novo ou edição).
   function invOpenItemDialog(item){
