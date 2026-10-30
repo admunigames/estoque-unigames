@@ -756,6 +756,12 @@
   td.saldo, td.entrada, td.saida, td.codigo{text-align:right;}
   td.codigo{text-align:left; color:var(--ink-soft); font-family:var(--mono);}
   body.table-density-compact tbody td{padding-block:8px; font-size:12px;}
+  /* Web: tabelas mais compactas para caber sem rolar para o lado (30/10/2026). */
+  @media (min-width:901px){
+    thead th{padding:12px 10px; letter-spacing:.3px;}
+    tbody td{padding:11px 10px; font-size:13.5px;}
+    tbody td .btn-outline,tbody td .btn-accent{padding-inline:10px;}
+  }
   body.table-density-compact thead th{padding-block:10px; font-size:9.5px;}
   @media (min-width:901px){
     #inventoryTable th:first-child,#inventoryTable td:first-child,
