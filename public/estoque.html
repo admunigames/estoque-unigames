@@ -146,6 +146,8 @@
   input[id*=password i], input[id*=pix i], input[id*=link i], input[id*=url i]{ text-transform:none; }
   code,.codigo,.num,.saldo,.entrada,.saida,.qty,.company-meta,.pagination-info{font-family:var(--mono);}
   .wrap{max-width:1680px; margin:0 auto; --wrap-pad-x:26px; padding:30px var(--wrap-pad-x) calc(68px + env(safe-area-inset-bottom));}
+  /* Web (≥1280px): usa a largura toda da tela; celular/tablet não mudam (30/10/2026). */
+  @media (min-width:1280px){ .wrap{max-width:none; --wrap-pad-x:32px;} }
 
   /* SELECTS / DROPDOWNS */
   :root{color-scheme:dark;}
