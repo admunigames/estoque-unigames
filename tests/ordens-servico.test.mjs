@@ -214,3 +214,31 @@ test("ligação com Orçamentos: status novos, valor e PDF do orçamento na O.S.
     [["88612.01", "q-base", 30000], ["88612.02", "q-base", 30000]]);
   assert.equal((await (await call(LOJA_A, "GET", undefined, `?quote=${rows[1].id}`)).json()).quote.osNumber, "88612");
 });
+
+test("APROVADAS POR DATA: O.S. abertas e finalizadas aprovadas no período (dia de Recife), loja só as suas", async () => {
+  const today = recifeDate();
+  // Cadastrada já APROVADA (segue para a loja) e outra aprovada pela edição (não segue: finaliza).
+  assert.equal((await call(TECNICO, "POST", order("APR-1", shift(3), { status: "APROVADA", shipToStore: "sim" }))).status, 201);
+  assert.equal((await call(TECNICO, "POST", order("APR-2", shift(3), { storeId: B }))).status, 201);
+  assert.equal((await call(TECNICO, "POST", order("APR-3", shift(3)))).status, 201);
+  let rows = (await (await call(TECNICO, "GET")).json()).orders;
+  const apr2 = rows.find((row) => row.osNumber === "APR-2");
+  const apr3 = rows.find((row) => row.osNumber === "APR-3");
+  assert.equal((await call(TECNICO, "PATCH", { ...order("APR-2", shift(3), { storeId: B }), id: apr2.id, status: "APROVADA", shipToStore: "nao" })).status, 200);
+  // APR-3 foi aprovada ontem às 23:30 de Recife (02:30Z de hoje): conta como ontem.
+  const [y, m, d] = today.split("-").map(Number);
+  db.insert("assist_service_order_updates", {
+    id: "apr-ontem", order_id: apr3.id, update_text: "STATUS: APROVADA · SEGUE PARA A LOJA",
+    created_at: new Date(Date.UTC(y, m - 1, d, 2, 30)).toISOString(),
+  });
+
+  const approved = async (actor, from, to = from) =>
+    (await (await call(actor, "GET", undefined, `?approvedFrom=${from}&approvedTo=${to}`)).json()).orders.map((row) => row.osNumber).filter((n) => n.startsWith("APR-")).sort();
+  assert.deepEqual(await approved(TECNICO, today), ["APR-1", "APR-2"]);
+  assert.deepEqual(await approved(TECNICO, shift(-1)), ["APR-3"]);
+  assert.deepEqual(await approved(TECNICO, shift(-1), today), ["APR-1", "APR-2", "APR-3"]);
+  assert.deepEqual(await approved(LOJA_A, shift(-1), today), ["APR-1", "APR-3"]);
+  const row = (await (await call(TECNICO, "GET", undefined, `?approvedFrom=${today}`)).json()).orders.find((item) => item.osNumber === "APR-2");
+  assert.equal(row.closed, 1);
+  assert.equal(recifeDate(row.approvedAt), today);
+});

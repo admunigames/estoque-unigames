@@ -7,6 +7,7 @@ import {
   compareOrders,
   DATE_PATTERN,
   deadlineInfo,
+  OS_APPROVAL_HISTORY,
   OS_APPROVED_STATUS,
   OS_CATEGORIES,
   OS_RETURN_STATUSES,
@@ -122,6 +123,12 @@ async function osNumberTaken(database: D1Database, osNumber: string, exceptId: s
   return Boolean(row);
 }
 
+function statusHistoryText(order: { status: string; shipToStore: ShipToStore }) {
+  const ship = OS_RETURN_STATUSES.includes(order.status) ? " · SEGUE PARA A LOJA PARA DEVOLVER AO CLIENTE"
+    : order.shipToStore === "sim" ? " · SEGUE PARA A LOJA" : order.shipToStore === "nao" ? " · NÃO SEGUE PARA A LOJA" : "";
+  return `STATUS: ${order.status}${ship}`;
+}
+
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -164,7 +171,18 @@ export async function GET(request: Request) {
     }
 
     const closed = url.searchParams.get("closed") === "1" ? 1 : 0;
-    const storeFilter = scope.allStores ? "" : " AND store_id=?2";
+    // APROVADAS POR DATA (30/10/2026): O.S. abertas ou finalizadas que a
+    // assistência pôs em APROVADA no período (dia de Recife, pelo histórico).
+    const approvedFrom = safeText(url.searchParams.get("approvedFrom"), 10);
+    const approvedTo = safeText(url.searchParams.get("approvedTo"), 10) || approvedFrom;
+    const byApproval = DATE_PATTERN.test(approvedFrom) && DATE_PATTERN.test(approvedTo);
+    const params: unknown[] = byApproval
+      ? [new Date(`${approvedFrom}T00:00:00-03:00`).toISOString(),
+        new Date(new Date(`${approvedTo}T00:00:00-03:00`).getTime() + 86_400_000).toISOString()]
+      : [closed];
+    const storeFilter = scope.allStores ? "" : ` AND store_id=?${params.push(actor.companyId)}`;
+    const approvalEvent = `FROM assist_service_order_updates u WHERE u.order_id=assist_service_orders.id
+      AND u.update_text LIKE '${OS_APPROVAL_HISTORY}%' AND u.created_at >= ?1 AND u.created_at < ?2`;
     const statement = database.prepare(
       `SELECT id, os_number AS osNumber, category, equipment, status, store_id AS storeId, store_name AS storeName,
               deadline, situation, closed, closed_at AS closedAt, last_update_text AS lastUpdateText,
@@ -174,12 +192,14 @@ export async function GET(request: Request) {
               store_check_note AS storeCheckNote,
               (SELECT q.id FROM assist_quotes q WHERE ${quoteOfOsSql("assist_service_orders.os_number")} LIMIT 1) AS quoteId,
               (SELECT q.total_cents FROM assist_quotes q WHERE ${quoteOfOsSql("assist_service_orders.os_number")} LIMIT 1) AS quoteTotalCents,
+              ${byApproval ? `(SELECT MAX(u.created_at) ${approvalEvent})` : "''"} AS approvedAt,
               created_by_name AS createdByName, created_at AS createdAt, updated_by_name AS updatedByName, updated_at AS updatedAt
-       FROM assist_service_orders WHERE canceled=0 AND closed=?1${storeFilter}
-       ORDER BY ${closed ? "closed_at DESC LIMIT 300" : "deadline"}`,
+       FROM assist_service_orders
+       WHERE canceled=0 AND ${byApproval ? `EXISTS (SELECT 1 ${approvalEvent})` : "closed=?1"}${storeFilter}
+       ORDER BY ${byApproval ? "id" : closed ? "closed_at DESC LIMIT 300" : "deadline"}`,
     );
     const [result, allCompanies] = await Promise.all([
-      (scope.allStores ? statement.bind(closed) : statement.bind(closed, actor.companyId)).all<JsonMap>(),
+      statement.bind(...params).all<JsonMap>(),
       loadCompanies(database),
     ]);
     const today = recifeDate();
@@ -193,6 +213,7 @@ export async function GET(request: Request) {
           closedAt: String(row.closedAt || ""),
           quoteId: String(row.quoteId || ""),
           quoteTotalCents: Number(row.quoteTotalCents) || 0,
+          approvedAt: String(row.approvedAt || ""),
         };
         const info = deadlineInfo(order.deadline, today);
         return {
@@ -202,7 +223,7 @@ export async function GET(request: Request) {
           updatedToday: recifeDate(String(row.lastUpdateAt || "")) === today,
         };
       })
-      .sort(compareOrders);
+      .sort(byApproval ? (a, b) => b.approvedAt.localeCompare(a.approvedAt) : compareOrders);
     const companies = scope.allStores ? allCompanies : allCompanies.filter((company) => company.id === actor.companyId);
     return jsonResponse({ today, allStores: scope.allStores, companies, orders });
   } catch (error) {
@@ -244,6 +265,8 @@ export async function POST(request: Request) {
           order.shipToStore, order.shipToStore ? actor.displayName : "", order.shipToStore ? now : "", storeCheck,
           actor.id, actor.displayName, now),
     ];
+    // Já cadastrada como APROVADA: o histórico guarda a data (APROVADAS POR DATA).
+    if (order.status === OS_APPROVED_STATUS) statements.push(historyEntry(database, id, statusHistoryText(order), actor, now));
     if (updateText) {
       statements.push(
         database
@@ -365,11 +388,7 @@ export async function PATCH(request: Request) {
           existing.id),
     ];
     // Mudança de status (e o SEGUE PARA A LOJA) entra no histórico com quem fez.
-    if (statusChanged || shipChanged) {
-      const ship = OS_RETURN_STATUSES.includes(order.status) ? " · SEGUE PARA A LOJA PARA DEVOLVER AO CLIENTE"
-        : order.shipToStore === "sim" ? " · SEGUE PARA A LOJA" : order.shipToStore === "nao" ? " · NÃO SEGUE PARA A LOJA" : "";
-      statements.push(historyEntry(database, existing.id, `STATUS: ${order.status}${ship}`, actor, now));
-    }
+    if (statusChanged || shipChanged) statements.push(historyEntry(database, existing.id, statusHistoryText(order), actor, now));
     await database.batch(statements);
     return jsonResponse({ updated: true });
   } catch (error) {

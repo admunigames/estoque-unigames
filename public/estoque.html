@@ -8127,8 +8127,10 @@
 
       <div class="dre-toolbar">
         <div class="field"><label for="osView">MOSTRAR</label>
-          <select id="osView"><option value="open">EM ABERTO</option><option value="closed">FINALIZADAS (APROVADAS, NÃO AUTORIZADAS, SEM SOLUÇÃO)</option></select>
+          <select id="osView"><option value="open">EM ABERTO</option><option value="closed">FINALIZADAS (APROVADAS, NÃO AUTORIZADAS, SEM SOLUÇÃO)</option><option value="approved">APROVADAS POR DATA</option></select>
         </div>
+        <div class="field" data-os-approved hidden><label for="osApprovedFrom">APROVADAS DE</label><input type="date" id="osApprovedFrom"></div>
+        <div class="field" data-os-approved hidden><label for="osApprovedTo">ATÉ</label><input type="date" id="osApprovedTo"></div>
         <div class="field" id="osStoreField"><label for="osStoreFilter">LOJA</label><select id="osStoreFilter"></select></div>
         <div class="field"><label for="osStatusFilter">STATUS</label><select id="osStatusFilter"></select></div>
         <div class="field"><label for="osLevelFilter">PRAZO</label>
@@ -30524,8 +30526,14 @@ function renderHomeTasks(){
     }).join('');
     const rows = osFiltered(false);
     const closedView = el('osView').value === 'closed';
+    const approvedView = el('osView').value === 'approved';
     const count = level => rows.filter(row => row.deadlineLevel === level).length;
-    el('osSummary').innerHTML = closedView
+    const period = approvedView ? osApprovedPeriodLabel() : '';
+    el('osSummary').innerHTML = approvedView
+      ? '<article class="supply-dashboard-card"><span>APROVADAS '+escapeHtml(period)+'</span><strong>'+rows.length+'</strong></article>'+
+        '<article class="supply-dashboard-card"><span>AGUARDANDO TESTE NA LOJA</span><strong>'+rows.filter(osAtStore).length+'</strong></article>'+
+        '<article class="supply-dashboard-card"><span>FINALIZADAS</span><strong>'+rows.filter(row => row.closed).length+'</strong></article>'
+      : closedView
       ? '<article class="supply-dashboard-card"><span>FINALIZADAS (ÚLTIMAS 300)</span><strong>'+rows.length+'</strong></article>'
       : '<article class="supply-dashboard-card"><span>EM ABERTO</span><strong>'+rows.length+'</strong></article>'+
         '<article class="supply-dashboard-card danger"><span>ATRASADAS</span><strong>'+count('atrasada')+'</strong></article>'+
@@ -30534,10 +30542,11 @@ function renderHomeTasks(){
         '<article class="supply-dashboard-card warning"><span>SEM ATUALIZAÇÃO HOJE</span><strong>'+rows.filter(row => !osAtStore(row) && !row.updatedToday).length+'</strong></article>'+
         '<article class="supply-dashboard-card"><span>AGUARDANDO TESTE NA LOJA</span><strong>'+rows.filter(osAtStore).length+'</strong></article>'+
         '<article class="supply-dashboard-card danger"><span>REPROVADO EM LOJA</span><strong>'+rows.filter(row => row.storeCheck === 'reprovada').length+'</strong></article>';
-    el('osListTitle').textContent = closedView ? 'O.S. FINALIZADAS · MAIS RECENTES PRIMEIRO' : 'O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO';
+    el('osListTitle').textContent = approvedView ? 'O.S. APROVADAS '+period+' · MAIS RECENTES PRIMEIRO'
+      : closedView ? 'O.S. FINALIZADAS · MAIS RECENTES PRIMEIRO' : 'O.S. EM ABERTO · MAIS CRÍTICAS PRIMEIRO';
     const body = el('osTableBody');
     if(!rows.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma O.S. '+(closedView ? 'aprovada' : 'em aberto')+' com esse filtro.</td></tr>';
+      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma O.S. '+(approvedView ? 'aprovada '+period.toLowerCase() : closedView ? 'aprovada' : 'em aberto')+' com esse filtro.</td></tr>';
       return;
     }
     const canEdit = osCan('edit');
@@ -30577,7 +30586,7 @@ function renderHomeTasks(){
         '<td data-label="O.S."><strong>'+escapeHtml(row.osNumber)+'</strong></td>'+
         '<td data-label="Tipo">'+escapeHtml(row.category)+'</td>'+
         '<td data-label="Equipamento">'+escapeHtml(row.equipment || '—')+'</td>'+
-        '<td data-label="Status">'+escapeHtml(row.status)+ship+check+(row.quoteId ? '<small class="os-update-meta">ORÇAMENTO: '+formatCentsBRL(row.quoteTotalCents)+'</small>' : '')+'</td>'+
+        '<td data-label="Status">'+escapeHtml(row.status)+(row.approvedAt ? '<small class="os-update-meta">APROVADA EM '+escapeHtml(formatDateTimeBR(row.approvedAt) || '')+'</small>' : '')+ship+check+(row.quoteId ? '<small class="os-update-meta">ORÇAMENTO: '+formatCentsBRL(row.quoteTotalCents)+'</small>' : '')+'</td>'+
         '<td data-label="Loja">'+escapeHtml(row.storeName || '—')+'</td>'+
         '<td data-label="Data limite" style="white-space:nowrap">'+escapeHtml(row.deadline ? gdDateLabel(row.deadline) : '—')+'<br><span class="status-pill '+(OS_LEVEL_PILL[level] || '')+'">'+escapeHtml(osDeadlineLabel(row))+'</span></td>'+
         '<td data-label="Observações">'+escapeHtml(row.situation || '—')+'</td>'+
@@ -30589,7 +30598,11 @@ function renderHomeTasks(){
 
   async function loadOrdensServicoPage(){
     try{
-      osData = await osApiRequest(el('osView').value === 'closed' ? '?closed=1' : '');
+      const view = el('osView').value;
+      document.querySelectorAll('[data-os-approved]').forEach(field => { field.hidden = view !== 'approved'; });
+      if(view === 'approved' && !el('osApprovedFrom').value) el('osApprovedFrom').value = el('osApprovedTo').value = todayDateKeyRecife();
+      osData = await osApiRequest(view === 'closed' ? '?closed=1'
+        : view === 'approved' ? '?approvedFrom='+el('osApprovedFrom').value+'&approvedTo='+(el('osApprovedTo').value || el('osApprovedFrom').value) : '');
       const storeSelect = el('osStoreFilter');
       const previousStore = storeSelect.value;
       storeSelect.innerHTML = '<option value="">TODAS AS LOJAS</option>'+
@@ -30783,6 +30796,13 @@ function renderHomeTasks(){
   });
   el('btnOsReload') && el('btnOsReload').addEventListener('click', loadOrdensServicoPage);
   el('osView') && el('osView').addEventListener('change', loadOrdensServicoPage);
+  ['osApprovedFrom','osApprovedTo'].forEach(id => el(id) && el(id).addEventListener('change', loadOrdensServicoPage));
+  function osApprovedPeriodLabel(){
+    const from = el('osApprovedFrom').value;
+    const to = el('osApprovedTo').value || from;
+    if(from === todayDateKeyRecife() && to === from) return 'HOJE';
+    return to === from ? 'EM '+formatDateBR(from) : 'DE '+formatDateBR(from)+' A '+formatDateBR(to);
+  }
   ['osStoreFilter','osStatusFilter','osLevelFilter'].forEach(id => el(id) && el(id).addEventListener('change', renderOrdensServico));
   el('osSearch') && el('osSearch').addEventListener('input', debounce(renderOrdensServico, 120));
   el('btnOsNew') && el('btnOsNew').addEventListener('click', () => osOpenOrderDialog(null));

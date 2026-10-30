@@ -24,6 +24,9 @@ export const OS_STATUSES = [
   "APROVADA",
 ] as const;
 export const OS_APPROVED_STATUS = "APROVADA";
+// Início do texto do histórico quando a assistência põe a O.S. em APROVADA
+// (filtro APROVADAS POR DATA).
+export const OS_APPROVAL_HISTORY = `STATUS: ${OS_APPROVED_STATUS}`;
 // Ligação com Assistência > Orçamentos (29/10/2026): a O.S. em ORÇAMENTO
 // PENDENTE vira ORÇAMENTO PRONTO quando o orçamento com o mesmo nº é salvo;
 // depois de enviar ao cliente, a pessoa muda para PASSADO ORÇAMENTO.
