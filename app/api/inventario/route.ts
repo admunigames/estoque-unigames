@@ -32,6 +32,7 @@ import {
 //       produto FORA DA LISTA (sistema 0, custo à mão, não sobrescrito pelos custos)
 //     delete_item {itemId}                         (count) → só produto fora da lista
 //     reason {itemId, reason} / remove {itemId, removed} (manage)
+//     recount {itemIds[], recount}                  (manage) → PDF RECONTAGEM DE LOJA
 //     finalize {finalized}                          (manage)
 //   DELETE {id}                                     (delete; deleted=1)
 
@@ -119,7 +120,7 @@ async function inventoryDetail(database: Database, actor: Actor, id: string) {
       .prepare(
         `SELECT id, category, code, product, system_qty AS systemQty, counted_qty AS countedQty,
                 counted_by_name AS countedByName, counted_at AS countedAt, cost_cents AS costCents, reason,
-                source, added_by_name AS addedByName, removed, removed_by_name AS removedByName, removed_at AS removedAt
+                source, added_by_name AS addedByName, removed, recount, removed_by_name AS removedByName, removed_at AS removedAt
          FROM inventory_items WHERE inventory_id=?1 ORDER BY category, product`,
       )
       .bind(id)
@@ -149,7 +150,7 @@ async function inventoryDetail(database: Database, actor: Actor, id: string) {
     categories: categories.results ?? [],
     items: (items.results ?? []).map((row) => ({
       ...row, systemQty: Number(row.systemQty), countedQty: toNumber(row.countedQty),
-      costCents: toNumber(row.costCents), removed: Number(row.removed),
+      costCents: toNumber(row.costCents), removed: Number(row.removed), recount: Number(row.recount),
     })),
     divergencesNoted: (noted.results ?? []).map((row) => ({ ...row, physicalQty: Number(row.physicalQty), systemQty: Number(row.systemQty) })),
     attachments: attachments.results ?? [],
@@ -186,7 +187,7 @@ export async function POST(request: Request) {
 const ACTION_PERMISSION: Record<string, string> = {
   add_item: "count", delete_item: "count",
   upload_category: "manage", delete_category: "manage", count: "count", finish_category: "count",
-  reopen_category: "count", costs: "manage", reason: "manage", remove: "manage", finalize: "manage",
+  reopen_category: "count", costs: "manage", reason: "manage", remove: "manage", recount: "manage", finalize: "manage",
 };
 
 export async function PATCH(request: Request) {
@@ -393,6 +394,21 @@ export async function PATCH(request: Request) {
             safeText(body.itemId, 80), inventory.id);
       const row = await statement.first<{ id: string }>();
       if (!row) return jsonResponse({ error: "PRODUTO NÃO ENCONTRADO." }, 404);
+      return jsonResponse({ updated: true });
+    }
+
+    if (action === "recount") {
+      const ids = (Array.isArray(body.itemIds) ? body.itemIds : []).map((value) => safeText(value, 80)).filter(Boolean);
+      if (!ids.length || ids.length > MAX_ITEMS_PER_CATEGORY) return jsonResponse({ error: "ESCOLHA OS PRODUTOS." }, 400);
+      for (const part of chunk(ids, 90)) {
+        await database
+          .prepare(
+            `UPDATE inventory_items SET recount=?1, updated_by_name=?2, updated_at=?3
+             WHERE inventory_id=?4 AND id IN (${part.map((_id, index) => `?${index + 5}`).join(",")})`,
+          )
+          .bind(body.recount ? 1 : 0, actor.displayName, now, inventory.id, ...part)
+          .run();
+      }
       return jsonResponse({ updated: true });
     }
 

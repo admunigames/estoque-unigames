@@ -5084,13 +5084,15 @@
             <div class="field"><label for="invDivView">MOSTRAR</label>
               <select id="invDivView"><option value="">DIVERGENTES (LISTA FINAL)</option><option value="removed">ENCONTRADOS / RETIRADOS</option></select>
             </div>
+            <button class="btn-outline" id="btnInvRecountAll" type="button" hidden>MARCAR TODOS PARA RECONTAGEM</button>
             <button class="btn-outline" type="button" data-inv-pdf="diretor">PDF RELATÓRIO FINAL (DIRETOR)</button>
             <button class="btn-outline" type="button" data-inv-pdf="final">PDF DIVERGÊNCIA FINAL DA LOJA</button>
             <button class="btn-outline" type="button" data-inv-pdf="recontagem">PDF RECONTAGEM DE LOJA</button>
             <button class="btn-outline" type="button" data-inv-pdf="pontti">PDF DIVERGÊNCIA PONTTI</button>
           </div>
+          <p class="purchase-field-help" id="invRecountHint"></p>
           <div class="table-panel responsive-table"><div class="table-scroll">
-            <table><thead><tr><th>Categoria</th><th>Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Valor</th><th>Motivo da divergência</th><th></th></tr></thead>
+            <table><thead><tr><th>Recontagem</th><th>Categoria</th><th>Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Valor</th><th>Motivo da divergência</th><th></th></tr></thead>
             <tbody id="invDivBody"></tbody></table>
           </div></div>
         </div>
@@ -29249,10 +29251,19 @@ function renderHomeTasks(){
     const canCount = (invCan('count') || invCan('manage')) && invOpen();
     const rows = invDivergent().filter(item => Boolean(item.removed) === showRemoved).sort((a, b) => a.category.localeCompare(b.category) || a.product.localeCompare(b.product));
     const body = el('invDivBody');
+    // Só os marcados aqui vão para o PDF RECONTAGEM DE LOJA (quem gerencia escolhe).
+    const open = invDivergent().filter(item => !item.removed);
+    const marked = open.filter(item => item.recount).length;
+    el('invRecountHint').textContent = marked+' DE '+open.length+' DIVERGENTES MARCADOS PARA A RECONTAGEM DA LOJA (SÓ ELES SAEM NO PDF RECONTAGEM DE LOJA).';
+    el('btnInvRecountAll').hidden = !canManage || showRemoved || !open.length;
+    el('btnInvRecountAll').textContent = open.length && marked === open.length ? 'DESMARCAR TODOS DA RECONTAGEM' : 'MARCAR TODOS PARA RECONTAGEM';
     if(live && body.contains(document.activeElement)) return;
     body.innerHTML = rows.length ? rows.map(item => {
       const diff = invDiff(item); const value = invValue(item);
       return '<tr>'+
+        '<td data-label="Recontagem">'+(item.removed ? '—' : canManage
+          ? '<input type="checkbox" class="bulk-check" data-inv-recount="'+escapeHtml(item.id)+'" aria-label="Enviar para a recontagem da loja"'+(item.recount ? ' checked' : '')+'>'
+          : (item.recount ? '<span class="status-pill waiting">RECONTAR</span>' : '—'))+'</td>'+
         '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong><small class="os-update-meta">'+escapeHtml(item.code || '')+'</small></td>'+
         '<td data-label="Contado">'+(canCount && !item.removed ? '<input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+item.countedQty+'">' : item.countedQty)+'</td>'+
@@ -29263,7 +29274,7 @@ function renderHomeTasks(){
           (item.removed ? '<small class="os-update-meta">RETIRADO POR '+escapeHtml(item.removedByName+' · '+(formatDateTimeBR(item.removedAt) || ''))+'</small>' : '')+'</td>'+
         '<td style="white-space:nowrap">'+(canManage ? '<button class="btn-outline btn-sm" type="button" data-inv-remove="'+escapeHtml(item.id)+'" data-removed="'+(item.removed ? '0' : '1')+'">'+(item.removed ? 'VOLTAR PARA A LISTA' : 'ENCONTRADO / RETIRAR')+'</button>' : '')+'</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="8" class="responsive-empty">'+(showRemoved ? 'Nenhuma divergência retirada.' : 'Nenhuma divergência na lista final.')+'</td></tr>';
+    }).join('') : '<tr><td colspan="9" class="responsive-empty">'+(showRemoved ? 'Nenhuma divergência retirada.' : 'Nenhuma divergência na lista final.')+'</td></tr>';
   }
 
   function renderInvAttachments(){
@@ -29331,7 +29342,8 @@ function renderHomeTasks(){
     // recontagem: só as que ficaram na lista (não encontradas nem retiradas).
     const everything = invDivergent().slice().sort(byName);
     const open = everything.filter(item => !item.removed);
-    const rows = kind === 'diretor' || kind === 'pontti' ? everything : open;
+    const rows = kind === 'diretor' || kind === 'pontti' ? everything : kind === 'recontagem' ? open.filter(item => item.recount) : open;
+    if(!rows.length && kind === 'recontagem'){ showPurchaseToast('MARQUE NA COLUNA RECONTAGEM OS PRODUTOS QUE VÃO PARA A RECONTAGEM DA LOJA.', 'error'); return; }
     if(!rows.length){ showPurchaseToast(kind === 'diretor' || kind === 'pontti' ? 'NENHUMA DIVERGÊNCIA NESTE INVENTÁRIO.' : 'NENHUMA DIVERGÊNCIA NA LISTA FINAL.', 'error'); return; }
     const head = (title, extra) => '<header class="print-report-header"><div class="print-report-kicker">ESTOQUE · INVENTÁRIO · '+escapeHtml(inv.storeName)+'</div><h1>'+escapeHtml(title)+'</h1>'+
       '<div class="print-report-meta">INVENTÁRIO DE '+escapeHtml(gdDateLabel(inv.inventoryDate))+' · '+escapeHtml(extra)+' · GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></header>';
@@ -29600,7 +29612,20 @@ function renderHomeTasks(){
   el('invResultCategory') && el('invResultCategory').addEventListener('change', renderInvResult);
   el('invResultSearch') && el('invResultSearch').addEventListener('input', debounce(renderInvResult, 120));
   el('invDivView') && el('invDivView').addEventListener('change', () => renderInvDivergent());
+  async function invSetRecount(ids, recount){
+    try{
+      await invPatch('recount', {itemIds: ids, recount});
+      invData.items.forEach(item => { if(ids.includes(item.id)) item.recount = recount ? 1 : 0; });
+      renderInvDivergent();
+    }catch(error){ showPurchaseToast(error.message, 'error'); renderInvDivergent(); }
+  }
+  el('btnInvRecountAll') && el('btnInvRecountAll').addEventListener('click', () => {
+    const open = invDivergent().filter(item => !item.removed);
+    invSetRecount(open.map(item => item.id), !open.every(item => item.recount));
+  });
   el('invDivBody') && el('invDivBody').addEventListener('change', async event => {
+    const box = event.target.closest('[data-inv-recount]');
+    if(box){ invSetRecount([box.dataset.invRecount], box.checked); return; }
     const input = event.target.closest('[data-inv-reason]');
     if(!input) return;
     try{

@@ -91,6 +91,15 @@ test("fluxo completo: categoria, contagem por vários usuários, custos, diverg�
   assert.equal(removed.removed, 1);
   assert.equal(removed.removedByName, "RENATO");
 
+  // Recontagem da loja: só quem gerencia marca; nada vem marcado.
+  const rosa = detail.items.find((i) => i.product === "ABAFADOR RUIDO OEX ROSA");
+  assert.equal(rosa.recount, 0);
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "recount", itemIds: [rosa.id], recount: true })).status, 403);
+  assert.equal((await call(GESTOR, "PATCH", { id, action: "recount", itemIds: [], recount: true })).status, 400);
+  assert.equal((await call(GESTOR, "PATCH", { id, action: "recount", itemIds: [rosa.id, azul.id], recount: true })).status, 200);
+  detail = await (await call(GESTOR, "GET", undefined, `?id=${id}`)).json();
+  assert.deepEqual(detail.items.filter((i) => i.recount).map((i) => i.id).sort(), [rosa.id, azul.id].sort());
+
   // Lista: divergente só os não retirados.
   const list = await (await call(GESTOR, "GET")).json();
   assert.equal(list.inventories[0].divergent, 0);

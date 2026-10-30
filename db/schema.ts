@@ -4721,6 +4721,8 @@ export const inventoryItems = pgTable(
     source: text("source").notNull().default("relatorio"),
     addedByName: text("added_by_name").notNull().default(""),
     removed: integer("removed").notNull().default(0),
+    // 1 = vai para o PDF RECONTAGEM DE LOJA (marcado na aba DIVERGENTES).
+    recount: integer("recount").notNull().default(0),
     removedByName: text("removed_by_name").notNull().default(""),
     removedAt: text("removed_at").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),
