@@ -162,11 +162,12 @@ test("lib: liderados que contam — novato conta; inativo, o próprio líder, ou
   assert.deepEqual(qualified, ["OK", "NOVATO"]);
 });
 
-test("lib: operacional — nada < 80%, 0,5% de 80% a 99,9%, 1% a partir de 100%, prêmios a 120%", () => {
+test("lib: operacional — 0,5% abaixo de 100% (inclusive < 80%), 1% a partir de 100%, prêmios a 120%", () => {
   const op = lib.DEFAULT_ROLE_RULES.operational;
   const run = (assistRevenueCents, revenueCents = 0) =>
     lib.operationalCommission({ targetCents: 1_000_000, revenueCents, assistTargetCents: 1_000_000, assistRevenueCents }, op);
-  assert.equal(run(799_999).commissionCents, 0);
+  assert.equal(run(799_999).commissionCents, 4_000);
+  assert.equal(lib.operationalCommission({ targetCents: 0, revenueCents: 0, assistTargetCents: 0, assistRevenueCents: 500_000 }, op).commissionCents, 0);
   assert.equal(run(800_000).rateBps, 50);
   assert.equal(run(800_000).commissionCents, 4_000);
   assert.equal(run(999_999).rateBps, 50);
@@ -274,7 +275,7 @@ test("operacional: pelo cargo (ativo, com loja, admitido até o mês), valor CHE
   assert.ok(!data.sellers.some((seller) => seller.employeeId.startsWith("emp-op")));
   const rank = await (await callRoute(rankingRoute.GET, DASHBOARD, "GET", "/api/commercial/ranking?month=2026-10")).json();
   assert.ok(!rank.items.some((item) => item.employeeId.startsWith("emp-op")));
-  // Assistência em 85%: 0,5%; em 79%: nada. A loja vale pelo TOTAL (vendas +
+  // Assistência em 85%: 0,5%; em 79%: 0,5% também. A loja vale pelo TOTAL (vendas +
   // assistência): 12.000.000 + 850.000 de 11.000.000 = 116,8% → sem os R$ 400.
   await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 850_000 });
   let op1 = (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1");
@@ -289,7 +290,7 @@ test("operacional: pelo cargo (ativo, com loja, admitido até o mês), valor CHE
   assert.deepEqual([hrRow("emp-op1", "2026-10").c, hrRow("emp-op1", "2026-10").commission, hrRow("emp-op1", "2026-10").premium], [44_250, 4_250, 40_000]);
   await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 790_000 });
   op1 = (await getOverview(ADMIN, "2026-10")).operationals.find((item) => item.employeeId === "emp-op1");
-  assert.deepEqual([op1.commission.rateBps, op1.commission.commissionCents], [0, 0]);
+  assert.deepEqual([op1.commission.rateBps, op1.commission.commissionCents], [50, 3_950]);
   await putStore("2026-10", STORE_A, { targetCents: 10_000_000, revenueCents: 12_000_000, assistTargetCents: 1_000_000, assistRevenueCents: 1_200_000 });
   // RH: vem do Comercial, com o tipo (recibo do operacional = natureza salarial).
   const hr = await (await callRoute(hrCommissionsRoute.GET, PAYROLL, "GET", "/api/hr-payroll/commissions?month=2026-10")).json();

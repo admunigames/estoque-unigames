@@ -87,8 +87,8 @@ export type LeaderRules = {
   storeCents: number;
 };
 
-// OPERACIONAL (por loja): % sobre o FEITO DA ASSISTÊNCIA — baixa de 80% a
-// 99,9% da meta da assistência, alta a partir de 100%, nada abaixo de 80%
+// OPERACIONAL (por loja): % sobre o FEITO DA ASSISTÊNCIA — baixa abaixo de
+// 100% da meta da assistência (inclusive < 80%), alta a partir de 100%
 // (contracheque) — e premiações quando assistência / loja chegam a
 // premiumPercent. Cada operacional recebe o valor CHEIO (sem rateio).
 export type OperationalRules = {
@@ -188,7 +188,7 @@ const LEADER_FIELDS: Array<[keyof LeaderRules, "bps" | "percent" | "cents", stri
   ["storeCents", "cents", "PRÊMIO DO LÍDER POR LOJA E ASSISTÊNCIA"],
 ];
 const OPERATIONAL_FIELDS: Array<[keyof OperationalRules, "bps" | "percent" | "cents", string]> = [
-  ["rateLowBps", "bps", "% DO OPERACIONAL DE 80% A 99,9%"],
+  ["rateLowBps", "bps", "% DO OPERACIONAL ABAIXO DE 100%"],
   ["rateHighBps", "bps", "% DO OPERACIONAL A PARTIR DE 100%"],
   ["premiumPercent", "percent", "% DA META PARA A PREMIAÇÃO DO OPERACIONAL"],
   ["assistPremiumCents", "cents", "PREMIAÇÃO DO OPERACIONAL PELA ASSISTÊNCIA"],
@@ -707,7 +707,7 @@ export function leaderCommission(
 export type OperationalBreakdown = StoreGoal & {
   assistPercent: number | null;
   storePercent: number | null;
-  // 0 abaixo de 80% da meta da assistência.
+  // 0 só quando a loja não tem meta da assistência.
   rateBps: number;
   commissionCents: number;
   assistPremiumCents: number;
@@ -722,7 +722,7 @@ export type OperationalBreakdown = StoreGoal & {
 export function operationalCommission(store: StoreGoal | null, rules: OperationalRules): OperationalBreakdown {
   const goal = store ?? { targetCents: 0, revenueCents: 0, assistTargetCents: 0, assistRevenueCents: 0 };
   const rateBps = reached(goal.assistRevenueCents, goal.assistTargetCents, 100) ? rules.rateHighBps
-    : reached(goal.assistRevenueCents, goal.assistTargetCents, 80) ? rules.rateLowBps
+    : goal.assistTargetCents > 0 ? rules.rateLowBps
     : 0;
   const commissionCents = applyBps(goal.assistRevenueCents, rateBps);
   const assistPremiumCents = reached(goal.assistRevenueCents, goal.assistTargetCents, rules.premiumPercent) ? rules.assistPremiumCents : 0;

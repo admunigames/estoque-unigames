@@ -10237,7 +10237,7 @@
           <div class="purchase-field"><label for="comRuleLeaderStorePct">LOJA E ASSISTÊNCIA COM ≥ (% DA META)</label><input type="number" id="comRuleLeaderStorePct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="leader.storePercent" data-kind="percent"></div>
           <div class="purchase-field"><label for="comRuleLeaderStore">PRÊMIO LOJA E ASSISTÊNCIA (R$)</label><input type="number" id="comRuleLeaderStore" min="0" step="0.01" inputmode="decimal" data-com-role-field="leader.storeCents" data-kind="cents"></div>
           <div class="purchase-field full"><strong>OPERACIONAL</strong> — por loja, valor cheio para cada um</div>
-          <div class="purchase-field"><label for="comRuleOpLow">% DO FEITO DA ASSISTÊNCIA (80% A 99,9%)</label><input type="number" id="comRuleOpLow" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="operational.rateLowBps" data-kind="bps"></div>
+          <div class="purchase-field"><label for="comRuleOpLow">% DO FEITO DA ASSISTÊNCIA (ABAIXO DE 100%)</label><input type="number" id="comRuleOpLow" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="operational.rateLowBps" data-kind="bps"></div>
           <div class="purchase-field"><label for="comRuleOpHigh">% DO FEITO DA ASSISTÊNCIA (A PARTIR DE 100%)</label><input type="number" id="comRuleOpHigh" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="operational.rateHighBps" data-kind="bps"></div>
           <div class="purchase-field"><label for="comRuleOpPct">PREMIAÇÃO COM ≥ (% DA META)</label><input type="number" id="comRuleOpPct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="operational.premiumPercent" data-kind="percent"></div>
           <div class="purchase-field"><label for="comRuleOpAssist">PREMIAÇÃO PELA ASSISTÊNCIA (R$)</label><input type="number" id="comRuleOpAssist" min="0" step="0.01" inputmode="decimal" data-com-role-field="operational.assistPremiumCents" data-kind="cents"></div>
@@ -53795,7 +53795,7 @@ function renderHomeTasks(){
     });
     box.innerHTML = Array.from(stores.values()).map(group => {
       const c = group[0].commission;
-      const rateText = c.rateBps > 0 ? 'Faixa de '+comFormatBps(c.rateBps)+' do feito da assistência.' : 'Abaixo de 80% da meta da assistência — sem comissão.';
+      const rateText = c.rateBps > 0 ? 'Faixa de '+comFormatBps(c.rateBps)+' do feito da assistência.' : 'Loja sem meta da assistência — sem comissão.';
       const assistNote = rateText+(c.assistPercent !== null && c.assistPercent >= op.premiumPercent ? ' Premiação da assistência atingida.' : ' Premiação a partir de '+op.premiumPercent+'%.');
       const storeNote = c.storePercent !== null && c.storePercent >= op.premiumPercent ? 'Premiação da loja atingida.' : 'Premiação a partir de '+op.premiumPercent+'% da meta da loja.';
       // Acompanhamento da loja (meta, realizado, faltando, diária e meta
@@ -53856,7 +53856,7 @@ function renderHomeTasks(){
           comMoneyShort(leader.perSellerCents)+' por vendedor ativo da loja com '+leader.sellerPercent+'%+ da meta; '+comMoneyShort(leader.storeCents)+' com loja E assistência em '+leader.storePercent+'%+'),
         ...(rules.partnerSaleRateBps > 0 ? [item('lider', 'Venda P.A / Unigames', comFormatBps(rules.partnerSaleRateBps), 'Sobre as vendas lançadas em VENDA P.A e VENDA UNIGAMES')] : []),
         item('operacional', 'Comissão da assistência', comFormatBps(op.rateHighBps)+' / '+comFormatBps(op.rateLowBps),
-          'Sobre o feito da assistência da loja: '+comFormatBps(op.rateHighBps)+' a partir de 100% da meta, '+comFormatBps(op.rateLowBps)+' de 80% a 99,9% — natureza salarial (integra DSR, 13º, férias e FGTS)'),
+          'Sobre o feito da assistência da loja: '+comFormatBps(op.rateHighBps)+' a partir de 100% da meta, '+comFormatBps(op.rateLowBps)+' abaixo de 100% — natureza salarial (integra DSR, 13º, férias e FGTS)'),
         item('operacional', 'Premiação do operacional', comMoneyShort(op.assistPremiumCents)+' + '+comMoneyShort(op.storePremiumCents),
           comMoneyShort(op.assistPremiumCents)+' com a assistência e '+comMoneyShort(op.storePremiumCents)+' com a loja (vendas + assistência) em '+op.premiumPercent+'%+ da meta — valor cheio para cada operacional')
       );
@@ -53958,7 +53958,7 @@ function renderHomeTasks(){
         '<div><dt>Loja total ('+escapeHtml(comFormatPct(c.storePercent))+')</dt><dd>'+escapeHtml(formatCentsBRL(c.revenueCents)+' de '+formatCentsBRL(c.targetCents))+'</dd></div>'+
       '</dl>'+
       '<ul class="com-commission-rows">'+
-        row('Comissão sobre o feito da assistência ('+(c.rateBps > 0 ? comFormatBps(c.rateBps) : 'abaixo de 80%')+')', c.commissionCents)+
+        row('Comissão sobre o feito da assistência ('+(c.rateBps > 0 ? comFormatBps(c.rateBps) : 'sem meta')+')', c.commissionCents)+
         row('Premiação · assistência '+op.premiumPercent+'%+', c.assistPremiumCents)+
         row('Premiação · loja '+op.premiumPercent+'%+', c.storePremiumCents)+
       '</ul>'+
