@@ -1,0 +1,99 @@
+name: Backup do banco
+
+# Copia todos os dados do Supabase uma vez por dia e guarda no R2 da
+# Cloudflare (bucket privado "estoque-unigames-backups", que o site não
+# acessa). Cada cópia é apagada sozinha depois de 30 dias.
+# O arquivo nunca é anexado ao GitHub: vai direto do runner para o R2.
+# Configuração e restauração em docs/BACKUP-E-RESTAURACAO.md.
+
+on:
+  schedule:
+    # 06:17 UTC = 03:17 no horário de Brasília.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: backup-banco
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  BUCKET: estoque-unigames-backups
+  WRANGLER: npx --yes wrangler@4.92.0
+
+jobs:
+  backup:
+    name: Copiar banco para o R2
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Conferir segredos
+        run: |
+          for name in SUPABASE_DB_URL CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Cadastre o segredo $name no GitHub (ver docs/BACKUP-E-RESTAURACAO.md)."
+              exit 1
+            fi
+          done
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: db/scripts
+
+      # O pg_dump precisa ser da mesma versão principal do servidor (ou mais
+      # nova). Pergunta a versão ao Supabase e instala o cliente certo.
+      - name: Instalar pg_dump da versão do Supabase
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          MAJOR=$(psql "$SUPABASE_DB_URL" -tAc "SELECT current_setting('server_version_num')::int / 10000")
+          echo "Supabase em Postgres $MAJOR"
+          if [ ! -x "/usr/lib/postgresql/$MAJOR/bin/pg_dump" ]; then
+            sudo install -d /usr/share/postgresql-common/pgdg
+            sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+              https://www.postgresql.org/media/keys/ACCC4CF8.asc
+            echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+              | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq "postgresql-client-$MAJOR"
+          fi
+          echo "PG_BIN=/usr/lib/postgresql/$MAJOR/bin" >> "$GITHUB_ENV"
+
+      - name: Gerar backup
+        run: |
+          FILE="estoque-unigames-$(TZ=America/Sao_Paulo date +%Y-%m-%d-%H%M).dump"
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          bash db/scripts/backup-banco.sh "$RUNNER_TEMP/$FILE"
+
+      # Na primeira execução cria o bucket e a regra que apaga cópias com
+      # mais de 30 dias. Nas seguintes, só confere.
+      - name: Preparar bucket
+        working-directory: ${{ runner.temp }}
+        run: |
+          if ! $WRANGLER r2 bucket info "$BUCKET" >/dev/null 2>&1; then
+            $WRANGLER r2 bucket create "$BUCKET"
+          fi
+          if ! $WRANGLER r2 bucket lifecycle list "$BUCKET" 2>/dev/null | grep -q "apagar-apos-30-dias"; then
+            $WRANGLER r2 bucket lifecycle add "$BUCKET" apagar-apos-30-dias banco/ --expire-days 30 --force
+          fi
+
+      - name: Enviar para o R2
+        working-directory: ${{ runner.temp }}
+        run: |
+          $WRANGLER r2 object put "$BUCKET/banco/$FILE" \
+            --file "$RUNNER_TEMP/$FILE" \
+            --content-type application/octet-stream \
+            --remote
+          echo "Backup guardado em \`$BUCKET/banco/$FILE\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apagar cópia local
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/*.dump
