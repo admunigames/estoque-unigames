@@ -108,6 +108,18 @@ test("fluxo completo: categoria, contagem por vários usuários, custos, diverg�
   // Finalizado não aceita alteração até reabrir.
   assert.equal((await call(GESTOR, "PATCH", { id, action: "finalize", finalized: true })).status, 200);
   assert.equal((await call(CONTADOR, "PATCH", { id, action: "count", itemId: azul.id, countedQty: 4 })).status, 409);
+
+  // RECONTAGEM DA LOJA: quem conta digita mesmo finalizado; só nos marcados.
+  const naoMarcado = detail.items.find((i) => !i.recount);
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "store_recount", itemId: naoMarcado.id, qty: 1 })).status, 404);
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "store_recount", itemId: rosa.id, qty: -1 })).status, 400);
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "store_recount", itemId: rosa.id, qty: 7 })).status, 200);
+  let recontado = (await (await call(GESTOR, "GET", undefined, `?id=${id}`)).json()).items.find((i) => i.id === rosa.id);
+  assert.equal(recontado.storeRecountQty, 7);
+  assert.equal(recontado.storeRecountByName, "LIDIANE");
+  assert.equal((await call(CONTADOR, "PATCH", { id, action: "store_recount", itemId: rosa.id, qty: null })).status, 200);
+  recontado = (await (await call(GESTOR, "GET", undefined, `?id=${id}`)).json()).items.find((i) => i.id === rosa.id);
+  assert.equal(recontado.storeRecountQty, null);
   assert.equal((await call(GESTOR, "PATCH", { id, action: "finalize", finalized: false })).status, 200);
 
   // Escopo de loja: login da TACARUNA não vê o inventário da GUARARAPES.

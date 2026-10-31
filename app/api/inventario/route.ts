@@ -33,6 +33,8 @@ import {
 //     delete_item {itemId}                         (count) → só produto fora da lista
 //     reason {itemId, reason} / remove {itemId, removed} (manage)
 //     recount {itemIds[], recount}                  (manage) → PDF RECONTAGEM DE LOJA
+//     store_recount {itemId, qty|null}              (count) → aba RECONTAGEM DA LOJA;
+//       vale também com o inventário finalizado (é o ajuste depois do primeiro)
 //     finalize {finalized}                          (manage)
 //   DELETE {id}                                     (delete; deleted=1)
 
@@ -120,7 +122,8 @@ async function inventoryDetail(database: Database, actor: Actor, id: string) {
       .prepare(
         `SELECT id, category, code, product, system_qty AS systemQty, counted_qty AS countedQty,
                 counted_by_name AS countedByName, counted_at AS countedAt, cost_cents AS costCents, reason,
-                source, added_by_name AS addedByName, removed, recount, removed_by_name AS removedByName, removed_at AS removedAt
+                source, added_by_name AS addedByName, removed, recount, removed_by_name AS removedByName, removed_at AS removedAt,
+                store_recount_qty AS storeRecountQty, store_recount_by_name AS storeRecountByName, store_recount_at AS storeRecountAt
          FROM inventory_items WHERE inventory_id=?1 ORDER BY category, product`,
       )
       .bind(id)
@@ -188,6 +191,7 @@ const ACTION_PERMISSION: Record<string, string> = {
   add_item: "count", delete_item: "count",
   upload_category: "manage", delete_category: "manage", count: "count", finish_category: "count",
   reopen_category: "count", costs: "manage", reason: "manage", remove: "manage", recount: "manage", finalize: "manage",
+  store_recount: "count",
 };
 
 export async function PATCH(request: Request) {
@@ -203,7 +207,7 @@ export async function PATCH(request: Request) {
     const database = await getD1();
     const inventory = await findInventory(database, actor, safeText(body.id, 80));
     if (!inventory) return jsonResponse({ error: NOT_FOUND }, 404);
-    if (inventory.status === "finalizado" && action !== "finalize") {
+    if (inventory.status === "finalizado" && action !== "finalize" && action !== "store_recount") {
       return jsonResponse({ error: "INVENTÁRIO FINALIZADO: REABRA PARA ALTERAR." }, 409);
     }
     const now = new Date().toISOString();
@@ -409,6 +413,22 @@ export async function PATCH(request: Request) {
           .bind(body.recount ? 1 : 0, actor.displayName, now, inventory.id, ...part)
           .run();
       }
+      return jsonResponse({ updated: true });
+    }
+
+    if (action === "store_recount") {
+      const raw = body.qty;
+      const value = raw === null || raw === "" ? null : qty(raw);
+      if (value === null ? raw !== null && raw !== "" : value < 0) return jsonResponse({ error: "QUANTIDADE INVÁLIDA." }, 400);
+      // Só produto divergente marcado para a recontagem da loja.
+      const row = await database
+        .prepare(
+          `UPDATE inventory_items SET store_recount_qty=?1, store_recount_by_name=?2, store_recount_at=?3, updated_by_name=?4, updated_at=?5
+           WHERE id=?6 AND inventory_id=?7 AND recount=1 RETURNING id`,
+        )
+        .bind(value, value === null ? "" : actor.displayName, value === null ? "" : now, actor.displayName, now, safeText(body.itemId, 80), inventory.id)
+        .first<{ id: string }>();
+      if (!row) return jsonResponse({ error: "PRODUTO NÃO ESTÁ MARCADO PARA A RECONTAGEM DA LOJA." }, 404);
       return jsonResponse({ updated: true });
     }
 

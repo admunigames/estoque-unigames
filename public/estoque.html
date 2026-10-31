@@ -2866,14 +2866,14 @@
     #invTabs::-webkit-scrollbar{display:none;}
     #invTabs .supply-tab{flex:0 0 auto;}
     /* Cartões curtos das tabelas do inventário. */
-    #invCountTable tbody tr,#invResultBody tr,#invDivBody tr{
+    #invCountTable tbody tr,#invResultBody tr,#invDivBody tr,#invStoreBody tr{
       display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px 10px; padding:10px 12px;
     }
-    #invCountTable tbody td,#invResultBody td,#invDivBody td{
+    #invCountTable tbody td,#invResultBody td,#invDivBody td,#invStoreBody td{
       display:block; min-height:0; padding:0; border:0; text-align:left;
     }
-    #invCountTable tbody td::before,#invResultBody td::before,#invDivBody td::before{display:block; margin-bottom:2px;}
-    #invCountTable tbody td.responsive-empty,#invResultBody td.responsive-empty,#invDivBody td.responsive-empty{grid-column:1 / -1;}
+    #invCountTable tbody td::before,#invResultBody td::before,#invDivBody td::before,#invStoreBody td::before{display:block; margin-bottom:2px;}
+    #invCountTable tbody td.responsive-empty,#invResultBody td.responsive-empty,#invDivBody td.responsive-empty,#invStoreBody td.responsive-empty{grid-column:1 / -1;}
     /* CONTAGEM: 1 código, 2 produto, 3 estoque, 4 contado, 5 diferença, 6 contado por */
     #invCountTable tbody td:nth-child(2){grid-column:1 / -1; grid-row:1; font-size:14px;}
     #invCountTable tbody td:nth-child(1){grid-column:1 / -1; grid-row:2; color:var(--ink-faint); font-size:11px;}
@@ -2903,6 +2903,11 @@
     #invDivBody td:nth-child(7){grid-column:1 / -1; grid-row:5;}
     #invDivBody td:nth-child(8){grid-column:1 / -1; grid-row:6;}
     #invDivBody td:nth-child(8) button{width:100%;}
+    /* RECONTAGEM DA LOJA: produto em cima, ajuste embaixo. */
+    #invStoreBody td:nth-child(2){grid-column:1 / -1; grid-row:1; font-size:13px;}
+    #invStoreBody td:nth-child(2)::before{display:none;}
+    #invStoreBody td:nth-child(1){grid-column:1 / -1; grid-row:2;}
+    #invStoreBody td:nth-child(7){grid-column:1 / -1;}
     .inv-reason{min-width:0;}
     /* Botões das tabelas (CONTAR / EXCLUIR / ABRIR): lado a lado, na largura do cartão. */
     #invCatBody td:not([data-label]),#invListBody td:not([data-label]),#invAttachBody td:not([data-label]){
@@ -5073,6 +5078,7 @@
           <button class="supply-tab" type="button" role="tab" data-inv-tab="resultado">RESULTADO</button>
           <button class="supply-tab" type="button" role="tab" data-inv-tab="divergentes">DIVERGENTES</button>
           <button class="supply-tab" type="button" role="tab" data-inv-tab="recontagem">RECONTAGEM</button>
+          <button class="supply-tab" type="button" role="tab" data-inv-tab="recontagemLoja">RECONTAGEM DA LOJA</button>
         </div>
 
         <div class="inv-panel" data-inv-panel="categorias">
@@ -5147,6 +5153,14 @@
           <div class="table-panel responsive-table"><div class="table-scroll">
             <table><thead><tr><th>Arquivo</th><th>Enviado por</th><th>Quando</th><th></th></tr></thead>
             <tbody id="invAttachBody"></tbody></table>
+          </div></div>
+        </div>
+        <div class="inv-panel" data-inv-panel="recontagemLoja" hidden>
+          <p class="purchase-field-help">Digite o que a loja recontou (PDF RECONTAGEM DE LOJA). A diferença é RECONTAGEM DA LOJA − CONTAGEM INICIAL: é o que ainda falta ajustar no sistema depois do primeiro ajuste. Vale também com o inventário finalizado.</p>
+          <div class="table-panel" id="invStoreSummary" style="padding:10px 14px;font-size:12px;margin-bottom:10px;"></div>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Categoria</th><th>Produto</th><th>Sistema</th><th>Contagem inicial</th><th>Recontagem da loja</th><th>Diferença</th><th>Ajuste no sistema</th></tr></thead>
+            <tbody id="invStoreBody"></tbody></table>
           </div></div>
         </div>
         <div class="print-only" id="invPrintBody"></div>
@@ -29297,6 +29311,47 @@ function renderHomeTasks(){
     renderInvResult();
     renderInvDivergent(live);
     renderInvAttachments();
+    renderInvStoreRecount(live);
+  }
+
+  // RECONTAGEM DA LOJA: só os marcados para recontagem (aba DIVERGENTES).
+  // Diferença = recontagem da loja − contagem inicial (o que falta ajustar
+  // no sistema depois do primeiro ajuste, que foi pela contagem inicial).
+  function invStoreDiff(item){
+    return item.storeRecountQty === null || item.storeRecountQty === undefined || item.storeRecountQty === '' ? null : Number(item.storeRecountQty) - Number(item.countedQty);
+  }
+  function invStoreAdjustLabel(diff){
+    if(diff === null) return '—';
+    if(!diff) return '<span class="status-pill done">CONTAGEM INICIAL CORRETA</span>';
+    return '<span class="status-pill '+(diff > 0 ? 'waiting' : 'alert')+'">'+(diff > 0 ? 'ENTRADA DE '+diff : 'SAÍDA DE '+(-diff))+'</span>';
+  }
+  function invStoreRowCells(item){
+    const diff = invStoreDiff(item);
+    return {diff:'<strong>'+invDiffLabel(diff)+'</strong>', adjust:invStoreAdjustLabel(diff), cls:gdMoneyClass(diff || 0)};
+  }
+  function renderInvStoreRecount(live){
+    const rows = invDivergent().filter(item => item.recount && !item.removed).sort((a, b) => a.category.localeCompare(b.category, 'pt-BR') || a.product.localeCompare(b.product, 'pt-BR'));
+    const done = rows.filter(item => invStoreDiff(item) !== null);
+    const wrong = done.filter(item => invStoreDiff(item));
+    el('invStoreSummary').innerHTML = rows.length
+      ? '<strong>'+done.length+'</strong> DE <strong>'+rows.length+'</strong> RECONTADOS PELA LOJA · <strong>'+(done.length - wrong.length)+'</strong> COM A CONTAGEM INICIAL CORRETA · <strong>'+wrong.length+'</strong> A AJUSTAR NO SISTEMA'
+      : 'NENHUM PRODUTO MARCADO PARA A RECONTAGEM DA LOJA (MARQUE NA ABA DIVERGENTES).';
+    const body = el('invStoreBody');
+    if(live && body.contains(document.activeElement)) return;
+    const canCount = invCan('count') || invCan('manage');
+    body.innerHTML = rows.length ? rows.map(item => {
+      const cells = invStoreRowCells(item);
+      return '<tr>'+
+        '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
+        '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong><small class="os-update-meta">'+escapeHtml(item.code || '')+'</small></td>'+
+        '<td data-label="Sistema">'+item.systemQty+'</td>'+
+        '<td data-label="Contagem inicial"><strong>'+item.countedQty+'</strong></td>'+
+        '<td data-label="Recontagem da loja"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-store="'+escapeHtml(item.id)+'" value="'+(item.storeRecountQty === null || item.storeRecountQty === undefined ? '' : item.storeRecountQty)+'"'+(canCount ? '' : ' disabled')+'>'+
+          (item.storeRecountByName ? '<small class="os-update-meta">'+escapeHtml(item.storeRecountByName+' · '+(formatDateTimeBR(item.storeRecountAt) || ''))+'</small>' : '')+'</td>'+
+        '<td data-label="Diferença" class="'+cells.cls+'" data-inv-store-diff="'+escapeHtml(item.id)+'">'+cells.diff+'</td>'+
+        '<td data-label="Ajuste no sistema" data-inv-store-adjust="'+escapeHtml(item.id)+'">'+cells.adjust+'</td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="7" class="responsive-empty">Nenhum produto para recontar.</td></tr>';
   }
 
   function renderInvCategories(){
@@ -29779,6 +29834,39 @@ function renderHomeTasks(){
   el('invResultCategory') && el('invResultCategory').addEventListener('change', renderInvResult);
   el('invResultSearch') && el('invResultSearch').addEventListener('input', debounce(renderInvResult, 120));
   el('invDivView') && el('invDivView').addEventListener('change', () => renderInvDivergent());
+  if(el('invStoreBody')){
+    const body = el('invStoreBody');
+    const preview = input => {
+      const item = invData.items.find(row => row.id === input.dataset.invStore);
+      if(!item) return;
+      const cells = invStoreRowCells({...item, storeRecountQty: input.value === '' ? null : Number(input.value)});
+      const diffCell = body.querySelector('[data-inv-store-diff="'+CSS.escape(item.id)+'"]');
+      diffCell.className = cells.cls; diffCell.innerHTML = cells.diff;
+      body.querySelector('[data-inv-store-adjust="'+CSS.escape(item.id)+'"]').innerHTML = cells.adjust;
+    };
+    body.addEventListener('input', event => { if(event.target.matches('[data-inv-store]')) preview(event.target); });
+    body.addEventListener('change', async event => {
+      const input = event.target.closest('[data-inv-store]');
+      if(!input) return;
+      const value = input.value === '' ? null : Number(input.value);
+      try{
+        await invPatch('store_recount', {itemId: input.dataset.invStore, qty: value});
+        const item = invData.items.find(row => row.id === input.dataset.invStore);
+        if(item){ item.storeRecountQty = value; item.storeRecountByName = value === null ? '' : currentSession.displayName; item.storeRecountAt = new Date().toISOString(); }
+        input.classList.add('inv-saved');
+        setTimeout(() => input.classList.remove('inv-saved'), 900);
+        renderInvStoreRecount(true);
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    });
+    body.addEventListener('keydown', event => {
+      if(event.key !== 'Enter' || !event.target.matches('[data-inv-store]')) return;
+      event.preventDefault();
+      const inputs = [...body.querySelectorAll('[data-inv-store]')];
+      const next = inputs[inputs.indexOf(event.target) + 1];
+      event.target.blur();
+      if(next){ next.focus(); next.select(); }
+    });
+  }
   async function invSetRecount(ids, recount){
     try{
       await invPatch('recount', {itemIds: ids, recount});
