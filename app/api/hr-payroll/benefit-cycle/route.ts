@@ -2,6 +2,7 @@ import { getD1 } from "../../../../db";
 import {
   benefitCycle,
   cycleBenefitAmounts,
+  employeeBenefitRule,
   parseBenefitRules,
   type BenefitCycle,
   type BenefitRules,
@@ -65,6 +66,10 @@ type CycleRow = {
   workingDays: number;
   ruleFoodCents: number;
   transportPerDayCents: number;
+  /** VALOR TOTAL de transporte do cadastro (0 = regra × dias). */
+  transportTotalCents: number;
+  countedDays: number;
+  benefitPaymentMethod: string;
   foodCents: number;
   transportCents: number;
   totalCents: number;
@@ -111,7 +116,7 @@ async function buildCycleRows(
 
   return employees.map((employee) => {
     const days = workingDaysForEmployee(employee, cycle.month);
-    const rule = rules[days.schedule];
+    const rule = employeeBenefitRule(rules[days.schedule], employee, days.workingDays);
     const amounts = cycleBenefitAmounts(rule, days.workingDays);
     return {
       employeeId: employee.id,
@@ -124,6 +129,9 @@ async function buildCycleRows(
       workingDays: days.workingDays,
       ruleFoodCents: rule.foodCents,
       transportPerDayCents: rule.transportPerDayCents,
+      transportTotalCents: rule.transportTotalCents,
+      countedDays: rule.countedDays,
+      benefitPaymentMethod: employee.benefitPaymentMethod || "",
       foodCents: amounts.foodCents,
       transportCents: amounts.transportCents,
       totalCents: amounts.totalCents,
@@ -144,7 +152,7 @@ function reviewed(row: CycleRow, adjustments: unknown): CycleRow & { reviewNote:
   const foodAdjustCents = Number.isInteger(adjust) && Math.abs(adjust) <= 10_000_000 ? adjust : 0;
   const reason = safeText(input.reason, 200).toUpperCase();
   const amounts = cycleBenefitAmounts(
-    { foodCents: row.ruleFoodCents, transportPerDayCents: row.transportPerDayCents },
+    { foodCents: row.ruleFoodCents, transportPerDayCents: row.transportPerDayCents, transportTotalCents: row.transportTotalCents, countedDays: row.countedDays },
     transportDays,
     foodAdjustCents,
   );
@@ -244,7 +252,9 @@ export async function POST(request: Request) {
     const statements = [];
     const itemsOf = (row: (typeof rows)[number]) => [
       { type: "alimentacao", mode: "fixed", perDay: 0, days: 0, amount: row.foodCents },
-      { type: "mobilidade", mode: "per_day", perDay: row.transportPerDayCents, days: row.workingDays, amount: row.transportCents },
+      row.transportTotalCents
+        ? { type: "mobilidade", mode: "fixed", perDay: 0, days: row.workingDays, amount: row.transportCents }
+        : { type: "mobilidade", mode: "per_day", perDay: row.transportPerDayCents, days: row.workingDays, amount: row.transportCents },
     ].filter((item) => item.amount > 0);
     const insertItems = (benefitId: string, items: ReturnType<typeof itemsOf>) => {
       for (const item of items) {
@@ -300,7 +310,8 @@ export async function POST(request: Request) {
             row.companyName,
             cycle.month,
             headerType,
-            paymentMethod,
+            // Formato de recebimento do cadastro; sem ele, o escolhido ao gerar.
+            row.benefitPaymentMethod || paymentMethod,
             row.totalCents,
             paymentDate,
             notes,

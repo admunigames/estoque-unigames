@@ -3,6 +3,7 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { checklistPendingCount } from "../../../lib/hr-rh";
 import { loadCompanyList } from "../../finance/shared";
 import {
+  BENEFIT_PAYMENT_METHODS,
   canEmployees,
   canManagePayroll,
   canSeeEmployees,
@@ -128,6 +129,27 @@ export async function POST(request: Request) {
     let foodPerDayCents = centsValue(body.foodPerDayCents ?? 0);
     let transportPerDayCents = centsValue(body.transportPerDayCents ?? 0);
     let benefitNotes = safeText(body.benefitNotes, 500);
+    // Benefício em VALOR TOTAL MENSAL (0 = aba REGRAS), formato de recebimento
+    // e FACEPONTO mensal — só com RH Financeiro (gravados à parte, abaixo).
+    const extras = {
+      food: centsValue(body.benefitFoodTotalCents ?? 0),
+      transport: centsValue(body.benefitTransportTotalCents ?? 0),
+      method: safeText(body.benefitPaymentMethod, 20),
+      faceponto: centsValue(body.facepontoCents ?? 0),
+    };
+    if ([extras.food, extras.transport, extras.faceponto].some((value) => !Number.isFinite(value) || value < 0)) {
+      return jsonResponse({ error: "INFORME VALORES DE BENEFÍCIO/FACEPONTO VÁLIDOS." }, 400);
+    }
+    if (extras.method && !isOneOf(BENEFIT_PAYMENT_METHODS, extras.method)) {
+      return jsonResponse({ error: "FORMATO DE RECEBIMENTO DO BENEFÍCIO INVÁLIDO." }, 400);
+    }
+    const saveExtras = (employeeId: string) =>
+      database
+        .prepare(
+          `UPDATE hr_employees SET benefit_food_total_cents=?1, benefit_transport_total_cents=?2,
+             benefit_payment_method=?3, faceponto_cents=?4 WHERE id=?5`,
+        )
+        .bind(extras.food, extras.transport, extras.method, extras.faceponto, employeeId);
 
     if (!fullName) return jsonResponse({ error: "INFORME O NOME DO FUNCIONÁRIO." }, 400);
     if (cpf && !isValidCpf(cpf)) return jsonResponse({ error: "INFORME UM CPF VÁLIDO." }, 400);
@@ -256,9 +278,19 @@ export async function POST(request: Request) {
         );
       // Marcado como inativo (desligado): cadastro + desligamento juntos
       // (mesma transação) e o login vinculado é bloqueado na hora.
-      await database.batch(becomingInactive
-        ? [updateStatement, insertTermination(database, { employeeId: editId, employeeName: fullName, companyId, companyName, ...termination }, actor).statement]
-        : [updateStatement]);
+      const admission = {
+        companyId: admissionRequested ? admissionCompanyId : existing.admissionCompanyId || existing.companyId,
+        companyName: admissionRequested ? admissionCompanyName : existing.admissionCompanyName || existing.companyName,
+      };
+      // Desligamento fica na LOJA CADASTRADA (admissão): é ela que arca com
+      // os débitos do fim do ciclo (31/10/2026).
+      await database.batch([
+        updateStatement,
+        ...(financial ? [saveExtras(editId)] : []),
+        ...(becomingInactive
+          ? [insertTermination(database, { employeeId: editId, employeeName: fullName, companyId: admission.companyId || companyId, companyName: admission.companyId ? admission.companyName : companyName, ...termination }, actor).statement]
+          : []),
+      ]);
       if (status === "inactive") await deactivateLinkedLogin(database, editId).run();
       // O nome do funcionário é desnormalizado nos lançamentos — mantê-lo em
       // sincronia evita relatório com nome antigo. A LOJA não: trocar a loja do
@@ -334,11 +366,16 @@ export async function POST(request: Request) {
         admissionCompanyId ? admissionCompanyName : companyName,
       )
       .run();
-    if (becomingInactive) {
-      await database.batch([
-        insertTermination(database, { employeeId: id, employeeName: fullName, companyId, companyName, ...termination }, actor).statement,
-      ]);
-    }
+    await database.batch([
+      ...(financial ? [saveExtras(id)] : []),
+      ...(becomingInactive
+        ? [insertTermination(database, {
+            employeeId: id, employeeName: fullName,
+            companyId: admissionCompanyId || companyId, companyName: admissionCompanyId ? admissionCompanyName : companyName,
+            ...termination,
+          }, actor).statement]
+        : []),
+    ]);
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     console.error("Não foi possível salvar o funcionário.", error);

@@ -6939,6 +6939,14 @@
         </div>
       </header>
 
+      <div class="output-tabs no-print" role="tablist" aria-label="Seção de Funcionários" id="rhFuncTabs" style="margin-bottom:12px;">
+        <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rh-func-tab="lista">FUNCIONÁRIOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-func-tab="desligamentos" hidden>DESLIGAMENTOS</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-func-tab="loja" hidden>LOJA ATUANTE</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-func-tab="ferias" hidden>FÉRIAS</button>
+      </div>
+
+      <div data-rh-func-panel="lista">
       <div class="dre-toolbar no-print">
         <div class="field"><label for="rhEmployeeFiltroLoja">LOJA</label><select id="rhEmployeeFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="field"><label for="rhEmployeeFiltroStatus">SITUAÇÃO</label><select id="rhEmployeeFiltroStatus"><option value="active">ATIVOS</option><option value="inactive">INATIVOS</option><option value="">TODOS</option></select></div>
@@ -6954,6 +6962,71 @@
             <thead><tr><th>Funcionário</th><th>Documentos</th><th>Cargo</th><th>Loja</th><th>Admissão</th><th>Aniversário</th><th>Salário</th><th>Pagamento</th><th>Situação</th><th class="no-print"></th></tr></thead>
             <tbody id="rhEmployeesTableBody"><tr><td colspan="10" class="responsive-empty">Carregando funcionários…</td></tr></tbody>
           </table>
+        </div>
+      </div>
+      </div>
+
+      <div data-rh-func-panel="desligamentos" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhDeslFiltro">SITUAÇÃO</label><select id="rhDeslFiltro"><option value="andamento">EM ANDAMENTO</option><option value="finalizado">FINALIZADOS</option><option value="">TODOS</option></select></div>
+          <div class="field"><label for="rhDeslLoja">LOJA CADASTRADA</label><select id="rhDeslLoja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="rhDeslBusca">BUSCAR</label><input id="rhDeslBusca" placeholder="Nome do funcionário"></div>
+        </div>
+        <p class="purchase-field-help">FINALIZADO = CHECKLIST DEMISSIONAL SEM PENDÊNCIA E RESCISÃO PAGA. A RESCISÃO (VALOR E FGTS) PREENCHIDA AQUI ENTRA NA DRE FUNCIONÁRIO PELA DATA DO DESLIGAMENTO, NA LOJA CADASTRADA.</p>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Funcionário</th><th>Loja cadastrada</th><th>Desligamento</th><th>Motivo</th><th>Rescisão</th><th>FGTS</th><th>Paga em</th><th>Checklist</th><th>Situação</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhDeslBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-rh-func-panel="loja" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhLojaAtuanteMes">MÊS</label><input type="month" id="rhLojaAtuanteMes"></div>
+          <div class="field"><label for="rhLojaAtuanteFiltro">LOJA ATUANTE</label><select id="rhLojaAtuanteFiltro"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnRhLojaAtuanteSalvar" type="button" disabled>SALVAR EM LOTE</button>
+          </div>
+        </div>
+        <p class="purchase-field-help" id="rhLojaAtuanteHint">LOJA ATUANTE = ONDE ELE TRABALHA NO MÊS: DEFINE META, COMISSÕES E CUSTOS. LOJA CADASTRADA = ONDE ESTÁ REGISTRADO: ARCA COM OS DÉBITOS DO FIM DO CICLO SE FOR DESLIGADO.</p>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Funcionário</th><th>Cargo</th><th>Loja cadastrada</th><th>Loja atuante no mês</th></tr></thead>
+              <tbody id="rhLojaAtuanteBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div data-rh-func-panel="ferias" hidden>
+        <div class="dre-toolbar no-print">
+          <div class="field"><label for="rhFeriasVisao">MOSTRAR</label><select id="rhFeriasVisao"><option value="anual">ACOMPANHAMENTO ANUAL</option><option value="registros">FÉRIAS REGISTRADAS</option></select></div>
+          <div class="field"><label for="rhFeriasMes">VENCE NO MÊS</label><input type="month" id="rhFeriasMes"></div>
+          <div class="field"><label for="rhFeriasLoja">LOJA</label><select id="rhFeriasLoja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="dre-toolbar-actions">
+            <button class="btn-accent" id="btnRhFeriasNova" type="button">REGISTRAR FÉRIAS</button>
+          </div>
+        </div>
+        <p class="purchase-field-help">REGRA CLT: CADA 12 MESES DESDE A ADMISSÃO DÃO 30 DIAS; AS FÉRIAS DO PERÍODO VENCEM 12 MESES DEPOIS DO FIM DELE. FÉRIAS NÃO ENTRAM NA DRE.</p>
+        <div class="table-panel responsive-table" id="rhFeriasAnualPanel">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Funcionário</th><th>Loja</th><th>Admissão</th><th>Período aquisitivo</th><th>Pode tirar a partir de</th><th>Vence em</th><th>Saldo</th><th>Último retorno</th><th>Situação</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhFeriasAnualBody"><tr><td colspan="10" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-panel responsive-table" id="rhFeriasRegistrosPanel" hidden>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Funcionário</th><th>Período aquisitivo</th><th>Início</th><th>Fim</th><th>Dias</th><th>Retorno</th><th>Valor líquido</th><th>Observações</th><th class="no-print"></th></tr></thead>
+              <tbody id="rhFeriasRegistrosBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -7143,6 +7216,7 @@
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rh-dre-func-tab="fechamento">FECHAMENTO DO MÊS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-dre-func-tab="aso">EXAMES ASO</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-dre-func-tab="rescisoes">RESCISÕES</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-dre-func-tab="faceponto">FACEPONTO</button>
       </div>
 
       <div id="rhDreFuncTabFechamento">
@@ -7162,8 +7236,13 @@
         </div>
       </div>
 
+      <div id="rhDreFuncTabFaceponto" hidden>
+        <p class="no-print" style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">VALOR MENSAL DO FACEPONTO CADASTRADO NO FUNCIONÁRIO, DE QUEM ESTEVE ATIVO NO MÊS, NA LOJA ATUANTE. SEM VALOR CADASTRADO, NÃO APARECE.</p>
+        <div id="rhDreFuncFaceponto"></div>
+      </div>
+
       <div id="rhDreFuncTabRescisoes" hidden>
-        <p class="no-print" style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">Registrar uma rescisão marca o funcionário como INATIVO. Excluir a rescisão não o reativa — reative pelo cadastro de Funcionários, se for o caso.</p>
+        <p class="no-print" style="color:var(--ink-soft);font-size:11px;margin:0 0 10px;">A RESCISÃO É PREENCHIDA EM RH › FUNCIONÁRIOS › DESLIGAMENTOS (BOTÃO DESLIGAMENTO DO FUNCIONÁRIO). AQUI SÓ APARECEM AS DO MÊS.</p>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="rhRescisaoTable">
@@ -12893,13 +12972,17 @@
       <div class="purchase-field"><label for="rhEmployeeTelefone">TELEFONE</label><input type="tel" id="rhEmployeeTelefone" maxlength="40" placeholder="(81) 90000-0000"></div>
       <div class="purchase-field"><label for="rhEmployeeAdmission">DATA DE ADMISSÃO</label><input type="date" id="rhEmployeeAdmission"></div>
       <div class="purchase-field"><label for="rhEmployeeCompany">LOJA ATUANTE (MÊS ATUAL)</label><select id="rhEmployeeCompany"><option value="">SEM LOJA DEFINIDA</option></select></div>
-      <div class="purchase-field"><label for="rhEmployeeAdmissionCompany">LOJA DE ADMISSÃO</label><select id="rhEmployeeAdmissionCompany"><option value="">MESMA DA LOJA ATUANTE</option></select></div>
+      <div class="purchase-field"><label for="rhEmployeeAdmissionCompany">LOJA CADASTRADA (REGISTRO)</label><select id="rhEmployeeAdmissionCompany"><option value="">MESMA DA LOJA ATUANTE</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeRole">CARGO</label><input id="rhEmployeeRole" maxlength="120"></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeSalary">SALÁRIO (R$)</label><input type="text" inputmode="decimal" id="rhEmployeeSalary" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhEmployeeStatus">SITUAÇÃO</label><select id="rhEmployeeStatus"><option value="active">ATIVO</option><option value="inactive">INATIVO</option></select></div>
       <div class="purchase-field"><label for="rhEmployeeSchedule">ESCALA</label><select id="rhEmployeeSchedule"><option value="5x2">5x2 (SEG A SEX)</option><option value="6x1">6x1 (TRABALHA 6, FOLGA 1)</option></select></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeBank">BANCO</label><input id="rhEmployeeBank" maxlength="120"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeBenefitFood">ALIMENTAÇÃO · VALOR TOTAL MÊS</label><input type="text" inputmode="decimal" id="rhEmployeeBenefitFood" placeholder="EM BRANCO = REGRA DA ESCALA"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeBenefitTransport">TRANSPORTE · VALOR TOTAL MÊS</label><input type="text" inputmode="decimal" id="rhEmployeeBenefitTransport" placeholder="EM BRANCO = REGRA DA ESCALA"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeBenefitMethod">FORMATO DE RECEBIMENTO DO BENEFÍCIO</label><select id="rhEmployeeBenefitMethod"><option value="">O ESCOLHIDO AO GERAR O CICLO</option><option value="pix">PIX</option><option value="cartao">CARTÃO</option><option value="plataforma">PLATAFORMA</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeFaceponto">FACEPONTO (R$ POR MÊS · OPCIONAL)</label><input type="text" inputmode="decimal" id="rhEmployeeFaceponto" placeholder="R$ 0,00"></div>
       <div class="purchase-field full" data-rh-fin><label for="rhEmployeeBenefitNotes">OBSERVAÇÕES DOS BENEFÍCIOS</label><input id="rhEmployeeBenefitNotes" maxlength="500"></div>
       <div class="purchase-field full"><label for="rhEmployeeUser">CONTA DE ACESSO (OPCIONAL)</label><select id="rhEmployeeUser"><option value="">SEM CONTA VINCULADA</option></select></div>
       <div class="purchase-field full"><label for="rhEmployeeDriveLink">LINK DO DRIVE (DOCUMENTOS DO FUNCIONÁRIO)</label><input type="url" id="rhEmployeeDriveLink" maxlength="600" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..."></div>
@@ -12982,12 +13065,41 @@
       <div class="purchase-field"><label for="rhDesligamentoMotivo">MOTIVO *</label><select id="rhDesligamentoMotivo" required></select></div>
       <div class="purchase-field full" id="rhDesligamentoOutroWrap" hidden><label for="rhDesligamentoOutro">DESCREVA O MOTIVO *</label><input id="rhDesligamentoOutro" maxlength="300"></div>
       <div class="purchase-field"><label for="rhDesligamentoPago">RESCISÃO PAGA EM (EM BRANCO = NÃO PAGA)</label><input type="date" id="rhDesligamentoPago"></div>
+      <div class="purchase-field" data-rh-desl-valores hidden><label for="rhDesligamentoValor">VALOR DA RESCISÃO (R$)</label><input type="text" inputmode="decimal" id="rhDesligamentoValor" placeholder="R$ 0,00"></div>
+      <div class="purchase-field" data-rh-desl-valores hidden><label for="rhDesligamentoFgts">FGTS (R$)</label><input type="text" inputmode="decimal" id="rhDesligamentoFgts" placeholder="R$ 0,00"></div>
+      <div class="purchase-field full" data-rh-desl-valores hidden><label for="rhDesligamentoObs">OBSERVAÇÕES</label><textarea id="rhDesligamentoObs" rows="2" maxlength="500"></textarea></div>
     </div>
+    <div id="rhDesligamentoChecklistBox">
     <h4 class="rh-checklist-title">CHECKLIST DEMISSIONAL <small>(PODE FICAR PENDENTE — FICA O ALERTA ATÉ CONCLUIR)</small></h4>
     <div class="rh-checklist" id="rhDesligamentoChecklist"></div>
+    </div>
     <div class="user-form-status" id="rhDesligamentoStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRhDesligamento" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="rhFeriasDialog" aria-labelledby="rhFeriasDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFeriasDialogTitle">REGISTRAR FÉRIAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFerias" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhFeriasForm">
+    <input type="hidden" id="rhFeriasId">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhFeriasFuncionario">FUNCIONÁRIO *</label><select id="rhFeriasFuncionario" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="rhFeriasPeriodo">PERÍODO AQUISITIVO *</label><select id="rhFeriasPeriodo" required></select></div>
+      <div class="purchase-field"><label for="rhFeriasInicio">INÍCIO DAS FÉRIAS *</label><input type="date" id="rhFeriasInicio" required></div>
+      <div class="purchase-field"><label for="rhFeriasFim">FIM DAS FÉRIAS *</label><input type="date" id="rhFeriasFim" required></div>
+      <div class="purchase-field"><label for="rhFeriasValor">VALOR LÍQUIDO PAGO (R$)</label><input type="text" inputmode="decimal" id="rhFeriasValor" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label>PERÍODO GOZADO</label><p class="purchase-field-help" id="rhFeriasDias" style="margin:8px 0 0;">—</p></div>
+      <div class="purchase-field full"><label for="rhFeriasObs">OBSERVAÇÕES DAS FÉRIAS</label><textarea id="rhFeriasObs" rows="2" maxlength="500"></textarea></div>
+    </div>
+    <div class="user-form-status" id="rhFeriasStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFerias" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR</button>
     </div>
   </form>
@@ -47378,6 +47490,7 @@ function renderHomeTasks(){
         '<td>'+statusPill+'</td>'+
         '<td class="no-print"><span style="display:flex;gap:6px;">'+
           (rhEmployeeCan('edit') ? '<button class="btn-outline" type="button" data-rh-employee-edit="'+escapeHtml(employee.id)+'">EDITAR</button>' : '')+
+          (canAccess('payroll') ? '<button class="btn-outline" type="button" data-rh-employee-desligar="'+escapeHtml(employee.id)+'">DESLIGAMENTO</button>' : '')+
           (rhEmployeeCan('delete') ? '<button class="btn-outline" type="button" data-rh-employee-delete="'+escapeHtml(employee.id)+'">EXCLUIR</button>' : '')+
         '</span></td>'+
       '</tr>';
@@ -47416,10 +47529,285 @@ function renderHomeTasks(){
       if(canManageUsers() && !managedUsers.length) await loadAdminUsers();
       rhRenderEmployeeUserOptions();
       renderRhEmployeesTable();
+      rhFuncSetupTabs();
+      if(rhFuncTab !== 'lista') rhFuncLoadTab();
     }catch(error){
       if(body) body.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
+
+  // ---------------- FUNCIONÁRIOS: ABAS (31/10/2026) ----------------
+  // DESLIGAMENTOS e FÉRIAS pedem RH Financeiro (valores); LOJA ATUANTE,
+  // a edição de funcionários.
+  let rhFuncTab = 'lista';
+  const rhFuncTabAllowed = {
+    lista: () => true,
+    desligamentos: () => canAccess('payroll'),
+    loja: () => rhEmployeeCan('edit'),
+    ferias: () => canAccess('payroll'),
+  };
+  function rhFuncSetupTabs(){
+    if(!rhFuncTabAllowed[rhFuncTab]()) rhFuncTab = 'lista';
+    document.querySelectorAll('[data-rh-func-tab]').forEach(button => {
+      const tab = button.dataset.rhFuncTab;
+      button.hidden = !rhFuncTabAllowed[tab]();
+      const active = tab === rhFuncTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('[data-rh-func-panel]').forEach(panel => { panel.hidden = panel.dataset.rhFuncPanel !== rhFuncTab; });
+    el('btnNewRhEmployee').hidden = rhFuncTab !== 'lista' || !rhEmployeeCan('create');
+    const storeOptions = rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]);
+    ['rhDeslLoja','rhLojaAtuanteFiltro','rhFeriasLoja'].forEach(id => {
+      if(el(id) && el(id).options.length <= 1) rhFillSelect(id,'TODAS AS LOJAS',storeOptions);
+    });
+  }
+  function rhFuncSetTab(tab){
+    rhFuncTab = tab;
+    rhFuncSetupTabs();
+    return rhFuncLoadTab();
+  }
+  function rhFuncLoadTab(){
+    if(rhFuncTab === 'desligamentos') return loadRhDesligamentos();
+    if(rhFuncTab === 'loja') return loadRhLojaAtuante();
+    if(rhFuncTab === 'ferias') return loadRhFerias();
+  }
+  document.querySelectorAll('[data-rh-func-tab]').forEach(button => button.addEventListener('click', () => rhFuncSetTab(button.dataset.rhFuncTab)));
+
+  // --- DESLIGAMENTOS: em andamento × finalizados; abre o desligamento completo.
+  let rhDeslRows = [];
+  async function loadRhDesligamentos(){
+    const body = el('rhDeslBody');
+    try{
+      const data = await rhApiRequest('/terminations');
+      rhDeslRows = Array.isArray(data.terminations) ? data.terminations : [];
+      renderRhDesligamentos();
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderRhDesligamentos(){
+    const filter = el('rhDeslFiltro').value, store = el('rhDeslLoja').value;
+    const terms = el('rhDeslBusca').value.trim().toLocaleUpperCase('pt-BR');
+    const rows = rhDeslRows.filter(row => (!filter || (filter === 'finalizado') === Boolean(row.finished)) &&
+      (!store || row.companyId === store) && (!terms || String(row.employeeName || '').toLocaleUpperCase('pt-BR').includes(terms)));
+    el('rhDeslBody').innerHTML = rows.length ? rows.map(row => '<tr>'+
+      '<td data-label="Funcionário"><strong>'+escapeHtml(row.employeeName)+'</strong></td>'+
+      '<td data-label="Loja cadastrada">'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td data-label="Desligamento">'+escapeHtml(rhFormatDate(row.terminationDate))+'</td>'+
+      '<td data-label="Motivo">'+escapeHtml(row.reason === 'outro' ? (row.reasonOther || 'OUTRO') : (RH_TERMINATION_REASONS[row.reason] || row.reason || '—'))+'</td>'+
+      '<td data-label="Rescisão">'+formatCentsBRL(row.severanceCents)+'</td>'+
+      '<td data-label="FGTS">'+formatCentsBRL(row.fgtsCents)+'</td>'+
+      '<td data-label="Paga em">'+escapeHtml(row.severancePaidDate ? rhFormatDate(row.severancePaidDate) : 'NÃO PAGA')+'</td>'+
+      '<td data-label="Checklist">'+(row.pending ? '<span class="status-pill waiting">'+Number(row.pending)+' PENDENTE(S)</span>' : '<span class="status-pill done">COMPLETO</span>')+'</td>'+
+      '<td data-label="Situação">'+(row.finished ? '<span class="status-pill done">FINALIZADO</span>' : '<span class="status-pill progress">EM ANDAMENTO</span>')+'</td>'+
+      '<td class="no-print"><button class="btn-outline btn-sm" type="button" data-rh-desl-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
+    '</tr>').join('') : '<tr><td colspan="10" class="responsive-empty">Nenhum desligamento '+(filter === 'finalizado' ? 'finalizado' : filter ? 'em andamento' : '')+'.</td></tr>';
+  }
+  ['rhDeslFiltro','rhDeslLoja'].forEach(id => { if(el(id)) el(id).addEventListener('change', renderRhDesligamentos); });
+  if(el('rhDeslBusca')) el('rhDeslBusca').addEventListener('input', renderRhDesligamentos);
+  if(el('rhDeslBody')) el('rhDeslBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-desl-open]');
+    const row = button && rhDeslRows.find(item => item.id === button.dataset.rhDeslOpen);
+    if(row) openRhDesligamento({mode:'rescisao', id:row.id, employeeId:row.employeeId, employeeName:row.employeeName, termination:row});
+  });
+  // Botão DESLIGAMENTO do funcionário: vai para a aba e abre o desligamento
+  // dele (o último, se já houver; senão um novo — salvar deixa INATIVO).
+  async function rhOpenEmployeeDesligamento(employeeId){
+    const employee = rhEmployees.find(item => item.id === employeeId);
+    if(!employee) return;
+    await rhFuncSetTab('desligamentos');
+    const row = rhDeslRows.filter(item => item.employeeId === employeeId).sort((a, b) => String(b.terminationDate).localeCompare(String(a.terminationDate)))[0];
+    openRhDesligamento({mode:'rescisao', id:row ? row.id : '', employeeId, employeeName:employee.fullName, termination:row || null});
+  }
+
+  // --- LOJA ATUANTE em lote: só os que mudaram são gravados.
+  let rhLojaAtuante = {month:'', stores:{}};
+  async function loadRhLojaAtuante(){
+    if(!el('rhLojaAtuanteMes').value) el('rhLojaAtuanteMes').value = financeCurrentMonthKey();
+    const month = el('rhLojaAtuanteMes').value;
+    el('rhLojaAtuanteBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await rhApiRequest('/employees/acting-stores/batch?month='+encodeURIComponent(month));
+      rhLojaAtuante = {month, stores:data.stores || {}};
+      renderRhLojaAtuante();
+    }catch(error){
+      el('rhLojaAtuanteBody').innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function rhLojaAtuanteChanges(){
+    return [...el('rhLojaAtuanteBody').querySelectorAll('[data-rh-acting]')]
+      .filter(select => select.value && select.value !== select.dataset.original)
+      .map(select => ({employeeId:select.dataset.rhActing, companyId:select.value}));
+  }
+  function rhLojaAtuanteRefreshButton(){
+    const count = rhLojaAtuanteChanges().length;
+    el('btnRhLojaAtuanteSalvar').disabled = !count;
+    el('btnRhLojaAtuanteSalvar').textContent = count ? 'SALVAR EM LOTE ('+count+')' : 'SALVAR EM LOTE';
+  }
+  function renderRhLojaAtuante(){
+    const filter = el('rhLojaAtuanteFiltro').value;
+    const options = rhCompanyOptions().concat([{value:'assistencia',label:'ASSISTÊNCIA (SETOR)'}]);
+    const rows = rhEmployees.filter(employee => employee.status === 'active')
+      .map(employee => ({employee, store:rhLojaAtuante.stores[employee.id] || {companyId:'', companyName:''}}))
+      .filter(row => !filter || row.store.companyId === filter);
+    el('rhLojaAtuanteBody').innerHTML = rows.length ? rows.map(({employee, store}) => '<tr>'+
+      '<td data-label="Funcionário"><strong>'+escapeHtml(employee.fullName)+'</strong></td>'+
+      '<td data-label="Cargo">'+escapeHtml(employee.roleTitle || '—')+'</td>'+
+      '<td data-label="Loja cadastrada">'+escapeHtml(employee.admissionCompanyName || employee.companyName || '—')+'</td>'+
+      '<td data-label="Loja atuante no mês"><select data-rh-acting="'+escapeHtml(employee.id)+'" data-original="'+escapeHtml(store.companyId || '')+'" aria-label="Loja atuante de '+escapeHtml(employee.fullName)+'">'+
+        '<option value="">'+(store.companyId ? '' : 'SEM LOJA')+'</option>'+
+        options.map(option => '<option value="'+escapeHtml(option.value)+'"'+(option.value === store.companyId ? ' selected' : '')+'>'+escapeHtml(option.label)+'</option>').join('')+
+      '</select></td>'+
+    '</tr>').join('') : '<tr><td colspan="4" class="responsive-empty">Nenhum funcionário ativo.</td></tr>';
+    rhLojaAtuanteRefreshButton();
+  }
+  if(el('rhLojaAtuanteMes')) el('rhLojaAtuanteMes').addEventListener('change', loadRhLojaAtuante);
+  if(el('rhLojaAtuanteFiltro')) el('rhLojaAtuanteFiltro').addEventListener('change', renderRhLojaAtuante);
+  if(el('rhLojaAtuanteBody')) el('rhLojaAtuanteBody').addEventListener('change', event => {
+    const select = event.target.closest('[data-rh-acting]');
+    if(!select) return;
+    select.closest('tr').classList.toggle('inv-over', select.value !== select.dataset.original);
+    rhLojaAtuanteRefreshButton();
+  });
+  if(el('btnRhLojaAtuanteSalvar')) el('btnRhLojaAtuanteSalvar').addEventListener('click', async () => {
+    const items = rhLojaAtuanteChanges();
+    if(!items.length) return;
+    const button = el('btnRhLojaAtuanteSalvar');
+    button.disabled = true;
+    try{
+      const data = await rhApiRequest('/employees/acting-stores/batch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month:rhLojaAtuante.month, items})});
+      showPurchaseToast((data.saved || 0)+' LOJA(S) ATUANTE(S) SALVA(S) EM '+rhFormatMonth(rhLojaAtuante.month)+'.');
+      await loadRhEmployeeList();
+      await loadRhLojaAtuante();
+    }catch(error){
+      showPurchaseToast(error.message,'error');
+      rhLojaAtuanteRefreshButton();
+    }
+  });
+
+  // --- FÉRIAS: acompanhamento anual (CLT) e férias registradas.
+  let rhFeriasData = {vacations:[], summary:[], today:''};
+  const rhAddDays = (date, days) => { const [y, m, d] = date.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10); };
+  const rhAddYears = (date, years) => { const [y, m, d] = date.split('-').map(Number); return new Date(Date.UTC(y + years, m - 1, d)).toISOString().slice(0, 10); };
+  const rhVacationDays = (start, end) => start && end && end >= start ? Math.round((Date.parse(end+'T00:00:00Z') - Date.parse(start+'T00:00:00Z')) / 86400000) + 1 : 0;
+  async function loadRhFerias(){
+    try{
+      rhFeriasData = await rhApiRequest('/vacations');
+      renderRhFerias();
+    }catch(error){
+      el('rhFeriasAnualBody').innerHTML = '<tr><td colspan="10" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  function renderRhFerias(){
+    const view = el('rhFeriasVisao').value, store = el('rhFeriasLoja').value, month = el('rhFeriasMes').value;
+    el('rhFeriasAnualPanel').hidden = view !== 'anual';
+    el('rhFeriasRegistrosPanel').hidden = view !== 'registros';
+    el('rhFeriasMes').closest('.field').hidden = view !== 'anual';
+    const summaryOf = id => rhFeriasData.summary.find(item => item.employeeId === id);
+    if(view === 'anual'){
+      const soon = rhAddDays(rhFeriasData.today || todayDateKey(), 60);
+      const rows = rhFeriasData.summary.filter(item => item.status === 'active' && item.next &&
+        (!store || item.companyId === store) && (!month || item.next.deadline.slice(0, 7) === month))
+        .sort((a, b) => a.next.deadline.localeCompare(b.next.deadline));
+      el('rhFeriasAnualBody').innerHTML = rows.length ? rows.map(item => {
+        const next = item.next;
+        const pill = next.situation === 'vencida' ? '<span class="status-pill alert">VENCIDA</span>'
+          : next.situation === 'em_aquisicao' ? '<span class="status-pill">EM AQUISIÇÃO</span>'
+          : next.deadline <= soon ? '<span class="status-pill warn">VENCE EM BREVE</span>' : '<span class="status-pill waiting">A TIRAR</span>';
+        return '<tr>'+
+          '<td data-label="Funcionário"><strong>'+escapeHtml(item.fullName)+'</strong></td>'+
+          '<td data-label="Loja">'+escapeHtml(item.companyName || '—')+'</td>'+
+          '<td data-label="Admissão">'+escapeHtml(rhFormatDate(item.admissionDate))+'</td>'+
+          '<td data-label="Período aquisitivo">'+escapeHtml(rhFormatDate(next.start)+' A '+rhFormatDate(next.end))+'</td>'+
+          '<td data-label="Pode tirar a partir de">'+escapeHtml(rhFormatDate(rhAddDays(next.end, 1)))+'</td>'+
+          '<td data-label="Vence em"><strong>'+escapeHtml(rhFormatDate(next.deadline))+'</strong></td>'+
+          '<td data-label="Saldo">'+next.remainingDays+' DIAS</td>'+
+          '<td data-label="Último retorno">'+escapeHtml(item.lastReturn ? rhFormatDate(item.lastReturn) : '—')+'</td>'+
+          '<td data-label="Situação">'+pill+'</td>'+
+          '<td class="no-print"><button class="btn-outline btn-sm" type="button" data-rh-ferias-nova="'+escapeHtml(item.employeeId)+'">REGISTRAR</button></td>'+
+        '</tr>';
+      }).join('') : '<tr><td colspan="10" class="responsive-empty">'+(rhFeriasData.summary.some(item => item.status === 'active' && !item.next) ? 'Nenhuma férias neste filtro (funcionário sem data de admissão não entra no cálculo).' : 'Nenhuma férias neste filtro.')+'</td></tr>';
+      return;
+    }
+    const rows = rhFeriasData.vacations.filter(row => !store || (summaryOf(row.employeeId) || {}).companyId === store);
+    el('rhFeriasRegistrosBody').innerHTML = rows.length ? rows.map(row => '<tr>'+
+      '<td data-label="Funcionário"><strong>'+escapeHtml(row.employeeName)+'</strong></td>'+
+      '<td data-label="Período aquisitivo">'+escapeHtml(rhFormatDate(row.acquisitionStart)+' A '+rhFormatDate(rhAddDays(rhAddYears(row.acquisitionStart, 1), -1)))+'</td>'+
+      '<td data-label="Início">'+escapeHtml(rhFormatDate(row.startDate))+'</td>'+
+      '<td data-label="Fim">'+escapeHtml(rhFormatDate(row.endDate))+'</td>'+
+      '<td data-label="Dias">'+row.days+'</td>'+
+      '<td data-label="Retorno">'+escapeHtml(rhFormatDate(rhAddDays(row.endDate, 1)))+'</td>'+
+      '<td data-label="Valor líquido">'+formatCentsBRL(row.netCents)+'</td>'+
+      '<td data-label="Observações">'+escapeHtml(row.notes || '—')+'</td>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;"><button class="btn-outline btn-sm" type="button" data-rh-ferias-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline btn-sm" type="button" data-rh-ferias-delete="'+escapeHtml(row.id)+'">EXCLUIR</button></span></td>'+
+    '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma férias registrada.</td></tr>';
+  }
+  ['rhFeriasVisao','rhFeriasLoja','rhFeriasMes'].forEach(id => { if(el(id)) el(id).addEventListener('change', renderRhFerias); });
+  function rhFeriasFillPeriods(employeeId, selected){
+    const item = rhFeriasData.summary.find(row => row.employeeId === employeeId);
+    const periods = item ? item.periods.slice().reverse() : [];
+    el('rhFeriasPeriodo').innerHTML = periods.length
+      ? periods.map(period => '<option value="'+period.start+'">'+rhFormatDate(period.start)+' A '+rhFormatDate(period.end)+' · VENCE '+rhFormatDate(period.deadline)+' · SALDO '+period.remainingDays+' DIAS</option>').join('')
+      : '<option value="">CADASTRE A DATA DE ADMISSÃO DO FUNCIONÁRIO</option>';
+    el('rhFeriasPeriodo').value = selected || (item && item.next ? item.next.start : '') || el('rhFeriasPeriodo').value;
+  }
+  function rhFeriasUpdateDays(){
+    const start = el('rhFeriasInicio').value, end = el('rhFeriasFim').value;
+    const days = rhVacationDays(start, end);
+    el('rhFeriasDias').textContent = days ? days+' DIAS · RETORNO EM '+rhFormatDate(rhAddDays(end, 1)) : '—';
+  }
+  function openRhFerias(row, employeeId){
+    el('rhFeriasForm').reset();
+    el('rhFeriasId').value = row ? row.id : '';
+    el('rhFeriasDialogTitle').textContent = row ? 'EDITAR FÉRIAS' : 'REGISTRAR FÉRIAS';
+    const employees = rhEmployees.slice().sort((a, b) => (a.status === b.status ? a.fullName.localeCompare(b.fullName) : a.status === 'active' ? -1 : 1));
+    el('rhFeriasFuncionario').innerHTML = '<option value="">SELECIONE</option>'+employees.map(employee =>
+      '<option value="'+escapeHtml(employee.id)+'">'+escapeHtml(employee.fullName+(employee.status === 'inactive' ? ' (INATIVO)' : ''))+'</option>').join('');
+    el('rhFeriasFuncionario').value = row ? row.employeeId : (employeeId || '');
+    rhFeriasFillPeriods(el('rhFeriasFuncionario').value, row ? row.acquisitionStart : '');
+    el('rhFeriasInicio').value = row ? row.startDate : '';
+    el('rhFeriasFim').value = row ? row.endDate : '';
+    if(row && row.netCents) setCurrencyValue(el('rhFeriasValor'), row.netCents / 100); else { el('rhFeriasValor').value = ''; el('rhFeriasValor').dataset.rawValue = ''; }
+    el('rhFeriasObs').value = row ? row.notes || '' : '';
+    el('rhFeriasStatus').textContent = '';
+    rhFeriasUpdateDays();
+    el('rhFeriasDialog').showModal();
+  }
+  if(el('rhFeriasValor')) attachCurrencyMask(el('rhFeriasValor'));
+  if(el('rhFeriasFuncionario')) el('rhFeriasFuncionario').addEventListener('change', () => rhFeriasFillPeriods(el('rhFeriasFuncionario').value, ''));
+  ['rhFeriasInicio','rhFeriasFim'].forEach(id => { if(el(id)) el(id).addEventListener('change', rhFeriasUpdateDays); });
+  if(el('btnRhFeriasNova')) el('btnRhFeriasNova').addEventListener('click', () => openRhFerias(null, ''));
+  ['btnCloseRhFerias','btnCancelRhFerias'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('rhFeriasDialog').close()); });
+  ['rhFeriasAnualBody','rhFeriasRegistrosBody'].forEach(id => { if(el(id)) el(id).addEventListener('click', async event => {
+    const nova = event.target.closest('[data-rh-ferias-nova]');
+    if(nova){ openRhFerias(null, nova.dataset.rhFeriasNova); return; }
+    const edit = event.target.closest('[data-rh-ferias-edit]');
+    if(edit){ const row = rhFeriasData.vacations.find(item => item.id === edit.dataset.rhFeriasEdit); if(row) openRhFerias(row); return; }
+    const del = event.target.closest('[data-rh-ferias-delete]');
+    if(del && confirm('Excluir este registro de férias?')){
+      try{ await rhApiRequest('/vacations?id='+encodeURIComponent(del.dataset.rhFeriasDelete), {method:'DELETE'}); await loadRhFerias(); showPurchaseToast('Férias excluídas.'); }
+      catch(error){ showPurchaseToast(error.message,'error'); }
+    }
+  }); });
+  if(el('rhFeriasForm')) el('rhFeriasForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('rhFeriasStatus');
+    const netCents = parseBRLToCents(getCurrencyValue(el('rhFeriasValor')) || '0');
+    if(netCents === null){ status.textContent = 'INFORME UM VALOR LÍQUIDO VÁLIDO.'; return; }
+    try{
+      await rhApiRequest('/vacations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        id:el('rhFeriasId').value || undefined, employeeId:el('rhFeriasFuncionario').value, acquisitionStart:el('rhFeriasPeriodo').value,
+        startDate:el('rhFeriasInicio').value, endDate:el('rhFeriasFim').value, netCents, notes:el('rhFeriasObs').value
+      })});
+      el('rhFeriasDialog').close();
+      await loadRhFerias();
+      showPurchaseToast('Férias salvas.');
+    }catch(error){
+      status.textContent = error.message;
+    }
+  });
 
   ['rhEmployeeFiltroLoja','rhEmployeeFiltroStatus'].forEach(id => {
     if(el(id)) el(id).addEventListener('change', renderRhEmployeesTable);
@@ -47451,6 +47839,12 @@ function renderHomeTasks(){
     el('rhEmployeePix').value = employee ? (employee.pixKey || '') : '';
     el('rhEmployeeBank').value = employee ? (employee.bankName || '') : '';
     el('rhEmployeeBenefitNotes').value = employee ? (employee.benefitNotes || '') : '';
+    // Valor total do benefício e faceponto: em branco quando 0 (= regra / sem faceponto).
+    [['rhEmployeeBenefitFood','benefitFoodTotalCents'],['rhEmployeeBenefitTransport','benefitTransportTotalCents'],['rhEmployeeFaceponto','facepontoCents']].forEach(([id, key]) => {
+      const cents = employee ? Number(employee[key] || 0) : 0;
+      if(cents) setCurrencyValue(el(id), cents/100); else { el(id).value = ''; el(id).dataset.rawValue = ''; }
+    });
+    el('rhEmployeeBenefitMethod').value = employee ? (employee.benefitPaymentMethod || '') : '';
     el('rhEmployeeUser').value = employee ? (employee.userId || '') : '';
     el('rhEmployeeNotes').value = employee ? (employee.notes || '') : '';
     el('rhEmployeeDriveLink').value = employee ? (employee.driveLink || '') : '';
@@ -47519,11 +47913,14 @@ function renderHomeTasks(){
   });
 
   if(el('rhEmployeeSalary')) attachCurrencyMask(el('rhEmployeeSalary'));
+  ['rhEmployeeBenefitFood','rhEmployeeBenefitTransport','rhEmployeeFaceponto'].forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
   if(el('btnNewRhEmployee')) el('btnNewRhEmployee').addEventListener('click', () => openRhEmployeeDialog(null));
   if(el('btnCloseRhEmployeeDialog')) el('btnCloseRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
   if(el('btnCancelRhEmployeeDialog')) el('btnCancelRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
 
   if(el('rhEmployeesTableBody')) el('rhEmployeesTableBody').addEventListener('click', async event => {
+    const desligar = event.target.closest('[data-rh-employee-desligar]');
+    if(desligar){ rhOpenEmployeeDesligamento(desligar.dataset.rhEmployeeDesligar); return; }
     const editButton = event.target.closest('[data-rh-employee-edit]');
     const deleteButton = event.target.closest('[data-rh-employee-delete]');
     if(editButton){
@@ -47586,6 +47983,10 @@ function renderHomeTasks(){
       status: el('rhEmployeeStatus').value,
       workSchedule: el('rhEmployeeSchedule').value,
       benefitNotes: el('rhEmployeeBenefitNotes').value,
+      benefitFoodTotalCents: parseBRLToCents(getCurrencyValue(el('rhEmployeeBenefitFood')) || '0') || 0,
+      benefitTransportTotalCents: parseBRLToCents(getCurrencyValue(el('rhEmployeeBenefitTransport')) || '0') || 0,
+      benefitPaymentMethod: el('rhEmployeeBenefitMethod').value,
+      facepontoCents: parseBRLToCents(getCurrencyValue(el('rhEmployeeFaceponto')) || '0') || 0,
       userId: el('rhEmployeeUser').disabled ? '' : el('rhEmployeeUser').value,
       notes: el('rhEmployeeNotes').value,
       driveLink: el('rhEmployeeDriveLink').value.trim(),
@@ -48785,7 +49186,10 @@ function renderHomeTasks(){
     const days = Number.isInteger(review.transportDays) && review.transportDays >= 0 ? review.transportDays : row.workingDays;
     const foodAdjustCents = Number(review.foodAdjustCents || 0);
     const foodCents = Math.max(0, Number(row.ruleFoodCents || 0) + foodAdjustCents);
-    const transportCents = days * Number(row.transportPerDayCents || 0);
+    // VALOR TOTAL do cadastro: proporcional aos dias (mesma conta de app/lib/hr-benefit-cycle.ts).
+    const transportCents = Number(row.transportTotalCents) > 0
+      ? (Number(row.countedDays) ? Math.round(Number(row.transportTotalCents) * days / Number(row.countedDays)) : 0)
+      : days * Number(row.transportPerDayCents || 0);
     return {transportDays:days, foodAdjustCents, reason:review.reason || '', foodCents, transportCents, totalCents:foodCents + transportCents};
   }
 
@@ -48834,7 +49238,7 @@ function renderHomeTasks(){
       '<td>'+(editable ? '<input type="number" step="0.01" style="width:96px;" data-rh-ciclo-field="foodAdjust" data-employee="'+id+'" value="'+(calc.foodAdjustCents ? (calc.foodAdjustCents/100).toFixed(2) : '')+'" placeholder="0,00" aria-label="Ajuste da alimentação">' : '—')+'</td>'+
       '<td>'+(editable ? '<input list="rhCicloMotivos" maxlength="200" style="min-width:150px;" data-rh-ciclo-field="reason" data-employee="'+id+'" value="'+escapeHtml(calc.reason)+'" placeholder="—" aria-label="Motivo do ajuste">' : '—')+'</td>'+
       '<td data-rh-ciclo-out="food">'+formatCentsBRL(calc.foodCents)+'</td>'+
-      '<td data-rh-ciclo-out="transport" title="'+escapeHtml(formatCentsBRL(row.transportPerDayCents)+' por dia')+'">'+formatCentsBRL(calc.transportCents)+'</td>'+
+      '<td data-rh-ciclo-out="transport" title="'+escapeHtml(Number(row.transportTotalCents) > 0 ? 'VALOR TOTAL DO CADASTRO: '+formatCentsBRL(row.transportTotalCents)+' ('+row.countedDays+' DIAS)' : formatCentsBRL(row.transportPerDayCents)+' por dia')+'">'+formatCentsBRL(calc.transportCents)+'</td>'+
       '<td data-rh-ciclo-out="total"><strong>'+formatCentsBRL(calc.totalCents)+'</strong></td>'+
       '<td data-rh-ciclo-out="situacao">'+rhCicloSituacaoCell(row, calc)+'</td>';
   }
@@ -49161,10 +49565,7 @@ function renderHomeTasks(){
       '<td>'+formatCentsBRL(row.fgtsCents)+'</td>'+
       '<td>'+formatCentsBRL(Number(row.severanceCents || 0) + Number(row.fgtsCents || 0))+'</td>'+
       '<td>'+escapeHtml(row.notes || '—')+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;">'+
-        '<button class="btn-outline" type="button" data-rh-rescisao-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
-        '<button class="btn-outline" type="button" data-rh-rescisao-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
-      '</span></td>'+
+      '<td class="no-print"></td>'+
     '</tr>').join('');
   }
 
@@ -49184,6 +49585,25 @@ function renderHomeTasks(){
     });
   });
 
+  // FACEPONTO por unidade (loja atuante do mês), com subtotal por loja.
+  function renderRhDreFaceponto(rows){
+    if(!rows.length){
+      el('rhDreFuncFaceponto').innerHTML = '<div class="table-panel"><p class="responsive-empty" style="padding:14px;">Nenhum funcionário com FACEPONTO cadastrado ativo neste mês.</p></div>';
+      return;
+    }
+    const stores = new Map();
+    rows.forEach(row => { const key = row.companyName || 'SEM LOJA'; stores.set(key, (stores.get(key) || []).concat([row])); });
+    const total = rows.reduce((sum, row) => sum + Number(row.amountCents || 0), 0);
+    el('rhDreFuncFaceponto').innerHTML = '<div class="table-panel responsive-table"><div class="table-scroll"><table>'+
+      '<thead><tr><th>Unidade</th><th>Colaborador</th><th>Faceponto</th></tr></thead><tbody>'+
+      [...stores.entries()].map(([store, list]) =>
+        list.map(row => '<tr><td data-label="Unidade">'+escapeHtml(store)+'</td><td data-label="Colaborador">'+escapeHtml(row.personName)+'</td><td data-label="Faceponto">'+formatCentsBRL(row.amountCents)+'</td></tr>').join('')+
+        '<tr><td colspan="2"><strong>SUBTOTAL '+escapeHtml(store)+' ('+list.length+')</strong></td><td><strong>'+formatCentsBRL(list.reduce((sum, row) => sum + Number(row.amountCents || 0), 0))+'</strong></td></tr>'
+      ).join('')+
+      '<tr><td colspan="2"><strong>TOTAL GERAL ('+rows.length+')</strong></td><td><strong>'+formatCentsBRL(total)+'</strong></td></tr>'+
+      '</tbody></table></div></div>';
+  }
+
   async function loadRhDreFuncionario(){
     if(!canAccess('payroll')) return;
     try{
@@ -49199,6 +49619,10 @@ function renderHomeTasks(){
         const data = await rhApiRequest('/aso-exams?'+params);
         rhAsoRows = Array.isArray(data.exams) ? data.exams : [];
         renderRhAsoTable();
+      }else if(rhDreFuncTab === 'faceponto'){
+        el('rhDreFuncFaceponto').innerHTML = '<p class="responsive-empty">Carregando…</p>';
+        const data = await rhApiRequest('/employee-dre?'+params);
+        renderRhDreFaceponto(Array.isArray(data.faceponto) ? data.faceponto : []);
       }else if(rhDreFuncTab === 'rescisoes'){
         el('rhRescisaoTableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
         const data = await rhApiRequest('/terminations?'+params);
@@ -49233,8 +49657,10 @@ function renderHomeTasks(){
       el('rhDreFuncTabFechamento').hidden = rhDreFuncTab !== 'fechamento';
       el('rhDreFuncTabAso').hidden = rhDreFuncTab !== 'aso';
       el('rhDreFuncTabRescisoes').hidden = rhDreFuncTab !== 'rescisoes';
+      el('rhDreFuncTabFaceponto').hidden = rhDreFuncTab !== 'faceponto';
       el('btnNewRhAso').hidden = rhDreFuncTab !== 'aso';
-      el('btnNewRhRescisao').hidden = rhDreFuncTab !== 'rescisoes';
+      // Rescisão é preenchida em Funcionários > DESLIGAMENTOS (31/10/2026).
+      el('btnNewRhRescisao').hidden = true;
       el('btnRhDreFuncPrint').hidden = rhDreFuncTab !== 'fechamento';
       el('btnRhDreFuncInss').hidden = rhDreFuncTab !== 'fechamento';
       loadRhDreFuncionario();
@@ -51002,9 +51428,21 @@ function renderHomeTasks(){
         '<input data-check-note maxlength="300" placeholder="Observação" aria-label="Observação: '+escapeHtml(label)+'" value="'+escapeHtml(entry.note || '')+'">'+
       '</div>';
     }).join('');
+    // Modos: 'employee' (INATIVO no cadastro: só data e motivo — o checklist
+    // fica na aba DESLIGAMENTOS), 'edit' (Painel do RH: sem valores) e
+    // 'rescisao' (Funcionários > DESLIGAMENTOS: tudo, inclusive a rescisão).
+    const showValues = context.mode === 'rescisao';
+    document.querySelectorAll('[data-rh-desl-valores]').forEach(node => { node.hidden = !showValues; });
+    el('rhDesligamentoChecklistBox').hidden = context.mode === 'employee';
+    ['rhDesligamentoValor','rhDesligamentoFgts'].forEach((id, index) => {
+      const cents = Number(index ? data.fgtsCents : data.severanceCents) || 0;
+      if(cents) setCurrencyValue(el(id), cents / 100); else { el(id).value = ''; el(id).dataset.rawValue = ''; }
+    });
+    el('rhDesligamentoObs').value = data.notes || '';
     el('rhDesligamentoStatus').textContent = '';
     el('rhDesligamentoDialog').showModal();
   }
+  ['rhDesligamentoValor','rhDesligamentoFgts'].forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
   function rhDesligamentoData(){
     const checklist = {};
     el('rhDesligamentoChecklist').querySelectorAll('[data-check-key]').forEach(row => {
@@ -51045,6 +51483,25 @@ function renderHomeTasks(){
       rhPendingTermination = data;
       closeRhDesligamento(false);
       el('rhEmployeeFormStatus').textContent = 'DESLIGAMENTO INFORMADO — CLIQUE EM SALVAR PARA CONCLUIR.';
+      return;
+    }
+    if(rhDesligamentoContext.mode === 'rescisao'){
+      const severanceCents = parseBRLToCents(getCurrencyValue(el('rhDesligamentoValor')) || '0');
+      const fgtsCents = parseBRLToCents(getCurrencyValue(el('rhDesligamentoFgts')) || '0');
+      if(severanceCents === null || fgtsCents === null){ status.textContent = 'INFORME VALORES DE RESCISÃO E FGTS VÁLIDOS.'; return; }
+      try{
+        await rhApiRequest('/terminations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+          id:rhDesligamentoContext.id || undefined, employeeId:rhDesligamentoContext.employeeId, ...data,
+          severanceCents, fgtsCents, notes:el('rhDesligamentoObs').value
+        })});
+        closeRhDesligamento(false);
+        await loadRhEmployeeList();
+        renderRhEmployeesTable();
+        await loadRhDesligamentos();
+        showPurchaseToast('DESLIGAMENTO SALVO.');
+      }catch(error){
+        status.textContent = error.message;
+      }
       return;
     }
     try{

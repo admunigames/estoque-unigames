@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { checklistPendingCount, normalizeChecklist } from "../../../lib/hr-rh";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
   DATE_PATTERN,
@@ -78,7 +79,13 @@ export async function GET(request: Request) {
       .prepare(`SELECT ${COLUMNS} FROM hr_terminations ${where} ORDER BY termination_date DESC, employee_name ASC`)
       .bind(...params)
       .all<TerminationRow>();
-    return jsonResponse({ terminations: result.results ?? [] });
+    // EM ANDAMENTO × FINALIZADO (Funcionários > DESLIGAMENTOS): finalizado =
+    // checklist sem pendência e rescisão paga.
+    const terminations = (result.results ?? []).map((row) => {
+      const pending = checklistPendingCount(row.checklistJson);
+      return { ...row, checklist: normalizeChecklist(JSON.parse(row.checklistJson || "{}")), pending, finished: !pending && Boolean(row.severancePaidDate) };
+    });
+    return jsonResponse({ terminations });
   } catch (error) {
     console.error("Não foi possível carregar as rescisões.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR AS RESCISÕES." }, 500);
@@ -109,7 +116,9 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "INFORME A DATA DO DESLIGAMENTO." }, 400);
     }
     // Motivo obrigatório (o funcionário só fica INATIVO com data e motivo).
-    const termination = terminationFields({ terminationDate, reason: body.reason, reasonOther: body.reasonOther, checklist: body.checklist });
+    const termination = terminationFields({
+      terminationDate, reason: body.reason, reasonOther: body.reasonOther, checklist: body.checklist, severancePaidDate: body.severancePaidDate,
+    });
     if (termination.error) return jsonResponse({ error: termination.error }, 400);
     if (!Number.isFinite(severanceCents) || severanceCents < 0) {
       return jsonResponse({ error: "INFORME UM VALOR DE RESCISÃO VÁLIDO." }, 400);
@@ -139,15 +148,15 @@ export async function POST(request: Request) {
                company_name=CASE WHEN ?3 = 1 THEN company_name ELSE ?5 END,
                termination_date=?6, severance_cents=?7, fgts_cents=?8, notes=?9,
                updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP,
-               reason=?13, reason_other=?14
+               reason=?13, reason_other=?14, checklist_json=?15, severance_paid_date=?16
            WHERE id=?12`,
         )
         .bind(
           employeeId,
           employee.fullName,
           keepCompany ? 1 : 0,
-          employee.companyId,
-          employee.companyName,
+          employee.admissionCompanyId || employee.companyId,
+          employee.admissionCompanyId ? employee.admissionCompanyName : employee.companyName,
           terminationDate,
           severanceCents,
           fgtsCents,
@@ -157,6 +166,8 @@ export async function POST(request: Request) {
           editId,
           termination.reason,
           termination.reasonOther,
+          termination.checklistJson,
+          termination.severancePaidDate,
         )
         .run();
       return jsonResponse({ updated: true, id: editId });
@@ -165,7 +176,10 @@ export async function POST(request: Request) {
     const { id, statement } = insertTermination(
       database,
       {
-        employeeId, employeeName: employee.fullName, companyId: employee.companyId, companyName: employee.companyName,
+        // Loja CADASTRADA (admissão): arca com os débitos do desligamento.
+        employeeId, employeeName: employee.fullName,
+        companyId: employee.admissionCompanyId || employee.companyId,
+        companyName: employee.admissionCompanyId ? employee.admissionCompanyName : employee.companyName,
         ...termination, severanceCents, fgtsCents, notes,
       },
       actor,

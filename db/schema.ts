@@ -1573,6 +1573,15 @@ export const hrEmployees = pgTable(
     foodPerDayCents: integer("food_per_day_cents").notNull().default(0),
     transportPerDayCents: integer("transport_per_day_cents").notNull().default(0),
     benefitNotes: text("benefit_notes").notNull().default(""),
+    // Benefício com VALOR TOTAL MENSAL (31/10/2026): > 0 substitui a aba
+    // REGRAS para este funcionário no ciclo (0 = segue a regra da escala).
+    benefitFoodTotalCents: integer("benefit_food_total_cents").notNull().default(0),
+    benefitTransportTotalCents: integer("benefit_transport_total_cents").notNull().default(0),
+    // Formato de recebimento do benefício ('' = o escolhido ao gerar o ciclo).
+    benefitPaymentMethod: text("benefit_payment_method").notNull().default(""),
+    // FACEPONTO: custo MENSAL enquanto ativo (DRE Funcionário, aba FACEPONTO
+    // pela loja atuante). 0 = sem faceponto.
+    facepontoCents: integer("faceponto_cents").notNull().default(0),
     // RH > Onboarding — trilha aberta na admissão (cadastro novo ou CONTRATADO
     // no Recrutamento); '' = sem trilha (funcionários anteriores ao módulo).
     // Concluída quando todos os vídeos do cargo/loja foram assistidos até o
@@ -3731,6 +3740,31 @@ export const hrScheduleDayNotes = pgTable(
     uniqueIndex("hr_schedule_day_notes_company_date_idx").on(table.companyId, table.noteDate),
     index("hr_schedule_day_notes_month_idx").on(table.referenceMonth),
   ],
+);
+
+// RH > Funcionários > FÉRIAS (31/10/2026) — férias gozadas, ligadas ao
+// período aquisitivo (CLT: 12 meses a partir da admissão; vence 12 meses
+// depois). Não entram na DRE. Próximas férias calculadas em app/lib/hr-vacations.ts.
+export const hrVacations = pgTable(
+  "hr_vacations",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    employeeName: text("employee_name").notNull().default(""),
+    // Início do período aquisitivo a que as férias se referem (AAAA-MM-DD).
+    acquisitionStart: text("acquisition_start").notNull().default(""),
+    startDate: text("start_date").notNull(),
+    endDate: text("end_date").notNull(),
+    netCents: integer("net_cents").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_vacations_employee_idx").on(table.employeeId)],
 );
 
 // DRE Funcionário — rescisões (valor da rescisão + FGTS) dos desligados. Ao

@@ -4,13 +4,13 @@ import { actingStoreFor } from "../../../../lib/acting-store";
 import { todayInTimezone } from "../../../../lib/finance-status";
 import { loadCompanyList } from "../../../finance/shared";
 import {
+  saveActingStoreMonth,
   canEmployees,
   canSeeEmployees,
   identity,
   jsonResponse,
   safeText,
   sameOrigin,
-  upsertActingStoreStatement,
   type JsonMap,
 } from "../../shared";
 
@@ -68,48 +68,16 @@ async function applyMonth(request: Request, remove: boolean) {
       .first<{ id: string; fullName: string }>();
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
 
-    const statements: ReturnType<typeof database.prepare>[] = [];
-    if (remove) {
-      statements.push(database.prepare("DELETE FROM hr_schedule_assignments WHERE employee_id=?1 AND reference_month=?2").bind(employeeId, month));
-    } else {
+    let store: { companyId: string; companyName: string } | null = null;
+    if (!remove) {
       const companyId = safeText(body.companyId, 80);
       if (!companyId) return jsonResponse({ error: "ESCOLHA A LOJA DO MÊS." }, 400);
       const companies = await loadCompanyList(database);
       const companyName = companyId === "assistencia" ? "Assistência" : companies.find((item) => item.id === companyId)?.name;
       if (!companyName) return jsonResponse({ error: "LOJA NÃO ENCONTRADA." }, 400);
-      statements.push(upsertActingStoreStatement(database, { employeeId, employeeName: employee.fullName, month, companyId, companyName }, actor));
+      store = { companyId, companyName };
     }
-    await database.batch(statements);
-
-    // Lançamentos do RH do mês até o próximo mês com registro → loja do mês.
-    const store = await actingStoreFor(database, employeeId, month);
-    const next = await database
-      .prepare("SELECT MIN(reference_month) AS month FROM hr_schedule_assignments WHERE employee_id=?1 AND reference_month > ?2 AND company_id <> ''")
-      .bind(employeeId, month)
-      .first<{ month: string | null }>();
-    const sync: ReturnType<typeof database.prepare>[] = [];
-    if (store) {
-      for (const table of ["hr_payroll_entries", "hr_benefits", "hr_commissions"]) {
-        sync.push(
-          database
-            .prepare(
-              `UPDATE ${table} SET company_id=?1, company_name=?2
-               WHERE employee_id=?3 AND month >= ?4 AND (?5 = '' OR month < ?5)`,
-            )
-            .bind(store.companyId, store.companyName, employeeId, month, next?.month ?? ""),
-        );
-      }
-    }
-    // A loja ATUAL do cadastro = loja atuante do mês corrente.
-    const current = await actingStoreFor(database, employeeId, todayInTimezone().slice(0, 7));
-    if (current?.companyId) {
-      sync.push(
-        database
-          .prepare("UPDATE hr_employees SET company_id=?1, company_name=?2, updated_at=CURRENT_TIMESTAMP WHERE id=?3")
-          .bind(current.companyId, current.companyName, employeeId),
-      );
-    }
-    if (sync.length) await database.batch(sync);
+    const current = await saveActingStoreMonth(database, actor, { employeeId, employeeName: employee.fullName, month, store });
     return jsonResponse({ saved: true, employeeId, month, current });
   } catch (error) {
     console.error("Não foi possível gravar a loja atuante.", error);

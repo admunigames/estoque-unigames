@@ -110,9 +110,12 @@ export async function GET(request: Request) {
       database
         .prepare(
           `SELECT id, full_name AS fullName, admission_date AS admissionDate, status, company_id AS companyId,
-                  salary_cents AS salaryCents FROM hr_employees`,
+                  company_name AS companyName, salary_cents AS salaryCents, faceponto_cents AS facepontoCents FROM hr_employees`,
         )
-        .all<{ id: string; fullName: string; admissionDate: string; status: string; companyId: string; salaryCents: number }>(),
+        .all<{
+          id: string; fullName: string; admissionDate: string; status: string; companyId: string; companyName: string;
+          salaryCents: number; facepontoCents: number;
+        }>(),
       database
         .prepare("SELECT employee_id AS employeeId, termination_date AS terminationDate FROM hr_terminations")
         .all<{ employeeId: string; terminationDate: string }>(),
@@ -151,9 +154,22 @@ export async function GET(request: Request) {
           (dsr.get(row.employeeId) ?? 0),
       ]),
     );
-    const staff = (employees.results ?? [])
-      .filter((employee) => activeOn(employee, terms, monthEnd) ||
-        terms.some((item) => item.employeeId === employee.id && item.terminationDate.slice(0, 7) === month))
+    const inMonth = (employees.results ?? []).filter((employee) => activeOn(employee, terms, monthEnd) ||
+      terms.some((item) => item.employeeId === employee.id && item.terminationDate.slice(0, 7) === month));
+    // FACEPONTO (31/10/2026): valor mensal do cadastro de quem esteve ativo no
+    // mês, na loja atuante do mês. Sem valor cadastrado, não aparece.
+    const faceponto = inMonth
+      .filter((employee) => Number(employee.facepontoCents) > 0)
+      .map((employee) => ({
+        employeeId: employee.id,
+        personName: employee.fullName,
+        companyId: assignments.get(employee.id)?.companyId || employee.companyId,
+        companyName: assignments.get(employee.id)?.companyName || employee.companyName,
+        amountCents: Number(employee.facepontoCents),
+      }))
+      .filter((row) => !companyId || row.companyId === companyId)
+      .sort((a, b) => a.companyName.localeCompare(b.companyName, "pt-BR") || a.personName.localeCompare(b.personName, "pt-BR"));
+    const staff = inMonth
       .map((employee) => ({
         employeeId: employee.id,
         personName: employee.fullName,
@@ -164,7 +180,7 @@ export async function GET(request: Request) {
       .filter((person) => !companyId || person.companyId === companyId);
     const companies = (await loadCompanyList(database)) as Array<{ id: string; name: string; cnpj?: string }>;
     const byCnpj = buildCnpjSummary(report.stores, staff, [...companies, { id: "assistencia", name: "Assistência" }]);
-    return jsonResponse({ ...report, byCnpj } as unknown as Record<string, unknown>);
+    return jsonResponse({ ...report, byCnpj, faceponto } as unknown as Record<string, unknown>);
   } catch (error) {
     console.error("Não foi possível montar o DRE Funcionário.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL MONTAR O DRE FUNCIONÁRIO." }, 500);

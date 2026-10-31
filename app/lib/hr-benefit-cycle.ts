@@ -117,10 +117,33 @@ export type CycleBenefitAmounts = {
   totalCents: number;
 };
 
-/** Alimentação cheia ± ajuste da revisão; transporte = dias × valor do dia. */
-export function cycleBenefitAmounts(rule: BenefitRule, transportDays: number, foodAdjustCents = 0): CycleBenefitAmounts {
+/**
+ * Valor do funcionário no ciclo: o VALOR TOTAL MENSAL do cadastro (> 0)
+ * substitui a regra da escala (31/10/2026). O transporte total vale para os
+ * dias contados do ciclo; a revisão de dias de passagem aplica a proporção.
+ */
+export type EmployeeBenefitRule = BenefitRule & { transportTotalCents: number; countedDays: number };
+export function employeeBenefitRule(
+  rule: BenefitRule,
+  employee: { benefitFoodTotalCents?: number; benefitTransportTotalCents?: number },
+  countedDays: number,
+): EmployeeBenefitRule {
+  const food = Math.max(0, Math.round(Number(employee.benefitFoodTotalCents) || 0));
+  const transport = Math.max(0, Math.round(Number(employee.benefitTransportTotalCents) || 0));
+  return { foodCents: food || rule.foodCents, transportPerDayCents: rule.transportPerDayCents, transportTotalCents: transport, countedDays };
+}
+
+/** Alimentação cheia ± ajuste da revisão; transporte = dias × valor do dia (ou total proporcional). */
+export function cycleBenefitAmounts(
+  rule: BenefitRule & { transportTotalCents?: number; countedDays?: number },
+  transportDays: number,
+  foodAdjustCents = 0,
+): CycleBenefitAmounts {
   const days = Math.max(0, Math.round(transportDays) || 0);
   const foodCents = Math.max(0, rule.foodCents + (Math.round(foodAdjustCents) || 0));
-  const transportCents = days * rule.transportPerDayCents;
+  const counted = Number(rule.countedDays) || 0;
+  const transportCents = rule.transportTotalCents
+    ? (counted ? Math.round((rule.transportTotalCents * days) / counted) : 0)
+    : days * rule.transportPerDayCents;
   return { foodCents, transportCents, totalCents: foodCents + transportCents };
 }

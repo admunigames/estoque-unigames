@@ -10,6 +10,7 @@ import { isWorkSchedule } from "../../lib/working-days";
 import { normalizeChecklist, terminationError } from "../../lib/hr-rh";
 import { actingStoreFor } from "../../lib/acting-store";
 import { computeOvertime } from "../../lib/hr-accounting-report";
+import { todayInTimezone } from "../../lib/finance-status";
 
 // RH Financeiro (Financeiro Fase 5) — base compartilhada da Folha de
 // Pagamento, dos Benefícios e do Comissionamento.
@@ -80,7 +81,8 @@ export function canEmployees(actor: Identity, action: EmployeeAction) {
 export function canSeeEmployees(actor: Identity) {
   return canManagePayroll(actor) || actor.permissions.some((permission) => permission.startsWith("rh_funcionarios:"));
 }
-export const EMPLOYEE_FINANCIAL_FIELDS = ["salaryCents", "pixKey", "bankName", "foodPerDayCents", "transportPerDayCents", "benefitNotes"] as const;
+export const EMPLOYEE_FINANCIAL_FIELDS = ["salaryCents", "pixKey", "bankName", "foodPerDayCents", "transportPerDayCents", "benefitNotes",
+  "benefitFoodTotalCents", "benefitTransportTotalCents", "benefitPaymentMethod", "facepontoCents"] as const;
 
 export function actorName(actor: Identity) {
   return actor.displayName || "Usuário";
@@ -187,6 +189,10 @@ export type EmployeeRow = {
   foodPerDayCents: number;
   transportPerDayCents: number;
   benefitNotes: string;
+  benefitFoodTotalCents: number;
+  benefitTransportTotalCents: number;
+  benefitPaymentMethod: string;
+  facepontoCents: number;
   userId: string;
   notes: string;
   // Link da pasta do Drive com os documentos do funcionário ('' = sem link).
@@ -205,6 +211,8 @@ export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, a
   salary_cents AS salaryCents, pix_key AS pixKey, bank_name AS bankName, status,
   work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
   transport_per_day_cents AS transportPerDayCents, benefit_notes AS benefitNotes,
+  benefit_food_total_cents AS benefitFoodTotalCents, benefit_transport_total_cents AS benefitTransportTotalCents,
+  benefit_payment_method AS benefitPaymentMethod, faceponto_cents AS facepontoCents,
   user_id AS userId, notes, drive_link AS driveLink, birth_date AS birthDate, created_by AS createdBy, created_by_name AS createdByName,
   created_at AS createdAt, updated_by AS updatedBy, updated_by_name AS updatedByName,
   updated_at AS updatedAt`;
@@ -490,6 +498,53 @@ export function upsertActingStoreStatement(
       crypto.randomUUID(), input.employeeId, input.employeeName, input.companyId, input.companyName, input.month,
       actor.id, actorName(actor),
     );
+}
+
+/**
+ * Grava (store) ou remove (null) a LOJA ATUANTE de um mês e sincroniza: os
+ * lançamentos do RH do mês até o próximo mês com registro passam para a loja
+ * do mês, e a loja ATUAL do cadastro acompanha o mês corrente. Usado pela
+ * loja atuante do cadastro e pelo LOTE (RH > Funcionários > LOJA ATUANTE).
+ */
+export async function saveActingStoreMonth(
+  database: Database,
+  actor: Identity,
+  input: { employeeId: string; employeeName: string; month: string; store: { companyId: string; companyName: string } | null },
+) {
+  const { employeeId, month } = input;
+  await database.batch([
+    input.store
+      ? upsertActingStoreStatement(database, { employeeId, employeeName: input.employeeName, month, ...input.store }, actor)
+      : database.prepare("DELETE FROM hr_schedule_assignments WHERE employee_id=?1 AND reference_month=?2").bind(employeeId, month),
+  ]);
+  const store = await actingStoreFor(database, employeeId, month);
+  const next = await database
+    .prepare("SELECT MIN(reference_month) AS month FROM hr_schedule_assignments WHERE employee_id=?1 AND reference_month > ?2 AND company_id <> ''")
+    .bind(employeeId, month)
+    .first<{ month: string | null }>();
+  const sync: ReturnType<typeof database.prepare>[] = [];
+  if (store) {
+    for (const table of ["hr_payroll_entries", "hr_benefits", "hr_commissions"]) {
+      sync.push(
+        database
+          .prepare(
+            `UPDATE ${table} SET company_id=?1, company_name=?2
+             WHERE employee_id=?3 AND month >= ?4 AND (?5 = '' OR month < ?5)`,
+          )
+          .bind(store.companyId, store.companyName, employeeId, month, next?.month ?? ""),
+      );
+    }
+  }
+  const current = await actingStoreFor(database, employeeId, todayInTimezone().slice(0, 7));
+  if (current?.companyId) {
+    sync.push(
+      database
+        .prepare("UPDATE hr_employees SET company_id=?1, company_name=?2, updated_at=CURRENT_TIMESTAMP WHERE id=?3")
+        .bind(current.companyId, current.companyName, employeeId),
+    );
+  }
+  if (sync.length) await database.batch(sync);
+  return current;
 }
 
 // Valores MANUAIS por funcionário e competência (migration 0109):
