@@ -3600,6 +3600,7 @@
   .com-commission-note{margin:-2px 0 0;font:600 11px/1.4 var(--sans);color:var(--ink-soft)}
   .com-operationals-title{margin:22px 0 10px}
   .com-operationals{margin-top:16px}
+  .com-op-earn{margin-top:16px}
   .com-leader-track-title{margin:16px 0 10px;font:800 10.5px/1.4 var(--mono);letter-spacing:.05em;color:var(--ink-soft)}
   .com-entry-form .field{min-width:min(100%,200px);flex:1 1 200px}
   .com-entry-form input,.com-entry-form select{width:100%}
@@ -53802,11 +53803,11 @@ function renderHomeTasks(){
       const track = (comOverview.tracking || []).find(item => item.companyId === group[0].companyId);
       const blocks = track
         ? comTrackCardHtml('Assistência', track.assistTargetCents, track.assistRevenueCents, comOverview.clock, op.premiumPercent)+
-          comTrackCardHtml('Loja · total (vendas + assistência)', track.targetCents, track.revenueCents, comOverview.clock, op.premiumPercent)
+          comTrackCardHtml('Loja total', track.targetCents, track.revenueCents, comOverview.clock, op.premiumPercent)
         : comPctBlockHtml('Assistência', c.assistPercent, assistNote)+comPctBlockHtml('Loja', c.storePercent, storeNote);
       // Comissão estimada só com comercial:commission (o servidor manda o total).
       const earn = c.totalCents !== undefined
-        ? '<p class="com-incentive">'+escapeHtml(rateText)+'<small>'+(comOverview.ownOnly ? 'Sua comissão estimada: ' : 'Comissão estimada de cada operacional: ')+escapeHtml(formatCentsBRL(c.totalCents))+'</small></p>'
+        ? '<p class="com-incentive com-op-earn">'+escapeHtml(rateText)+'<small>'+(comOverview.ownOnly ? 'Sua comissão estimada: ' : 'Comissão estimada de cada operacional: ')+escapeHtml(formatCentsBRL(c.totalCents))+'</small></p>'
         : '';
       return '<article class="com-seller">'+
         '<header class="com-seller-head"><div class="com-seller-name"><strong>OPERACIONAIS · '+escapeHtml(group[0].companyName || 'SEM LOJA')+'</strong>'+
