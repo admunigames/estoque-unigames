@@ -8,7 +8,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 const db = await setupRouteDb([
   "shared_state", "hr_employees", "hr_terminations", "hr_aso_exams", "hr_recruitment_candidates",
-  "hr_recruitment_test_payments", "hr_payroll_entries", "hr_commissions",
+  "hr_recruitment_test_payments", "hr_payroll_entries", "hr_commissions", "hr_vacations",
 ]);
 const { buildCnpjSummary } = await import("../app/lib/hr-employee-dre.ts");
 const dre = await import("../app/api/hr-payroll/employee-dre/route.ts");
@@ -60,10 +60,12 @@ test("rota: base com folha (salário + comissão + HE + DSR), sem folha o cadast
   assert.equal(row.totalCents, 63500);
 });
 
-test("tela: botão INSS DO MÊS e lista de colaboradores com base/FGTS/INSS", async () => {
+test("tela: botão INSS DO MÊS e fechamento compacto com INSS/FGTS por CNPJ", async () => {
   const { readFile } = await import("node:fs/promises");
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
   assert.match(html, /id="btnRhDreFuncInss"/);
   assert.match(html, /kind:'inss'/);
-  assert.match(html, /\['Colaborador','Loja','Base','FGTS \(8%\)','INSS'\]/);
+  // Fechamento compacto (31/10/2026): bloco INSS / FGTS por CNPJ.
+  assert.match(html, /block\('INSS \/ FGTS'/);
+  assert.match(html, /li\('INSS — '\+money\(row\.inssCents\)\), li\('FGTS — '\+money\(row\.fgtsMonthCents\)\)/);
 });

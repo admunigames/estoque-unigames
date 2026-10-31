@@ -10,7 +10,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
 const db = await setupRouteDb([
   "shared_state", "app_users", "push_subscriptions", "push_delivery_log", "hr_settings",
-  "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_terminations", "hr_aso_exams",
+  "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_terminations", "hr_aso_exams", "hr_vacations",
   "hr_recruitment_candidates", "hr_recruitment_status_history", "hr_recruitment_test_payments", "hr_leader_pdi",
   "hr_onboarding_videos", "hr_onboarding_progress", "hr_store_followups", "hr_time_tracking_entries",
   "hr_time_tracking_settings", "hr_schedule_assignments",
