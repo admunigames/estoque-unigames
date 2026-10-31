@@ -2886,23 +2886,24 @@
     #invCountTable tbody td:nth-child(6){grid-column:1 / -1; grid-row:4;}
     #invCountTable tbody td:nth-child(6)::before{display:none;}
     #invCountTable .inv-count-input{width:100%; min-height:46px; font-size:20px;}
-    /* RESULTADO: 1 categoria, 2 código, 3 produto, 4 contado, 5 sistema, 6 dif, 7 custo, 8 valor */
+    /* RESULTADO: 1 categoria, 2 código, 3 produto, 4 contado, 5 loja, 6 sistema, 7 dif final, 8 custo, 9 valor, 10 motivo */
     #invResultBody td:nth-child(3){grid-column:1 / -1; grid-row:1; font-size:13px;}
     #invResultBody td:nth-child(3)::before{display:none;}
     #invResultBody td:nth-child(1){grid-column:1 / 3; grid-row:2;}
     #invResultBody td:nth-child(2){grid-column:3; grid-row:2;}
     #invResultBody td:nth-child(4),#invResultBody td:nth-child(5),#invResultBody td:nth-child(6){grid-row:3;}
-    #invResultBody td:nth-child(7){grid-column:1; grid-row:4;}
-    #invResultBody td:nth-child(8){grid-column:2 / -1; grid-row:4;}
-    /* DIVERGENTES: 1 categoria, 2 produto, 3 contado, 4 sistema, 5 dif, 6 valor, 7 motivo, 8 botão */
-    #invDivBody td:nth-child(2){grid-column:1 / -1; grid-row:1; font-size:13px;}
-    #invDivBody td:nth-child(2)::before{display:none;}
-    #invDivBody td:nth-child(1){grid-column:1 / -1; grid-row:2;}
-    #invDivBody td:nth-child(3),#invDivBody td:nth-child(4),#invDivBody td:nth-child(5){grid-row:3;}
-    #invDivBody td:nth-child(6){grid-column:1 / -1; grid-row:4;}
-    #invDivBody td:nth-child(7){grid-column:1 / -1; grid-row:5;}
-    #invDivBody td:nth-child(8){grid-column:1 / -1; grid-row:6;}
-    #invDivBody td:nth-child(8) button{width:100%;}
+    #invResultBody td:nth-child(7),#invResultBody td:nth-child(8),#invResultBody td:nth-child(9){grid-row:4;}
+    #invResultBody td:nth-child(10){grid-column:1 / -1; grid-row:5;}
+    /* DIVERGENTES: 1 recontagem, 2 categoria, 3 produto, 4 contado, 5 sistema, 6 dif, 7 loja, 8 dif final, 9 valor final, 10 motivo, 11 botão */
+    #invDivBody td:nth-child(3){grid-column:1 / -1; grid-row:1; font-size:13px;}
+    #invDivBody td:nth-child(3)::before{display:none;}
+    #invDivBody td:nth-child(2){grid-column:1 / 3; grid-row:2;}
+    #invDivBody td:nth-child(1){grid-column:3; grid-row:2;}
+    #invDivBody td:nth-child(4),#invDivBody td:nth-child(5),#invDivBody td:nth-child(6){grid-row:3;}
+    #invDivBody td:nth-child(7),#invDivBody td:nth-child(8),#invDivBody td:nth-child(9){grid-row:4;}
+    #invDivBody td:nth-child(10){grid-column:1 / -1; grid-row:5;}
+    #invDivBody td:nth-child(11){grid-column:1 / -1; grid-row:6;}
+    #invDivBody td:nth-child(11) button{width:100%;}
     /* RECONTAGEM DA LOJA: produto em cima, ajuste embaixo. */
     #invStoreBody td:nth-child(2){grid-column:1 / -1; grid-row:1; font-size:13px;}
     #invStoreBody td:nth-child(2)::before{display:none;}
@@ -5075,10 +5076,9 @@
         <div class="supply-tabs" role="tablist" aria-label="Etapas do inventário" id="invTabs">
           <button class="supply-tab active" type="button" role="tab" data-inv-tab="categorias">CATEGORIAS</button>
           <button class="supply-tab" type="button" role="tab" data-inv-tab="contagem">CONTAGEM</button>
-          <button class="supply-tab" type="button" role="tab" data-inv-tab="resultado">RESULTADO</button>
           <button class="supply-tab" type="button" role="tab" data-inv-tab="divergentes">DIVERGENTES</button>
-          <button class="supply-tab" type="button" role="tab" data-inv-tab="recontagem">RECONTAGEM</button>
           <button class="supply-tab" type="button" role="tab" data-inv-tab="recontagemLoja">RECONTAGEM DA LOJA</button>
+          <button class="supply-tab" type="button" role="tab" data-inv-tab="resultado">RESULTADO</button>
         </div>
 
         <div class="inv-panel" data-inv-panel="categorias">
@@ -5116,7 +5116,7 @@
           </div>
           <p class="purchase-field-help" id="invCostsHint"></p>
           <div class="table-panel responsive-table"><div class="table-scroll">
-            <table><thead><tr><th>Categoria</th><th>Código</th><th>Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Custo</th><th>Valor</th></tr></thead>
+            <table><thead><tr><th>Categoria</th><th>Código</th><th>Produto</th><th>Contado</th><th>Loja</th><th>Sistema</th><th>Diferença final</th><th>Custo</th><th>Valor</th><th>Motivo</th></tr></thead>
             <tbody id="invResultBody"></tbody></table>
           </div></div>
           <h3 class="supply-section-title">ANOTADOS PARA INVENTÁRIO NAS DIVERGÊNCIAS (ESTA LOJA)</h3>
@@ -5139,28 +5139,27 @@
           </div>
           <p class="purchase-field-help" id="invRecountHint"></p>
           <div class="table-panel responsive-table"><div class="table-scroll">
-            <table><thead><tr><th>Recontagem</th><th class="sortable" data-inv-div-sort="category" title="Ordenar por categoria">Categoria</th><th class="sortable" data-inv-div-sort="product" title="Ordenar por produto">Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Valor</th><th>Motivo da divergência</th><th></th></tr></thead>
+            <table><thead><tr><th>Recontagem</th><th class="sortable" data-inv-div-sort="category" title="Ordenar por categoria">Categoria</th><th class="sortable" data-inv-div-sort="product" title="Ordenar por produto">Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Loja</th><th>Diferença final</th><th>Valor final</th><th>Motivo da divergência</th><th></th></tr></thead>
             <tbody id="invDivBody"></tbody></table>
           </div></div>
         </div>
 
-        <div class="inv-panel" data-inv-panel="recontagem" hidden>
+        <div class="inv-panel" data-inv-panel="recontagemLoja" hidden>
           <div class="dre-toolbar">
+            <button class="btn-outline" type="button" data-inv-pdf="ajuste">PDF AJUSTE NO SISTEMA</button>
             <button class="btn-accent" id="btnInvAttach" type="button" hidden>ANEXAR RECONTAGEM ESCANEADA</button>
             <input type="file" id="invAttachInput" accept=".pdf,image/*" hidden>
-            <p class="purchase-field-help">Imprima o PDF RECONTAGEM DE LOJA (aba DIVERGENTES), reconte na loja e anexe aqui o escaneado.</p>
           </div>
-          <div class="table-panel responsive-table"><div class="table-scroll">
-            <table><thead><tr><th>Arquivo</th><th>Enviado por</th><th>Quando</th><th></th></tr></thead>
-            <tbody id="invAttachBody"></tbody></table>
-          </div></div>
-        </div>
-        <div class="inv-panel" data-inv-panel="recontagemLoja" hidden>
-          <p class="purchase-field-help">Digite o que a loja recontou (PDF RECONTAGEM DE LOJA). A diferença é RECONTAGEM DA LOJA − CONTAGEM INICIAL: é o que ainda falta ajustar no sistema depois do primeiro ajuste. Vale também com o inventário finalizado.</p>
+          <p class="purchase-field-help">Digite o que a loja recontou (PDF RECONTAGEM DE LOJA, aba DIVERGENTES). A diferença é RECONTAGEM DA LOJA − CONTAGEM INICIAL: é o que ainda falta ajustar no sistema depois do primeiro ajuste. A quantidade da loja passa a valer nas DIVERGENTES e no RESULTADO. Vale também com o inventário finalizado.</p>
           <div class="table-panel" id="invStoreSummary" style="padding:10px 14px;font-size:12px;margin-bottom:10px;"></div>
           <div class="table-panel responsive-table"><div class="table-scroll">
             <table><thead><tr><th>Categoria</th><th>Produto</th><th>Sistema</th><th>Contagem inicial</th><th>Recontagem da loja</th><th>Diferença</th><th>Ajuste no sistema</th></tr></thead>
             <tbody id="invStoreBody"></tbody></table>
+          </div></div>
+          <h3 class="supply-section-title">RECONTAGEM ESCANEADA (ANEXOS)</h3>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Arquivo</th><th>Enviado por</th><th>Quando</th><th></th></tr></thead>
+            <tbody id="invAttachBody"></tbody></table>
           </div></div>
         </div>
         <div class="print-only" id="invPrintBody"></div>
@@ -29213,13 +29212,18 @@ function renderHomeTasks(){
   }
   const invPatch = (action, extra) => invApi('PATCH', {id: invId, action, ...(extra || {})});
   const invDiff = item => item.countedQty === null ? null : item.countedQty - item.systemQty;
+  // Resultado final: a RECONTAGEM DA LOJA substitui a contagem inicial (o
+  // PDF PONTTI e a aba CONTAGEM continuam com a contagem inicial).
+  const invHasStore = item => item.storeRecountQty !== null && item.storeRecountQty !== undefined;
+  const invFinalQty = item => invHasStore(item) ? Number(item.storeRecountQty) : item.countedQty;
+  const invFinalDiff = item => invFinalQty(item) === null ? null : invFinalQty(item) - item.systemQty;
   // Diferença mostrada como FALTA 2 (físico 2, estoque 4) ou SOBRA +1 (físico
   // 2, estoque 1); valor = custo × quantidade faltante/sobrando, sempre
   // positivo, com faltas e sobras somadas separadamente (pedido de 19/10/2026).
-  const invValue = item => { const d = invDiff(item); return d === null || item.costCents === null ? null : Math.abs(d) * item.costCents; };
+  const invValue = item => { const d = invFinalDiff(item); return d === null || item.costCents === null ? null : Math.abs(d) * item.costCents; };
   const invDiffLabel = n => n === null ? '—' : n < 0 ? 'FALTA '+(-n) : n > 0 ? 'SOBRA +'+n : '0';
   const invTotals = rows => rows.reduce((acc, item) => {
-    const d = invDiff(item), v = invValue(item) || 0;
+    const d = invFinalDiff(item), v = invValue(item) || 0;
     if(d < 0) acc.missing += v; else if(d > 0) acc.surplus += v;
     return acc;
   }, {missing:0, surplus:0});
@@ -29288,7 +29292,7 @@ function renderHomeTasks(){
     // No celular, título curto (loja · data) para não ocupar três linhas.
     el('invPageTitle').textContent = (window.matchMedia('(max-width:680px)').matches ? '' : 'Inventário · ')+inv.storeName+' · '+gdDateLabel(inv.inventoryDate);
     const counted = items.filter(item => item.countedQty !== null).length;
-    const divergent = invDivergent().filter(item => !item.removed);
+    const divergent = invDivergent().filter(item => !item.removed && invFinalDiff(item));
     const totals = invTotals(divergent);
     el('invSummary').innerHTML =
       '<article class="supply-dashboard-card"><span>STATUS</span><strong>'+(inv.status === 'finalizado' ? 'FINALIZADO' : 'EM ANDAMENTO')+'</strong><small>'+escapeHtml(inv.status === 'finalizado' ? 'POR '+inv.finalizedByName+' · '+(formatDateTimeBR(inv.finalizedAt) || '') : 'CRIADO POR '+inv.createdByName)+'</small></article>'+
@@ -29433,18 +29437,20 @@ function renderHomeTasks(){
     const notedCodes = new Set(invData.divergencesNoted.map(row => String(row.code || '').toUpperCase()));
     const rows = invData.items.filter(item => (!category || item.category === category) && terms.every(term => (item.product+' '+item.code).includes(term)));
     el('invResultBody').innerHTML = rows.length ? rows.map(item => {
-      const diff = invDiff(item); const value = invValue(item);
+      const diff = invFinalDiff(item); const value = invValue(item);
       return '<tr class="'+(diff ? (diff > 0 ? 'inv-over' : 'inv-under') : '')+'">'+
         '<td data-label="Categoria">'+escapeHtml(item.category)+'</td>'+
         '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(notedCodes.has(String(item.code).toUpperCase()) ? ' <span class="status-pill waiting">ANOTADO NAS DIVERGÊNCIAS</span>' : '')+(item.source === 'manual' ? ' <span class="status-pill waiting">FORA DA LISTA</span>' : '')+'</td>'+
         '<td data-label="Contado">'+(item.countedQty === null ? '—' : item.countedQty)+'</td>'+
+        '<td data-label="Loja">'+(invHasStore(item) ? '<strong>'+item.storeRecountQty+'</strong>' : '—')+'</td>'+
         '<td data-label="Sistema">'+item.systemQty+'</td>'+
-        '<td data-label="Diferença" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
+        '<td data-label="Diferença final" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
         '<td data-label="Custo">'+invMoney(item.costCents)+'</td>'+
         '<td data-label="Valor" class="'+gdMoneyClass(diff || 0)+'"><strong>'+invMoney(value)+'</strong></td>'+
+        '<td data-label="Motivo">'+escapeHtml(item.reason || (diff ? '—' : ''))+'</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum produto.</td></tr>';
+    }).join('') : '<tr><td colspan="10" class="responsive-empty">Nenhum produto.</td></tr>';
     const codes = new Set(invData.items.map(item => String(item.code).toUpperCase()));
     el('invNotedBody').innerHTML = invData.divergencesNoted.length ? invData.divergencesNoted.map(row =>
       '<tr><td data-label="Código">'+escapeHtml(row.code || '—')+'</td><td data-label="Produto">'+escapeHtml(row.product)+'</td>'+
@@ -29481,7 +29487,7 @@ function renderHomeTasks(){
     el('btnInvRecountAll').textContent = open.length && marked === open.length ? 'DESMARCAR TODOS DA RECONTAGEM' : 'MARCAR TODOS PARA RECONTAGEM';
     if(live && body.contains(document.activeElement)) return;
     body.innerHTML = rows.length ? rows.map(item => {
-      const diff = invDiff(item); const value = invValue(item);
+      const diff = invDiff(item); const finalDiff = invFinalDiff(item); const value = invValue(item);
       return '<tr>'+
         '<td data-label="Recontagem">'+(item.removed ? '—' : canManage
           ? '<input type="checkbox" class="bulk-check" data-inv-recount="'+escapeHtml(item.id)+'" aria-label="Enviar para a recontagem da loja"'+(item.recount ? ' checked' : '')+'>'
@@ -29491,12 +29497,14 @@ function renderHomeTasks(){
         '<td data-label="Contado">'+(canCount && !item.removed ? '<input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+item.countedQty+'">' : item.countedQty)+'</td>'+
         '<td data-label="Sistema">'+item.systemQty+'</td>'+
         '<td data-label="Diferença" class="'+gdMoneyClass(diff)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invDiffLabel(diff)+'</strong></td>'+
-        '<td data-label="Valor" class="'+gdMoneyClass(diff || 0)+'">'+invMoney(value)+'</td>'+
+        '<td data-label="Loja">'+(invHasStore(item) ? item.storeRecountQty : '—')+'</td>'+
+        '<td data-label="Diferença final" class="'+gdMoneyClass(finalDiff || 0)+'"><strong>'+(invHasStore(item) ? invDiffLabel(finalDiff) : '—')+'</strong></td>'+
+        '<td data-label="Valor final" class="'+gdMoneyClass(finalDiff || 0)+'">'+invMoney(value)+'</td>'+
         '<td data-label="Motivo da divergência"><input type="text" class="inv-reason" maxlength="1000" data-inv-reason="'+escapeHtml(item.id)+'" value="'+escapeHtml(item.reason || '')+'" placeholder="Motivo"'+(canManage ? '' : ' disabled')+'>'+
           (item.removed ? '<small class="os-update-meta">RETIRADO POR '+escapeHtml(item.removedByName+' · '+(formatDateTimeBR(item.removedAt) || ''))+'</small>' : '')+'</td>'+
         '<td style="white-space:nowrap">'+(canManage ? '<button class="btn-outline btn-sm" type="button" data-inv-remove="'+escapeHtml(item.id)+'" data-removed="'+(item.removed ? '0' : '1')+'">'+(item.removed ? 'VOLTAR PARA A LISTA' : 'ENCONTRADO / RETIRAR')+'</button>' : '')+'</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="9" class="responsive-empty">'+(showRemoved ? 'Nenhuma divergência retirada.' : 'Nenhuma divergência na lista final.')+'</td></tr>';
+    }).join('') : '<tr><td colspan="11" class="responsive-empty">'+(showRemoved ? 'Nenhuma divergência retirada.' : 'Nenhuma divergência na lista final.')+'</td></tr>';
   }
 
   function renderInvAttachments(){
@@ -29564,7 +29572,10 @@ function renderHomeTasks(){
     // recontagem: só as que ficaram na lista (não encontradas nem retiradas).
     const everything = invDivergent().slice().sort(byName);
     const open = everything.filter(item => !item.removed);
-    const rows = kind === 'diretor' || kind === 'pontti' ? everything : kind === 'recontagem' ? open.filter(item => item.recount) : open;
+    const adjust = open.filter(item => invStoreDiff(item));
+    const rows = kind === 'diretor' || kind === 'pontti' ? everything : kind === 'recontagem' ? open.filter(item => item.recount)
+      : kind === 'ajuste' ? adjust : open.filter(item => invFinalDiff(item));
+    if(!rows.length && kind === 'ajuste'){ showPurchaseToast('NENHUM PRODUTO PRECISA DE AJUSTE APÓS A RECONTAGEM DA LOJA.', 'error'); return; }
     if(!rows.length && kind === 'recontagem'){ showPurchaseToast('MARQUE NA COLUNA RECONTAGEM OS PRODUTOS QUE VÃO PARA A RECONTAGEM DA LOJA.', 'error'); return; }
     if(!rows.length){ showPurchaseToast(kind === 'diretor' || kind === 'pontti' ? 'NENHUMA DIVERGÊNCIA NESTE INVENTÁRIO.' : 'NENHUMA DIVERGÊNCIA NA LISTA FINAL.', 'error'); return; }
     const head = (title, extra) => '<header class="print-report-header"><div class="print-report-kicker">ESTOQUE · INVENTÁRIO · '+escapeHtml(inv.storeName)+'</div><h1>'+escapeHtml(title)+'</h1>'+
@@ -29579,19 +29590,27 @@ function renderHomeTasks(){
       html = head('RELATÓRIO FINAL DE DIVERGÊNCIAS (DIRETOR)', everything.length+' DIVERGÊNCIAS · '+(everything.length - open.length)+' ENCONTRADAS/RETIRADAS · '+open.length+' NA LISTA FINAL')+
         '<p class="inv-print-totals">TODAS AS DIVERGÊNCIAS — FALTAS: <b>'+formatCentsBRL(totalsAll.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(totalsAll.surplus)+'</b><br>'+
         'LISTA FINAL (SEM AS ENCONTRADAS/RETIRADAS) — FALTAS: <b>'+formatCentsBRL(totalsOpen.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(totalsOpen.surplus)+'</b></p>'+
-        table(['Produto', num('Estoque'), num('Contado'), num('Diferença'), num('Custo'), num('Valor'), 'Situação', 'Motivo'], rows.map(item =>
+        table(['Produto', num('Estoque'), num('Contado'), num('Loja'), num('Diferença final'), num('Custo'), num('Valor'), 'Situação', 'Motivo'], rows.map(item =>
           '<tr><td>'+escapeHtml(item.product)+(item.code ? '<br><small>'+escapeHtml(item.code)+'</small>' : '')+'</td><td class="num">'+item.systemQty+'</td><td class="num">'+item.countedQty+'</td>'+
-          '<td class="num">'+invDiffLabel(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td>'+
+          '<td class="num">'+(invHasStore(item) ? item.storeRecountQty : '—')+'</td><td class="num">'+invDiffLabel(invFinalDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td>'+
           '<td>'+(item.removed ? 'ENCONTRADO / RETIRADO' : 'EM ABERTO')+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''));
     }else if(kind === 'final'){
       // Divergência final da loja: só o que não foi encontrado nem retirado.
       const totals = invTotals(rows);
       html = head('DIVERGÊNCIA FINAL DA LOJA', rows.length+' PRODUTOS NÃO ENCONTRADOS')+
         '<p class="inv-print-totals">VALOR EM FALTA: <b>'+formatCentsBRL(totals.missing)+'</b> · VALOR EM SOBRA: <b>'+formatCentsBRL(totals.surplus)+'</b> (VALOR FINAL = CUSTO × DIFERENÇA)</p>'+
-        table(['Produto', num('Estoque no dia'), num('Contado'), num('Diferença'), num('Custo'), num('Valor final')], rows.map(item =>
+        table(['Produto', num('Estoque no dia'), num('Contado'), num('Loja'), num('Diferença final'), num('Custo'), num('Valor final'), 'Motivo'], rows.map(item =>
           '<tr><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.systemQty+'</td><td class="num">'+item.countedQty+'</td>'+
-          '<td class="num">'+invDiffLabel(invDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td></tr>').join(''))+
+          '<td class="num">'+(invHasStore(item) ? item.storeRecountQty : '—')+'</td><td class="num">'+invDiffLabel(invFinalDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''))+
         '<p class="inv-print-totals">TOTAL EM FALTA: <b>'+formatCentsBRL(totals.missing)+'</b> · TOTAL EM SOBRA: <b>'+formatCentsBRL(totals.surplus)+'</b></p>';
+    }else if(kind === 'ajuste'){
+      // Só o que a recontagem da loja mostrou diferente da contagem inicial.
+      html = head('AJUSTE NO SISTEMA APÓS A RECONTAGEM DA LOJA', rows.length+' PRODUTOS A AJUSTAR')+
+        table(['Código','Produto', num('Contagem inicial'), num('Recontagem da loja'), 'Ajuste no sistema'], rows.map(item => {
+          const diff = invStoreDiff(item);
+          return '<tr><td>'+escapeHtml(item.code || '')+'</td><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.countedQty+'</td><td class="num">'+item.storeRecountQty+'</td>'+
+            '<td>'+(diff > 0 ? 'ENTRADA DE '+diff : 'SAÍDA DE '+(-diff))+'</td></tr>';
+        }).join(''));
     }else if(kind === 'recontagem'){
       html = head('RECONTAGEM DE LOJA', 'RECONTE E ESCREVA A QUANTIDADE NA CAIXA')+
         table(['Código','Produto','Recontagem'], rows.map(item =>
@@ -29606,7 +29625,7 @@ function renderHomeTasks(){
     }
     el('invPrintBody').innerHTML = html;
     invPrintTitleBefore = document.title;
-    document.title = ({diretor:'INVENTARIO-DIVERGENCIAS-DIRETOR', final:'DIVERGENCIA-FINAL-DA-LOJA', recontagem:'INVENTARIO-RECONTAGEM', pontti:'DIVERGENCIA-PONTTI'})[kind]+'-'+inv.storeName.replace(/[^A-Z0-9]+/gi, '-')+'-'+inv.inventoryDate;
+    document.title = ({diretor:'INVENTARIO-DIVERGENCIAS-DIRETOR', final:'DIVERGENCIA-FINAL-DA-LOJA', ajuste:'INVENTARIO-AJUSTE-RECONTAGEM', recontagem:'INVENTARIO-RECONTAGEM', pontti:'DIVERGENCIA-PONTTI'})[kind]+'-'+inv.storeName.replace(/[^A-Z0-9]+/gi, '-')+'-'+inv.inventoryDate;
     document.body.classList.add('pdf-export', 'inv-printing');
     window.print();
   }
@@ -29855,7 +29874,7 @@ function renderHomeTasks(){
         if(item){ item.storeRecountQty = value; item.storeRecountByName = value === null ? '' : currentSession.displayName; item.storeRecountAt = new Date().toISOString(); }
         input.classList.add('inv-saved');
         setTimeout(() => input.classList.remove('inv-saved'), 900);
-        renderInvStoreRecount(true);
+        renderInvDetail(true);
       }catch(error){ showPurchaseToast(error.message, 'error'); }
     });
     body.addEventListener('keydown', event => {
