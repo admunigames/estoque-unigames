@@ -5,13 +5,14 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Relatório COMISSIONAMENTO / HORAS / PREMIAÇÃO para a contabilidade e HORAS
 // EXTRAS A PAGAR em três tipos (prompt 11, 22/10/2026). Desde 23/10/2026 o
 // relatório tem só COMISSIONAMENTO, HORAS EXTRAS (valor único manual) e
-// PREMIAÇÃO.
+// PREMIAÇÃO. Desde 31/10/2026 HORAS EXTRAS é QUANTIDADE (minutos, fora do R$)
+// e cada empresa (CNPJ) tem OBSERVAÇÕES por competência.
 
 const lib = await import("../app/lib/hr-accounting-report.ts");
 const db = await setupRouteDb([
   "shared_state", "hr_employees", "hr_commissions", "hr_commission_items", "hr_payroll_entries", "hr_benefits",
   "hr_payroll_settings", "hr_time_tracking_entries", "hr_time_tracking_settings",
-  "commercial_monthly", "commercial_rules", "commercial_newcomers", "commercial_credit_entries", "commercial_store_goals", "commercial_roles",
+  "hr_accounting_notes", "commercial_monthly", "commercial_rules", "commercial_newcomers", "commercial_credit_entries", "commercial_store_goals", "commercial_roles",
 ]);
 const payouts = await import("../app/api/hr-time-tracking/payouts/route.ts");
 const balance = await import("../app/api/hr-time-tracking/balance/route.ts");
@@ -43,10 +44,10 @@ test("desconto maior que a comissão: comissão 0, sobra vai para o mês seguint
   );
   const { groups, total } = lib.buildAccountingReport([{
     employeeId: "e", employeeName: "ANA", companyId: ALFA, companyName: "LOJA ALFA", cnpj: "1",
-    carry: chain.get("2026-10"), premiumCents: 30000, overtimeCents: 12345,
+    carry: chain.get("2026-10"), premiumCents: 30000, overtimeMinutes: 750,
   }]);
-  assert.equal(groups[0].rows[0].totalCents, 30000 + 12345, "premiação não é abatida");
-  assert.deepEqual(total, { commissionCents: 0, premiumCents: 30000, overtimeCents: 12345, totalCents: 42345 });
+  assert.equal(groups[0].rows[0].totalCents, 30000, "premiação não é abatida; horas não somam no R$");
+  assert.deepEqual(total, { commissionCents: 0, premiumCents: 30000, overtimeMinutes: 750, totalCents: 30000 });
 });
 
 test("três tipos de HE: valor da hora = salário ÷ 220 × fator; só HE 50% e 100% abatem o banco", () => {
@@ -87,19 +88,38 @@ test("relatório: por CNPJ, só comissionamento (com desconto e sobra), HE manua
   const biaSep = september.groups.flatMap((g) => g.rows).find((r) => r.employeeId === "bia");
   assert.deepEqual([biaSep.carry.netCommissionCents, biaSep.carry.carryOutCents], [0, 15000]);
 
-  // HORAS EXTRAS: valor único digitado à mão (kind 'he').
+  // HORAS EXTRAS: quantidade em minutos digitada à mão (kind 'he_min'); o antigo 'he' em R$ saiu.
   const monthValues = await import("../app/api/hr-payroll/month-values/route.ts");
-  assert.equal((await callRoute(monthValues.PUT, ADMIN, "PUT", "/api/hr-payroll/month-values", { month: "2026-10", kind: "he", values: [{ employeeId: "ana", amountCents: 6650 }] })).status, 200);
+  assert.equal((await callRoute(monthValues.PUT, ADMIN, "PUT", "/api/hr-payroll/month-values", { month: "2026-10", kind: "he", values: [{ employeeId: "ana", amountCents: 6650 }] })).status, 400);
+  assert.equal((await callRoute(monthValues.PUT, ADMIN, "PUT", "/api/hr-payroll/month-values", { month: "2026-10", kind: "he_min", values: [{ employeeId: "ana", amountCents: 750 }, { employeeId: "bia", amountCents: 90 }] })).status, 200);
   const october = await (await callRoute(report.GET, ADMIN, "GET", "/api/hr-payroll/accounting-report?month=2026-10")).json();
   assert.deepEqual(october.groups.map((g) => g.cnpj), ["11222333000181", "99888777000166"]);
   const ana = october.groups[0].rows[0];
-  assert.deepEqual([ana.carry.netCommissionCents, ana.premiumCents, ana.overtimeCents], [50000, 25000, 6650]);
-  assert.equal(ana.totalCents, 50000 + 25000 + 6650);
+  assert.deepEqual([ana.carry.netCommissionCents, ana.premiumCents, ana.overtimeMinutes], [50000, 25000, 750]);
+  assert.equal(ana.totalCents, 50000 + 25000, "horas extras não somam no total em R$");
   const bia = october.groups[1].rows[0];
   // 300 de comissão − (20 do mês + 150 de sobra de setembro) = 130; premiação 100 intacta.
   assert.deepEqual([bia.carry.carryInCents, bia.carry.netCommissionCents, bia.carry.carryOutCents, bia.premiumCents], [15000, 13000, 0, 10000]);
   assert.equal(october.total.totalCents, ana.totalCents + bia.totalCents);
   assert.equal(october.groups[1].subtotal.totalCents, bia.totalCents);
+  assert.deepEqual([october.groups[0].subtotal.overtimeMinutes, october.groups[1].subtotal.overtimeMinutes, october.total.overtimeMinutes], [750, 90, 840]);
+});
+
+test("OBSERVAÇÕES por CNPJ e competência: CAIXA ALTA, não repete no mês seguinte, vazio apaga", async () => {
+  const put = (body, user = ADMIN) => callRoute(report.PUT, user, "PUT", "/api/hr-payroll/accounting-report", body);
+  assert.equal((await put({ month: "2026-10", cnpj: "11.222.333/0001-81", notes: "  falta nota da ana  " })).status, 200);
+  assert.equal((await put({ month: "2026-10", cnpj: "123", notes: "x" })).status, 400);
+  assert.equal((await put({ month: "2026-10", cnpj: "11222333000181", notes: "x" }, { id: "loja", permissions: [] })).status, 403);
+  const notesOf = async (month) => Object.fromEntries((await (await callRoute(report.GET, ADMIN, "GET", `/api/hr-payroll/accounting-report?month=${month}`)).json()).groups.map((g) => [g.cnpj, g.notes]));
+  assert.deepEqual(await notesOf("2026-10"), { "11222333000181": "FALTA NOTA DA ANA", "99888777000166": "" });
+  // Edita (não duplica) e não aparece em novembro.
+  assert.equal((await put({ month: "2026-10", cnpj: "11222333000181", notes: "corrigido" })).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT count(*) AS n FROM hr_accounting_notes").get().n, 1);
+  assert.equal((await notesOf("2026-10"))["11222333000181"], "CORRIGIDO");
+  db.insert("hr_commissions", { id: "c-ana-11", month: "2026-11", employee_id: "ana", company_id: ALFA, commission_cents: 1000, created_by: "x" });
+  assert.equal((await notesOf("2026-11"))["11222333000181"], "");
+  assert.equal((await put({ month: "2026-10", cnpj: "11222333000181", notes: "" })).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT count(*) AS n FROM hr_accounting_notes").get().n, 0);
 });
 
 test("tela: página do relatório (RH + atalho no RH Financeiro), PDF/XLSX e diálogo de HORAS PAGAS com os três tipos", async () => {
@@ -114,6 +134,11 @@ test("tela: página do relatório (RH + atalho no RH Financeiro), PDF/XLSX e di�
   assert.match(html, /id="btnRhContabPdf"/);
   assert.match(html, /id="btnRhContabHe"/);
   assert.match(html, /const RH_CONTAB_HEAD = \['FUNCIONÁRIO','COMISSIONAMENTO','HORAS EXTRAS','PREMIAÇÃO','TOTAL'\];/);
+  assert.match(html, /kind:'he_min', month, hours:true,/);
+  assert.match(html, /rhHoursText\(row\.overtimeMinutes\)/);
+  assert.match(html, /data-rh-contab-notes-print=/);
+  assert.match(html, /if\(group\.notes\) rows\.push\(\['OBSERVAÇÕES — '\+label, group\.notes\]\);/);
+  assert.doesNotMatch(html, /kind:'he',/);
   assert.match(html, /data-payout-minutes="'\+kind.key\+'"/);
   assert.match(worker, /"\/rh\/relatorio-contabilidade"/);
 });

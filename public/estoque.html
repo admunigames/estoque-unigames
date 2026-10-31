@@ -1638,6 +1638,7 @@
       border-bottom:2px solid #244f83; color:#111827;
     }
     body.pdf-export .print-only{display:block !important;}
+    body.pdf-export .print-only[hidden]{display:none !important;}
     /* Recibo individual do comissionamento: esconde o resto da página. */
     body.rh-recibo-only #rhComissaoMain{display:none !important;}
     body.rh-custo-only #rhFolhaPrintHeader{display:none !important;}
@@ -7288,7 +7289,7 @@
           <button class="btn-outline" id="btnRhContabPdf" type="button">PDF (A4)</button>
         </div>
       </div>
-      <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">AGRUPADO POR EMPRESA (CNPJ DO CADASTRO DE LOJAS, PELA LOJA ATUANTE DO MÊS). COMISSIONAMENTO JÁ COM O DESCONTO (SE PASSAR DA COMISSÃO, A SOBRA VAI PARA O MÊS SEGUINTE — NUNCA ABATE A PREMIAÇÃO). HORAS EXTRAS: VALOR EM R$ LANÇADO À MÃO EM "LANÇAR HORAS EXTRAS".</p>
+      <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">AGRUPADO POR EMPRESA (CNPJ DO CADASTRO DE LOJAS, PELA LOJA ATUANTE DO MÊS). COMISSIONAMENTO JÁ COM O DESCONTO (SE PASSAR DA COMISSÃO, A SOBRA VAI PARA O MÊS SEGUINTE — NUNCA ABATE A PREMIAÇÃO). HORAS EXTRAS: QUANTIDADE DE HORAS (HH:MM) LANÇADA À MÃO EM "LANÇAR HORAS EXTRAS" — NÃO ENTRA NO TOTAL EM R$ (TOTAL = COMISSIONAMENTO + PREMIAÇÃO). OBSERVAÇÕES: UMA POR EMPRESA E POR COMPETÊNCIA; SAEM NO PDF E NO XLSX ABAIXO DO SUBTOTAL.</p>
       <div class="table-panel" id="rhContabResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
       <div id="rhContabConteudo"></div>
     </section>
@@ -48315,12 +48316,13 @@ function renderHomeTasks(){
     const people = config.people.slice().sort((a, b) => String(a.employeeName).localeCompare(String(b.employeeName), 'pt-BR'));
     el('rhMonthValuesBody').innerHTML = people.length ? people.map(person =>
       '<tr><td>'+escapeHtml(person.employeeName)+'</td><td>'+escapeHtml(String(person.companyName || '—').toUpperCase())+'</td>'+
-      '<td><input data-rh-mv="'+escapeHtml(person.employeeId)+'" inputmode="decimal" placeholder="R$ 0,00" aria-label="'+escapeHtml(person.employeeName)+'"></td></tr>'
+      '<td><input data-rh-mv="'+escapeHtml(person.employeeId)+'" inputmode="decimal" placeholder="'+(config.hours ? 'HH:MM' : 'R$ 0,00')+'" aria-label="'+escapeHtml(person.employeeName)+'"></td></tr>'
     ).join('') : '<tr><td colspan="3" class="responsive-empty">Nenhum funcionário nesta competência.</td></tr>';
     rhMonthValueInputs().forEach(input => {
+      const value = rhMonthValuesConfig.initial.get(input.dataset.rhMv) || 0;
+      if(config.hours){ if(value) input.value = rhHoursText(value); return; }
       attachCurrencyMask(input);
-      const cents = rhMonthValuesConfig.initial.get(input.dataset.rhMv) || 0;
-      if(cents) setCurrencyValue(input, cents/100);
+      if(value) setCurrencyValue(input, value/100);
     });
   }
   function closeRhMonthValues(){ if(el('rhMonthValuesDialog').open) el('rhMonthValuesDialog').close(); }
@@ -48345,9 +48347,11 @@ function renderHomeTasks(){
       const byName = people.filter(person => normalizeSearchText(person.employeeName) === wanted);
       const byStart = people.filter(person => normalizeSearchText(person.employeeName).startsWith(wanted));
       const match = byCpf.length === 1 ? byCpf[0] : byName.length === 1 ? byName[0] : byStart.length === 1 ? byStart[0] : null;
-      const value = financeBatchParseCell({type:'money'}, cells[cells.length - 1]);
-      if(!match || value === '' || !inputs.has(match.employeeId)){ missing.push(key); return; }
-      setCurrencyValue(inputs.get(match.employeeId), value);
+      const hours = rhMonthValuesConfig && rhMonthValuesConfig.hours;
+      const value = hours ? rhParseHours(cells[cells.length - 1]) : financeBatchParseCell({type:'money'}, cells[cells.length - 1]);
+      if(!match || value === '' || value === null || !inputs.has(match.employeeId)){ missing.push(key); return; }
+      if(hours) inputs.get(match.employeeId).value = rhHoursText(value);
+      else setCurrencyValue(inputs.get(match.employeeId), value);
       applied++;
     });
     el('rhMonthValuesStatus').textContent = applied+' VALOR(ES) APLICADO(S)'+(missing.length ? ' · NÃO ENCONTRADOS: '+missing.join(', ').toUpperCase() : '')+'. CONFIRA E CLIQUE EM SALVAR.';
@@ -48358,7 +48362,7 @@ function renderHomeTasks(){
     if(!config) return;
     const values = [];
     for(const input of rhMonthValueInputs()){
-      const cents = parseBRLToCents(getCurrencyValue(input) || '0');
+      const cents = config.hours ? rhParseHours(input.value) : parseBRLToCents(getCurrencyValue(input) || '0');
       if(cents === null){ el('rhMonthValuesStatus').textContent = 'VALOR INVÁLIDO EM '+input.getAttribute('aria-label').toUpperCase()+'.'; return; }
       if(cents !== (config.initial.get(input.dataset.rhMv) || 0)) values.push({employeeId:input.dataset.rhMv, amountCents:cents});
     }
@@ -49961,7 +49965,8 @@ function renderHomeTasks(){
 
   // ---------------------- RELATÓRIO CONTABILIDADE ----------------------
   // Comissão bruta, descontos (com descrição e sobra do mês anterior),
-  // comissão líquida, premiação e HE a pagar (3 tipos), por EMPRESA/CNPJ.
+  // comissão líquida, premiação e HORAS EXTRAS (quantidade HH:MM, fora do R$),
+  // por EMPRESA/CNPJ, com OBSERVAÇÕES por empresa e competência.
   let rhContabData = null;
   const RH_CONTAB_HEAD = ['FUNCIONÁRIO','COMISSIONAMENTO','HORAS EXTRAS','PREMIAÇÃO','TOTAL'];
   function rhContabMonth(){
@@ -49975,7 +49980,7 @@ function renderHomeTasks(){
     return values.map((value, index) => '<td'+(index ? ' class="num"' : '')+'>'+value+'</td>').join('');
   }
   function rhContabTotalsCells(label, t){
-    return rhContabCells(['<strong>'+escapeHtml(label)+'</strong>', formatCentsBRL(t.commissionCents), formatCentsBRL(t.overtimeCents),
+    return rhContabCells(['<strong>'+escapeHtml(label)+'</strong>', formatCentsBRL(t.commissionCents), rhHoursText(t.overtimeMinutes),
       formatCentsBRL(t.premiumCents), '<strong>'+formatCentsBRL(t.totalCents)+'</strong>']);
   }
   function renderRhContabilidade(){
@@ -49989,18 +49994,23 @@ function renderHomeTasks(){
     }
     const t = data.total;
     el('rhContabResumo').innerHTML = '<strong>'+groups.reduce((sum, group) => sum + group.rows.length, 0)+'</strong> funcionário(s) em <strong>'+groups.length+'</strong> empresa(s) · '+
-      'Comissionamento: <strong>'+formatCentsBRL(t.commissionCents)+'</strong> · Horas extras: <strong>'+formatCentsBRL(t.overtimeCents)+'</strong> · '+
+      'Comissionamento: <strong>'+formatCentsBRL(t.commissionCents)+'</strong> · Horas extras: <strong>'+rhHoursText(t.overtimeMinutes)+'</strong> · '+
       'Premiação: <strong>'+formatCentsBRL(t.premiumCents)+'</strong> · Total geral: <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
     const head = '<thead><tr>'+RH_CONTAB_HEAD.map((label, index) => '<th'+(index ? ' class="num"' : '')+'>'+label+'</th>').join('')+'</tr></thead>';
-    el('rhContabConteudo').innerHTML = groups.map(group =>
+    el('rhContabConteudo').innerHTML = groups.map((group, index) =>
       '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
         '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">'+escapeHtml(rhContabGroupLabel(group))+'</h3>'+
         '<div class="table-scroll"><table class="rh-print-table rh-contab-table">'+head+'<tbody>'+
         group.rows.map(row => '<tr>'+rhContabCells([escapeHtml(row.employeeName)+'<br><small>'+escapeHtml(String(row.companyName || '—').toUpperCase())+'</small>',
           formatCentsBRL(row.carry.netCommissionCents)+(row.carry.carryOutCents ? '<br><small>SOBRA DE DESCONTO P/ O MÊS SEGUINTE: '+formatCentsBRL(row.carry.carryOutCents)+'</small>' : ''),
-          formatCentsBRL(row.overtimeCents), formatCentsBRL(row.premiumCents), '<strong>'+formatCentsBRL(row.totalCents)+'</strong>'])+'</tr>').join('')+
+          rhHoursText(row.overtimeMinutes), formatCentsBRL(row.premiumCents), '<strong>'+formatCentsBRL(row.totalCents)+'</strong>'])+'</tr>').join('')+
         '<tr>'+rhContabTotalsCells('SUBTOTAL DA EMPRESA', group.subtotal)+'</tr>'+
-        '</tbody></table></div></div>'
+        '</tbody></table></div>'+
+        '<div class="field no-print" style="margin-top:10px;"><label for="rhContabNotes'+index+'">OBSERVAÇÕES</label>'+
+          '<textarea id="rhContabNotes'+index+'" data-rh-contab-notes="'+index+'" rows="2" maxlength="2000" style="width:100%;">'+escapeHtml(group.notes || '')+'</textarea></div>'+
+        '<div class="print-only" data-rh-contab-notes-print="'+index+'" style="margin-top:6px;font-size:9px;white-space:pre-wrap;"'+(group.notes ? '' : ' hidden')+'>'+
+          '<strong>OBSERVAÇÕES:</strong> <span>'+escapeHtml(group.notes || '')+'</span></div>'+
+      '</div>'
     ).join('')+
     '<div class="table-panel rh-print-block" style="padding:12px 14px;"><div class="table-scroll"><table class="rh-print-table rh-contab-table">'+head+
       '<tbody><tr>'+rhContabTotalsCells('TOTAL GERAL', t)+'</tr></tbody></table></div></div>';
@@ -50020,15 +50030,32 @@ function renderHomeTasks(){
     renderRhContabilidade();
   }
   if(el('rhContabMes')) el('rhContabMes').addEventListener('change', loadRhContabilidade);
-  // HORAS EXTRAS do relatório: valor único em R$ por funcionário, digitado à
-  // mão (ou colado da planilha) — mesmo diálogo do DSR/INSS.
+  // OBSERVAÇÕES por empresa: grava ao sair do campo (o clique no PDF/XLSX
+  // dispara o change antes) e atualiza o bloco impresso na hora.
+  if(el('rhContabConteudo')) el('rhContabConteudo').addEventListener('change', async event => {
+    const input = event.target.closest('[data-rh-contab-notes]');
+    if(!input || !rhContabData) return;
+    const group = rhContabData.groups[Number(input.dataset.rhContabNotes)];
+    if(!group) return;
+    const notes = input.value.trim().toLocaleUpperCase('pt-BR');
+    group.notes = notes;
+    const print = document.querySelector('[data-rh-contab-notes-print="'+input.dataset.rhContabNotes+'"]');
+    print.hidden = !notes;
+    print.querySelector('span').textContent = notes;
+    try{
+      await rhApiRequest('/accounting-report', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month:rhContabData.month, cnpj:group.cnpj, notes})});
+      showPurchaseToast('Observações salvas.');
+    }catch(error){ showPurchaseToast(error.message,'error'); }
+  });
+  // HORAS EXTRAS do relatório: QUANTIDADE de horas por funcionário (HH:MM ou
+  // decimal), digitada à mão (ou colada da planilha) — mesmo diálogo do DSR/INSS.
   if(el('btnRhContabHe')) el('btnRhContabHe').addEventListener('click', async () => {
     const month = rhContabMonth();
     try{ await rhEnsureBaseData(false); }catch(error){ showPurchaseToast(error.message,'error'); return; }
     openRhMonthValues({
-      kind:'he', month,
+      kind:'he_min', month, hours:true,
       title:'HORAS EXTRAS — '+rhFormatMonth(month),
-      help:'VALOR DAS HORAS EXTRAS EM R$ POR FUNCIONÁRIO (UM VALOR ÚNICO, DIGITADO À MÃO). VALOR 0 APAGA.',
+      help:'QUANTIDADE DE HORAS EXTRAS POR FUNCIONÁRIO, EM HH:MM (EX.: 12:30) OU DECIMAL (EX.: 12,5). NÃO É VALOR EM R$. VALOR 0 APAGA.',
       people:rhEmployees.filter(employee => employee.status === 'active').map(employee => ({employeeId:employee.id, employeeName:employee.fullName, companyName:employee.companyName})),
       onSaved:() => loadRhContabilidade()
     });
@@ -50043,14 +50070,15 @@ function renderHomeTasks(){
     try{ XLSX = await ensureXlsx(); }
     catch(error){ showPurchaseToast(error.message,'error'); return; }
     const money = cents => Math.round(Number(cents || 0)) / 100;
-    const header = ['EMPRESA (CNPJ)','FUNCIONÁRIO','LOJA','COMISSIONAMENTO','HORAS EXTRAS','PREMIAÇÃO','TOTAL'];
-    const totalsLine = (label, t) => [label,'','',money(t.commissionCents),money(t.overtimeCents),money(t.premiumCents),money(t.totalCents)];
+    const header = ['EMPRESA (CNPJ)','FUNCIONÁRIO','LOJA','COMISSIONAMENTO','HORAS EXTRAS (HH:MM)','PREMIAÇÃO','TOTAL'];
+    const totalsLine = (label, t) => [label,'','',money(t.commissionCents),rhHoursText(t.overtimeMinutes),money(t.premiumCents),money(t.totalCents)];
     const rows = [header];
     rhContabData.groups.forEach(group => {
       const label = rhContabGroupLabel(group);
       group.rows.forEach(row => rows.push([label,row.employeeName,String(row.companyName || '').toUpperCase(),
-        money(row.carry.netCommissionCents),money(row.overtimeCents),money(row.premiumCents),money(row.totalCents)]));
+        money(row.carry.netCommissionCents),rhHoursText(row.overtimeMinutes),money(row.premiumCents),money(row.totalCents)]));
       rows.push(totalsLine('SUBTOTAL — '+label, group.subtotal));
+      if(group.notes) rows.push(['OBSERVAÇÕES — '+label, group.notes]);
     });
     rows.push(totalsLine('TOTAL GERAL', rhContabData.total));
     const workbook = XLSX.utils.book_new();

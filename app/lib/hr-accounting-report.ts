@@ -125,8 +125,8 @@ export type AccountingPerson = {
   /** Comissão do mês com o desconto aplicado (e a sobra do mês anterior). */
   carry: CommissionCarry;
   premiumCents: number;
-  /** HORAS EXTRAS do mês: valor ÚNICO em R$ digitado à mão (23/10/2026). */
-  overtimeCents: number;
+  /** HORAS EXTRAS do mês em MINUTOS, digitadas à mão (31/10/2026) — não é R$. */
+  overtimeMinutes: number;
 };
 
 export type AccountingRow = AccountingPerson & { totalCents: number };
@@ -134,46 +134,50 @@ export type AccountingRow = AccountingPerson & { totalCents: number };
 export type AccountingTotals = {
   commissionCents: number;
   premiumCents: number;
-  overtimeCents: number;
+  overtimeMinutes: number;
   totalCents: number;
 };
 
-export type AccountingGroup = { cnpj: string; companyNames: string[]; rows: AccountingRow[]; subtotal: AccountingTotals };
+export type AccountingGroup = { cnpj: string; companyNames: string[]; rows: AccountingRow[]; subtotal: AccountingTotals; notes: string };
 
 function emptyTotals(): AccountingTotals {
-  return { commissionCents: 0, premiumCents: 0, overtimeCents: 0, totalCents: 0 };
+  return { commissionCents: 0, premiumCents: 0, overtimeMinutes: 0, totalCents: 0 };
 }
 
 function addRow(totals: AccountingTotals, row: AccountingRow) {
   totals.commissionCents += row.carry.netCommissionCents;
   totals.premiumCents += row.premiumCents;
-  totals.overtimeCents += row.overtimeCents;
+  totals.overtimeMinutes += row.overtimeMinutes;
   totals.totalCents += row.totalCents;
 }
 
 /**
  * Relatório para a contabilidade (23/10/2026): só COMISSIONAMENTO (comissão
- * com o desconto aplicado), HORAS EXTRAS (valor único digitado à mão) e
- * PREMIAÇÃO, agrupado por EMPRESA (CNPJ do cadastro de Lojas; lojas sem CNPJ
- * ficam no grupo "SEM CNPJ"). TOTAL da linha = comissionamento + HE +
- * premiação. Linhas sem nenhum valor (nem sobra de desconto) ficam de fora.
+ * com o desconto aplicado), HORAS EXTRAS (QUANTIDADE de horas digitada à mão —
+ * 31/10/2026) e PREMIAÇÃO, agrupado por EMPRESA (CNPJ do cadastro de Lojas;
+ * lojas sem CNPJ ficam no grupo "SEM CNPJ"). TOTAL da linha (R$) =
+ * comissionamento + premiação; as horas só somam entre si. Linhas sem nenhum
+ * valor (nem sobra de desconto) ficam de fora. `notes`: CNPJ → OBSERVAÇÕES.
  */
-export function buildAccountingReport(people: AccountingPerson[]): { groups: AccountingGroup[]; total: AccountingTotals } {
+export function buildAccountingReport(
+  people: AccountingPerson[],
+  notes: Map<string, string> = new Map(),
+): { groups: AccountingGroup[]; total: AccountingTotals } {
   const groups = new Map<string, AccountingGroup>();
   const total = emptyTotals();
   for (const person of people) {
-    const overtimeCents = Math.max(0, Math.round(Number(person.overtimeCents) || 0));
+    const overtimeMinutes = int(person.overtimeMinutes);
     const row: AccountingRow = {
       ...person,
-      overtimeCents,
-      totalCents: person.carry.netCommissionCents + person.premiumCents + overtimeCents,
+      overtimeMinutes,
+      totalCents: person.carry.netCommissionCents + person.premiumCents,
     };
     // Sem valor nenhum fica de fora — mas a sobra de desconto aparece nos dois meses.
-    const hasValue = row.carry.netCommissionCents || row.premiumCents || row.overtimeCents || row.carry.carryInCents || row.carry.carryOutCents;
+    const hasValue = row.carry.netCommissionCents || row.premiumCents || row.overtimeMinutes || row.carry.carryInCents || row.carry.carryOutCents;
     if (!hasValue) continue;
     let group = groups.get(person.cnpj);
     if (!group) {
-      group = { cnpj: person.cnpj, companyNames: [], rows: [], subtotal: emptyTotals() };
+      group = { cnpj: person.cnpj, companyNames: [], rows: [], subtotal: emptyTotals(), notes: notes.get(person.cnpj) ?? "" };
       groups.set(person.cnpj, group);
     }
     if (person.companyName && !group.companyNames.includes(person.companyName)) group.companyNames.push(person.companyName);

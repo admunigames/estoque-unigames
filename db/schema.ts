@@ -5009,7 +5009,8 @@ export const infoGeraisItems = pgTable(
 );
 
 // RH: valores MANUAIS por funcionário e competência — migration 0109.
-// kind 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) | 'inss' (DRE Funcionário).
+// kind 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO) | 'inss' (DRE Funcionário) |
+// 'he_min' (HORAS EXTRAS do Relatório Contabilidade: amount_cents guarda MINUTOS).
 export const hrEmployeeMonthValues = pgTable(
   "hr_employee_month_values",
   {
@@ -5027,6 +5028,21 @@ export const hrEmployeeMonthValues = pgTable(
     uniqueIndex("hr_employee_month_values_key_idx").on(table.employeeId, table.month, table.kind),
     index("hr_employee_month_values_month_idx").on(table.month, table.kind),
   ],
+);
+
+// RH > Relatório Contabilidade: OBSERVAÇÕES por empresa (CNPJ) e competência — migration 0120.
+export const hrAccountingNotes = pgTable(
+  "hr_accounting_notes",
+  {
+    id: text("id").primaryKey(),
+    cnpj: text("cnpj").notNull().default(""),
+    month: text("month").notNull(),
+    notes: text("notes").notNull().default(""),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("hr_accounting_notes_key_idx").on(table.cnpj, table.month)],
 );
 
 export const financeDreAllocations = pgTable(

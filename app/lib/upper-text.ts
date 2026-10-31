@@ -124,6 +124,7 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   uniform_coat_terms: ["employee_name", "company_name", "size", "created_by_name", "updated_by_name"],
   hr_dental_plan: ["employee_name", "unit_name", "reason", "notes", "created_by_name", "updated_by_name"],
   hr_employee_month_values: ["employee_name", "updated_by_name"],
+  hr_accounting_notes: ["notes", "updated_by_name"],
   // Contrato/ID e telefone ficam como digitados.
   finance_bank_activities: ["name", "created_by_name"],
   finance_bank_period_balances: ["updated_by_name"],

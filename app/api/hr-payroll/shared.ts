@@ -549,8 +549,9 @@ export async function saveActingStoreMonth(
 
 // Valores MANUAIS por funcionário e competência (migration 0109):
 // 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO), 'inss' (DRE Funcionário) e
-// 'he' (HORAS EXTRAS em R$ do Relatório Contabilidade — 23/10/2026).
-export const MONTH_VALUE_KINDS = ["dsr", "inss", "he"] as const;
+// 'he_min' (HORAS EXTRAS do Relatório Contabilidade em QUANTIDADE: amount_cents
+// guarda MINUTOS — 31/10/2026; o antigo 'he' em R$ nunca teve valor em produção).
+export const MONTH_VALUE_KINDS = ["dsr", "inss", "he_min"] as const;
 export type MonthValueKind = (typeof MONTH_VALUE_KINDS)[number];
 
 export function isMonthValueKind(value: unknown): value is MonthValueKind {
