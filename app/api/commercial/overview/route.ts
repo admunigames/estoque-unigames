@@ -18,6 +18,7 @@ import {
   identity,
   jsonResponse,
   linkedEmployeeIds,
+  loadCompanyNames,
   loadStoreGoals,
   loadSellers,
   safeText,
@@ -138,7 +139,10 @@ export async function GET(request: Request) {
       canCredit: canManageCommercialCredit(actor),
       canRules: canManageCommercialRules(actor),
       canMarkNewcomer: !ownOnly && canMarkCommercialNewcomer(actor),
-      rules,
+      // Nomes das lojas sem o critério do anexo (a conta de loja não tem a lista).
+      rules: rules.attachExemptStoreIds.length
+        ? { ...rules, attachExemptStoreNames: await exemptNames(database, rules.attachExemptStoreIds) }
+        : rules,
       sellers: visible,
       // No cadastro (aba Crediários) os operacionais também aparecem: o
       // crediário deles é só registro.
@@ -148,4 +152,9 @@ export async function GET(request: Request) {
     console.error("Não foi possível carregar o Comercial.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS DADOS DO COMERCIAL." }, 500);
   }
+}
+
+async function exemptNames(database: Awaited<ReturnType<typeof getD1>>, ids: string[]) {
+  const names = await loadCompanyNames(database);
+  return ids.map((id) => names.get(id) || id);
 }

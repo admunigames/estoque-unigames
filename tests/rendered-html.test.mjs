@@ -5782,3 +5782,14 @@ test("Estoque Assistência: LISTA DE PEÇAS (PDF) só com os nomes, por categori
   assert.deepEqual([...body.matchAll(/<li>([^<]+)<\/li>/g)].map((m) => m[1]), ["I3-4130", "RYZEN 5 4500", "SSD 240GB", "SSD 480GB"]);
   assert.doesNotMatch(body, /\b(76|20)\b/); // sem quantidade
 });
+
+test("Comercial > Comissão: legendas compactas por tipo de usuário (só admin sem loja vê todas) e cards com selo à esquerda", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /const COM_LEGEND_GROUPS = \{vendedor:'VENDEDOR', lider:'LÍDER', operacional:'OPERACIONAL', digital:'LOJA DIGITAL'\};/);
+  assert.match(html, /const all = currentSession\.role === 'admin' && !currentSession\.companyId;/);
+  assert.match(html, /<details class="com-legend"><summary title=/);
+  assert.match(html, /\.com-legend summary\{display:grid;[^}]*height:52px;/);
+  assert.match(html, /'">'\+comSellerHeadHtml\(seller, false, true\)\+/);
+  assert.match(html, /comCommissionSumHtml\(commission\)\+comUpdatedHtml\(seller\)\+/);
+  assert.match(html, /if\(rule\.attachExemptStoreNames\) return ' · SEM CRITÉRIO: '/);
+});
