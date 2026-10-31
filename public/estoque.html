@@ -2725,6 +2725,16 @@
   .rh-bar-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);}
   .rh-bar-value{font:800 10px var(--mono);color:var(--ink);text-align:right;}
   small.rh-bar-value{font-weight:700;color:var(--ink-faint);}
+  /* DRE Funcionário — fechamento compacto (31/10/2026). */
+  .rh-dre-compact{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;align-items:start;}
+  .rh-dre-block{padding:12px 14px;}
+  .rh-dre-compact .rh-print-block{margin-top:0;}
+  .rh-dre-block h3{margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;}
+  .rh-dre-block ul{margin:0 0 6px;padding-left:18px;font-size:13px;line-height:1.5;}
+  .rh-dre-group h4{margin:8px 0 2px;font:800 10px var(--mono);letter-spacing:.06em;color:var(--ink-soft);}
+  .rh-dre-sub{margin:0 0 4px;font:700 11px var(--mono);color:var(--ink-soft);}
+  .rh-dre-total{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--surface-border);font:800 12px var(--mono);}
+  .rh-dre-empty{margin:0;font-size:12px;color:var(--ink-faint);}
   .rh-checklist-title{margin:14px 0 8px;font:800 10px var(--mono);letter-spacing:.06em;}
   .rh-checklist-title small{color:var(--ink-faint);font-weight:700;}
   .rh-checklist{display:grid;gap:8px;}
@@ -49418,115 +49428,73 @@ function renderHomeTasks(){
     return params.toString();
   }
 
-  function rhDreFuncSubTable(title, head, rows){
-    if(!rows.length) return '';
-    return '<h4 style="margin:12px 0 6px;font:800 10px var(--mono);letter-spacing:.06em;">'+escapeHtml(title)+'</h4>'+
-      '<div class="table-panel responsive-table"><div class="table-scroll"><table class="rh-print-table">'+
-      '<thead><tr>'+head.map(label => '<th>'+escapeHtml(label)+'</th>').join('')+'</tr></thead>'+
-      '<tbody>'+rows.join('')+'</tbody></table></div></div>';
-  }
-
   let rhDreFuncReport = null;
+  // FECHAMENTO DO MÊS compacto (modelo do fechamento financeiro da LIDIANE,
+  // 31/10/2026): um bloco por assunto, listas curtas por loja/CNPJ e o total
+  // de cada bloco. Férias líquidas são só informativas (não entram na DRE).
   function renderRhDreFuncionario(report){
     rhDreFuncReport = report;
     const wrap = el('rhDreFuncConteudo');
     const stores = report && Array.isArray(report.stores) ? report.stores : [];
     const byCnpj = report && Array.isArray(report.byCnpj) ? report.byCnpj : [];
+    const faceponto = report && Array.isArray(report.faceponto) ? report.faceponto : [];
+    const vacations = report && Array.isArray(report.vacations) ? report.vacations : [];
+    const commissions = report && Array.isArray(report.commissions) ? report.commissions : [];
     el('rhDreFuncPrintMeta').textContent = 'Mês '+rhFormatMonth(report ? report.month : '')+' · '+
       (el('rhDreFuncLoja').value ? (companies.find(company => company.id === el('rhDreFuncLoja').value) || {name:'—'}).name : 'Todas as lojas');
-    // Por CNPJ (cadastro de Lojas): colaboradores ativos no mês, base, FGTS
-    // (8% por colaborador) e INSS manual, mais ASO, treinamento e rescisão.
-    const cnpjLabel = row => row.cnpj ? rhFormatCnpj(row.cnpj) : 'SEM CNPJ CADASTRADO';
-    const cnpjRows = byCnpj.map(row => '<tr>'+
-      '<td>'+escapeHtml(cnpjLabel(row))+'<br><small style="color:var(--ink-faint);">'+escapeHtml(row.storeNames.join(', '))+'</small></td>'+
-      '<td class="num">'+row.headcount+'</td>'+
-      '<td class="num">'+formatCentsBRL(row.salaryCents)+'</td>'+
-      '<td class="num">'+formatCentsBRL(row.fgtsMonthCents)+'</td>'+
-      '<td class="num">'+formatCentsBRL(row.inssCents || 0)+'</td>'+
-      '<td class="num">'+formatCentsBRL(row.asoCents)+'</td>'+
-      '<td class="num">'+formatCentsBRL(row.trainingCents)+'</td>'+
-      '<td class="num">'+formatCentsBRL(row.severanceCents + row.terminationFgtsCents)+'</td>'+
-      '<td class="num"><strong>'+formatCentsBRL(row.totalCents)+'</strong></td>'+
-    '</tr>');
-    const cnpjBlock = cnpjRows.length ? '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
-      '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">POR CNPJ</h3>'+
-      rhDreFuncSubTable('FGTS = 8% DA BASE DE CADA COLABORADOR ATIVO NO MÊS (LOJA ATUANTE DO MÊS) · INSS LANÇADO À MÃO',
-        ['CNPJ','Colaboradores','Base','FGTS (8%)','INSS','ASO','Treinamento','Rescisão + FGTS rescisório','Total'], cnpjRows)+
-      byCnpj.filter(row => (row.people || []).length).map(row => rhDreFuncSubTable(
-        'COLABORADORES — '+cnpjLabel(row)+' · BASE = SALÁRIO + COMISSÃO + HE + DSR (COM FOLHA) OU SALÁRIO DO CADASTRO',
-        ['Colaborador','Loja','Base','FGTS (8%)','INSS'],
-        row.people.map(person => '<tr><td>'+escapeHtml(person.personName)+'</td><td>'+escapeHtml(String(person.storeName || '—').toUpperCase())+'</td>'+
-          '<td class="num">'+formatCentsBRL(person.baseCents)+'</td><td class="num">'+formatCentsBRL(person.fgtsCents)+'</td>'+
-          '<td class="num">'+(person.inssCents ? formatCentsBRL(person.inssCents) : '—')+'</td></tr>')
-          .concat(['<tr><td colspan="2"><strong>TOTAL DO CNPJ</strong></td><td class="num"><strong>'+formatCentsBRL(row.salaryCents)+'</strong></td>'+
-            '<td class="num"><strong>'+formatCentsBRL(row.fgtsMonthCents)+'</strong></td><td class="num"><strong>'+formatCentsBRL(row.inssCents || 0)+'</strong></td></tr>'])
-      )).join('')+
-      '</div>' : '';
-    if(!stores.length){
-      el('rhDreFuncResumo').textContent = 'Nenhum ASO, treinamento, rescisão ou aniversariante neste mês.';
-      wrap.innerHTML = cnpjBlock;
-      return;
-    }
-    const t = report.totals;
+    const money = value => formatCentsBRL(Number(value) || 0);
+    const sum = (list, key) => list.reduce((total, item) => total + (Number(item[key]) || 0), 0);
+    const ddmm = date => date ? date.slice(8,10)+'/'+date.slice(5,7) : '';
+    const li = text => '<li>'+text+'</li>';
+    const group = (title, items, footer) => '<div class="rh-dre-group"><h4>'+escapeHtml(title)+'</h4><ul>'+items.join('')+'</ul>'+(footer ? '<p class="rh-dre-sub">'+footer+'</p>' : '')+'</div>';
+    const block = (title, body, total) => '<section class="rh-dre-block table-panel rh-print-block"><h3>'+escapeHtml(title)+'</h3>'+
+      (body || '<p class="rh-dre-empty">Nada neste mês.</p>')+(total ? '<p class="rh-dre-total">'+total+'</p>' : '')+'</section>';
+    const byStore = (list, storeOf) => { const map = new Map(); list.forEach(item => { const key = String(storeOf(item) || 'SEM LOJA').toUpperCase(); map.set(key, (map.get(key) || []).concat([item])); }); return [...map.entries()]; };
+
+    const aso = stores.flatMap(store => store.aso.map(exam => ({...exam, store:store.companyName})));
+    const trainings = stores.flatMap(store => store.trainings);
+    const terminations = stores.flatMap(store => store.terminations);
+    const birthdays = stores.flatMap(store => store.birthdays).sort((a, b) => a.birthDate.slice(8,10).localeCompare(b.birthDate.slice(8,10)));
+    const severanceTotal = terminations.reduce((total, item) => total + (Number(item.severanceCents) || 0) + (Number(item.fgtsCents) || 0), 0);
+
     el('rhDreFuncResumo').innerHTML =
-      'ASO: <strong>'+t.asoCount+'</strong> · <strong>'+formatCentsBRL(t.asoCents)+'</strong>'+
-      ' · Treinamento: <strong>'+formatCentsBRL(t.trainingCents)+'</strong>'+
-      ' · Rescisões: <strong>'+t.terminationsCount+'</strong> · <strong>'+formatCentsBRL(t.severanceCents)+'</strong>'+
-      ' · FGTS: <strong>'+formatCentsBRL(t.fgtsCents)+'</strong>'+
-      ' · Aniversariantes: <strong>'+t.birthdaysCount+'</strong>'+
-      ' · Total do mês: <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
-    wrap.innerHTML = cnpjBlock + stores.map(store => {
-      const st = store.totals;
-      const people = store.people.map(person => '<tr>'+
-        '<td>'+escapeHtml(person.personName)+'</td>'+
-        '<td class="num">'+(person.asoCents ? formatCentsBRL(person.asoCents) : '—')+'</td>'+
-        '<td class="num">'+(person.trainingCents ? formatCentsBRL(person.trainingCents)+
-          ((person.trainingDates || []).length ? '<br><small style="color:var(--ink-faint);">PAGO EM '+escapeHtml(person.trainingDates.map(date => date.slice(8,10)+'/'+date.slice(5,7)).join(', '))+'</small>' : '') : '—')+'</td>'+
-        '<td class="num">'+(person.severanceCents ? formatCentsBRL(person.severanceCents) : '—')+'</td>'+
-        '<td class="num">'+(person.fgtsCents ? formatCentsBRL(person.fgtsCents) : '—')+'</td>'+
-        '<td>'+(person.birthDate ? escapeHtml(person.birthDate.slice(8,10)+'/'+person.birthDate.slice(5,7)) : '—')+'</td>'+
-        '<td class="num"><strong>'+formatCentsBRL(person.totalCents)+'</strong></td>'+
-      '</tr>');
-      people.push('<tr><td><strong>TOTAL DA LOJA</strong></td>'+
-        '<td class="num"><strong>'+formatCentsBRL(st.asoCents)+'</strong></td>'+
-        '<td class="num"><strong>'+formatCentsBRL(st.trainingCents)+'</strong></td>'+
-        '<td class="num"><strong>'+formatCentsBRL(st.severanceCents)+'</strong></td>'+
-        '<td class="num"><strong>'+formatCentsBRL(st.fgtsCents)+'</strong></td>'+
-        '<td><strong>'+st.birthdaysCount+'</strong></td>'+
-        '<td class="num"><strong>'+formatCentsBRL(st.totalCents)+'</strong></td></tr>');
-      const aso = store.aso.map(exam => '<tr>'+
-        '<td>'+escapeHtml(exam.personName)+'</td>'+
-        '<td>'+escapeHtml(RH_ASO_TYPE_LABELS[exam.examType] || exam.examType)+(exam.source === 'recrutamento' ? ' <span class="status-pill">RECRUTAMENTO</span>' : '')+'</td>'+
-        '<td>'+escapeHtml(rhFormatDate(exam.examDate))+'</td>'+
-        '<td>'+escapeHtml(exam.clinicName || '—')+'</td>'+
-        '<td>'+escapeHtml(rhFormatCnpj(exam.clinicCnpj))+'</td>'+
-        '<td class="num">'+formatCentsBRL(exam.amountCents)+'</td>'+
-      '</tr>');
-      const trainings = store.trainings.map(item => '<tr>'+
-        '<td>'+escapeHtml(item.personName)+'</td>'+
-        '<td>'+escapeHtml(rhFormatDate(item.paidDate))+'</td>'+
-        '<td>'+escapeHtml(item.note || '—')+'</td>'+
-        '<td class="num">'+formatCentsBRL(item.amountCents)+'</td>'+
-      '</tr>');
-      const terminations = store.terminations.map(item => '<tr>'+
-        '<td>'+escapeHtml(item.personName)+'</td>'+
-        '<td>'+escapeHtml(rhFormatDate(item.terminationDate))+'</td>'+
-        '<td class="num">'+formatCentsBRL(item.severanceCents)+'</td>'+
-        '<td class="num">'+formatCentsBRL(item.fgtsCents)+'</td>'+
-      '</tr>');
-      const birthdays = store.birthdays.map(item => '<tr>'+
-        '<td>'+escapeHtml(item.personName)+'</td>'+
-        '<td>'+escapeHtml(item.birthDate.slice(8,10)+'/'+item.birthDate.slice(5,7))+'</td>'+
-      '</tr>');
-      return '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
-        '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">'+escapeHtml(store.companyName)+'</h3>'+
-        rhDreFuncSubTable('POR COLABORADOR', ['Colaborador','ASO','Treinamento','Rescisão','FGTS','Aniversário','Total'], people)+
-        rhDreFuncSubTable('EXAMES ASO ('+st.asoCount+')', ['Colaborador','Tipo','Data','Clínica','CNPJ','Valor'], aso)+
-        rhDreFuncSubTable('TREINAMENTO PAGO ('+st.trainingCount+')', ['Pessoa','Data','Observação','Valor'], trainings)+
-        rhDreFuncSubTable('RESCISÕES ('+st.terminationsCount+')', ['Colaborador','Desligamento','Rescisão','FGTS'], terminations)+
-        rhDreFuncSubTable('ANIVERSARIANTES ('+st.birthdaysCount+')', ['Colaborador','Dia'], birthdays)+
-      '</div>';
-    }).join('');
+      'ASO <strong>'+money(sum(aso,'amountCents'))+'</strong> · FACEPONTO <strong>'+money(sum(faceponto,'amountCents'))+'</strong>'+
+      ' · TREINAMENTOS <strong>'+money(sum(trainings,'amountCents'))+'</strong> · RESCISÕES <strong>'+money(severanceTotal)+'</strong>'+
+      ' · INSS <strong>'+money(sum(byCnpj,'inssCents'))+'</strong> · FGTS <strong>'+money(sum(byCnpj,'fgtsMonthCents'))+'</strong>'+
+      ' · COMISSÕES <strong>'+money(sum(commissions,'amountCents'))+'</strong>';
+
+    wrap.innerHTML = '<div class="rh-dre-compact">'+[
+      block('EXAMES ASO — POR CNPJ / CLÍNICA',
+        byStore(aso, exam => exam.store).map(([store, list]) => group(store, list.map(exam =>
+          li(escapeHtml(exam.personName)+' — '+escapeHtml(exam.clinicName || RH_ASO_TYPE_LABELS[exam.examType] || exam.examType)+' — '+money(exam.amountCents))))).join(''),
+        aso.length ? 'TOTAL GERAL — EXAMES ASO: '+money(sum(aso,'amountCents')) : ''),
+      block('FACEPONTO — POR UNIDADE',
+        byStore(faceponto, row => row.companyName).map(([store, list]) => group(store, list.map(row => li(escapeHtml(row.personName))),
+          'CUSTO TOTAL: '+money(sum(list,'amountCents')))).join(''),
+        faceponto.length ? 'TOTAL GERAL FACEPONTO: '+money(sum(faceponto,'amountCents')) : ''),
+      block('TREINAMENTOS',
+        trainings.length ? '<ul>'+trainings.map(item => li(escapeHtml(item.personName)+' — '+money(item.amountCents)+
+          (item.paidDate ? ' (DIA '+ddmm(item.paidDate)+')' : '')+(item.note ? ' — '+escapeHtml(item.note) : ''))).join('')+'</ul>' : '',
+        trainings.length ? 'TOTAL GERAL TREINAMENTOS: '+money(sum(trainings,'amountCents')) : ''),
+      block('FÉRIAS LÍQUIDAS',
+        vacations.length ? '<ul>'+vacations.map(item => li(escapeHtml(item.personName)+' — '+money(item.amountCents)+' ('+ddmm(item.startDate)+' A '+ddmm(item.endDate)+')'+(item.notes ? ' — '+escapeHtml(item.notes) : ''))).join('')+'</ul>' : '',
+        vacations.length ? 'TOTAL GERAL FÉRIAS LÍQUIDAS: '+money(sum(vacations,'amountCents'))+' · INFORMATIVO, NÃO ENTRA NA DRE' : ''),
+      block('RESCISÃO',
+        terminations.length ? '<ul>'+terminations.map(item => li(escapeHtml(item.personName)+' — '+money(item.severanceCents)+
+          (Number(item.fgtsCents) ? ' + FGTS '+money(item.fgtsCents)+' = '+money((Number(item.severanceCents) || 0) + (Number(item.fgtsCents) || 0)) : '')+
+          ' (DESLIGADO '+ddmm(item.terminationDate)+')')).join('')+'</ul>' : '',
+        terminations.length ? 'TOTAL GERAL RESCISÕES: '+money(severanceTotal) : ''),
+      block('INSS / FGTS',
+        byCnpj.map(row => group((row.storeNames || []).join(' · ') || (row.cnpj ? rhFormatCnpj(row.cnpj) : 'SEM CNPJ'),
+          [li('INSS — '+money(row.inssCents)), li('FGTS — '+money(row.fgtsMonthCents))])).join(''),
+        byCnpj.length ? 'TOTAL INSS: '+money(sum(byCnpj,'inssCents'))+' · TOTAL FGTS: '+money(sum(byCnpj,'fgtsMonthCents')) : ''),
+      block('ANIVERSARIANTES DO MÊS',
+        birthdays.length ? '<ul>'+birthdays.map(item => li(escapeHtml(item.personName)+' — DIA '+item.birthDate.slice(8,10))).join('')+'</ul>' : '',
+        birthdays.length ? birthdays.length+' ANIVERSARIANTE(S)' : ''),
+      block('COMISSÕES',
+        commissions.length ? '<ul>'+commissions.map(item => li(escapeHtml(item.personName)+' — '+money(item.amountCents))).join('')+'</ul>' : '',
+        commissions.length ? 'TOTAL GERAL COMISSÕES: '+money(sum(commissions,'amountCents')) : ''),
+    ].join('')+'</div>';
   }
 
   function renderRhAsoTable(){

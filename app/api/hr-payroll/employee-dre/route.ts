@@ -180,7 +180,26 @@ export async function GET(request: Request) {
       .filter((person) => !companyId || person.companyId === companyId);
     const companies = (await loadCompanyList(database)) as Array<{ id: string; name: string; cnpj?: string }>;
     const byCnpj = buildCnpjSummary(report.stores, staff, [...companies, { id: "assistencia", name: "Assistência" }]);
-    return jsonResponse({ ...report, byCnpj, faceponto } as unknown as Record<string, unknown>);
+    // Layout compacto (modelo do fechamento da LIDIANE, 31/10/2026): férias
+    // líquidas iniciadas no mês (só informativo — férias não entram na DRE) e
+    // comissões do mês por colaborador, na loja atuante do mês.
+    const nameOf = new Map((employees.results ?? []).map((employee) => [employee.id, employee.fullName]));
+    const storeNameOf = (employeeId: string) => assignments.get(employeeId)?.companyName ||
+      (employees.results ?? []).find((employee) => employee.id === employeeId)?.companyName || "";
+    const storeIdOf = (employeeId: string) => monthStoreOf.get(employeeId) ||
+      (employees.results ?? []).find((employee) => employee.id === employeeId)?.companyId || "";
+    const vacationRows = await database
+      .prepare("SELECT employee_id AS employeeId, employee_name AS personName, start_date AS startDate, end_date AS endDate, net_cents AS amountCents, notes FROM hr_vacations WHERE substr(start_date, 1, 7) = ?1 ORDER BY employee_name")
+      .bind(month)
+      .all<{ employeeId: string; personName: string; startDate: string; endDate: string; amountCents: number; notes: string }>();
+    const vacations = (vacationRows.results ?? [])
+      .map((row) => ({ ...row, amountCents: Number(row.amountCents) || 0, companyName: storeNameOf(row.employeeId) }))
+      .filter((row) => !companyId || storeIdOf(row.employeeId) === companyId);
+    const commissionList = (commissions.results ?? [])
+      .filter((row) => Number(row.total) && (!companyId || storeIdOf(row.employeeId) === companyId))
+      .map((row) => ({ employeeId: row.employeeId, personName: nameOf.get(row.employeeId) || "", companyName: storeNameOf(row.employeeId), amountCents: Number(row.total) }))
+      .sort((a, b) => a.personName.localeCompare(b.personName, "pt-BR"));
+    return jsonResponse({ ...report, byCnpj, faceponto, vacations, commissions: commissionList } as unknown as Record<string, unknown>);
   } catch (error) {
     console.error("Não foi possível montar o DRE Funcionário.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL MONTAR O DRE FUNCIONÁRIO." }, 500);
