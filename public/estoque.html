@@ -5133,7 +5133,7 @@
           </div>
           <p class="purchase-field-help" id="invRecountHint"></p>
           <div class="table-panel responsive-table"><div class="table-scroll">
-            <table><thead><tr><th>Recontagem</th><th>Categoria</th><th>Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Valor</th><th>Motivo da divergência</th><th></th></tr></thead>
+            <table><thead><tr><th>Recontagem</th><th class="sortable" data-inv-div-sort="category" title="Ordenar por categoria">Categoria</th><th class="sortable" data-inv-div-sort="product" title="Ordenar por produto">Produto</th><th>Contado</th><th>Sistema</th><th>Diferença</th><th>Valor</th><th>Motivo da divergência</th><th></th></tr></thead>
             <tbody id="invDivBody"></tbody></table>
           </div></div>
         </div>
@@ -29399,12 +29399,24 @@ function renderHomeTasks(){
     ).join('') : '<tr><td colspan="6" class="responsive-empty">Nenhum item anotado para inventário nas Divergências desta loja.</td></tr>';
   }
 
+  let invDivSort = {key:'category', dir:1};
+  document.querySelectorAll('[data-inv-div-sort]').forEach(th => th.addEventListener('click', () => {
+    const key = th.dataset.invDivSort;
+    invDivSort = {key, dir: invDivSort.key === key ? -invDivSort.dir : 1};
+    renderInvDivergent();
+  }));
   function renderInvDivergent(live){
     const showRemoved = el('invDivView').value === 'removed';
     const canManage = invCan('manage') && invOpen();
     // Recontagem dos divergentes: quem só conta corrige o contado aqui mesmo.
     const canCount = (invCan('count') || invCan('manage')) && invOpen();
-    const rows = invDivergent().filter(item => Boolean(item.removed) === showRemoved).sort((a, b) => a.category.localeCompare(b.category) || a.product.localeCompare(b.product));
+    // Ordem: clique em CATEGORIA ou PRODUTO no cabeçalho (de novo inverte).
+    const {key, dir} = invDivSort, other = key === 'category' ? 'product' : 'category';
+    const rows = invDivergent().filter(item => Boolean(item.removed) === showRemoved).sort((a, b) => dir * (a[key].localeCompare(b[key], 'pt-BR') || a[other].localeCompare(b[other], 'pt-BR')));
+    document.querySelectorAll('[data-inv-div-sort]').forEach(th => {
+      th.classList.toggle('sort-asc', th.dataset.invDivSort === key && dir > 0);
+      th.classList.toggle('sort-desc', th.dataset.invDivSort === key && dir < 0);
+    });
     const body = el('invDivBody');
     // Só os marcados aqui vão para o PDF RECONTAGEM DE LOJA (quem gerencia escolhe).
     const open = invDivergent().filter(item => !item.removed);
