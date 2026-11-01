@@ -226,7 +226,9 @@ test("desligamento: rescisão paga com data", async () => {
   assert.equal((await callRoute(offboarding.POST, ADMIN, "POST", "/api/hr-rh/offboarding", { id: "t-pago", terminationDate: "2026-10-01", reason: "acordo", severancePaidDate: "11/10" })).status, 400);
 });
 
-test("DRE: por CNPJ com FGTS de 8% do salário (loja do mês das Escalas) e dias pagos do treinamento", async () => {
+// Desde 01/11/2026: INSS/FGTS por CNPJ pela LOJA CADASTRADA, FGTS só o lançado
+// (sem lançamento = 0) e custos do Recrutamento fora da DRE Funcionário.
+test("DRE: por CNPJ pela loja cadastrada, FGTS só lançado e treinamento do recrutamento fora", async () => {
   db.sqlite.exec("DELETE FROM hr_employees; DELETE FROM hr_terminations; DELETE FROM hr_recruitment_candidates; DELETE FROM hr_aso_exams;");
   db.sqlite.prepare("UPDATE shared_state SET value_json=? WHERE state_key='companies_list'").run(JSON.stringify([
     { id: "clojaalfa1", name: "LOJA ALFA", cnpj: "11.222.333/0001-81" },
@@ -244,13 +246,12 @@ test("DRE: por CNPJ com FGTS de 8% do salário (loja do mês das Escalas) e dias
   db.insert("hr_recruitment_test_payments", { id: "tp2", candidate_id: "c-tr", amount_cents: 5000, paid_date: "2026-10-03" });
   const report = await (await callRoute(dre.GET, ADMIN, "GET", "/api/hr-payroll/employee-dre?month=2026-10")).json();
   const sameCnpj = report.byCnpj.find((row) => row.cnpj === "11222333000181");
-  assert.equal(sameCnpj.headcount, 3, "ALFA + BETA (mesmo CNPJ) + P3 escalado na ALFA no mês");
-  assert.equal(sameCnpj.salaryCents, 600000);
-  assert.equal(sameCnpj.fgtsMonthCents, 48000);
-  assert.equal(sameCnpj.trainingCents, 10000);
-  assert.equal(report.byCnpj.some((row) => row.cnpj === "" && row.headcount > 0), false, "admitido em novembro não conta em outubro");
-  const person = report.stores.find((store) => store.companyId === "clojaalfa1").people.find((item) => item.personName === "TREINO");
-  assert.deepEqual(person.trainingDates, ["2026-10-03", "2026-10-05"]);
+  assert.equal(sameCnpj.headcount, 2, "ALFA + BETA (mesmo CNPJ); P3 é da GAMA no cadastro, escala não muda o CNPJ");
+  assert.equal(sameCnpj.salaryCents, 500000);
+  assert.equal(sameCnpj.fgtsMonthCents, 0, "sem lançamento na aba INSS E FGTS, FGTS = 0");
+  assert.equal(sameCnpj.trainingCents, 0, "treinamento pago do recrutamento não entra");
+  assert.equal(report.byCnpj.find((row) => row.cnpj === "").headcount, 1, "só P3; admitido em novembro não conta em outubro");
+  assert.equal(report.stores.flatMap((store) => store.people).some((item) => item.personName === "TREINO"), false);
 });
 
 test("acompanhamento por liderado: ciclo com 3 encontros (online, online, presencial) e filtro por loja", async () => {
@@ -287,4 +288,35 @@ test("ponto em grade: salva o mês de uma vez, apaga dia limpo e recusa marcaç�
   const bad = await put([{ entryDate: "2026-10-04", punches: "08:00" }]);
   assert.equal(bad.status, 400);
   assert.match((await bad.json()).error, /^04\/10:/);
+});
+
+// Ajustes de 01/11/2026: STAND BY e REPROVADO (com histórico e filtro),
+// SELECIONADO ENTREVISTA só em CONTATOS, admissão já no EM TREINAMENTO,
+// pendências no status do contratado e filtro por data de cadastro.
+test("recrutamento: STAND BY e REPROVADO gravam histórico e filtram; tela com abas, admissão no treinamento e data", async () => {
+  const created = await callRoute(candidates.POST, ADMIN, "POST", "/api/hr-recruitment/candidates", { fullName: "rui" });
+  const id = (await created.json()).id;
+  for (const status of ["stand_by", "reprovado"]) {
+    const moved = await callRoute(candidates.POST, ADMIN, "POST", "/api/hr-recruitment/candidates", { id, fullName: "rui", status });
+    assert.equal(moved.status, 200, JSON.stringify(await moved.clone().json()));
+    const listed = (await (await callRoute(candidates.GET, ADMIN, "GET", `/api/hr-recruitment/candidates?status=${status}`)).json()).candidates;
+    assert.deepEqual(listed.map((row) => row.id), [id]);
+  }
+  const history = db.sqlite.prepare("SELECT to_status FROM hr_recruitment_status_history WHERE candidate_id=? ORDER BY changed_at, rowid").all(id);
+  assert.deepEqual(history.map((row) => row.to_status).slice(-2), ["stand_by", "reprovado"]);
+  assert.equal(lib.RECRUITMENT_STATUS_LABELS.stand_by, "STAND BY");
+
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  const filter = html.slice(html.indexOf('<select id="recFilterStatus">'), html.indexOf("</select>", html.indexOf('<select id="recFilterStatus">')));
+  assert.doesNotMatch(filter, /selecionado_entrevista/, "SELECIONADO ENTREVISTA só na aba CONTATOS");
+  assert.match(filter, /value="stand_by">STAND BY/);
+  assert.match(filter, /value="reprovado">REPROVADO/);
+  assert.match(html, /id="recFilterDate"/);
+  assert.match(html, /captureRecifeDateKey\(row\.createdAt\) === date/);
+  assert.match(html, /row\.status !== 'selecionado_entrevista'/);
+  assert.match(html, /data-rec-contact-edit=/);
+  assert.match(html, /if\(status === 'em_treinamento'\) \['recAdmissionDateField','recAdmissionCompanyField'/);
+  assert.match(html, /CONTRATADO \/ INTEGRAÇÃO · '\+pending\.length\+' PENDÊNCIA'/);
+  assert.match(html, /data-rec-pending-list/);
 });

@@ -7,7 +7,6 @@ import {
   type DreAso,
   type DreBirthday,
   type DreTermination,
-  type DreTraining,
 } from "../../../lib/hr-employee-dre";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, loadMonthValues, loadOvertimePayouts, safeText } from "../shared";
@@ -15,13 +14,10 @@ import { actingStoresForMonth } from "../../../lib/acting-store";
 
 // DRE Funcionário — fechamento do mês (civil), por loja com detalhe por
 // colaborador. Tudo calculado ao vivo a partir das fontes; nada é gravado.
-// Treinamento e ASO admissional vêm do Recrutamento, aniversariantes do
-// cadastro de funcionários (mesma fonte do módulo Aniversariantes) — sem
-// duplicar dado. A loja de um candidato é a unidade fixa (ou, sem ela, a
-// loja de admissão) cadastrada no Recrutamento.
-
-const CANDIDATE_COMPANY_ID = "COALESCE(NULLIF(c.fixed_unit_id, ''), c.admission_company_id)";
-const CANDIDATE_COMPANY_NAME = "COALESCE(NULLIF(c.fixed_unit_name, ''), c.admission_company_name)";
+// Aniversariantes vêm do cadastro de funcionários (mesma fonte do módulo
+// Aniversariantes). Os custos do Recrutamento (treinamento/teste pago e ASO
+// do candidato) NÃO entram desde 01/11/2026 — ficam só como histórico no
+// candidato (decisão do usuário).
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -39,7 +35,7 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const [asoExams, candidateAso, trainings, terminations, birthdays] = await Promise.all([
+    const [asoExams, terminations, birthdays] = await Promise.all([
       database
         .prepare(
           `SELECT employee_id AS employeeId, '' AS candidateId, employee_name AS personName,
@@ -50,28 +46,6 @@ export async function GET(request: Request) {
         )
         .bind(month)
         .all<DreAso>(),
-      database
-        .prepare(
-          `SELECT c.hr_employee_id AS employeeId, c.id AS candidateId, c.full_name AS personName,
-                  ${CANDIDATE_COMPANY_ID} AS companyId, ${CANDIDATE_COMPANY_NAME} AS companyName,
-                  'admissional' AS examType, c.aso_date AS examDate, c.aso_clinic AS clinicName,
-                  c.aso_clinic_cnpj AS clinicCnpj, c.aso_value_cents AS amountCents,
-                  'recrutamento' AS source
-           FROM hr_recruitment_candidates c WHERE substr(c.aso_date, 1, 7) = ?1`,
-        )
-        .bind(month)
-        .all<DreAso>(),
-      database
-        .prepare(
-          `SELECT c.hr_employee_id AS employeeId, c.id AS candidateId, c.full_name AS personName,
-                  ${CANDIDATE_COMPANY_ID} AS companyId, ${CANDIDATE_COMPANY_NAME} AS companyName,
-                  tp.paid_date AS paidDate, tp.amount_cents AS amountCents, tp.note AS note
-           FROM hr_recruitment_test_payments tp
-           JOIN hr_recruitment_candidates c ON c.id = tp.candidate_id
-           WHERE substr(tp.paid_date, 1, 7) = ?1`,
-        )
-        .bind(month)
-        .all<DreTraining>(),
       database
         .prepare(
           `SELECT employee_id AS employeeId, employee_name AS personName, company_id AS companyId,
@@ -96,25 +70,27 @@ export async function GET(request: Request) {
       (rows ?? []).filter((row) => !companyId || (row.companyId || "") === companyId);
 
     const report = buildEmployeeDre(month, {
-      aso: byCompany([...(asoExams.results ?? []), ...(candidateAso.results ?? [])]),
-      trainings: byCompany(trainings.results),
+      aso: byCompany(asoExams.results),
+      trainings: [],
       terminations: byCompany(terminations.results),
       birthdays: byCompany(birthdays.results),
     });
 
-    // Por CNPJ: quem esteve ativo no mês, na loja atuante do mês. FGTS 8% por
-    // colaborador sobre a base = salário + comissão + HE + DSR do mês (com
-    // folha lançada) ou o salário do cadastro (sem folha); INSS manual.
+    // Por CNPJ: quem esteve ativo no mês, pela LOJA CADASTRADA (admissão) do
+    // funcionário. INSS e FGTS = os da folha lançados em CUSTO TOTAL POR
+    // FUNCIONÁRIO > INSS E FGTS (01/11/2026); sem lançamento, FGTS = 0. A base
+    // (salário + comissão + HE + DSR, ou o salário do cadastro) segue informativa.
     const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
-    const [employees, allTerminations, assignments, payroll, commissions, dsr, inss, overtimePayouts] = await Promise.all([
+    const [employees, allTerminations, assignments, payroll, commissions, dsr, inss, overtimePayouts, fgts] = await Promise.all([
       database
         .prepare(
           `SELECT id, full_name AS fullName, admission_date AS admissionDate, status, company_id AS companyId,
-                  company_name AS companyName, salary_cents AS salaryCents, faceponto_cents AS facepontoCents FROM hr_employees`,
+                  company_name AS companyName, admission_company_id AS admissionCompanyId,
+                  salary_cents AS salaryCents, faceponto_cents AS facepontoCents FROM hr_employees`,
         )
         .all<{
           id: string; fullName: string; admissionDate: string; status: string; companyId: string; companyName: string;
-          salaryCents: number; facepontoCents: number;
+          admissionCompanyId: string; salaryCents: number; facepontoCents: number;
         }>(),
       database
         .prepare("SELECT employee_id AS employeeId, termination_date AS terminationDate FROM hr_terminations")
@@ -142,6 +118,7 @@ export async function GET(request: Request) {
       loadMonthValues(database, month, "dsr"),
       loadMonthValues(database, month, "inss"),
       loadOvertimePayouts(database, month),
+      loadMonthValues(database, month, "fgts"),
     ]);
     const terms = allTerminations.results ?? [];
     const monthStoreOf = new Map([...assignments].map(([employeeId, store]) => [employeeId, store.companyId]));
@@ -173,9 +150,10 @@ export async function GET(request: Request) {
       .map((employee) => ({
         employeeId: employee.id,
         personName: employee.fullName,
-        companyId: monthStoreOf.get(employee.id) || employee.companyId,
+        companyId: employee.admissionCompanyId || employee.companyId,
         salaryCents: payrollBaseOf.get(employee.id) ?? (Number(employee.salaryCents) || 0),
         inssCents: inss.get(employee.id) ?? 0,
+        fgtsCents: fgts.get(employee.id) ?? 0,
       }))
       .filter((person) => !companyId || person.companyId === companyId);
     const companies = (await loadCompanyList(database)) as Array<{ id: string; name: string; cnpj?: string }>;

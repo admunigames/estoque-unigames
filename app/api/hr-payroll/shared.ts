@@ -550,8 +550,10 @@ export async function saveActingStoreMonth(
 // Valores MANUAIS por funcionário e competência (migration 0109):
 // 'dsr' (Folha / CUSTO TOTAL POR FUNCIONÁRIO), 'inss' (DRE Funcionário) e
 // 'he_min' (HORAS EXTRAS do Relatório Contabilidade em QUANTIDADE: amount_cents
-// guarda MINUTOS — 31/10/2026; o antigo 'he' em R$ nunca teve valor em produção).
-export const MONTH_VALUE_KINDS = ["dsr", "inss", "he_min"] as const;
+// guarda MINUTOS — 31/10/2026; o antigo 'he' em R$ nunca teve valor em produção)
+// e os valores da folha do INSS E FGTS POR FUNCIONÁRIO (01/11/2026): 'inss_base',
+// 'inss_pct' (porcentagem × 100), 'fgts_base' e 'fgts'.
+export const MONTH_VALUE_KINDS = ["dsr", "inss", "he_min", "inss_base", "inss_pct", "fgts_base", "fgts"] as const;
 export type MonthValueKind = (typeof MONTH_VALUE_KINDS)[number];
 
 export function isMonthValueKind(value: unknown): value is MonthValueKind {

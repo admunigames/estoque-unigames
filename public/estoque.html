@@ -7108,12 +7108,23 @@
         <div class="dre-toolbar no-print">
           <strong style="align-self:center;">CUSTO TOTAL POR FUNCIONÁRIO</strong>
           <div class="dre-toolbar-actions">
-            <button class="btn-outline" id="btnRhCustoFuncDsr" type="button">EDITAR DSR</button>
-            <button class="btn-outline" id="btnRhCustoFuncXlsx" type="button">XLSX</button>
-            <button class="btn-outline" id="btnRhCustoFuncPdf" type="button">PDF</button>
+            <button class="btn-outline" id="btnRhCustoFuncDsr" type="button" data-rh-custo-only>EDITAR DSR</button>
+            <button class="btn-outline" id="btnRhCustoFuncXlsx" type="button" data-rh-custo-only>XLSX</button>
+            <button class="btn-outline" id="btnRhCustoFuncPdf" type="button" data-rh-custo-only>PDF</button>
+            <button class="btn-outline" id="btnRhInssFgtsNovo" type="button" hidden>LANÇAR / EDITAR À MÃO</button>
             <button class="btn-outline" id="btnRhCustoFuncClose" type="button">VOLTAR À FOLHA</button>
           </div>
         </div>
+        <div class="output-tabs no-print" role="tablist" aria-label="Seção do custo por funcionário" id="rhCustoFuncTabs">
+          <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rh-custo-tab="custo">CUSTO TOTAL</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-custo-tab="inss">INSS E FGTS</button>
+        </div>
+        <div id="rhInssFgtsView" hidden>
+          <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">VALORES DA FOLHA DO MÊS POR FUNCIONÁRIO, PELA LOJA CADASTRADA (REGISTRO). O INSS E O FGTS DAQUI SÃO OS DA DRE FUNCIONÁRIO POR CNPJ; SEM LANÇAMENTO, FGTS = R$ 0,00. A % DO INSS É SÓ PARA CONFERÊNCIA (BASE × %).</p>
+          <div class="table-panel" id="rhInssFgtsResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+          <div id="rhInssFgtsConteudo"></div>
+        </div>
+        <div id="rhCustoFuncCustoView">
         <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">REMUNERAÇÃO = SALÁRIO BASE + COMISSÃO + HE + DSR (DSR MANUAL). FGTS 8% · FÉRIAS + 1/3 = REMUNERAÇÃO ÷ 12 × 4/3 · 13º = REMUNERAÇÃO ÷ 12 · FGTS FÉRIAS/13º = 8% DA PROVISÃO · FGTS RESCISÓRIO = 40% DOS FGTS.</p>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
@@ -7123,6 +7134,7 @@
               <tfoot id="rhCustoFuncFoot"></tfoot>
             </table>
           </div>
+        </div>
         </div>
       </div>
       <input type="file" id="rhFolhaAttachInput" hidden>
@@ -7398,13 +7410,15 @@
           <div class="field"><label for="recFilterStatus">STATUS</label>
             <select id="recFilterStatus">
               <option value="">TODOS</option>
-              <option value="selecionado_entrevista">SELECIONADO ENTREVISTA</option>
               <option value="em_teste">EM TESTE</option>
               <option value="em_treinamento">EM TREINAMENTO</option>
               <option value="contratado">CONTRATADO / INTEGRAÇÃO</option>
+              <option value="stand_by">STAND BY</option>
+              <option value="reprovado">REPROVADO</option>
               <option value="cancelado">CANCELADO</option>
             </select>
           </div>
+          <div class="field"><label for="recFilterDate">DATA DE CADASTRO</label><input type="date" id="recFilterDate"></div>
           <div class="field full"><label for="recFilterSearch">BUSCAR POR NOME</label><input id="recFilterSearch" placeholder="Nome do candidato..."></div>
           <div class="dre-toolbar-actions">
             <button class="btn-outline" id="btnRecPendingTexts" type="button" data-permission="rh_recrutamento:manage">TEXTOS DAS PENDÊNCIAS</button>
@@ -7432,7 +7446,7 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="recContactsTable">
-              <thead><tr><th>Nome</th><th>Contato</th><th>Entrevista</th><th class="no-print"></th></tr></thead>
+              <thead><tr><th>Nome</th><th>Contato</th><th>Entrevista</th><th class="no-print"></th><th class="no-print"></th></tr></thead>
               <tbody id="recContactsBody"><tr><td colspan="4" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
@@ -13077,6 +13091,29 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="rhInssFgtsDialog" aria-labelledby="rhInssFgtsTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="rhInssFgtsTitle">INSS E FGTS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhInssFgts" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="rhInssFgtsForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="rhInssFgtsEmployee">FUNCIONÁRIO *</label><select id="rhInssFgtsEmployee" required></select></div>
+      <div class="purchase-field"><label for="rhInssFgtsInssBase">BASE INSS (R$)</label><input id="rhInssFgtsInssBase" inputmode="decimal" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhInssFgtsInssPct">% INSS</label><input id="rhInssFgtsInssPct" inputmode="decimal" placeholder="7,67"></div>
+      <div class="purchase-field"><label for="rhInssFgtsInss">VALOR INSS (R$)</label><input id="rhInssFgtsInss" inputmode="decimal" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhInssFgtsFgtsBase">BASE FGTS (R$)</label><input id="rhInssFgtsFgtsBase" inputmode="decimal" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhInssFgtsFgts">VALOR FGTS (R$)</label><input id="rhInssFgtsFgts" inputmode="decimal" placeholder="R$ 0,00"></div>
+    </div>
+    <p class="muted" id="rhInssFgtsCheck" style="margin:8px 0 0;font-size:12px;"></p>
+    <div class="user-form-status" id="rhInssFgtsStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhInssFgts" type="button">CANCELAR</button>
+      <button class="btn-accent" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="rhDesligamentoDialog" aria-labelledby="rhDesligamentoDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="rhDesligamentoDialogTitle">DESLIGAMENTO</h3>
@@ -13708,6 +13745,8 @@
           <option value="em_treinamento">EM TREINAMENTO</option>
           <option value="contratado">CONTRATADO</option>
           <option value="integracao" hidden>CONTRATADO</option>
+          <option value="stand_by">STAND BY</option>
+          <option value="reprovado">REPROVADO</option>
           <option value="cancelado">CANCELADO</option>
         </select>
       </div>
@@ -13739,7 +13778,7 @@
       <div class="purchase-field" data-rec-stage="3"><label for="recTrainingTrainerInformed">INFORMADO AO RESPONSÁVEL QUE IRÁ TREINAR?</label><select id="recTrainingTrainerInformed"><option value="nao">NÃO</option><option value="sim">SIM</option></select></div>
       <div class="purchase-field" id="recTrainingStartField" data-rec-stage="3"><label for="recTrainingStartDate">DATA DE INÍCIO DO TREINAMENTO</label><input type="date" id="recTrainingStartDate"></div>
       <div class="purchase-field full" id="recPaymentsSection" hidden>
-        <label>PAGAMENTOS DE TESTE/TREINAMENTO (DIAS PAGOS)</label>
+        <label>PAGAMENTOS DE TESTE/TREINAMENTO (DIAS PAGOS — SÓ HISTÓRICO, NÃO ENTRA NA DRE)</label>
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="recPaymentsTable">
@@ -13786,7 +13825,7 @@
       <div class="purchase-field" id="recAsoRequestedField" hidden><label for="recAsoRequested">ASO SOLICITADO?</label><select id="recAsoRequested"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
       <div class="purchase-field" id="recAsoClinicField" hidden><label for="recAsoClinic">CLÍNICA DO ASO</label><input id="recAsoClinic" maxlength="160"></div>
       <div class="purchase-field" id="recAsoValueField" hidden><label for="recAsoValue">VALOR DO EXAME (R$)</label><input type="text" inputmode="decimal" id="recAsoValue" placeholder="R$ 0,00"></div>
-      <div class="purchase-field" id="recAsoDateField" hidden><label for="recAsoDate">DATA DO EXAME (DRE FUNCIONÁRIO)</label><input type="date" id="recAsoDate"></div>
+      <div class="purchase-field" id="recAsoDateField" hidden><label for="recAsoDate">DATA DO EXAME (SÓ HISTÓRICO)</label><input type="date" id="recAsoDate"></div>
       <div class="purchase-field" id="recAsoCnpjField" hidden><label for="recAsoClinicCnpj">CNPJ DA CLÍNICA (ANTIGO)</label><input id="recAsoClinicCnpj" maxlength="20" inputmode="numeric" placeholder="Somente números"></div>
       <div class="purchase-field" id="recAdmissionCnpjField" hidden><label for="recAdmissionCnpj">CNPJ DE ADMISSÃO (DA LOJA)</label><input id="recAdmissionCnpj" readonly placeholder="Escolha a loja de admissão"></div>
       <div class="purchase-field" id="recShoppingField" hidden><label for="recShoppingRegistered">CADASTRADO NO SHOPPING FIXO?</label><select id="recShoppingRegistered"><option value="nao">NÃO</option><option value="sim">SIM</option><option value="na">NÃO SE APLICA</option></select></div>
@@ -48547,8 +48586,121 @@ function renderHomeTasks(){
   function showRhCustoFuncionario(show){
     el('rhCustoFuncPanel').hidden = !show;
     el('rhFolhaMain').hidden = show;
-    if(show) loadRhCustoFuncionario();
+    if(show) rhCustoFuncShowTab('custo');
   }
+
+  // INSS E FGTS POR FUNCIONÁRIO (aba do CUSTO TOTAL, 01/11/2026): valores da
+  // folha do mês (PDF ou à mão) por loja cadastrada / CNPJ — alimentam o INSS
+  // e o FGTS da DRE Funcionário por CNPJ.
+  let rhInssFgtsData = null;
+  function rhCustoFuncShowTab(tab){
+    document.querySelectorAll('#rhCustoFuncTabs [data-rh-custo-tab]').forEach(button => {
+      const active = button.dataset.rhCustoTab === tab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    el('rhCustoFuncCustoView').hidden = tab !== 'custo';
+    el('rhInssFgtsView').hidden = tab !== 'inss';
+    document.querySelectorAll('[data-rh-custo-only]').forEach(button => { button.hidden = tab !== 'custo'; });
+    el('btnRhInssFgtsNovo').hidden = tab !== 'inss';
+    if(tab === 'inss') loadRhInssFgts(); else loadRhCustoFuncionario();
+  }
+  if(el('rhCustoFuncTabs')) el('rhCustoFuncTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-custo-tab]');
+    if(button) rhCustoFuncShowTab(button.dataset.rhCustoTab);
+  });
+  const rhPctText = bps => (Number(bps || 0) / 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  async function loadRhInssFgts(){
+    const month = el('rhFolhaMes').value;
+    el('rhInssFgtsResumo').textContent = 'Carregando…';
+    el('rhInssFgtsConteudo').innerHTML = '';
+    try{
+      rhInssFgtsData = await rhApiRequest('/inss-fgts?month='+encodeURIComponent(month));
+    }catch(error){
+      rhInssFgtsData = null;
+      el('rhInssFgtsResumo').textContent = error.message;
+      return;
+    }
+    const groups = rhInssFgtsData.groups || [];
+    const t = rhInssFgtsData.total;
+    el('rhInssFgtsResumo').innerHTML = 'Competência '+escapeHtml(rhFormatMonth(month))+' · INSS <strong>'+formatCentsBRL(t.inssCents)+'</strong> · FGTS <strong>'+
+      formatCentsBRL(t.fgtsCents)+'</strong> · TOTAL <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
+    const head = '<thead><tr><th>Funcionário</th><th>Loja cadastrada / CNPJ</th><th class="num">Base INSS</th><th class="num">% INSS</th><th class="num">Valor INSS</th>'+
+      '<th class="num">Base FGTS</th><th class="num">Valor FGTS</th><th class="num">Total</th><th class="no-print"></th></tr></thead>';
+    const totals = (label, row) => '<tr><td colspan="4"><strong>'+escapeHtml(label)+'</strong></td><td class="num"><strong>'+formatCentsBRL(row.inssCents)+'</strong></td><td></td>'+
+      '<td class="num"><strong>'+formatCentsBRL(row.fgtsCents)+'</strong></td><td class="num"><strong>'+formatCentsBRL(row.totalCents)+'</strong></td><td class="no-print"></td></tr>';
+    el('rhInssFgtsConteudo').innerHTML = groups.map(group => {
+      const label = (group.cnpj ? 'CNPJ '+rhFormatCnpj(group.cnpj) : 'SEM CNPJ CADASTRADO')+(group.companyNames.length ? ' · '+group.companyNames.join(', ').toUpperCase() : '');
+      return '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
+        '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">'+escapeHtml(label)+'</h3>'+
+        '<div class="table-scroll"><table class="rh-print-table">'+head+'<tbody>'+
+        group.rows.map(row => '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+escapeHtml(String(row.companyName || '—').toUpperCase())+(row.cnpj ? '<br><small>'+escapeHtml(rhFormatCnpj(row.cnpj))+'</small>' : '')+'</td>'+
+          '<td class="num">'+formatCentsBRL(row.inssBaseCents)+'</td><td class="num">'+rhPctText(row.inssPctBps)+'%</td><td class="num">'+formatCentsBRL(row.inssCents)+'</td>'+
+          '<td class="num">'+formatCentsBRL(row.fgtsBaseCents)+'</td><td class="num">'+formatCentsBRL(row.fgtsCents)+'</td><td class="num"><strong>'+formatCentsBRL(row.totalCents)+'</strong></td>'+
+          '<td class="no-print"><button class="btn-outline" type="button" data-rh-inss-edit="'+escapeHtml(row.employeeId)+'">EDITAR</button></td></tr>').join('')+
+        totals('SUBTOTAL DO CNPJ', group)+'</tbody></table></div></div>';
+    }).join('')+(groups.length ? '<div class="table-panel rh-print-block" style="padding:12px 14px;"><div class="table-scroll"><table class="rh-print-table">'+head+
+      '<tbody>'+totals('TOTAL GERAL', t)+'</tbody></table></div></div>' : '<div class="dre-empty">Nenhum funcionário nesta competência.</div>');
+  }
+  const RH_INSS_FGTS_MONEY = ['rhInssFgtsInssBase','rhInssFgtsInss','rhInssFgtsFgtsBase','rhInssFgtsFgts'];
+  RH_INSS_FGTS_MONEY.forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
+  function rhInssFgtsRowOf(employeeId){
+    return rhInssFgtsData ? rhInssFgtsData.groups.flatMap(group => group.rows).find(row => row.employeeId === employeeId) : null;
+  }
+  function rhInssFgtsFill(employeeId){
+    const row = rhInssFgtsRowOf(employeeId) || {};
+    [['rhInssFgtsInssBase','inssBaseCents'],['rhInssFgtsInss','inssCents'],['rhInssFgtsFgtsBase','fgtsBaseCents'],['rhInssFgtsFgts','fgtsCents']]
+      .forEach(([id, key]) => setCurrencyValue(el(id), row[key] ? row[key]/100 : ''));
+    el('rhInssFgtsInssPct').value = row.inssPctBps ? rhPctText(row.inssPctBps) : '';
+    rhInssFgtsUpdateCheck();
+  }
+  function rhInssFgtsValues(){
+    const money = id => parseBRLToCents(getCurrencyValue(el(id)) || '0');
+    const pct = parseBRLToCents(String(el('rhInssFgtsInssPct').value || '0').replace(/\./g, '').replace(',', '.'));
+    const values = {inssBaseCents:money('rhInssFgtsInssBase'), inssPctBps:pct, inssCents:money('rhInssFgtsInss'), fgtsBaseCents:money('rhInssFgtsFgtsBase'), fgtsCents:money('rhInssFgtsFgts')};
+    return Object.values(values).some(value => value === null) ? null : values;
+  }
+  function rhInssFgtsUpdateCheck(){
+    const values = rhInssFgtsValues();
+    el('rhInssFgtsCheck').textContent = !values ? 'VALOR INVÁLIDO.' :
+      'CONFERÊNCIA: BASE '+formatCentsBRL(values.inssBaseCents)+' × '+rhPctText(values.inssPctBps)+'% = '+formatCentsBRL(Math.round(values.inssBaseCents * values.inssPctBps / 10000))+
+      ' (FOLHA: '+formatCentsBRL(values.inssCents)+') · TOTAL INSS + FGTS = '+formatCentsBRL(values.inssCents + values.fgtsCents);
+  }
+  ['rhInssFgtsInssBase','rhInssFgtsInssPct','rhInssFgtsInss','rhInssFgtsFgts'].forEach(id => { if(el(id)) el(id).addEventListener('input', rhInssFgtsUpdateCheck); });
+  async function openRhInssFgts(employeeId){
+    try{ await rhEnsureBaseData(false); }catch(error){ showPurchaseToast(error.message,'error'); return; }
+    const ids = new Set(rhEmployees.filter(employee => employee.status === 'active').map(employee => employee.id));
+    if(employeeId) ids.add(employeeId);
+    const people = rhEmployees.filter(employee => ids.has(employee.id)).sort((a, b) => a.fullName.localeCompare(b.fullName, 'pt-BR'));
+    el('rhInssFgtsEmployee').innerHTML = '<option value="">SELECIONE</option>'+people.map(employee => '<option value="'+escapeHtml(employee.id)+'">'+escapeHtml(employee.fullName)+'</option>').join('');
+    el('rhInssFgtsEmployee').value = employeeId || '';
+    el('rhInssFgtsTitle').textContent = 'INSS E FGTS — '+rhFormatMonth(el('rhFolhaMes').value);
+    el('rhInssFgtsStatus').textContent = '';
+    rhInssFgtsFill(employeeId || '');
+    el('rhInssFgtsDialog').showModal();
+  }
+  function closeRhInssFgts(){ if(el('rhInssFgtsDialog').open) el('rhInssFgtsDialog').close(); }
+  if(el('btnRhInssFgtsNovo')) el('btnRhInssFgtsNovo').addEventListener('click', () => openRhInssFgts(''));
+  if(el('rhInssFgtsConteudo')) el('rhInssFgtsConteudo').addEventListener('click', event => {
+    const button = event.target.closest('[data-rh-inss-edit]');
+    if(button) openRhInssFgts(button.dataset.rhInssEdit);
+  });
+  if(el('rhInssFgtsEmployee')) el('rhInssFgtsEmployee').addEventListener('change', () => rhInssFgtsFill(el('rhInssFgtsEmployee').value));
+  if(el('btnCloseRhInssFgts')) el('btnCloseRhInssFgts').addEventListener('click', closeRhInssFgts);
+  if(el('btnCancelRhInssFgts')) el('btnCancelRhInssFgts').addEventListener('click', closeRhInssFgts);
+  if(el('rhInssFgtsForm')) el('rhInssFgtsForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const employeeId = el('rhInssFgtsEmployee').value;
+    const values = rhInssFgtsValues();
+    if(!employeeId){ el('rhInssFgtsStatus').textContent = 'ESCOLHA O FUNCIONÁRIO.'; return; }
+    if(!values){ el('rhInssFgtsStatus').textContent = 'VALOR INVÁLIDO.'; return; }
+    try{
+      await rhApiRequest('/inss-fgts', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month:el('rhFolhaMes').value, values:[{employeeId, ...values}]})});
+      closeRhInssFgts();
+      showPurchaseToast('INSS e FGTS salvos.');
+      await loadRhInssFgts();
+    }catch(error){ el('rhInssFgtsStatus').textContent = error.message; }
+  });
   if(el('btnRhCustoFuncionario')) el('btnRhCustoFuncionario').addEventListener('click', () => showRhCustoFuncionario(true));
   if(el('btnRhCustoFuncClose')) el('btnRhCustoFuncClose').addEventListener('click', () => showRhCustoFuncionario(false));
   if(el('btnRhCustoFuncPdf')) el('btnRhCustoFuncPdf').addEventListener('click', () => {
@@ -49575,14 +49727,13 @@ function renderHomeTasks(){
     const byStore = (list, storeOf) => { const map = new Map(); list.forEach(item => { const key = String(storeOf(item) || 'SEM LOJA').toUpperCase(); map.set(key, (map.get(key) || []).concat([item])); }); return [...map.entries()]; };
 
     const aso = stores.flatMap(store => store.aso.map(exam => ({...exam, store:store.companyName})));
-    const trainings = stores.flatMap(store => store.trainings);
     const terminations = stores.flatMap(store => store.terminations);
     const birthdays = stores.flatMap(store => store.birthdays).sort((a, b) => a.birthDate.slice(8,10).localeCompare(b.birthDate.slice(8,10)));
     const severanceTotal = terminations.reduce((total, item) => total + (Number(item.severanceCents) || 0) + (Number(item.fgtsCents) || 0), 0);
 
     el('rhDreFuncResumo').innerHTML =
       'ASO <strong>'+money(sum(aso,'amountCents'))+'</strong> · FACEPONTO <strong>'+money(sum(faceponto,'amountCents'))+'</strong>'+
-      ' · TREINAMENTOS <strong>'+money(sum(trainings,'amountCents'))+'</strong> · RESCISÕES <strong>'+money(severanceTotal)+'</strong>'+
+      ' · RESCISÕES <strong>'+money(severanceTotal)+'</strong>'+
       ' · INSS <strong>'+money(sum(byCnpj,'inssCents'))+'</strong> · FGTS <strong>'+money(sum(byCnpj,'fgtsMonthCents'))+'</strong>'+
       ' · COMISSÕES <strong>'+money(sum(commissions,'amountCents'))+'</strong>';
 
@@ -49595,10 +49746,6 @@ function renderHomeTasks(){
         byStore(faceponto, row => row.companyName).map(([store, list]) => group(store, list.map(row => li(escapeHtml(row.personName))),
           'CUSTO TOTAL: '+money(sum(list,'amountCents')))).join(''),
         faceponto.length ? 'TOTAL GERAL FACEPONTO: '+money(sum(faceponto,'amountCents')) : ''),
-      block('TREINAMENTOS',
-        trainings.length ? '<ul>'+trainings.map(item => li(escapeHtml(item.personName)+' — '+money(item.amountCents)+
-          (item.paidDate ? ' (DIA '+ddmm(item.paidDate)+')' : '')+(item.note ? ' — '+escapeHtml(item.note) : ''))).join('')+'</ul>' : '',
-        trainings.length ? 'TOTAL GERAL TREINAMENTOS: '+money(sum(trainings,'amountCents')) : ''),
       block('FÉRIAS LÍQUIDAS',
         vacations.length ? '<ul>'+vacations.map(item => li(escapeHtml(item.personName)+' — '+money(item.amountCents)+' ('+ddmm(item.startDate)+' A '+ddmm(item.endDate)+')'+(item.notes ? ' — '+escapeHtml(item.notes) : ''))).join('')+'</ul>' : '',
         vacations.length ? 'TOTAL GERAL FÉRIAS LÍQUIDAS: '+money(sum(vacations,'amountCents'))+' · INFORMATIVO, NÃO ENTRA NA DRE' : ''),
@@ -51263,7 +51410,9 @@ function renderHomeTasks(){
     em_treinamento: 'EM TREINAMENTO',
     contratado: 'CONTRATADO',
     integracao: 'INTEGRAÇÃO',
-    cancelado: 'CANCELADO'
+    cancelado: 'CANCELADO',
+    stand_by: 'STAND BY',
+    reprovado: 'REPROVADO'
   };
 
   function recCanManage(){
@@ -51366,12 +51515,23 @@ function renderHomeTasks(){
           '<td><input data-rec-contact-name maxlength="160" value="'+escapeHtml(row.fullName)+'" aria-label="Nome"'+(manage ? '' : ' disabled')+'></td>'+
           '<td><input data-rec-contact-phone type="tel" maxlength="40" value="'+escapeHtml(row.phone || '')+'" placeholder="(81) 90000-0000" aria-label="Contato"'+(manage ? '' : ' disabled')+'></td>'+
           '<td>'+escapeHtml(rhFormatDate(row.interviewDate))+'</td>'+
-          '<td class="no-print">'+(wa ? '<a class="btn-outline" href="'+wa+'" target="_blank" rel="noopener">WHATSAPP</a>' : '—')+'</td></tr>';
-      }).join('') : '<tr><td colspan="4" class="responsive-empty">Nenhum candidato selecionado para entrevista.</td></tr>';
+          '<td class="no-print">'+(wa ? '<a class="btn-outline" href="'+wa+'" target="_blank" rel="noopener">WHATSAPP</a>' : '—')+'</td>'+
+          '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+            '<button class="btn-outline" type="button" data-rec-contact-details="'+escapeHtml(row.id)+'">DETALHES</button>'+
+            (manage ? '<button class="btn-outline" type="button" data-rec-contact-edit="'+escapeHtml(row.id)+'">EDITAR</button>' : '')+
+          '</span></td></tr>';
+      }).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhum candidato selecionado para entrevista.</td></tr>';
     }catch(error){
-      body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
+  if(el('recContactsBody')) el('recContactsBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-rec-contact-edit],[data-rec-contact-details]');
+    if(!button) return;
+    const id = button.dataset.recContactEdit || button.dataset.recContactDetails;
+    const row = recContacts.find(item => item.id === id);
+    if(row) openRecCandidateDialog(row, Boolean(button.dataset.recContactDetails));
+  });
   function recContactsFromTable(){
     return Array.from(document.querySelectorAll('[data-rec-contact-row]')).map(row => ({
       id:row.dataset.recContactRow,
@@ -51406,7 +51566,11 @@ function renderHomeTasks(){
     if(!body) return;
     const manage = recCanManage();
     const search = normalizeSearchText(el('recFilterSearch').value);
-    const rows = recCandidates.filter(row => !search || normalizeSearchText(row.fullName).includes(search));
+    const date = el('recFilterDate').value;
+    // SELECIONADO ENTREVISTA fica só em CONTATOS DOS SELECIONADOS (01/11/2026).
+    const rows = recCandidates.filter(row => row.status !== 'selecionado_entrevista' &&
+      (!search || normalizeSearchText(row.fullName).includes(search)) &&
+      (!date || captureRecifeDateKey(row.createdAt) === date));
     // Loja de admissão só no filtro CONTRATADO (com as pendências do checklist).
     const hiredView = el('recFilterStatus').value === 'contratado';
     el('recCandidatesHead').innerHTML = '<tr><th>Data da entrevista</th><th>Nome</th><th>Contato</th><th>Cargo pretendido</th><th>Status</th>'+
@@ -51423,7 +51587,10 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(row.fullName)+'</td>'+
       '<td>'+escapeHtml(row.phone || '—')+'</td>'+
       '<td>'+escapeHtml(row.desiredRole || '—')+'</td>'+
-      '<td>'+escapeHtml(row.status === 'integracao' ? 'CONTRATADO' : (REC_STATUS_LABELS[row.status] || row.status))+'</td>'+
+      '<td>'+(pending.length ?
+        '<button class="status-pill waiting" type="button" data-rec-pending-toggle style="cursor:pointer;border:0;">CONTRATADO / INTEGRAÇÃO · '+pending.length+' PENDÊNCIA'+(pending.length > 1 ? 'S' : '')+'</button>'+
+        '<div data-rec-pending-list hidden style="margin-top:6px;font-size:11px;">'+pending.map(item => '• '+escapeHtml(item)).join('<br>')+'</div>' :
+        escapeHtml(row.status === 'contratado' || row.status === 'integracao' ? 'CONTRATADO / INTEGRAÇÃO' : (REC_STATUS_LABELS[row.status] || row.status)))+'</td>'+
       (hiredView ? '<td>'+escapeHtml(row.admissionCompanyName || '—')+'</td>'+
         '<td>'+(pending.length ? '<span class="status-pill waiting" title="'+escapeHtml(pending.join(', '))+'">'+pending.length+' PENDENTE'+(pending.length > 1 ? 'S' : '')+'</span>' : '<span class="status-pill done">COMPLETO</span>')+'</td>' : '')+
       '<td><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
@@ -51457,6 +51624,7 @@ function renderHomeTasks(){
 
   if(el('recFilterStatus')) el('recFilterStatus').addEventListener('change', loadRecCandidates);
   if(el('recFilterSearch')) el('recFilterSearch').addEventListener('input', debounce(renderRecCandidatesTable, 150));
+  if(el('recFilterDate')) el('recFilterDate').addEventListener('change', renderRecCandidatesTable);
 
   // ====================== RH (out/2026) ======================
   // Desligamento com checklist, textos das pendências do Recrutamento,
@@ -52299,6 +52467,9 @@ function renderHomeTasks(){
     };
     document.querySelectorAll('#recCandidateForm [data-rec-stage]').forEach(node => { node.hidden = !stages[node.dataset.recStage]; });
     REC_CHECKLIST_FIELD_IDS.forEach(id => { el(id).hidden = !(all || hired); });
+    // EM TREINAMENTO já cadastra a data e a LOJA DE ADMISSÃO (loja do registro,
+    // não a atuante) — seguem para o funcionário na contratação.
+    if(status === 'em_treinamento') ['recAdmissionDateField','recAdmissionCompanyField','recAdmissionCnpjField'].forEach(id => { el(id).hidden = false; });
     el('recCancelFieldset').hidden = !(status === 'cancelado' || (all && Boolean(el('recCancelledAt').value || el('recCancelledReason').value)));
     el('recPaymentsSection').hidden = !el('recCandidateId').value || !(all || status === 'em_teste' || status === 'em_treinamento');
   }
@@ -52639,7 +52810,7 @@ function renderHomeTasks(){
       const printFile = el('recIntegrationPrintFile').files && el('recIntegrationPrintFile').files[0];
       if(printFile) await uploadRecAttachment('print', result.id, printFile);
       el('recCandidateDialog').close();
-      await refreshAfterAction(() => loadRecCandidates());
+      await refreshAfterAction(() => recSectionTab === 'contacts' ? loadRecContacts() : loadRecCandidates());
       showPurchaseToast('Candidato salvo.');
     }catch(error){
       status.textContent = error.message;
@@ -52649,6 +52820,12 @@ function renderHomeTasks(){
   });
 
   if(el('recCandidatesTableBody')) el('recCandidatesTableBody').addEventListener('click', async event => {
+    const pendingToggle = event.target.closest('[data-rec-pending-toggle]');
+    if(pendingToggle){
+      const list = pendingToggle.parentElement.querySelector('[data-rec-pending-list]');
+      list.hidden = !list.hidden;
+      return;
+    }
     const editButton = event.target.closest('[data-rec-candidate-edit]');
     if(editButton){
       const row = recCandidates.find(item => item.id === editButton.dataset.recCandidateEdit);

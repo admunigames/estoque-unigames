@@ -42,6 +42,8 @@ export const RECRUITMENT_STATUS_LABELS: Record<string, string> = {
   contratado: "CONTRATADO",
   integracao: "INTEGRAÇÃO",
   cancelado: "CANCELADO",
+  stand_by: "STAND BY",
+  reprovado: "REPROVADO",
 };
 
 // '' = só aviso (push), sem tarefa.
@@ -52,6 +54,8 @@ export const RECRUITMENT_PENDING_DEFAULTS: Record<string, string> = {
   contratado: "PENDENTE DE ADMISSÃO/INTEGRAÇÃO",
   integracao: "PENDENTE DE INTEGRAÇÃO",
   cancelado: "",
+  stand_by: "",
+  reprovado: "",
 };
 
 export function recruitmentPendingTexts(saved: unknown): Record<string, string> {

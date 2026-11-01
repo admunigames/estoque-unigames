@@ -266,6 +266,8 @@ export function buildEmployeeDre(
 // Desde 22/10/2026 o FGTS é calculado POR COLABORADOR (8% da base de cada
 // um, arredondado por pessoa) e o total do CNPJ é a soma das pessoas; o INSS
 // é digitado à mão por colaborador (hr_employee_month_values, kind 'inss').
+// Desde 01/11/2026 a rota passa o FGTS DA FOLHA (aba INSS E FGTS, kind 'fgts';
+// sem lançamento = 0): com `fgtsCents` informado, o 8% não é calculado.
 // Base = salário + comissão + HE + DSR do mês quando há folha lançada; sem
 // folha, o salário do cadastro (montada na rota).
 // ---------------------------------------------------------------------------
@@ -280,6 +282,8 @@ export type DreStaff = {
   salaryCents: number;
   /** INSS manual do mês (0 = não lançado). */
   inssCents?: number;
+  /** FGTS da folha do mês; ausente = 8% da base. */
+  fgtsCents?: number;
 };
 
 export type DreCnpjPerson = {
@@ -329,7 +333,7 @@ export function buildCnpjSummary(
   for (const person of staff) {
     const row = rowFor(person.companyId);
     const baseCents = cents(person.salaryCents);
-    const fgtsCents = Math.round(baseCents * FGTS_RATE);
+    const fgtsCents = person.fgtsCents === undefined ? Math.round(baseCents * FGTS_RATE) : cents(person.fgtsCents);
     const inssCents = cents(person.inssCents ?? 0);
     row.headcount += 1;
     row.salaryCents += baseCents;

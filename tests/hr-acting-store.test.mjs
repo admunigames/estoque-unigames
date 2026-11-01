@@ -26,7 +26,7 @@ db.insert("hr_employees", {
   id: "e1", full_name: "ANA VENDEDORA", company_id: ALFA, company_name: "LOJA ALFA", role_title: "VENDEDOR", status: "active",
   admission_company_id: ALFA, admission_company_name: "LOJA ALFA", cpf: "1",
 });
-for (const month of ["2026-10", "2026-11"]) {
+for (const month of ["2030-10", "2030-11"]) {
   db.insert("hr_payroll_entries", { id: `p-${month}`, month, company_id: ALFA, company_name: "LOJA ALFA", employee_id: "e1", employee_name: "ANA VENDEDORA", base_salary_cents: 200000, created_by: "x" });
   db.insert("commercial_monthly", { id: `m-${month}`, month, employee_id: "e1", employee_name: "ANA VENDEDORA", company_id: ALFA, company_name: "LOJA ALFA", target_revenue_cents: 100, revenue_cents: 100 });
 }
@@ -58,30 +58,31 @@ test("só admitido numa loja: sem mês lançado vale a loja atuante do cadastro,
   assert.equal(item.companyName, "LOJA BETA");
 });
 
+// Meses futuros fixos: o mês corrente sincroniza a loja do cadastro (não pode depender da data de hoje).
 test("muda de loja em novembro → outubro continua na loja antiga no Comercial e na DRE", async () => {
-  const response = await callRoute(actingRoute.PUT, ADMIN, "PUT", "/api/hr-payroll/employees/acting-stores", { employeeId: "e1", month: "2026-11", companyId: BETA });
+  const response = await callRoute(actingRoute.PUT, ADMIN, "PUT", "/api/hr-payroll/employees/acting-stores", { employeeId: "e1", month: "2030-11", companyId: BETA });
   assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
 
-  assert.equal((await ranking("2026-10")).companyName, "LOJA ALFA");
-  assert.equal((await ranking("2026-11")).companyName, "LOJA BETA");
+  assert.equal((await ranking("2030-10")).companyName, "LOJA ALFA");
+  assert.equal((await ranking("2030-11")).companyName, "LOJA BETA");
 
-  assert.equal(await dreFolha(ALFA, "2026-10"), 200000);
-  assert.equal(await dreFolha(BETA, "2026-10"), null);
-  assert.equal(await dreFolha(BETA, "2026-11"), 200000);
-  assert.equal(await dreFolha(ALFA, "2026-11"), null);
+  assert.equal(await dreFolha(ALFA, "2030-10"), 200000);
+  assert.equal(await dreFolha(BETA, "2030-10"), null);
+  assert.equal(await dreFolha(BETA, "2030-11"), 200000);
+  assert.equal(await dreFolha(ALFA, "2030-11"), null);
 
   // Lançamentos da Folha acompanham a loja do mês; outubro fica onde estava.
   const entries = db.sqlite.prepare("SELECT month, company_id AS companyId FROM hr_payroll_entries ORDER BY month").all();
-  assert.deepEqual(entries.map((row) => [row.month, row.companyId]), [["2026-10", ALFA], ["2026-11", BETA]]);
+  assert.deepEqual(entries.map((row) => [row.month, row.companyId]), [["2030-10", ALFA], ["2030-11", BETA]]);
 
   const months = await (await callRoute(actingRoute.GET, ADMIN, "GET", "/api/hr-payroll/employees/acting-stores?employeeId=e1")).json();
-  assert.deepEqual(months.months.map((row) => [row.month, row.companyId]), [["2026-11", BETA]]);
+  assert.deepEqual(months.months.map((row) => [row.month, row.companyId]), [["2030-11", BETA]]);
 
   // Remover o mês volta novembro para a loja de admissão.
-  const removed = await callRoute(actingRoute.DELETE, ADMIN, "DELETE", "/api/hr-payroll/employees/acting-stores?employeeId=e1&month=2026-11");
+  const removed = await callRoute(actingRoute.DELETE, ADMIN, "DELETE", "/api/hr-payroll/employees/acting-stores?employeeId=e1&month=2030-11");
   assert.equal(removed.status, 200);
-  assert.equal((await ranking("2026-11")).companyName, "LOJA ALFA");
-  assert.equal(db.sqlite.prepare("SELECT company_id AS c FROM hr_payroll_entries WHERE month='2026-11'").get().c, ALFA);
+  assert.equal((await ranking("2030-11")).companyName, "LOJA ALFA");
+  assert.equal(db.sqlite.prepare("SELECT company_id AS c FROM hr_payroll_entries WHERE month='2030-11'").get().c, ALFA);
 });
 
 test("trocar a loja no cadastro vale do mês corrente em diante; loja de admissão fica gravada", async () => {

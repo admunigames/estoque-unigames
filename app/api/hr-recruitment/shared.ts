@@ -25,6 +25,8 @@ export const STATUSES = [
   "contratado",
   "integracao",
   "cancelado",
+  "stand_by",
+  "reprovado",
 ] as const;
 export type RecruitmentStatus = (typeof STATUSES)[number];
 

@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     // Ordem de admissão: aprovados na entrevista ainda não contratados, por data.
     const admissionQueue = candidates
       .filter((candidate) => candidate.interviewResult === "aprovado" &&
-        !["contratado", "integracao", "cancelado"].includes(candidate.status))
+        !["contratado", "integracao", "cancelado", "reprovado"].includes(candidate.status))
       .sort((a, b) => (a.interviewDate || a.createdAt).localeCompare(b.interviewDate || b.createdAt))
       .map((candidate) => ({
         id: candidate.id, fullName: candidate.fullName, status: candidate.status, desiredRole: candidate.desiredRole,
