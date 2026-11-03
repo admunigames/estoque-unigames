@@ -105,6 +105,16 @@ test("relatório: por CNPJ, só comissionamento (com desconto e sobra), HE manua
   assert.deepEqual([october.groups[0].subtotal.overtimeMinutes, october.groups[1].subtotal.overtimeMinutes, october.total.overtimeMinutes], [750, 90, 840]);
 });
 
+test("relatório: empresa pela LOJA DE ADMISSÃO, não pela loja atuante (03/11/2026)", async () => {
+  // Admitido na ALFA, atuando (cadastro) na BETA → sai no CNPJ da ALFA.
+  db.insert("hr_employees", { id: "caio", full_name: "CAIO", company_id: BETA, company_name: "LOJA BETA", admission_company_id: ALFA, admission_company_name: "LOJA ALFA", salary_cents: 100000, status: "active", cpf: "3", created_by: "x" });
+  db.insert("hr_commissions", { id: "c-caio-11", month: "2026-11", employee_id: "caio", company_id: BETA, commission_cents: 40000, created_by: "x" });
+  const november = await (await callRoute(report.GET, ADMIN, "GET", "/api/hr-payroll/accounting-report?month=2026-11")).json();
+  const group = november.groups.find((g) => g.rows.some((r) => r.employeeId === "caio"));
+  assert.equal(group.cnpj, "11222333000181");
+  assert.equal(group.rows.find((r) => r.employeeId === "caio").companyName, "LOJA ALFA");
+});
+
 test("OBSERVAÇÕES por CNPJ e competência: CAIXA ALTA, não repete no mês seguinte, vazio apaga", async () => {
   const put = (body, user = ADMIN) => callRoute(report.PUT, user, "PUT", "/api/hr-payroll/accounting-report", body);
   assert.equal((await put({ month: "2026-10", cnpj: "11.222.333/0001-81", notes: "  falta nota da ana  " })).status, 200);
@@ -132,6 +142,8 @@ test("tela: página do relatório (RH + atalho no RH Financeiro), PDF/XLSX e di�
   assert.match(html, /rhContabilidade:'\/rh\/relatorio-contabilidade'/);
   assert.match(html, /id="btnRhContabXlsx"/);
   assert.match(html, /id="btnRhContabPdf"/);
+  assert.match(html, /id="btnRhContabWord"/);
+  assert.match(html, /PELA LOJA DE ADMISSÃO DO FUNCIONÁRIO/);
   assert.match(html, /id="btnRhContabHe"/);
   assert.match(html, /const RH_CONTAB_HEAD = \['FUNCIONÁRIO','COMISSIONAMENTO','HORAS EXTRAS','PREMIAÇÃO','TOTAL'\];/);
   assert.match(html, /kind:'he_min', month, hours:true,/);

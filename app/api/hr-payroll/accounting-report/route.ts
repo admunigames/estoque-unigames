@@ -1,6 +1,5 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { actingStoresForMonth } from "../../../lib/acting-store";
 import {
   buildAccountingReport,
   commissionCarryChain,
@@ -25,7 +24,8 @@ import {
 // Relatório COMISSIONAMENTO / HORAS / PREMIAÇÃO para a contabilidade (RH >
 // Relatório Contabilidade; atalho no grupo RH Financeiro do menu). Desde
 // 23/10/2026 só três colunas, agrupadas por EMPRESA (CNPJ do cadastro de
-// Lojas, pela loja atuante do mês):
+// Lojas, pela LOJA DE ADMISSÃO — onde o funcionário está registrado; sem ela,
+// a loja do cadastro. Desde 03/11/2026: antes era a loja atuante do mês):
 //   COMISSIONAMENTO = comissão (Comercial ou digitada) + bônus + ajustes,
 //     com o desconto aplicado — se o desconto passar da comissão, a sobra vai
 //     para o mês seguinte (app/lib/hr-accounting-report.ts);
@@ -62,8 +62,14 @@ export async function GET(request: Request) {
     for (let synced = COMMISSION_SYNC_FROM; synced <= month; synced = nextMonth(synced)) {
       await syncHrCommissions(database, synced, commercialIdentity(request));
     }
-    const [employeesResult, history, overtimeByEmployee, actingStores, companies, notesResult] = await Promise.all([
-      database.prepare("SELECT id, full_name AS fullName FROM hr_employees").all<{ id: string; fullName: string }>(),
+    const [employeesResult, history, overtimeByEmployee, companies, notesResult] = await Promise.all([
+      database
+        .prepare(
+          `SELECT id, full_name AS fullName, company_id AS companyId, company_name AS companyName,
+                  admission_company_id AS admissionCompanyId, admission_company_name AS admissionCompanyName
+           FROM hr_employees`,
+        )
+        .all<{ id: string; fullName: string; companyId: string; companyName: string; admissionCompanyId: string; admissionCompanyName: string }>(),
       database
         .prepare(
           `SELECT id, employee_id AS employeeId, month, commission_cents AS commissionCents,
@@ -74,7 +80,6 @@ export async function GET(request: Request) {
         .bind(month)
         .all<CommissionHistoryRow>(),
       loadMonthValues(database, month, "he_min"),
-      actingStoresForMonth(database, month),
       loadCompanyList(database) as Promise<Array<{ id: string; name: string; cnpj?: string }>>,
       database.prepare("SELECT cnpj, notes FROM hr_accounting_notes WHERE month=?1").bind(month).all<{ cnpj: string; notes: string }>(),
     ]);
@@ -100,13 +105,15 @@ export async function GET(request: Request) {
       const empty: CommissionCarry = { month, commissionCents: 0, discountCents: 0, carryInCents: 0, appliedCents: 0, netCommissionCents: 0, carryOutCents: 0 };
       const carry = chain.get(month) ?? empty;
       const current = rows.find((row) => row.month === month);
-      const store = actingStores.get(employee.id);
-      const company = store ? companyOf(store.companyId) : undefined;
+      const store = employee.admissionCompanyId
+        ? { companyId: employee.admissionCompanyId, companyName: employee.admissionCompanyName }
+        : { companyId: employee.companyId, companyName: employee.companyName };
+      const company = companyOf(store.companyId);
       return {
         employeeId: employee.id,
         employeeName: employee.fullName,
-        companyId: store?.companyId ?? "",
-        companyName: company?.name ?? store?.companyName ?? "",
+        companyId: store.companyId,
+        companyName: company?.name ?? store.companyName,
         cnpj: String(company?.cnpj || "").replace(/\D+/g, ""),
         carry,
         premiumCents: Number(current?.commercialPremiumCents || 0) + Number(current?.premiumsCents || 0),

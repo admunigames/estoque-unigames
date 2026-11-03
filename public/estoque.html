@@ -7311,10 +7311,11 @@
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnRhContabHe" type="button">LANÇAR HORAS EXTRAS</button>
           <button class="btn-outline" id="btnRhContabXlsx" type="button">XLSX</button>
+          <button class="btn-outline" id="btnRhContabWord" type="button">WORD</button>
           <button class="btn-outline" id="btnRhContabPdf" type="button">PDF (A4)</button>
         </div>
       </div>
-      <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">AGRUPADO POR EMPRESA (CNPJ DO CADASTRO DE LOJAS, PELA LOJA ATUANTE DO MÊS). COMISSIONAMENTO JÁ COM O DESCONTO (SE PASSAR DA COMISSÃO, A SOBRA VAI PARA O MÊS SEGUINTE — NUNCA ABATE A PREMIAÇÃO). HORAS EXTRAS: QUANTIDADE DE HORAS (HH:MM) LANÇADA À MÃO EM "LANÇAR HORAS EXTRAS" — NÃO ENTRA NO TOTAL EM R$ (TOTAL = COMISSIONAMENTO + PREMIAÇÃO). OBSERVAÇÕES: UMA POR EMPRESA E POR COMPETÊNCIA; SAEM NO PDF E NO XLSX ABAIXO DO SUBTOTAL.</p>
+      <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">AGRUPADO POR EMPRESA (CNPJ DO CADASTRO DE LOJAS, PELA LOJA DE ADMISSÃO DO FUNCIONÁRIO; SEM ELA, A LOJA DO CADASTRO). COMISSIONAMENTO JÁ COM O DESCONTO (SE PASSAR DA COMISSÃO, A SOBRA VAI PARA O MÊS SEGUINTE — NUNCA ABATE A PREMIAÇÃO). HORAS EXTRAS: QUANTIDADE DE HORAS (HH:MM) LANÇADA À MÃO EM "LANÇAR HORAS EXTRAS" — NÃO ENTRA NO TOTAL EM R$ (TOTAL = COMISSIONAMENTO + PREMIAÇÃO). OBSERVAÇÕES: UMA POR EMPRESA E POR COMPETÊNCIA; SAEM NO PDF, NO WORD E NO XLSX ABAIXO DO SUBTOTAL.</p>
       <div class="table-panel" id="rhContabResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
       <div id="rhContabConteudo"></div>
     </section>
@@ -50397,6 +50398,29 @@ function renderHomeTasks(){
   if(el('btnRhContabPdf')) el('btnRhContabPdf').addEventListener('click', () => {
     if(!rhContabData || !(rhContabData.groups || []).length){ showPurchaseToast('Nada para gerar.','error'); return; }
     rhStartPrint('relatorio-contabilidade-'+rhContabData.month);
+  });
+  // WORD: documento HTML que o Word abre como .doc (A4, mesmas tabelas do PDF).
+  if(el('btnRhContabWord')) el('btnRhContabWord').addEventListener('click', () => {
+    if(!rhContabData || !(rhContabData.groups || []).length){ showPurchaseToast('Nada para exportar.','error'); return; }
+    const cell = (value, index, bold) => '<td style="border:1px solid #999;padding:3pt 5pt;'+(index ? 'text-align:right;' : '')+(bold ? 'font-weight:bold;' : '')+'">'+value+'</td>';
+    const head = '<tr>'+RH_CONTAB_HEAD.map((label, index) => '<th style="border:1px solid #999;padding:3pt 5pt;background:#e6ebf2;'+(index ? 'text-align:right;' : 'text-align:left;')+'">'+label+'</th>').join('')+'</tr>';
+    const totals = (label, t) => '<tr>'+[escapeHtml(label), formatCentsBRL(t.commissionCents), rhHoursText(t.overtimeMinutes), formatCentsBRL(t.premiumCents), formatCentsBRL(t.totalCents)].map((v, i) => cell(v, i, true)).join('')+'</tr>';
+    const table = rows => '<table style="border-collapse:collapse;width:100%;font-size:9pt;">'+head+rows+'</table>';
+    const body = rhContabData.groups.map(group =>
+      '<h3 style="font-size:10pt;margin:14pt 0 4pt;">'+escapeHtml(rhContabGroupLabel(group))+'</h3>'+
+      table(group.rows.map(row => '<tr>'+[
+        escapeHtml(row.employeeName)+'<br><span style="font-size:7.5pt;color:#555;">'+escapeHtml(String(row.companyName || '—').toUpperCase())+'</span>',
+        formatCentsBRL(row.carry.netCommissionCents)+(row.carry.carryOutCents ? '<br><span style="font-size:7.5pt;color:#555;">SOBRA DE DESCONTO P/ O MÊS SEGUINTE: '+formatCentsBRL(row.carry.carryOutCents)+'</span>' : ''),
+        rhHoursText(row.overtimeMinutes), formatCentsBRL(row.premiumCents), formatCentsBRL(row.totalCents)
+      ].map((v, i) => cell(v, i, i === 4)).join('')+'</tr>').join('')+totals('SUBTOTAL DA EMPRESA', group.subtotal))+
+      (group.notes ? '<p style="font-size:8.5pt;white-space:pre-wrap;"><b>OBSERVAÇÕES:</b> '+escapeHtml(group.notes)+'</p>' : '')
+    ).join('')+'<h3 style="font-size:10pt;margin:14pt 0 4pt;">TOTAL GERAL</h3>'+table(totals('TOTAL GERAL', rhContabData.total));
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+
+      '<head><meta charset="utf-8"><title>RELATÓRIO CONTABILIDADE</title><style>@page Section1{size:21cm 29.7cm;margin:1.5cm;} div.Section1{page:Section1;} body{font-family:Arial,sans-serif;}</style></head>'+
+      '<body><div class="Section1"><p style="font-size:8pt;letter-spacing:1pt;color:#555;margin:0;">UNIGAMES · RH FINANCEIRO</p>'+
+      '<h1 style="font-size:14pt;margin:2pt 0;">COMISSIONAMENTO, HORAS E PREMIAÇÃO</h1>'+
+      '<p style="font-size:9pt;margin:0 0 6pt;">COMPETÊNCIA '+escapeHtml(rhFormatMonth(rhContabData.month).toUpperCase())+'</p>'+body+'</div></body></html>';
+    downloadBlobFile(new Blob(['\ufeff', html], {type:'application/msword'}), 'relatorio-contabilidade-'+rhContabData.month+'.doc');
   });
   if(el('btnRhContabXlsx')) el('btnRhContabXlsx').addEventListener('click', async () => {
     if(!rhContabData || !(rhContabData.groups || []).length){ showPurchaseToast('Nada para exportar.','error'); return; }
