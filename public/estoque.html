@@ -4139,6 +4139,9 @@
     body.inv-printing #invPrintBody{display:block !important; width:100%; color:#111827;}
     .inv-print-totals{margin:6px 0 10px; font-size:11px;}
     .inv-print-box{width:110px; height:26px;}
+    #invPrintBody .inv-print-bad td{background:#fecaca !important;}
+    #invPrintBody .inv-print-ok td{background:#bbf7d0 !important;}
+    #invPrintBody .inv-print-total td{font-weight:700; background:#fef08a !important;}
     #invPrintBody .num{white-space:nowrap;}
     .inv-print-sign{margin-top:22px; font-size:11px;}
     /* Resumo da Auditoria Operacional: só o resumo. */
@@ -5132,8 +5135,8 @@
               <select id="invDivView"><option value="">DIVERGENTES (LISTA FINAL)</option><option value="removed">ENCONTRADOS / RETIRADOS</option></select>
             </div>
             <button class="btn-outline" id="btnInvRecountAll" type="button" hidden>MARCAR TODOS PARA RECONTAGEM</button>
-            <button class="btn-outline" type="button" data-inv-pdf="diretor">PDF RELATÓRIO FINAL (DIRETOR)</button>
-            <button class="btn-outline" type="button" data-inv-pdf="final">PDF DIVERGÊNCIA FINAL DA LOJA</button>
+            <button class="btn-outline" type="button" data-inv-pdf="final">PDF DIVERGÊNCIA FINAL (DIRETOR)</button>
+            <button class="btn-outline" type="button" data-inv-pdf="diretor">PDF MOTIVOS DAS DIVERGÊNCIAS</button>
             <button class="btn-outline" type="button" data-inv-pdf="recontagem">PDF RECONTAGEM DE LOJA</button>
             <button class="btn-outline" type="button" data-inv-pdf="pontti">PDF DIVERGÊNCIA PONTTI</button>
           </div>
@@ -29643,25 +29646,26 @@ function renderHomeTasks(){
     const num = label => '<span class="num">'+label+'</span>';
     let html = '';
     if(kind === 'diretor'){
-      // Lista única, ordem alfabética, com situação e motivo na lateral.
-      const totalsOpen = invTotals(open);
-      const totalsAll = invTotals(everything);
-      html = head('RELATÓRIO FINAL DE DIVERGÊNCIAS (DIRETOR)', everything.length+' DIVERGÊNCIAS · '+(everything.length - open.length)+' ENCONTRADAS/RETIRADAS · '+open.length+' NA LISTA FINAL')+
-        '<p class="inv-print-totals">TODAS AS DIVERGÊNCIAS — FALTAS: <b>'+formatCentsBRL(totalsAll.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(totalsAll.surplus)+'</b><br>'+
-        'LISTA FINAL (SEM AS ENCONTRADAS/RETIRADAS) — FALTAS: <b>'+formatCentsBRL(totalsOpen.missing)+'</b> · SOBRAS: <b>'+formatCentsBRL(totalsOpen.surplus)+'</b></p>'+
-        table(['Produto', num('Estoque'), num('Contado'), num('Loja'), num('Diferença final'), num('Custo'), num('Valor'), 'Situação', 'Motivo'], rows.map(item =>
-          '<tr><td>'+escapeHtml(item.product)+(item.code ? '<br><small>'+escapeHtml(item.code)+'</small>' : '')+'</td><td class="num">'+item.systemQty+'</td><td class="num">'+item.countedQty+'</td>'+
-          '<td class="num">'+(invHasStore(item) ? item.storeRecountQty : '—')+'</td><td class="num">'+invDiffLabel(invFinalDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td>'+
-          '<td>'+(item.removed ? 'ENCONTRADO / RETIRADO' : 'EM ABERTO')+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''));
+      // Motivos (enxuto): todas as divergências, produto + causa; vermelho =
+      // divergente de fato (lista final), verde = resolvida (encontrada/retirada
+      // ou zerada pela recontagem da loja).
+      html = head('MOTIVOS DAS DIVERGÊNCIAS', rows.length+' PRODUTOS · VERMELHO = DIVERGENTE NO FINAL · VERDE = RESOLVIDO')+
+        table(['Produto', 'Justificativa'], rows.map(item => {
+          const open = !item.removed && invFinalDiff(item);
+          return '<tr class="'+(open ? 'inv-print-bad' : 'inv-print-ok')+'"><td>'+escapeHtml(item.product)+'</td><td>'+escapeHtml(item.reason || (open ? 'SEM MOTIVO INFORMADO' : 'RESOLVIDO'))+'</td></tr>';
+        }).join(''));
     }else if(kind === 'final'){
-      // Divergência final da loja: só o que não foi encontrado nem retirado.
-      const totals = invTotals(rows);
-      html = head('DIVERGÊNCIA FINAL DA LOJA', rows.length+' PRODUTOS NÃO ENCONTRADOS')+
-        '<p class="inv-print-totals">VALOR EM FALTA: <b>'+formatCentsBRL(totals.missing)+'</b> · VALOR EM SOBRA: <b>'+formatCentsBRL(totals.surplus)+'</b> (VALOR FINAL = CUSTO × DIFERENÇA)</p>'+
-        table(['Produto', num('Estoque no dia'), num('Contado'), num('Loja'), num('Diferença final'), num('Custo'), num('Valor final'), 'Motivo'], rows.map(item =>
-          '<tr><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.systemQty+'</td><td class="num">'+item.countedQty+'</td>'+
-          '<td class="num">'+(invHasStore(item) ? item.storeRecountQty : '—')+'</td><td class="num">'+invDiffLabel(invFinalDiff(item))+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(invValue(item))+'</td><td>'+escapeHtml(item.reason || '—')+'</td></tr>').join(''))+
-        '<p class="inv-print-totals">TOTAL EM FALTA: <b>'+formatCentsBRL(totals.missing)+'</b> · TOTAL EM SOBRA: <b>'+formatCentsBRL(totals.surplus)+'</b></p>';
+      // Diretor: só o que ficou divergente de fato. FALTANDO = sistema −
+      // contado final (negativo = sobra); total líquido (pedido de 03/11/2026).
+      let total = 0;
+      html = head('DIVERGÊNCIA FINAL DA LOJA', rows.length+' PRODUTOS DIVERGENTES')+
+        table(['Produto', num('Qtd. em sistema'), num('Qtd. contada'), num('Faltando'), num('Custo'), num('Valor total')], rows.map(item => {
+          const missing = -invFinalDiff(item);
+          const value = item.costCents === null ? null : missing * item.costCents;
+          total += value || 0;
+          return '<tr><td>'+escapeHtml(item.product)+'</td><td class="num">'+item.systemQty+'</td><td class="num">'+invFinalQty(item)+'</td>'+
+            '<td class="num">'+missing+'</td><td class="num">'+invMoney(item.costCents)+'</td><td class="num">'+invMoney(value)+'</td></tr>';
+        }).join('')+'<tr class="inv-print-total"><td colspan="5" style="text-align:right">TOTAL:</td><td class="num">'+formatCentsBRL(total)+'</td></tr>');
     }else if(kind === 'ajuste'){
       // Só o que a recontagem da loja mostrou diferente da contagem inicial.
       html = head('AJUSTE NO SISTEMA APÓS A RECONTAGEM DA LOJA', rows.length+' PRODUTOS A AJUSTAR')+
@@ -29684,7 +29688,7 @@ function renderHomeTasks(){
     }
     el('invPrintBody').innerHTML = html;
     invPrintTitleBefore = document.title;
-    document.title = ({diretor:'INVENTARIO-DIVERGENCIAS-DIRETOR', final:'DIVERGENCIA-FINAL-DA-LOJA', ajuste:'INVENTARIO-AJUSTE-RECONTAGEM', recontagem:'INVENTARIO-RECONTAGEM', pontti:'DIVERGENCIA-PONTTI'})[kind]+'-'+inv.storeName.replace(/[^A-Z0-9]+/gi, '-')+'-'+inv.inventoryDate;
+    document.title = ({diretor:'INVENTARIO-MOTIVOS-DAS-DIVERGENCIAS', final:'DIVERGENCIA-FINAL-DA-LOJA', ajuste:'INVENTARIO-AJUSTE-RECONTAGEM', recontagem:'INVENTARIO-RECONTAGEM', pontti:'DIVERGENCIA-PONTTI'})[kind]+'-'+inv.storeName.replace(/[^A-Z0-9]+/gi, '-')+'-'+inv.inventoryDate;
     document.body.classList.add('pdf-export', 'inv-printing');
     window.print();
   }
