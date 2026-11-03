@@ -254,8 +254,8 @@ export async function POST(request: Request) {
               (id, employee_id, employee_name, company_id, company_name, month, type, payment_method,
                amount_cents, gross_cents, discount_cents, payment_date, notes, created_by,
                created_by_name, created_at, updated_by, updated_by_name, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, CURRENT_TIMESTAMP,
-                     ?13, ?14, CURRENT_TIMESTAMP)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, CURRENT_TIMESTAMP,
+                     ?14, ?15, CURRENT_TIMESTAMP)`,
           )
           .bind(
             benefitId,

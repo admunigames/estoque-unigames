@@ -153,7 +153,7 @@ export async function POST(request: Request) {
             (id, company_id, company_name, team_members, week, meeting_date, management_feedback,
              topic_discussed, suggested_activity, in_person_return, member_returns, attendance_signed,
              created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, CURRENT_TIMESTAMP, ?12, ?13, CURRENT_TIMESTAMP)`,
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, CURRENT_TIMESTAMP, ?13, ?14, CURRENT_TIMESTAMP)`,
         )
         .bind(
           recordId,
