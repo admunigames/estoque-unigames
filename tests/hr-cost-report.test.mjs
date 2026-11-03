@@ -6,7 +6,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // MANUAL (prompt 9, 22/10/2026).
 
 const db = await setupRouteDb([
-  "shared_state", "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_payroll_settings",
+  "shared_state", "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_payroll_settings", "hr_recurring_deductions",
 ]);
 const { computeEmployeeCost, sumEmployeeCosts } = await import("../app/lib/hr-cost-report.ts");
 const monthValuesRoute = await import("../app/api/hr-payroll/month-values/route.ts");

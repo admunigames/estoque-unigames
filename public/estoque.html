@@ -13245,13 +13245,25 @@
       <div class="purchase-field"><label for="rhFolhaBonus">BONIFICAÇÃO (R$)</label><input type="text" inputmode="decimal" id="rhFolhaBonus" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhFolhaOvertime">HORAS EXTRAS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaOvertime" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhFolhaAdditions">ADICIONAIS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaAdditions" placeholder="R$ 0,00"></div>
-      <div class="purchase-field"><label for="rhFolhaDeductions">DESCONTOS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaDeductions" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="rhFolhaDeductions">DESCONTO AVULSO DO MÊS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaDeductions" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhFolhaOther">OUTROS (R$)</label><input type="text" inputmode="decimal" id="rhFolhaOther" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label for="rhFolhaCommission">COMISSÃO (CALCULADA)</label><input id="rhFolhaCommission" readonly></div>
       <div class="purchase-field"><label for="rhFolhaBenefits">BENEFÍCIOS (CALCULADOS)</label><input id="rhFolhaBenefits" readonly></div>
       <div class="purchase-field"><label for="rhFolhaNet">VALOR LÍQUIDO</label><input id="rhFolhaNet" readonly></div>
       <div class="purchase-field full"><label for="rhFolhaNotes">OBSERVAÇÕES</label><textarea id="rhFolhaNotes" rows="2" maxlength="500"></textarea></div>
     </div>
+    <fieldset style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:12px 0 0;">
+      <legend style="font:800 11px var(--mono);letter-spacing:.06em;padding:0 6px;">DESCONTOS RECORRENTES</legend>
+      <p class="muted" style="font-size:11px;margin:0 0 8px;">DESCONTADOS TODO MÊS AUTOMATICAMENTE, SOMADOS AO DESCONTO AVULSO. ENCERRAR PARA A PARTIR DESTA COMPETÊNCIA; EXCLUIR APAGA DE TODOS OS MESES.</p>
+      <div id="rhFolhaRecList" style="font-size:12px;margin-bottom:8px;"></div>
+      <div class="purchase-form-grid">
+        <div class="purchase-field"><label for="rhFolhaRecDesc">DESCRIÇÃO</label><input id="rhFolhaRecDesc" maxlength="120" placeholder="EX.: EMPRÉSTIMO, UNIFORME"></div>
+        <div class="purchase-field"><label for="rhFolhaRecValor">VALOR MENSAL (R$)</label><input type="text" inputmode="decimal" id="rhFolhaRecValor" placeholder="R$ 0,00"></div>
+        <div class="purchase-field"><label for="rhFolhaRecInicio">A PARTIR DE</label><input type="month" id="rhFolhaRecInicio"></div>
+        <div class="purchase-field"><label for="rhFolhaRecMeses">Nº DE MESES (VAZIO = ATÉ ENCERRAR)</label><input type="number" id="rhFolhaRecMeses" min="1" max="120" step="1"></div>
+      </div>
+      <button class="btn-outline btn-sm" id="btnRhFolhaRecAdd" type="button" style="margin-top:8px;">ADICIONAR DESCONTO RECORRENTE</button>
+    </fieldset>
     <p style="color:var(--ink-soft);font-size:11px;margin:10px 0 0;">Comissão e benefícios vêm do Comissionamento e dos Benefícios desta mesma competência — para alterá-los, edite o lançamento de origem.</p>
     <div class="user-form-status" id="rhFolhaFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -48290,7 +48302,8 @@ function renderHomeTasks(){
         '<td>'+formatCentsBRL(row.baseSalaryCents)+'</td>'+
         '<td>'+formatCentsBRL(row.dsrCents || 0)+'</td>'+
         '<td>'+formatCentsBRL(row.bonusCents)+'</td>'+
-        '<td>'+formatCentsBRL(row.deductionsCents)+'</td>'+
+        '<td'+(Number(row.recurringDeductionsCents) ? ' title="'+escapeHtml('AVULSO '+formatCentsBRL(row.deductionsCents)+' · RECORRENTE: '+(row.recurringDeductions || []).map(item => item.description+' '+formatCentsBRL(item.amountCents)).join(', '))+'"' : '')+'>'+formatCentsBRL(row.totalDeductionsCents != null ? row.totalDeductionsCents : row.deductionsCents)+
+          (Number(row.recurringDeductionsCents) ? '<br><small class="muted">RECORRENTE '+formatCentsBRL(row.recurringDeductionsCents)+'</small>' : '')+'</td>'+
         '<td title="'+escapeHtml(detalhe)+'"><strong>'+formatCentsBRL(valorFinal)+'</strong></td>'+
         '<td>'+escapeHtml(row.notes || '—')+'</td>'+
         '<td>'+paymentCell+'</td>'+
@@ -48801,7 +48814,8 @@ function renderHomeTasks(){
     const current = rhFolhaRows.find(row => row.employeeId === el('rhFolhaEmployeeId').value);
     const commission = current ? Number(current.commissionCents || 0) : 0;
     const benefits = current ? Number(current.benefitsCents || 0) : 0;
-    return values.reduce((sum, value) => sum + value, 0) + commission + benefits - deductions;
+    const recurring = current ? Number(current.recurringDeductionsCents || 0) : 0;
+    return values.reduce((sum, value) => sum + value, 0) + commission + benefits - deductions - recurring;
   }
 
   function rhFolhaUpdateDialogNet(){
@@ -48831,9 +48845,72 @@ function renderHomeTasks(){
     el('rhFolhaBenefits').value = formatCentsBRL(row.benefitsCents);
     el('rhFolhaNotes').value = row.notes || '';
     el('rhFolhaFormStatus').textContent = '';
+    ['rhFolhaRecDesc','rhFolhaRecMeses'].forEach(id => { el(id).value = ''; });
+    setCurrencyValue(el('rhFolhaRecValor'), 0);
+    el('rhFolhaRecInicio').value = row.month;
     rhFolhaUpdateDialogNet();
+    loadRhFolhaRecorrentes();
     el('rhFolhaDialog').showModal();
   }
+
+  // DESCONTOS RECORRENTES do funcionário (hr-payroll/recurring-deductions).
+  async function loadRhFolhaRecorrentes(){
+    const box = el('rhFolhaRecList');
+    const month = el('rhFolhaMes').value;
+    box.textContent = 'Carregando…';
+    try{
+      const data = await rhApiRequest('/recurring-deductions?employeeId='+encodeURIComponent(el('rhFolhaEmployeeId').value));
+      const list = data.deductions || [];
+      box.innerHTML = list.length ? list.map(item => {
+        const active = item.startMonth <= month && (!item.endMonth || item.endMonth >= month);
+        const period = rhFormatMonth(item.startMonth)+' ATÉ '+(item.endMonth ? rhFormatMonth(item.endMonth) : 'ENCERRAR');
+        const canEnd = item.startMonth < month && (!item.endMonth || item.endMonth >= month);
+        return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0;border-bottom:1px solid var(--line);">'+
+          '<strong>'+escapeHtml(item.description)+'</strong> · '+formatCentsBRL(item.amountCents)+'/MÊS · '+escapeHtml(period.toUpperCase())+
+          ' <span class="status-pill '+(active ? 'done' : 'waiting')+'">'+(active ? 'DESCONTA NESTE MÊS' : 'FORA DESTE MÊS')+'</span>'+
+          (canEnd ? ' <button class="btn-outline btn-sm" type="button" data-rh-rec-end="'+escapeHtml(item.id)+'">ENCERRAR A PARTIR DESTE MÊS</button>' : '')+
+          ' <button class="btn-outline btn-sm" type="button" data-rh-rec-del="'+escapeHtml(item.id)+'">EXCLUIR</button></div>';
+      }).join('') : '<span class="muted">NENHUM DESCONTO RECORRENTE.</span>';
+    }catch(error){ box.textContent = error.message; }
+  }
+  async function rhFolhaRecorrentesChanged(message){
+    showPurchaseToast(message);
+    await loadRhFolha({silent:true});
+    rhFolhaUpdateDialogNet();
+    loadRhFolhaRecorrentes();
+  }
+  if(el('rhFolhaRecValor')) attachCurrencyMask(el('rhFolhaRecValor'));
+  if(el('btnRhFolhaRecAdd')) el('btnRhFolhaRecAdd').addEventListener('click', async () => {
+    const status = el('rhFolhaFormStatus');
+    const amountCents = parseBRLToCents(getCurrencyValue(el('rhFolhaRecValor')) || '0');
+    if(!amountCents){ status.textContent = 'INFORME O VALOR MENSAL DO DESCONTO.'; return; }
+    try{
+      await rhApiRequest('/recurring-deductions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        employeeId: el('rhFolhaEmployeeId').value, description: el('rhFolhaRecDesc').value, amountCents,
+        startMonth: el('rhFolhaRecInicio').value, months: Number(el('rhFolhaRecMeses').value || 0)
+      })});
+      status.textContent = '';
+      el('rhFolhaRecDesc').value = ''; el('rhFolhaRecMeses').value = ''; setCurrencyValue(el('rhFolhaRecValor'), 0);
+      await rhFolhaRecorrentesChanged('Desconto recorrente adicionado.');
+    }catch(error){ status.textContent = error.message; }
+  });
+  if(el('rhFolhaRecList')) el('rhFolhaRecList').addEventListener('click', async event => {
+    const endBtn = event.target.closest('[data-rh-rec-end]');
+    const delBtn = event.target.closest('[data-rh-rec-del]');
+    if(!endBtn && !delBtn) return;
+    const month = el('rhFolhaMes').value;
+    try{
+      if(endBtn){
+        if(!(await askConfirm('ENCERRAR ESTE DESCONTO A PARTIR DE '+rhFormatMonth(month).toUpperCase()+'? OS MESES ANTERIORES CONTINUAM DESCONTADOS.', {okText:'ENCERRAR', danger:false}))) return;
+        await rhApiRequest('/recurring-deductions', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:endBtn.dataset.rhRecEnd, fromMonth:month})});
+        await rhFolhaRecorrentesChanged('Desconto recorrente encerrado.');
+      }else{
+        if(!(await askConfirm('EXCLUIR ESTE DESCONTO RECORRENTE? ELE SAI DE TODOS OS MESES, INCLUSIVE OS ANTERIORES.', {okText:'EXCLUIR'}))) return;
+        await rhApiRequest('/recurring-deductions?id='+encodeURIComponent(delBtn.dataset.rhRecDel), {method:'DELETE'});
+        await rhFolhaRecorrentesChanged('Desconto recorrente excluído.');
+      }
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
 
   function closeRhFolhaDialog(){
     if(el('rhFolhaDialog').open) el('rhFolhaDialog').close();

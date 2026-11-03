@@ -12,7 +12,7 @@ const lib = await import("../app/lib/hr-accounting-report.ts");
 const db = await setupRouteDb([
   "shared_state", "hr_employees", "hr_commissions", "hr_commission_items", "hr_payroll_entries", "hr_benefits",
   "hr_payroll_settings", "hr_time_tracking_entries", "hr_time_tracking_settings",
-  "hr_accounting_notes", "commercial_monthly", "commercial_rules", "commercial_newcomers", "commercial_credit_entries", "commercial_store_goals", "commercial_roles",
+  "hr_accounting_notes", "hr_recurring_deductions", "commercial_monthly", "commercial_rules", "commercial_newcomers", "commercial_credit_entries", "commercial_store_goals", "commercial_roles",
 ]);
 const payouts = await import("../app/api/hr-time-tracking/payouts/route.ts");
 const balance = await import("../app/api/hr-time-tracking/balance/route.ts");

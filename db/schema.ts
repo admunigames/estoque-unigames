@@ -5041,6 +5041,28 @@ export const hrEmployeeMonthValues = pgTable(
   ],
 );
 
+// RH > Folha: DESCONTO RECORRENTE por funcionário (migration 0124) — valor
+// mensal de start_month até end_month ('' = sem fim); somado ao desconto
+// avulso da folha na leitura (entries/rows.ts).
+export const hrRecurringDeductions = pgTable(
+  "hr_recurring_deductions",
+  {
+    id: text("id").primaryKey(),
+    employeeId: text("employee_id").notNull(),
+    description: text("description").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    startMonth: text("start_month").notNull(),
+    endMonth: text("end_month").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("hr_recurring_deductions_employee_idx").on(table.employeeId)],
+);
+
 // RH > Relatório Contabilidade: OBSERVAÇÕES por empresa (CNPJ) e competência — migration 0120.
 export const hrAccountingNotes = pgTable(
   "hr_accounting_notes",

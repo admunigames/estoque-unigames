@@ -78,7 +78,7 @@ async function loadEmployeesFor(database: Database, companyId: string) {
 }
 
 export async function loadPayrollRows(database: Database, month: string, companyId: string) {
-  const [allEmployees, entriesResult, employerChargesBps, actingStores, dsrByEmployee, overtimePayouts] = await Promise.all([
+  const [allEmployees, entriesResult, employerChargesBps, actingStores, dsrByEmployee, overtimePayouts, recurringResult] = await Promise.all([
     loadEmployeesFor(database, ""),
     database
       .prepare(`SELECT ${ENTRY_COLUMNS} FROM hr_payroll_entries WHERE month=?1`)
@@ -90,7 +90,22 @@ export async function loadPayrollRows(database: Database, month: string, company
     loadMonthValues(database, month, "dsr"),
     // HE A PAGAR do Controle de Horas (fonte única quando lançada).
     loadOvertimePayouts(database, month),
+    // DESCONTO RECORRENTE vigente no mês (migration 0124) — somado ao avulso.
+    database
+      .prepare(
+        `SELECT employee_id AS employeeId, description, amount_cents AS amountCents
+         FROM hr_recurring_deductions
+         WHERE start_month <= ?1 AND (end_month = '' OR end_month >= ?1)`,
+      )
+      .bind(month)
+      .all<{ employeeId: string; description: string; amountCents: number }>(),
   ]);
+  const recurringByEmployee = new Map<string, Array<{ description: string; amountCents: number }>>();
+  for (const row of recurringResult.results ?? []) {
+    const list = recurringByEmployee.get(row.employeeId) ?? [];
+    list.push({ description: row.description, amountCents: Number(row.amountCents || 0) });
+    recurringByEmployee.set(row.employeeId, list);
+  }
   // Unidade do mês = loja atuante (não a loja de hoje do cadastro).
   const employees = allEmployees
     .map((employee) => {
@@ -144,7 +159,12 @@ export async function loadPayrollRows(database: Database, month: string, company
         employerChargesBps,
         dsrCents: dsrByEmployee.get(employee.id) ?? 0,
       };
-      const breakdown = computePayrollBreakdown(values, inputs);
+      // deductionsCents segue sendo só o AVULSO (o que a tela edita); o
+      // recorrente entra no cálculo e vem à parte.
+      const recurringDeductions = recurringByEmployee.get(employee.id) ?? [];
+      const recurringDeductionsCents = recurringDeductions.reduce((sum, item) => sum + item.amountCents, 0);
+      const withRecurring = { ...values, deductionsCents: values.deductionsCents + recurringDeductionsCents };
+      const breakdown = computePayrollBreakdown(withRecurring, inputs);
       return {
         id: entry?.id ?? "",
         saved: Boolean(entry),
@@ -157,6 +177,9 @@ export async function loadPayrollRows(database: Database, month: string, company
         companyName: employee.companyName,
         month,
         ...values,
+        recurringDeductionsCents,
+        recurringDeductions,
+        totalDeductionsCents: withRecurring.deductionsCents,
         commissionCents,
         benefitsCents,
         commissionGrossCents,
@@ -167,7 +190,7 @@ export async function loadPayrollRows(database: Database, month: string, company
         employerChargesCents: breakdown.employerChargesCents,
         folhaPagaCents: breakdown.folhaPagaCents,
         custoTotalCents: breakdown.custoTotalCents,
-        netCents: legacyNetCents(values, inputs),
+        netCents: legacyNetCents(withRecurring, inputs),
         notes: entry?.notes ?? "",
         paymentDone: Number(entry?.paymentDone ?? 0),
         paymentDate: entry?.paymentDate ?? "",
