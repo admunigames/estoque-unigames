@@ -61,7 +61,8 @@ export async function loadProviders(database: Database, scope: CreditScope): Pro
     .map((row) => ({ ...row, defaultFeeBps: Number(row.defaultFeeBps || 0) }));
 }
 
-export const CREDIT_SALE_COLUMNS = `id, company_id AS companyId, company_name AS companyName, provider_id AS providerId,
+export const CREDIT_SALE_COLUMNS = `id, company_id AS companyId, company_name AS companyName,
+  login_company_id AS loginCompanyId, login_company_name AS loginCompanyName, provider_id AS providerId,
   provider_name AS providerName, sale_date AS saleDate, sale_ref AS saleRef, proposal, customer_name AS customerName,
   gross_cents AS grossCents, fee_bps AS feeBps, fee_cents AS feeCents, net_cents AS netCents,
   expected_date AS expectedDate, bank_entry_id AS bankEntryId, received_date AS receivedDate,
@@ -71,6 +72,8 @@ export type CreditSaleRow = CreditSaleAmounts & {
   id: string;
   companyId: string;
   companyName: string;
+  loginCompanyId: string;
+  loginCompanyName: string;
   providerId: string;
   providerName: string;
   saleDate: string;
@@ -148,6 +151,10 @@ export function planCreditSale(
   if (provider.companyId && provider.companyId !== companyId) return { error: "A FINANCEIRA NÃO ATENDE ESSA UNIDADE.", status: 400 };
   const saleDate = safeText(input.saleDate, 10);
   if (!DATE_RE.test(saleDate)) return { error: "INFORME A DATA DA VENDA.", status: 400 };
+  // LOGIN usado na venda: qualquer loja do Cadastro de Lojas (vazio = não informado).
+  const loginCompanyId = safeText(input.loginCompanyId, 80);
+  const login = loginCompanyId ? ctx.companies.find((item) => item.id === loginCompanyId) : null;
+  if (loginCompanyId && !login) return { error: "ESCOLHA O LOGIN.", status: 400 };
   // Proposta é opcional; quando vem, não pode repetir na mesma financeira.
   const proposal = safeText(input.proposal, 60).toUpperCase();
   const expectedDate = safeText(input.expectedDate, 10);
@@ -173,8 +180,8 @@ export function planCreditSale(
       `INSERT INTO finance_credit_sales
          (id, company_id, company_name, provider_id, provider_name, sale_date, sale_ref, proposal, customer_name,
           gross_cents, fee_bps, fee_cents, net_cents, expected_date, notes,
-          created_by, created_by_name, updated_by, updated_by_name)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?16, ?17)`,
+          created_by, created_by_name, updated_by, updated_by_name, login_company_id, login_company_name)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?16, ?17, ?18, ?19)`,
       [
         id,
         companyId,
@@ -193,6 +200,8 @@ export function planCreditSale(
         safeText(input.notes, 500),
         ctx.scope.actor.id,
         who,
+        login ? login.id : "",
+        login ? login.name : "",
       ],
     ],
   };

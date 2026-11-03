@@ -2659,6 +2659,9 @@ export const financeCreditSales = pgTable(
     id: text("id").primaryKey(),
     companyId: text("company_id").notNull().default(""),
     companyName: text("company_name").notNull().default(""),
+    // LOGIN de loja usado na venda (02/11/2026): pode ser de outra unidade.
+    loginCompanyId: text("login_company_id").notNull().default(""),
+    loginCompanyName: text("login_company_name").notNull().default(""),
     providerId: text("provider_id").notNull(),
     providerName: text("provider_name").notNull().default(""),
     saleDate: text("sale_date").notNull().default(""),

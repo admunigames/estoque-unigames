@@ -5142,7 +5142,11 @@ test("Financeiro > Declaração de Vendas: nome novo, campos retirados, lote e a
   assert.match(html, /pullStoreCompanies\(\)/);
   // Barra de ações em lote (componente reutilizável).
   assert.match(html, /function setupBulkSelection\(bar, body, onAction\)/);
-  assert.match(html, /id="declShoppingBulkBar"[\s\S]*?data-bulk-all> SELECIONAR TODOS[\s\S]*?data-bulk-action="mark-paid"[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
+  assert.match(html, /id="declShoppingBulkBar"[\s\S]*?data-bulk-all> SELECIONAR TODOS[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
+  // 02/11/2026: VALOR EFETIVAMENTE PAGO e ALUGUEL PERCENTUAL PAGO saíram (as colunas ficam no banco);
+  // aluguel % digitado aparece como MANUAL com o calculado ao lado.
+  assert.doesNotMatch(html, /id="declShoppingValorPago"|id="declShoppingPctPago"|data-bulk-action="mark-paid"|<th>Valor efetivamente pago<\/th>/);
+  assert.match(html, /function declShoppingRentCell\(r, hasPct\)[\s\S]*?MANUAL<\/span><br><small class="purchase-field-help">CALCULADO: /);
   assert.match(html, /financeApiRequest\('\/mall-declarations\/bulk'/);
   assert.match(html, /\.bulk-check,\.decl-batch-table input\[type="checkbox"\]\{\n\s*width:18px; height:18px; min-height:0;/);
 });
@@ -5396,7 +5400,7 @@ test("Financeiro > Crediários: menu, rota, abas, lote, extrato e situação CRE
   }
   // Filtros e cards.
   for (const id of ["crCompany", "crMonth", "crProvider", "crStatus", "crSearch", "crSummary"]) assert.match(html, new RegExp(`id="${id}"`), id);
-  assert.match(html, /PENDENTES HÁ MAIS DE 30 DIAS/);
+  assert.match(html, /PENDENTE HÁ MAIS DE 7 DIAS/);
   // Lote (componente reutilizado), cadastro em lote e diálogo do depósito.
   assert.match(html, /id="crBulkBar"[\s\S]*?data-bulk-action="finish"(?: data-bulk-confirm="[^"]*")?>MARCAR COMO FINALIZADO[\s\S]*?data-bulk-action="pending"(?: data-bulk-confirm="[^"]*")?>VOLTAR PARA PENDENTE[\s\S]*?data-bulk-action="provider"(?: data-bulk-confirm="[^"]*")?>ALTERAR FINANCEIRA\/TAXA[\s\S]*?data-bulk-action="cancel"(?: data-bulk-confirm="[^"]*")?>CANCELAR[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
   assert.match(html, /const crBulk = setupBulkSelection\(el\('crBulkBar'\), el\('crBody'\)/);
@@ -5480,7 +5484,13 @@ test("Financeiro 9/9 > Conciliação Bancária: barra de lote", async () => {
 
 test("Financeiro 9/9 > Controle de Reposição: barra de lote e cadastro em lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="reposicaoBulkBar"[\s\S]*?data-bulk-action="update"(?: data-bulk-confirm="[^"]*")?>ALTERAR SETOR \/ MOTIVO[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR/);
+  assert.match(html, /id="reposicaoBulkBar"[\s\S]*?data-bulk-action="update"(?: data-bulk-confirm="[^"]*")?>ALTERAR MOTIVO[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
+  // 02/11/2026: sem UNIDADE e sem SETOR RESPONSÁVEL no lançamento (só RESPONSÁVEL); lote sem PRODUTO;
+  // excluir (linha ou selecionados) pergunta se a despesa vinculada também sai.
+  assert.doesNotMatch(html, /id="reposicaoUnidade"|id="reposicaoSetorResp"|data-rp-batch="product"|data-rp-batch="companyId"|data-rp-batch="sector"/);
+  assert.match(html, /<label for="reposicaoMotivo">MOTIVO \*<\/label>/);
+  assert.match(html, /id="reposicaoDeleteDialog"[\s\S]*?EXCLUIR TAMBÉM A DESPESA VINCULADA/);
+  assert.match(html, /'\/replacement-control\?id='\+encodeURIComponent\(reposicaoDeleteIds\[0\]\)\+\(withExpense \? '&withExpense=1' : ''\)/);
   assert.match(html, /const reposicaoBulk = setupBulkSelection\(el\('reposicaoBulkBar'\), el\('reposicaoTableBody'\)/);
   assert.match(html, /id="btnBatchReposicao" type="button">\+ CADASTRAR EM LOTE/);
   assert.match(html, /id="reposicaoBatchDialog"[\s\S]*?SALVAR TUDO/);
@@ -5792,4 +5802,16 @@ test("Comercial > Comissão: legendas compactas por tipo de usuário (só admin 
   assert.match(html, /'">'\+comSellerHeadHtml\(seller, false, true\)\+/);
   assert.match(html, /comCommissionSumHtml\(commission\)\+comUpdatedHtml\(seller\)\+/);
   assert.match(html, /if\(rule\.attachExemptStoreNames\) return ' · SEM CRITÉRIO: '/);
+});
+
+test("Financeiro > Crediários: LOGIN (cadastro, lote, lista, filtro) e cards da lista filtrada", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /<label for="crLogin">LOGIN<\/label><select id="crLogin">/);
+  assert.match(html, /<label for="crSaleLogin">LOGIN \(USADO NA VENDA\)<\/label>/);
+  assert.match(html, /<label for="crBatchLogin">LOGIN \(PADRÃO\)<\/label>/);
+  assert.match(html, /data-cr-batch="loginCompanyId"/);
+  assert.match(html, /<th>Unidade<\/th><th>Login<\/th><th>Financeira<\/th>/);
+  for (const label of ["VALOR BRUTO TOTAL", "VALOR LÍQUIDO", "VALOR DE TAXAS", "QUANTIDADE PENDENTE", "PENDENTE HÁ MAIS DE 7 DIAS"]) {
+    assert.match(html, new RegExp(`card\\('${label}'`), label);
+  }
 });

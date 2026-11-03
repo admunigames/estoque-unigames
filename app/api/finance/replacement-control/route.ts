@@ -8,7 +8,7 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
-import { insertReplacementStatement, KINDS, parseReplacementEntry, SECTORS } from "./shared";
+import { insertReplacementStatement, KINDS, parseReplacementEntry, planReplacementDelete, SECTORS } from "./shared";
 
 // Controle de Reposição (Financeiro — Fase 8). Registra valores repostos/
 // gastos por Assistência, Logística e outros setores. "Adicionar como
@@ -192,23 +192,22 @@ export async function DELETE(request: Request) {
   if (!sameOrigin(request)) {
     return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
   }
-  const id = safeText(new URL(request.url).searchParams.get("id"), 80);
+  const params = new URL(request.url).searchParams;
+  const id = safeText(params.get("id"), 80);
   if (!id) return jsonResponse({ error: "LANÇAMENTO INVÁLIDO." }, 400);
   try {
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT expense_id AS expenseId FROM finance_replacement_entries WHERE id=?1")
+      .prepare("SELECT id, expense_id AS expenseId FROM finance_replacement_entries WHERE id=?1")
       .bind(id)
-      .first<{ expenseId: string }>();
+      .first<{ id: string; expenseId: string }>();
     if (!existing) return jsonResponse({ error: "LANÇAMENTO NÃO ENCONTRADO." }, 404);
-    if (existing.expenseId) {
-      return jsonResponse(
-        { error: "ESTE LANÇAMENTO JÁ VIROU DESPESA — REMOVA A DESPESA PRIMEIRO." },
-        409,
-      );
-    }
-    await database.prepare("DELETE FROM finance_replacement_entries WHERE id=?1").bind(id).run();
-    return jsonResponse({ deleted: true });
+    // withExpense=1: exclui também a despesa vinculada; sem ele, a despesa fica.
+    const plan = await planReplacementDelete(database, existing, params.get("withExpense") === "1",
+      { id: actor.id, name: actor.displayName || "Administrador" });
+    if ("skip" in plan) return jsonResponse({ error: plan.skip }, 409);
+    await database.batch(plan.statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
+    return jsonResponse({ deleted: true, expenseDeleted: Boolean(existing.expenseId && params.get("withExpense") === "1") });
   } catch (error) {
     console.error("Não foi possível excluir o lançamento de reposição.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR O LANÇAMENTO." }, 500);

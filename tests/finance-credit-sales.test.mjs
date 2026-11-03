@@ -269,15 +269,34 @@ test("escopo de loja: lista, lote, extrato e vínculo só da própria loja", asy
   assert.equal((await post(link.POST, RIOMAR_LOGIN, "/api/finance/credit-sales/link", { bankEntryId: "dep-diff", creditSaleIds: [sale("L-T").id] })).status, 403);
 });
 
-test("cards: total pendente, finalizado e taxas do mês, pendentes há mais de 30 dias", async () => {
+test("cards seguem os filtros (bruto, líquido, taxas, pendentes e pendentes há mais de 7 dias) e LOGIN separado da unidade", async () => {
   db.insert("finance_credit_sales", { id: "old", company_id: RIOMAR, provider_id: credfacil, provider_name: "CREDFÁCIL", sale_date: "2020-01-01", proposal: "OLD", gross_cents: 1000, fee_cents: 100, net_cents: 900 });
-  const { summary } = await json(await get(salesRoute.GET, ADMIN, `/api/finance/credit-sales?companyId=${RIOMAR}&month=2026-09`));
-  // Pendentes da RIOMAR: L-1 (450,00), P-LOJA (180,00), OLD (9,00).
-  assert.equal(summary.pendingCount, 3);
-  assert.equal(summary.pendingCents, 45000 + 18000 + 900);
-  assert.equal(summary.pendingOver30, 3);
-  assert.equal(summary.finishedMonthCents, 90000 + 45000);
-  assert.equal(summary.feesMonthCents, 10000 + 5000 + 5000 + 2000);
+  const view = async (query) => json(await get(salesRoute.GET, ADMIN, `/api/finance/credit-sales?${query}`));
+  // Os cards somam exatamente a lista filtrada (cancelado só com o filtro CANCELADO).
+  for (const query of [`companyId=${RIOMAR}&month=2026-09`, `companyId=${RIOMAR}`, `companyId=${RIOMAR}&status=pending`, `month=2026-09&status=canceled`]) {
+    const { summary, creditSales } = await view(query);
+    const counted = creditSales.filter((row) => row.status !== "canceled" || query.includes("status=canceled"));
+    const sum = (field) => counted.reduce((total, row) => total + row[field], 0);
+    assert.deepEqual([summary.grossCents, summary.netCents, summary.feeCents], [sum("grossCents"), sum("netCents"), sum("feeCents")], query);
+    assert.equal(summary.pendingCount, counted.filter((row) => row.status === "pending").length, query);
+  }
+  const all = await view(`companyId=${RIOMAR}`);
+  assert.ok(all.summary.pendingOver7 >= 1); // OLD (2020) está pendente há mais de 7 dias
+
+  // A RIOMAR vendeu usando o login da TACARUNA; o filtro LOGIN separa da unidade.
+  const created = await post(salesRoute.POST, ADMIN, "/api/finance/credit-sales", { companyId: RIOMAR, loginCompanyId: TACARUNA, providerId: credfacil, saleDate: "2026-10-03", grossCents: 50000 });
+  assert.equal(created.status, 201);
+  const byLogin = await view(`loginCompanyId=${TACARUNA}`);
+  assert.deepEqual(byLogin.creditSales.map((row) => [row.companyId, row.loginCompanyId, row.loginCompanyName]), [[RIOMAR, TACARUNA, "TACARUNA"]]);
+  assert.equal(byLogin.summary.grossCents, 50000);
+  assert.equal((await post(salesRoute.POST, ADMIN, "/api/finance/credit-sales", { companyId: RIOMAR, loginCompanyId: "cnaoexiste1", providerId: credfacil, saleDate: "2026-10-03", grossCents: 100 })).status, 400);
+  // Lote: login da linha ou do cabeçalho; antigos ficam vazios.
+  const lote = await json(await post(batch.POST, ADMIN, "/api/finance/credit-sales/batch", { companyId: RIOMAR, loginCompanyId: TACARUNA, providerId: credfacil,
+    rows: [{ saleDate: "2026-10-04", grossCents: 1000, proposal: "LG-1" }, { saleDate: "2026-10-04", grossCents: 2000, proposal: "LG-2", loginCompanyId: RIOMAR }] }));
+  assert.equal(lote.created, 2);
+  const logins = db.sqlite.prepare("SELECT proposal, login_company_id FROM finance_credit_sales WHERE proposal IN ('LG-1','LG-2','OLD') ORDER BY proposal").all().map((r) => [r.proposal, r.login_company_id]);
+  assert.deepEqual(logins, [["LG-1", TACARUNA], ["LG-2", RIOMAR], ["OLD", ""]]);
+  db.sqlite.prepare("DELETE FROM finance_credit_sales WHERE login_company_id <> ''").run();
 });
 
 test("proposta opcional: dois crediários sem proposta na mesma financeira; só o valor da venda, taxa da financeira", async () => {

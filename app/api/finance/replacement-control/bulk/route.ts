@@ -1,12 +1,13 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
-import { SECTORS } from "../shared";
+import { planReplacementDelete, SECTORS } from "../shared";
 
 // Ações em lote do CONTROLE DE REPOSIÇÃO (Financeiro 9/9): { action, ids, fields }
 // - update: ALTERAR SETOR/MOTIVO (só o que vier em fields.sector / fields.reason);
-// - delete: EXCLUIR — mesma regra do DELETE individual: o que já virou Despesa
-//   é pulado com o motivo.
+// - delete: EXCLUIR — mesma regra do DELETE individual: com fields.withExpense
+//   a despesa vinculada também sai (a que tem pagamento é pulada com o motivo);
+//   sem ele, a despesa fica.
 // Mesmo escopo das rotas atuais do módulo (finance:manage). Ids conferidos
 // antes (404); uma transação.
 
@@ -48,11 +49,9 @@ export async function POST(request: Request) {
     const skipped: Array<{ id: string; description: string; reason: string }> = [];
     for (const row of rows) {
       if (action === "delete") {
-        if (row.expenseId) {
-          skipped.push({ id: row.id, description: row.product, reason: "JÁ VIROU DESPESA — REMOVA A DESPESA PRIMEIRO" });
-          continue;
-        }
-        statements.push(["DELETE FROM finance_replacement_entries WHERE id=?1", [row.id]]);
+        const plan = await planReplacementDelete(database, row, fields.withExpense === true, { id: actor.id, name: who });
+        if ("skip" in plan) skipped.push({ id: row.id, description: row.product || row.reason, reason: plan.skip });
+        else statements.push(...plan.statements);
         continue;
       }
       statements.push([

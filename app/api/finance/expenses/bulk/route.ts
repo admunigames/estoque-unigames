@@ -1,9 +1,8 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
-import { recalcPayableEntrySql } from "../../../../lib/payables-recurrence";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
 import { planPayablesBulk } from "../../payables/shared";
-import { assertExpenseAccess, loadExpense, type ExpenseRow } from "../shared";
+import { assertExpenseAccess, loadExpense, planExpenseDeletion, type ExpenseRow } from "../shared";
 
 // Ações em lote de DESPESAS: { action: 'category' | 'delete', ids, fields }.
 // - category: categoria e/ou centro de custo da despesa e de TODAS as contas
@@ -100,42 +99,11 @@ export async function POST(request: Request) {
         applied += 1;
       }
     } else {
-      const slots = new Map<string, [string, string, string]>();
       for (const expense of expenses) {
-        const skip = (reason: string) => skipped.push({ id: expense.id, description: expense.description, reason });
-        if (expense.cardId || expense.bankReconciliationId) { skip("DESPESA VEIO DO CARTÃO OU DO EXTRATO — EXCLUA PELA ORIGEM"); continue; }
-        const payables = await payablesOf(expense.id);
-        const paid = payables.length
-          ? await database
-              .prepare(
-                `SELECT COUNT(*) AS n FROM accounts_payable_payments
-                 WHERE confirmed_at <> '' AND payable_id IN (${payables.map((_, index) => `?${index + 1}`).join(",")})`,
-              )
-              .bind(...payables.map((payable) => payable.id))
-              .first<{ n: number }>()
-          : { n: 0 };
-        if (Number(paid?.n || 0)) { skip("TEM PAGAMENTO REGISTRADO"); continue; }
-        for (const payable of payables) {
-          statements.push(
-            [
-              `DELETE FROM accounts_payable_payment_attachments
-               WHERE payment_id IN (SELECT id FROM accounts_payable_payments WHERE payable_id=?1)`,
-              [payable.id],
-            ],
-            ["DELETE FROM accounts_payable_payments WHERE payable_id=?1", [payable.id]],
-            ["DELETE FROM accounts_payable WHERE id=?1", [payable.id]],
-          );
-          slots.set(`${payable.companyId}|${payable.financeItemId}|${payable.competenceMonth}`, [payable.companyId, payable.financeItemId, payable.competenceMonth]);
-        }
-        statements.push(
-          ["DELETE FROM expense_rateio_shares WHERE expense_id=?1", [expense.id]],
-          ["DELETE FROM expense_attachments WHERE expense_id=?1", [expense.id]],
-          ["DELETE FROM expenses WHERE id=?1", [expense.id]],
-        );
+        const plan = await planExpenseDeletion(database, expense, { id: actor.id, name: actorName });
+        if ("skip" in plan) { skipped.push({ id: expense.id, description: expense.description, reason: plan.skip }); continue; }
+        statements.push(...plan.statements);
         applied += 1;
-      }
-      for (const [companyId, itemId, month] of slots.values()) {
-        statements.push(...recalcPayableEntrySql(crypto.randomUUID(), companyId, itemId, month, actor.id, actorName));
       }
     }
     if (statements.length) await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));

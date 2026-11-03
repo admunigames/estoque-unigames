@@ -14,6 +14,7 @@ const db = await setupRouteDb([
   "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
   "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
   "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries", "finance_budgets", "obras", "obra_entries",
+  "expenses", "expense_rateio_shares", "expense_attachments", "accounts_payable_payment_attachments",
 ]);
 const { todayInTimezone } = await import("../app/lib/finance-status.ts");
 const payablesBulk = await import("../app/api/finance/payables/bulk/route.ts");
@@ -220,28 +221,44 @@ test("Conciliação Bancária: classificar só os campos enviados, confirmar (ap
 // 4. Controle de Reposição
 // ---------------------------------------------------------------------------
 
-test("Reposição: cadastrar em lote (cria e pula), alterar setor/motivo, excluir (pula o que virou despesa), 404", async () => {
-  const base = { entryDate: today, companyId: STORE_A, companyName: "RIOMAR", sector: "assistencia", kind: "reposicao", amountCents: 5000, responsibleName: "ANA" };
+test("Reposição: cadastrar em lote sem unidade/setor/produto (só o motivo obrigatório), alterar motivo, excluir com ou sem a despesa vinculada, 404", async () => {
+  const base = { entryDate: today, kind: "reposicao", amountCents: 5000, responsibleName: "ANA" };
   const created = await json(await post(reposicaoBatch.POST, ADMIN, "/api/finance/replacement-control/batch", {
-    rows: [{ ...base, product: "CONTROLE PS5" }, { ...base, product: "X" }, { ...base, product: "CABO HDMI", amountCents: 0 }, { ...base, product: "FONTE", sector: "logistica" }],
+    rows: [{ ...base, reason: "CONTROLE QUEBRADO" }, { ...base, reason: "X" }, { ...base, reason: "CABO HDMI", amountCents: 0 }, { ...base, reason: "FONTE QUEIMADA", product: "FONTE" }],
   }));
   assert.equal(created.created, 2);
-  assert.deepEqual(created.skipped.map((s) => [s.line, s.reason]), [[2, "INFORME O PRODUTO."], [3, "INFORME UM VALOR VÁLIDO EM CENTAVOS."]]);
-  const ids = db.sqlite.prepare("SELECT id FROM finance_replacement_entries ORDER BY product").all().map((r) => r.id); // CONTROLE, FONTE
-  db.sqlite.prepare("UPDATE finance_replacement_entries SET expense_id='exp-9' WHERE id=?").run(ids[1]);
+  assert.deepEqual(created.skipped.map((s) => [s.line, s.reason]), [[2, "INFORME O MOTIVO."], [3, "INFORME UM VALOR VÁLIDO EM CENTAVOS."]]);
+  const entries = db.sqlite.prepare("SELECT id, company_id, sector, product FROM finance_replacement_entries ORDER BY reason").all();
+  assert.deepEqual(entries.map((r) => [r.company_id, r.sector, r.product]), [["", "", ""], ["", "", "FONTE"]]);
+  const ids = entries.map((r) => r.id); // CONTROLE, FONTE
 
-  await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "update", ids, fields: { sector: "outros" } });
-  assert.deepEqual(db.sqlite.prepare("SELECT DISTINCT sector FROM finance_replacement_entries").all().map((r) => r.sector), ["outros"]);
   await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "update", ids: [ids[0]], fields: { reason: "QUEBROU NA VITRINE" } });
   assert.equal(row("finance_replacement_entries", ids[0]).reason, "QUEBROU NA VITRINE");
-  assert.equal(row("finance_replacement_entries", ids[0]).sector, "outros");
-
   assert.equal((await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "delete", ids: [ids[0], "nope"] })).status, 404);
-  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_replacement_entries").get().n, 2);
-  const del = await json(await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "delete", ids }));
+
+  // Lançamentos que viraram despesa: um com a despesa em aberto, outro com a despesa já paga.
+  const expense = (id) => db.insert("expenses", {
+    id, company_id: STORE_A, company_name: "RIOMAR", description: "REPOSIÇÃO", finance_item_id: "item-1", original_amount_cents: 5000,
+    competence_month: month, due_date: today, idempotency_key: `reposicao:${id}`, created_by: "seed",
+  });
+  expense("exp-aberta"); expense("exp-paga");
+  payable("ap-aberta", { expense_id: "exp-aberta", original_amount_cents: 5000 });
+  payable("ap-paga", { expense_id: "exp-paga", original_amount_cents: 5000 });
+  db.insert("accounts_payable_payments", { id: "pg-1", payable_id: "ap-paga", amount_cents: 5000, payment_date: today, confirmed_at: today, idempotency_key: "pg-1", created_by: "seed" });
+  db.sqlite.prepare("UPDATE finance_replacement_entries SET expense_id='exp-aberta' WHERE id=?").run(ids[0]);
+  db.sqlite.prepare("UPDATE finance_replacement_entries SET expense_id='exp-paga' WHERE id=?").run(ids[1]);
+
+  // Com a despesa: a aberta sai junto (conta a pagar também); a paga é pulada com o motivo.
+  const del = await json(await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "delete", ids, fields: { withExpense: true } }));
   assert.equal(del.applied, 1);
-  assert.deepEqual(del.skipped.map((s) => s.reason), ["JÁ VIROU DESPESA — REMOVA A DESPESA PRIMEIRO"]);
-  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_replacement_entries").get().n, 1);
+  assert.deepEqual(del.skipped.map((s) => s.reason), ["A DESPESA VINCULADA TEM PAGAMENTO REGISTRADO"]);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM expenses WHERE id='exp-aberta'").get().n, 0);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM accounts_payable WHERE id='ap-aberta'").get().n, 0);
+  // Sem a despesa: só o lançamento sai; a despesa (paga) continua.
+  const solo = await json(await post(reposicaoBulk.POST, ADMIN, "/api/finance/replacement-control/bulk", { action: "delete", ids: [ids[1]] }));
+  assert.equal(solo.applied, 1);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM finance_replacement_entries").get().n, 0);
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM expenses WHERE id='exp-paga'").get().n, 1);
 });
 
 // ---------------------------------------------------------------------------

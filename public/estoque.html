@@ -9896,6 +9896,7 @@
       <div class="dre-toolbar">
         <div class="field"><label for="crCompany">UNIDADE</label><select id="crCompany"><option value="">TODAS AS UNIDADES</option></select></div>
         <div class="field"><label for="crMonth">MÊS (DA VENDA)</label><input type="month" id="crMonth"></div>
+        <div class="field"><label for="crLogin">LOGIN</label><select id="crLogin"><option value="">TODOS</option></select></div>
         <div class="field"><label for="crProvider">FINANCEIRA</label><select id="crProvider"><option value="">TODAS</option></select></div>
         <div class="field"><label for="crStatus">SITUAÇÃO</label><select id="crStatus"><option value="">TODAS</option><option value="pending">PENDENTE</option><option value="finished">FINALIZADO</option><option value="difference">RECEBIDO COM DIFERENÇA</option><option value="canceled">CANCELADO</option></select></div>
         <div class="field"><label for="crSearch">PROPOSTA / ID DA VENDA</label><input id="crSearch" maxlength="60" placeholder="Buscar"></div>
@@ -9933,8 +9934,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="crTable">
-              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Financeira</th><th>ID venda</th><th>Proposta</th><th>Valor da venda</th><th>Taxa</th><th>Sem taxa</th><th>Situação</th><th>Recebido em</th></tr></thead>
-              <tbody id="crBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Login</th><th>Financeira</th><th>ID venda</th><th>Proposta</th><th>Valor da venda</th><th>Taxa</th><th>Sem taxa</th><th>Situação</th><th>Recebido em</th></tr></thead>
+              <tbody id="crBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -10139,8 +10140,8 @@
         <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="update">ALTERAR SETOR / MOTIVO</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="update">ALTERAR MOTIVO</button>
+          <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR SELECIONADOS</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
       </div>
@@ -10253,8 +10254,6 @@
         <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="mark-paid">MARCAR ALUGUEL % COMO PAGO</button>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="unmark-paid">DESMARCAR PAGO</button>
           <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete" data-bulk-confirm="CONFIRMAR EXCLUSÃO">EXCLUIR SELECIONADOS</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
@@ -10262,8 +10261,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="declShoppingTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>Projetado</th><th>Efetivamente declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Valor efetivamente pago</th><th>Alerta</th><th></th></tr></thead>
-            <tbody id="declShoppingTableBody"><tr><td colspan="13" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Competência</th><th>Loja</th><th>Faturamento real</th><th>Sugerido</th><th>Projetado</th><th>Efetivamente declarado</th><th>% s/ faturamento</th><th>Aluguel mínimo</th><th>Aluguel percentual</th><th>Alerta</th><th></th></tr></thead>
+            <tbody id="declShoppingTableBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -10703,17 +10702,8 @@
     <input type="hidden" id="reposicaoId">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="reposicaoData">DATA *</label><input type="date" id="reposicaoData" required></div>
-      <div class="purchase-field"><label for="reposicaoUnidade">UNIDADE *</label><select id="reposicaoUnidade" required><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field full"><label for="reposicaoProduto">PRODUTO *</label><input id="reposicaoProduto" maxlength="200" required></div>
-      <div class="purchase-field full"><label for="reposicaoMotivo">MOTIVO</label><input id="reposicaoMotivo" maxlength="500"></div>
-      <div class="purchase-field"><label for="reposicaoSetorResp">SETOR RESPONSÁVEL *</label>
-        <select id="reposicaoSetorResp" required>
-          <option value="">SELECIONE</option>
-          <option value="assistencia">ASSISTÊNCIA</option>
-          <option value="logistica">LOGÍSTICA</option>
-          <option value="outros">OUTROS</option>
-        </select>
-      </div>
+      <div class="purchase-field full"><label for="reposicaoMotivo">MOTIVO *</label><input id="reposicaoMotivo" maxlength="500" required></div>
+      <div class="purchase-field full"><label for="reposicaoProduto">PRODUTO</label><input id="reposicaoProduto" maxlength="200" placeholder="OPCIONAL"></div>
       <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL *</label><input id="reposicaoResponsavel" maxlength="160" required></div>
       <div class="purchase-field"><label for="reposicaoTipoForm">TIPO *</label>
         <select id="reposicaoTipoForm" required>
@@ -11380,10 +11370,11 @@
     <input type="hidden" id="reposicaoExpenseEntryId">
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="reposicaoExpenseItem">CATEGORIA *</label><select id="reposicaoExpenseItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="reposicaoExpenseCompany">UNIDADE DA DESPESA *</label><select id="reposicaoExpenseCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="reposicaoExpenseCostCenter">CENTRO DE CUSTO</label><select id="reposicaoExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field"><label for="reposicaoExpenseDue">VENCIMENTO *</label><input type="date" id="reposicaoExpenseDue" required></div>
     </div>
-    <p class="page-desc">A despesa é criada no módulo de Despesas (avulsa, valor e loja do lançamento) e vinculada a este lançamento.</p>
+    <p class="page-desc">A despesa é criada no módulo de Despesas (avulsa, com o valor do lançamento, na unidade escolhida) e vinculada a este lançamento.</p>
     <div class="user-form-status" id="reposicaoExpenseStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReposicaoExpenseDialog" type="button">CANCELAR</button>
@@ -11536,8 +11527,6 @@
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingMinimo">ALUGUEL MÍNIMO (R$)</label><input type="text" inputmode="decimal" id="declShoppingMinimo" placeholder="R$ 0,00"></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingSugerido">VALOR SUGERIDO P/ DECLARAÇÃO (R$)</label><input type="text" id="declShoppingSugerido" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingSugeridoConta"></small></div>
       <div class="purchase-field" data-decl-pct-field><label for="declShoppingAluguelPct">VALOR DO ALUGUEL PERCENTUAL (R$)</label><input type="text" inputmode="decimal" id="declShoppingAluguelPct" placeholder="R$ 0,00"><small class="purchase-field-help" id="declShoppingAluguelPctInfo">CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO</small></div>
-      <div class="purchase-field" data-decl-pct-field><label for="declShoppingValorPago">VALOR EFETIVAMENTE PAGO (R$)</label><input type="text" id="declShoppingValorPago" readonly placeholder="—"><small class="purchase-field-help" id="declShoppingValorPagoConta">ALUGUEL MÍNIMO + PERCENTUAL SOBRE O VALOR EFETIVAMENTE DECLARADO.</small></div>
-      <div class="purchase-field full" data-decl-pct-field><label class="assist-check" for="declShoppingPctPago"><input type="checkbox" id="declShoppingPctPago"> ALUGUEL PERCENTUAL PAGO</label></div>
       <div class="purchase-field full"><label for="declShoppingObs">OBSERVAÇÕES</label><textarea id="declShoppingObs" rows="2" maxlength="2000"></textarea></div>
     </div>
     <div id="declShoppingCalcHint" class="page-desc"></div>
@@ -11958,7 +11947,8 @@
   </div>
   <form class="purchase-form" id="crSaleForm">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="crSaleCompany">UNIDADE *</label><select id="crSaleCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="crSaleCompany">UNIDADE (QUE VENDEU) *</label><select id="crSaleCompany" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="crSaleLogin">LOGIN (USADO NA VENDA)</label><select id="crSaleLogin"><option value="">NÃO INFORMADO</option></select></div>
       <div class="purchase-field"><label for="crSaleProvider">FINANCEIRA *</label><select id="crSaleProvider" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="crSaleDate">DATA DA VENDA *</label><input type="date" id="crSaleDate" required></div>
       <div class="purchase-field"><label for="crSaleRef">ID DA VENDA (PONTTIE)</label><input id="crSaleRef" maxlength="60"></div>
@@ -11987,13 +11977,14 @@
   <form class="purchase-form" id="crBatchForm">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="crBatchCompany">UNIDADE (PADRÃO)</label><select id="crBatchCompany"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="crBatchLogin">LOGIN (PADRÃO)</label><select id="crBatchLogin"><option value="">NÃO INFORMADO</option></select></div>
       <div class="purchase-field"><label for="crBatchProvider">FINANCEIRA (PADRÃO)</label><select id="crBatchProvider"><option value="">SELECIONE</option></select></div>
     </div>
-    <p class="purchase-field-help">UNIDADE E FINANCEIRA DA LINHA EM BRANCO = AS DO CABEÇALHO. INFORME O VALOR DA VENDA: A TAXA VEM DA FINANCEIRA. LINHAS SEM VALOR SÃO IGNORADAS; PROPOSTA JÁ CADASTRADA É PULADA.</p>
+    <p class="purchase-field-help">UNIDADE, LOGIN E FINANCEIRA DA LINHA EM BRANCO = AS DO CABEÇALHO. UNIDADE = LOJA QUE VENDEU; LOGIN = LOGIN DE LOJA USADO NA VENDA (PODE SER DE OUTRA LOJA). INFORME O VALOR DA VENDA: A TAXA VEM DA FINANCEIRA. LINHAS SEM VALOR SÃO IGNORADAS; PROPOSTA JÁ CADASTRADA É PULADA.</p>
     <div class="table-panel responsive-table decl-batch-table cr-batch-table">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Unidade</th><th>Financeira</th><th>Data *</th><th>ID venda</th><th>Proposta</th><th>Valor da venda *</th><th>Taxa %</th><th>Sem taxa</th><th>Prevista</th><th>Observação</th></tr></thead>
+          <thead><tr><th>Unidade</th><th>Login</th><th>Financeira</th><th>Data *</th><th>ID venda</th><th>Proposta</th><th>Valor da venda *</th><th>Taxa %</th><th>Sem taxa</th><th>Prevista</th><th>Observação</th></tr></thead>
           <tbody id="crBatchBody"></tbody>
         </table>
       </div>
@@ -12279,14 +12270,26 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="reposicaoDeleteDialog" aria-labelledby="reposicaoDeleteTitle">
+  <div class="purchase-dialog-head"><h3 id="reposicaoDeleteTitle">EXCLUIR LANÇAMENTO</h3></div>
+  <div class="purchase-form">
+    <p class="app-confirm-message" id="reposicaoDeleteMessage"></p>
+    <label class="assist-check" id="reposicaoDeleteExpenseField" hidden><input type="checkbox" id="reposicaoDeleteExpense"> EXCLUIR TAMBÉM A DESPESA VINCULADA (CONTA A PAGAR E DRE)</label>
+    <p class="purchase-field-help" id="reposicaoDeleteExpenseHelp" hidden>DESMARCADO: SÓ O LANÇAMENTO É EXCLUÍDO E A DESPESA CONTINUA EM DESPESAS. DESPESA COM PAGAMENTO REGISTRADO NÃO É EXCLUÍDA (O LANÇAMENTO FICA).</p>
+    <div class="user-form-status" id="reposicaoDeleteStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" id="btnCancelReposicaoDelete">VOLTAR</button>
+      <button class="btn-danger-outline" type="button" id="btnConfirmReposicaoDelete">EXCLUIR</button>
+    </div>
+  </div>
+</dialog>
 <dialog class="purchase-dialog" id="reposicaoBulkDialog" aria-labelledby="reposicaoBulkTitle">
   <div class="purchase-dialog-head">
-    <h3 id="reposicaoBulkTitle">ALTERAR SETOR / MOTIVO</h3>
+    <h3 id="reposicaoBulkTitle">ALTERAR MOTIVO</h3>
     <button class="purchase-dialog-close" id="btnCloseReposicaoBulk" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="reposicaoBulkForm">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="reposicaoBulkSetor">SETOR</label><select id="reposicaoBulkSetor"><option value="">NÃO ALTERAR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
       <div class="purchase-field full"><label for="reposicaoBulkMotivo">MOTIVO</label><input id="reposicaoBulkMotivo" maxlength="500" placeholder="EM BRANCO = NÃO ALTERAR"></div>
     </div>
     <div class="user-form-status" id="reposicaoBulkStatus" role="status" aria-live="polite"></div>
@@ -12340,11 +12343,11 @@
     <button class="purchase-dialog-close" id="btnCloseReposicaoBatch" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="reposicaoBatchForm">
-    <p class="purchase-field-help">LINHAS SEM PRODUTO E SEM VALOR SÃO IGNORADAS. AS PULADAS FICAM NA GRADE COM O MOTIVO.</p>
+    <p class="purchase-field-help">LINHAS SEM MOTIVO E SEM VALOR SÃO IGNORADAS. AS PULADAS FICAM NA GRADE COM O MOTIVO DO ERRO.</p>
     <div class="table-panel responsive-table decl-batch-table cr-batch-table">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Data *</th><th>Unidade *</th><th>Produto *</th><th>Motivo</th><th>Setor *</th><th>Responsável</th><th>Tipo *</th><th>Valor *</th></tr></thead>
+          <thead><tr><th>Data *</th><th>Motivo *</th><th>Responsável *</th><th>Tipo *</th><th>Valor *</th></tr></thead>
           <tbody id="reposicaoBatchBody"></tbody>
         </table>
       </div>
@@ -39247,7 +39250,7 @@ function renderHomeTasks(){
     return loadCrSales();
   }
   document.querySelectorAll('[data-cr-tab]').forEach(btn => btn.addEventListener('click', () => setCrTab(btn.dataset.crTab)));
-  ['crCompany','crMonth','crProvider','crStatus'].forEach(id => el(id).addEventListener('change', loadCrTab));
+  ['crCompany','crLogin','crMonth','crProvider','crStatus'].forEach(id => el(id).addEventListener('change', loadCrTab));
   let crSearchTimer = 0;
   el('crSearch').addEventListener('input', () => { clearTimeout(crSearchTimer); crSearchTimer = setTimeout(() => loadCrSales({silent:true}), 300); });
   ['crEntryAccount','crEntryMonth'].forEach(id => el(id).addEventListener('change', () => loadCrEntries()));
@@ -39270,6 +39273,7 @@ function renderHomeTasks(){
     if(!el('crMonth').value) el('crMonth').value = financeCurrentMonthKey();
     if(!el('crEntryMonth').value) el('crEntryMonth').value = financeCurrentMonthKey();
     fillSelect('crCompany', '<option value="">TODAS AS UNIDADES</option>', crCompanyOptions());
+    fillSelect('crLogin', '<option value="">TODOS</option>', crCompanyOptions());
     try{
       const accounts = await financeApiRequest('/accounts?includeInactive=1');
       reconAccounts = Array.isArray(accounts.accounts) ? accounts.accounts : [];
@@ -39280,16 +39284,16 @@ function renderHomeTasks(){
   }
 
   // --- CREDIÁRIOS: lista, cards e lote ---
+  // Cartões no topo: seguem os filtros da tela (unidade, login, mês, financeira, situação e busca).
   function renderCrSummary(s){
     if(!s){ el('crSummary').innerHTML = ''; return; }
-    const month = s.month.split('-').reverse().join('/');
     const card = (label, value, sub, neg) => '<div class="card'+(neg ? ' neg' : '')+'"><div class="lbl">'+label+'</div><div class="num">'+value+'</div><div class="sub">'+sub+'</div></div>';
     el('crSummary').innerHTML =
-      card('TOTAL PENDENTE (SEM TAXA)', formatCentsBRL(s.pendingCents), 'a receber das financeiras')+
-      card('FINALIZADO NO MÊS', formatCentsBRL(s.finishedMonthCents), 'recebido em '+month)+
-      card('TAXAS PAGAS NO MÊS', formatCentsBRL(s.feesMonthCents), 'vendas de '+month)+
+      card('VALOR BRUTO TOTAL', formatCentsBRL(s.grossCents), 'valor das vendas')+
+      card('VALOR LÍQUIDO', formatCentsBRL(s.netCents), 'sem a taxa (o que cai no extrato)')+
+      card('VALOR DE TAXAS', formatCentsBRL(s.feeCents), 'pago às financeiras')+
       card('QUANTIDADE PENDENTE', String(s.pendingCount), 'crediário(s)')+
-      card('PENDENTES HÁ MAIS DE 30 DIAS', String(s.pendingOver30), 'venda há mais de 30 dias', s.pendingOver30 > 0);
+      card('PENDENTE HÁ MAIS DE 7 DIAS', String(s.pendingOver7), 'venda há mais de 7 dias', s.pendingOver7 > 0);
   }
   function crStatusPill(r){
     let pill = CR_STATUS[r.status] || ['progress', r.status];
@@ -39303,6 +39307,7 @@ function renderHomeTasks(){
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar proposta '+r.proposal)+'</td>'+
         '<td data-label="Data">'+escapeHtml(formatDateBR(r.saleDate))+'</td>'+
         '<td data-label="Unidade">'+escapeHtml(r.companyName || crCompanyName(r.companyId))+'</td>'+
+        '<td data-label="Login">'+escapeHtml(r.loginCompanyName || (r.loginCompanyId ? crCompanyName(r.loginCompanyId) : '—'))+'</td>'+
         '<td data-label="Financeira">'+escapeHtml(r.providerName || '—')+'</td>'+
         '<td data-label="ID venda">'+escapeHtml(r.saleRef || '—')+'</td>'+
         '<td data-label="Proposta"><span><strong>'+escapeHtml(r.proposal || '—')+'</strong>'+(r.customerName ? ' <small>'+escapeHtml(r.customerName)+'</small>' : '')+'</span></td>'+
@@ -39311,13 +39316,13 @@ function renderHomeTasks(){
         '<td data-label="Sem taxa"><strong>'+formatCentsBRL(r.netCents)+'</strong></td>'+
         '<td data-label="Situação"><span>'+crStatusPill(r)+'</span></td>'+
         '<td data-label="Recebido em"><span>'+(r.receivedDate ? escapeHtml(formatDateBR(r.receivedDate))+' <small>'+(r.bankEntryId ? 'EXTRATO' : 'MANUAL')+'</small>' : (r.expectedDate ? '<small>PREVISTO '+escapeHtml(formatDateBR(r.expectedDate))+'</small>' : '—'))+'</span></td>'+
-      '</tr>').join('') : '<tr><td colspan="11" class="responsive-empty">Nenhum crediário para os filtros.</td></tr>';
+      '</tr>').join('') : '<tr><td colspan="12" class="responsive-empty">Nenhum crediário para os filtros.</td></tr>';
     crBulk.sync();
   }
   async function loadCrSales(opts){
-    if(!opts || !opts.silent) el('crBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('crBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
     const params = new URLSearchParams();
-    [['companyId','crCompany'],['month','crMonth'],['providerId','crProvider'],['status','crStatus'],['q','crSearch']].forEach(([key, id]) => {
+    [['companyId','crCompany'],['loginCompanyId','crLogin'],['month','crMonth'],['providerId','crProvider'],['status','crStatus'],['q','crSearch']].forEach(([key, id]) => {
       if(el(id).value.trim()) params.set(key, el(id).value.trim());
     });
     if(crEntryFilter) params.set('bankEntryId', crEntryFilter);
@@ -39331,7 +39336,7 @@ function renderHomeTasks(){
       renderCrSales();
     }catch(error){
       crRows = [];
-      el('crBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('crBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   el('crEntryFilterNote').addEventListener('click', event => {
@@ -39406,6 +39411,8 @@ function renderHomeTasks(){
     el('crSaleStatus').textContent = '';
     fillSelect('crSaleCompany', '<option value="">SELECIONE</option>', crCompanyOptions());
     el('crSaleCompany').value = el('crCompany').value;
+    fillSelect('crSaleLogin', '<option value="">NÃO INFORMADO</option>', crCompanyOptions());
+    el('crSaleLogin').value = el('crLogin').value;
     crFillSaleProviders();
     if(el('crProvider').value && Array.from(el('crSaleProvider').options).some(o => o.value === el('crProvider').value)) el('crSaleProvider').value = el('crProvider').value;
     crBindAmounts(el('crSaleForm'));
@@ -39424,7 +39431,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('crSaleStatus');
     const payload = Object.assign({
-      companyId: el('crSaleCompany').value, providerId: el('crSaleProvider').value, saleDate: el('crSaleDate').value,
+      companyId: el('crSaleCompany').value, loginCompanyId: el('crSaleLogin').value, providerId: el('crSaleProvider').value, saleDate: el('crSaleDate').value,
       saleRef: el('crSaleRef').value, proposal: el('crSaleProposal').value,
       expectedDate: el('crSaleExpected').value, notes: el('crSaleNotes').value
     }, crAmountsPayload(el('crSaleForm')));
@@ -39445,6 +39452,7 @@ function renderHomeTasks(){
     const html = Array.from({length: count}, () =>
       '<tr data-cr-batch-row>'+
         '<td data-label="UNIDADE"><select data-cr-batch="companyId" aria-label="Unidade">'+companyOptions+'</select></td>'+
+        '<td data-label="LOGIN"><select data-cr-batch="loginCompanyId" aria-label="Login usado na venda">'+companyOptions+'</select></td>'+
         '<td data-label="FINANCEIRA"><select data-cr-batch="providerId" aria-label="Financeira">'+providerOptions+'</select></td>'+
         '<td data-label="DATA"><input type="date" data-cr-batch="saleDate" aria-label="Data da venda"></td>'+
         '<td data-label="ID VENDA"><input data-cr-batch="saleRef" maxlength="60" aria-label="ID da venda"></td>'+
@@ -39470,6 +39478,7 @@ function renderHomeTasks(){
   el('btnCrBatch').addEventListener('click', async () => {
     if(!crProviders.length) await crLoadProviders();
     fillSelect('crBatchCompany', '<option value="">SELECIONE</option>', crCompanyOptions());
+    fillSelect('crBatchLogin', '<option value="">NÃO INFORMADO</option>', crCompanyOptions());
     fillSelect('crBatchProvider', '<option value="">SELECIONE</option>', crProviderOptions(''));
     if(el('crCompany').value) el('crBatchCompany').value = el('crCompany').value;
     el('crBatchBody').innerHTML = '';
@@ -39499,7 +39508,7 @@ function renderHomeTasks(){
     status.textContent = 'Salvando…';
     try{
       const res = await financeApiRequest('/credit-sales/batch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-        companyId: el('crBatchCompany').value, providerId: el('crBatchProvider').value, rows
+        companyId: el('crBatchCompany').value, loginCompanyId: el('crBatchLogin').value, providerId: el('crBatchProvider').value, rows
       })});
       const skipped = Array.isArray(res.skipped) ? res.skipped : [];
       // Fica na grade só o que foi pulado, para corrigir e salvar de novo.
@@ -40566,7 +40575,6 @@ function renderHomeTasks(){
       try{ const cc = await financeApiRequest('/cost-centers'); financeCostCenters = Array.isArray(cc.costCenters) ? cc.costCenters : []; }catch(_e){}
     }
     fase8CompanyOptions('reposicaoLoja', 'TODAS AS UNIDADES');
-    fase8CompanyOptions('reposicaoUnidade', '');
     await reloadReposicao();
     await loadRpBank();
   }
@@ -40611,19 +40619,19 @@ function renderHomeTasks(){
         ? '<span class="status-pill ok">VINCULADA</span>'
         : (eligible ? '<button class="btn-outline btn-sm" type="button" data-reposicao-expense="'+escapeHtml(r.id)+'">ADICIONAR</button>' : '—');
       return '<tr>'+
-        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar '+(r.product || 'lançamento'))+'</td>'+
+        '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar '+(r.product || r.reason || 'lançamento'))+'</td>'+
         '<td data-label="Data">'+escapeHtml(formatDateBR(r.entryDate))+'</td>'+
         '<td data-label="Unidade">'+escapeHtml(r.companyName || fase8CompanyName(r.companyId) || '—')+'</td>'+
         '<td data-label="Produto">'+escapeHtml(r.product || '—')+'</td>'+
         '<td data-label="Motivo">'+escapeHtml(r.reason || '—')+'</td>'+
-        '<td data-label="Setor">'+escapeHtml(REPOSICAO_SECTOR_LABELS[r.sector] || r.sector)+'</td>'+
+        '<td data-label="Setor">'+escapeHtml(REPOSICAO_SECTOR_LABELS[r.sector] || r.sector || '—')+'</td>'+
         '<td data-label="Responsável">'+escapeHtml(r.responsibleName || '—')+'</td>'+
         '<td data-label="Tipo">'+escapeHtml(REPOSICAO_KIND_LABELS[r.kind] || r.kind)+'</td>'+
         '<td data-label="Valor">'+formatCentsBRL(r.amountCents)+'</td>'+
         '<td data-label="Despesa">'+despesaCell+'</td>'+
         '<td data-label="Ações" style="white-space:nowrap">'+
           '<button class="btn-outline btn-sm" type="button" data-reposicao-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
-          (r.expenseId ? '' : '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>')+
+          '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</td>'+
       '</tr>';
     }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhum lançamento.</td></tr>';
@@ -40636,22 +40644,53 @@ function renderHomeTasks(){
     if(action === 'update'){
       reposicaoBulkIds = ids;
       el('reposicaoBulkForm').reset();
-      el('reposicaoBulkTitle').textContent = 'ALTERAR SETOR / MOTIVO — '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
+      el('reposicaoBulkTitle').textContent = 'ALTERAR MOTIVO — '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
       el('reposicaoBulkStatus').textContent = '';
       el('reposicaoBulkDialog').showModal();
       return false;
     }
-    await financeBulkRequest('/replacement-control/bulk', {action, ids});
-    await reloadReposicao();
+    if(action === 'delete'){ openReposicaoDeleteDialog(ids); return false; }
+  });
+  // EXCLUIR (uma linha ou selecionados): confirmação na janela própria; se algum
+  // já virou despesa, pergunta se a despesa vinculada também sai.
+  let reposicaoDeleteIds = [];
+  function openReposicaoDeleteDialog(ids){
+    reposicaoDeleteIds = ids;
+    const linked = reposicaoRows.filter(r => ids.includes(r.id) && r.expenseId).length;
+    el('reposicaoDeleteTitle').textContent = ids.length === 1 ? 'EXCLUIR LANÇAMENTO' : 'EXCLUIR '+ids.length+' LANÇAMENTOS';
+    el('reposicaoDeleteMessage').textContent = (ids.length === 1 ? 'EXCLUIR ESTE LANÇAMENTO?' : 'EXCLUIR OS '+ids.length+' LANÇAMENTOS SELECIONADOS?')+
+      (linked ? ' '+(ids.length === 1 ? 'ELE JÁ VIROU DESPESA.' : linked+' DELES JÁ VIRARAM DESPESA.') : '');
+    el('reposicaoDeleteExpenseField').hidden = !linked;
+    el('reposicaoDeleteExpenseHelp').hidden = !linked;
+    el('reposicaoDeleteExpense').checked = false;
+    el('reposicaoDeleteStatus').textContent = '';
+    el('reposicaoDeleteDialog').showModal();
+  }
+  el('btnCancelReposicaoDelete').addEventListener('click', () => el('reposicaoDeleteDialog').close());
+  el('btnConfirmReposicaoDelete').addEventListener('click', async () => {
+    const withExpense = el('reposicaoDeleteExpense').checked;
+    const button = el('btnConfirmReposicaoDelete');
+    button.disabled = true;
+    try{
+      if(reposicaoDeleteIds.length === 1){
+        await financeApiRequest('/replacement-control?id='+encodeURIComponent(reposicaoDeleteIds[0])+(withExpense ? '&withExpense=1' : ''), {method:'DELETE'});
+        showPurchaseToast(withExpense ? 'Lançamento e despesa excluídos.' : 'Lançamento excluído.');
+      }else{
+        await financeBulkRequest('/replacement-control/bulk', {action:'delete', ids: reposicaoDeleteIds, fields:{withExpense}});
+      }
+      el('reposicaoDeleteDialog').close();
+      reposicaoBulk.clear();
+      await Promise.all([reloadReposicao(), loadRpBank()]);
+    }catch(error){ el('reposicaoDeleteStatus').textContent = error.message; }
+    finally{ button.disabled = false; }
   });
   el('btnCloseReposicaoBulk').addEventListener('click', () => el('reposicaoBulkDialog').close());
   el('btnCancelReposicaoBulk').addEventListener('click', () => el('reposicaoBulkDialog').close());
   el('reposicaoBulkForm').addEventListener('submit', async event => {
     event.preventDefault();
     const fields = {};
-    if(el('reposicaoBulkSetor').value) fields.sector = el('reposicaoBulkSetor').value;
     if(el('reposicaoBulkMotivo').value.trim()) fields.reason = el('reposicaoBulkMotivo').value.trim();
-    if(!Object.keys(fields).length){ el('reposicaoBulkStatus').textContent = 'ESCOLHA O SETOR OU INFORME O MOTIVO.'; return; }
+    if(!Object.keys(fields).length){ el('reposicaoBulkStatus').textContent = 'INFORME O MOTIVO.'; return; }
     try{
       await financeBulkRequest('/replacement-control/bulk', {action:'update', ids: reposicaoBulkIds, fields});
       el('reposicaoBulkDialog').close();
@@ -40661,8 +40700,6 @@ function renderHomeTasks(){
   });
 
   function reposicaoBatchAddRows(count){
-    const companyOptions = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-    const sectorOptions = '<option value="">SELECIONE</option>'+Object.keys(REPOSICAO_SECTOR_LABELS).map(k => '<option value="'+k+'">'+REPOSICAO_SECTOR_LABELS[k]+'</option>').join('');
     const kindOptions = '<option value="">SELECIONE</option>'+Object.keys(REPOSICAO_KIND_LABELS).map(k => '<option value="'+k+'">'+REPOSICAO_KIND_LABELS[k]+'</option>').join('');
     const today = todayDateKeyRecife();
     const body = el('reposicaoBatchBody');
@@ -40670,10 +40707,7 @@ function renderHomeTasks(){
     body.insertAdjacentHTML('beforeend', Array.from({length: count}, () =>
       '<tr>'+
         '<td data-label="DATA"><input type="date" data-rp-batch="entryDate" value="'+today+'" aria-label="Data"></td>'+
-        '<td data-label="UNIDADE"><select data-rp-batch="companyId" aria-label="Unidade">'+companyOptions+'</select></td>'+
-        '<td data-label="PRODUTO"><input data-rp-batch="product" maxlength="200" aria-label="Produto"></td>'+
         '<td data-label="MOTIVO"><input data-rp-batch="reason" maxlength="500" aria-label="Motivo"></td>'+
-        '<td data-label="SETOR"><select data-rp-batch="sector" aria-label="Setor">'+sectorOptions+'</select></td>'+
         '<td data-label="RESPONSÁVEL"><input data-rp-batch="responsibleName" maxlength="160" aria-label="Responsável"></td>'+
         '<td data-label="TIPO"><select data-rp-batch="kind" aria-label="Tipo">'+kindOptions+'</select></td>'+
         '<td data-label="VALOR"><input data-rp-batch="amount" aria-label="Valor"></td>'+
@@ -40694,14 +40728,12 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('reposicaoBatchStatus');
     const filled = Array.from(el('reposicaoBatchBody').rows).filter(tr =>
-      tr.querySelector('[data-rp-batch="product"]').value.trim() || getCurrencyValue(tr.querySelector('[data-rp-batch="amount"]')));
+      tr.querySelector('[data-rp-batch="reason"]').value.trim() || getCurrencyValue(tr.querySelector('[data-rp-batch="amount"]')));
     if(!filled.length){ status.textContent = 'PREENCHA AO MENOS UMA LINHA.'; return; }
     const rows = filled.map(tr => {
       const field = name => tr.querySelector('[data-rp-batch="'+name+'"]');
-      const companyId = field('companyId').value;
       return {
-        entryDate: field('entryDate').value, companyId, companyName: fase8CompanyName(companyId),
-        product: field('product').value.trim(), reason: field('reason').value.trim(), sector: field('sector').value,
+        entryDate: field('entryDate').value, reason: field('reason').value.trim(),
         responsibleName: field('responsibleName').value.trim(), kind: field('kind').value,
         amountCents: Math.round(Number(getCurrencyValue(field('amount')) || 0) * 100)
       };
@@ -40833,21 +40865,21 @@ function renderHomeTasks(){
       el('reposicaoData').value = exit.entryDate;
       setCurrencyValue(el('reposicaoValor'), Math.abs(exit.amountCents) / 100);
       el('reposicaoMotivo').value = exit.description || '';
-      if(exit.companyId) el('reposicaoUnidade').value = exit.companyId;
     }
   });
 
   function openReposicaoDialog(row){
     rpLinkAfterSave = '';
     el('reposicaoForm').reset();
-    fase8CompanyOptions('reposicaoUnidade', '');
+    // Sem unidade e sem setor no formulário (02/11/2026): o antigo mantém os que tem.
+    el('reposicaoForm').dataset.companyId = row ? (row.companyId || '') : '';
+    el('reposicaoForm').dataset.companyName = row ? (row.companyName || '') : '';
+    el('reposicaoForm').dataset.sector = row ? (row.sector || '') : '';
     el('reposicaoId').value = row ? row.id : '';
     el('reposicaoDialogTitle').textContent = row ? 'EDITAR LANÇAMENTO' : 'NOVO LANÇAMENTO';
     el('reposicaoData').value = row ? row.entryDate : todayDateKeyRecife();
-    el('reposicaoUnidade').value = row ? row.companyId : '';
     el('reposicaoProduto').value = row ? (row.product || '') : '';
     el('reposicaoMotivo').value = row ? (row.reason || '') : '';
-    el('reposicaoSetorResp').value = row ? row.sector : '';
     el('reposicaoResponsavel').value = row ? (row.responsibleName || '') : '';
     el('reposicaoTipoForm').value = row ? row.kind : '';
     setCurrencyValue(el('reposicaoValor'), row && row.amountCents ? row.amountCents/100 : '');
@@ -40864,13 +40896,13 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('reposicaoFormStatus');
     status.textContent = '';
-    const companyId = el('reposicaoUnidade').value;
+    const form = el('reposicaoForm').dataset;
     const payload = {
       entryDate: el('reposicaoData').value,
-      companyId, companyName: fase8CompanyName(companyId),
+      companyId: form.companyId || '', companyName: form.companyName || '',
       product: el('reposicaoProduto').value.trim(),
       reason: el('reposicaoMotivo').value.trim(),
-      sector: el('reposicaoSetorResp').value,
+      sector: form.sector || '',
       responsibleName: el('reposicaoResponsavel').value.trim(),
       kind: el('reposicaoTipoForm').value,
       amountCents: Math.round(Number(getCurrencyValue(el('reposicaoValor'))) * 100),
@@ -40895,11 +40927,7 @@ function renderHomeTasks(){
     const del = event.target.closest('[data-reposicao-del]');
     const exp = event.target.closest('[data-reposicao-expense]');
     if(edit){ const r = reposicaoRows.find(x => x.id === edit.dataset.reposicaoEdit); if(r) openReposicaoDialog(r); }
-    else if(del){
-      if(!await askConfirm('Excluir este lançamento?')) return;
-      try{ await financeApiRequest('/replacement-control?id='+encodeURIComponent(del.dataset.reposicaoDel), {method:'DELETE'}); await reloadReposicao(); showPurchaseToast('Lançamento excluído.'); }
-      catch(error){ alert(error.message); }
-    }
+    else if(del) openReposicaoDeleteDialog([del.dataset.reposicaoDel]);
     else if(exp){ const r = reposicaoRows.find(x => x.id === exp.dataset.reposicaoExpense); if(r) openReposicaoExpenseDialog(r); }
   });
 
@@ -40909,6 +40937,8 @@ function renderHomeTasks(){
     const cc = el('reposicaoExpenseCostCenter');
     cc.innerHTML = '<option value="">SEM CENTRO DE CUSTO</option>' + (financeCostCenters||[]).map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
     el('reposicaoExpenseEntryId').value = row.id;
+    fase8CompanyOptions('reposicaoExpenseCompany', '');
+    el('reposicaoExpenseCompany').value = row.companyId || '';
     el('reposicaoExpenseDue').value = row.entryDate;
     el('reposicaoExpenseStatus').textContent = '';
     el('reposicaoExpenseDialog').showModal();
@@ -40926,11 +40956,13 @@ function renderHomeTasks(){
     const dueDate = el('reposicaoExpenseDue').value;
     if(!financeItemId){ status.textContent = 'SELECIONE A CATEGORIA.'; return; }
     if(!dueDate){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
+    const expenseCompanyId = el('reposicaoExpenseCompany').value;
+    if(!expenseCompanyId){ status.textContent = 'SELECIONE A UNIDADE DA DESPESA.'; return; }
     try{
       const expensePayload = {
         idempotencyKey: 'reposicao:'+entryId,
-        companyId: row.companyId,
-        companyName: row.companyName || fase8CompanyName(row.companyId),
+        companyId: expenseCompanyId,
+        companyName: fase8CompanyName(expenseCompanyId),
         description: ('Reposição: '+(row.product || REPOSICAO_KIND_LABELS[row.kind])).slice(0,200),
         financeItemId,
         costCenterId: el('reposicaoExpenseCostCenter').value || '',
@@ -43853,7 +43885,7 @@ function renderHomeTasks(){
       renderDeclShopping();
     }catch(error){
       declShoppingRows = [];
-      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      body.innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
       declShoppingBulk.sync();
     }
   }
@@ -43878,16 +43910,23 @@ function renderHomeTasks(){
         '<td data-label="EFETIVAMENTE DECLARADO">'+(Number(r.declaredCents) > 0 ? formatCentsBRL(r.declaredCents) : '<span class="status-pill warn">AGUARDANDO DECLARAÇÃO</span>')+'</td>'+
         '<td data-label="% S/ FATURAMENTO">'+pctFromBps(d.declaredShareBps)+'</td>'+
         '<td data-label="ALUGUEL MÍNIMO">'+(hasPct ? formatCentsBRL(r.minimumRentCents)+' · '+declPctLabel(r.contractPercentBps) : '—')+'</td>'+
-        '<td data-label="ALUGUEL PERCENTUAL"><span>'+(hasPct ? formatCentsBRL(d.percentageRentCents)+' <span class="status-pill '+(r.percentageRentPaid ? 'ok' : 'warn')+'">'+(r.percentageRentPaid ? 'PAGO' : 'NÃO PAGO')+'</span>' : 'SEM PERCENTUAL')+'</span></td>'+
-        '<td data-label="VALOR EFETIVAMENTE PAGO">'+(hasPct ? formatCentsBRL(d.paidRentCents) : '—')+'</td>'+
+        '<td data-label="ALUGUEL PERCENTUAL">'+declShoppingRentCell(r, hasPct)+'</td>'+
         '<td data-label="ALERTA">'+(d.alertLevel && d.alertLevel !== 'none' ? '<span class="status-pill '+(d.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(d.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '—')+'</td>'+
         '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
           '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'">EDITAR</button>'+
           '<button class="btn-outline btn-sm" type="button" data-decl-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</div></td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="13" class="responsive-empty">Nenhuma declaração.</td></tr>';
+    }).join('') : '<tr><td colspan="12" class="responsive-empty">Nenhuma declaração.</td></tr>';
     declShoppingBulk.sync();
+  }
+  // Aluguel percentual da linha: o salvo; diferente do calculado = digitado (MANUAL), com o calculado ao lado.
+  function declShoppingRentCell(r, hasPct){
+    if(!hasPct) return 'SEM PERCENTUAL';
+    const saved = Number(r.derived && r.derived.percentageRentCents) || 0;
+    const calc = declShoppingDerive(r).percentageRentCents;
+    return saved === calc ? formatCentsBRL(saved)
+      : formatCentsBRL(saved)+' <span class="status-pill warn">MANUAL</span><br><small class="purchase-field-help">CALCULADO: '+formatCentsBRL(calc)+'</small>';
   }
   const declShoppingBulk = setupBulkSelection(el('declShoppingBulkBar'), el('declShoppingTableBody'), async (action, ids) => {
     const res = await financeApiRequest('/mall-declarations/bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, ids})});
@@ -43906,7 +43945,6 @@ function renderHomeTasks(){
       plannedCents: declMoneyCents(el('declShoppingProjetado')),
       contractPercentBps: hasPct ? declPctToBps(el('declShoppingPercentual').value) : 0,
       minimumRentCents: hasPct ? declMoneyCents(el('declShoppingMinimo')) : 0,
-      percentageRentPaid: hasPct && el('declShoppingPctPago').checked,
       // Digitado (valor cobrado pelo shopping) substitui o calculado; vazio = calculado.
       percentageRentCents: hasPct && el('declShoppingAluguelPct').dataset.manual === '1' ? declMoneyCents(el('declShoppingAluguelPct')) : undefined,
       notes: el('declShoppingObs').value
@@ -43924,13 +43962,8 @@ function renderHomeTasks(){
     const rentInput = el('declShoppingAluguelPct');
     if(rentInput.dataset.manual !== '1') setCurrencyValue(rentInput, hasPct ? d.percentageRentCents / 100 : '');
     el('declShoppingAluguelPctInfo').textContent = rentInput.dataset.manual === '1'
-      ? 'DIGITADO · CALCULADO SERIA '+formatCentsBRL(d.percentageRentCents)+' (APAGUE PARA VOLTAR AO CÁLCULO)'
+      ? 'MANUAL · CALCULADO: '+formatCentsBRL(d.percentageRentCents)+' (APAGUE PARA VOLTAR AO CÁLCULO)'
       : 'CALCULADO: DECLARADO × % − MÍNIMO · PODE DIGITAR O VALOR COBRADO';
-    const rentCents = rentInput.dataset.manual === '1' ? declMoneyCents(rentInput) : d.percentageRentCents;
-    el('declShoppingValorPago').value = hasPct ? formatCentsBRL(f.minimumRentCents + rentCents) : '';
-    el('declShoppingValorPagoConta').textContent = hasPct
-      ? formatCentsBRL(f.minimumRentCents)+' (MÍNIMO) + '+formatCentsBRL(rentCents)+' (PERCENTUAL SOBRE '+formatCentsBRL(f.declaredCents)+' DECLARADO)'
-      : 'ALUGUEL MÍNIMO + PERCENTUAL SOBRE O VALOR EFETIVAMENTE DECLARADO.';
     const hint = el('declShoppingCalcHint');
     if(!hasPct || !d.breakpointCents){ hint.textContent = ''; return; }
     let msg = 'PONTO DE VIRADA: '+formatCentsBRL(d.breakpointCents)+' (ATÉ ESTE VALOR DECLARADO O ALUGUEL PERCENTUAL FICA ZERADO).';
@@ -43991,7 +44024,6 @@ function renderHomeTasks(){
       el('declShoppingTemPct').checked = Number(row.contractPercentBps) > 0;
       el('declShoppingPercentual').value = row.contractPercentBps ? String(row.contractPercentBps / 100) : '';
       setCurrencyValue(el('declShoppingMinimo'), row.minimumRentCents ? row.minimumRentCents / 100 : '');
-      el('declShoppingPctPago').checked = !!row.percentageRentPaid;
       el('declShoppingObs').value = row.notes || '';
       // Valor salvo diferente do cálculo = foi digitado: mantém.
       const savedRent = Number(row.derived && row.derived.percentageRentCents) || 0;

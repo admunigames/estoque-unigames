@@ -110,7 +110,8 @@ export async function POST(request: Request) {
 
     const values = parseDeclarationValues(body);
     if ("error" in values) return jsonResponse(values, 400);
-    const percentageRentPaid = body.percentageRentPaid === true || body.percentageRentPaid === 1 ? 1 : 0;
+    // ALUGUEL PERCENTUAL PAGO saiu da tela (02/11/2026): sem o campo, a edição mantém o que está salvo.
+    const percentageRentPaid = body.percentageRentPaid === undefined ? null : body.percentageRentPaid === true || body.percentageRentPaid === 1 ? 1 : 0;
     // Aluguel percentual digitado (valor cobrado) substitui o calculado; ausente = calculado.
     const typedRent = body.percentageRentCents === undefined || body.percentageRentCents === null || body.percentageRentCents === "" ? null : Number(body.percentageRentCents);
     if (typedRent !== null && !(Number.isInteger(typedRent) && typedRent >= 0)) {
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
              company_id=?1, company_name=?2, competence_month=?3,
              real_revenue_cents=?4, suggested_declared_cents=?5, declared_cents=?6,
              contract_percent_bps=?7, minimum_rent_cents=?8, percentage_rent_cents=?9,
-             percentage_rent_paid=?10, notes=?11,
+             percentage_rent_paid=COALESCE(?10, percentage_rent_paid), notes=?11,
              updated_by=?12, updated_by_name=?13, updated_at=CURRENT_TIMESTAMP,
              planned_cents=COALESCE(?15, planned_cents)
            WHERE id=?14`,
@@ -181,7 +182,7 @@ export async function POST(request: Request) {
     await insertDeclarationStatement(database, {
       id, companyId, companyName, competenceMonth, realRevenueCents,
       declaredCents: values.declaredCents, contractPercentBps: values.contractPercentBps,
-      minimumRentCents: values.minimumRentCents, percentageRentCents, percentageRentPaid, notes, actorId: actor.id, who,
+      minimumRentCents: values.minimumRentCents, percentageRentCents, percentageRentPaid: percentageRentPaid ?? 0, notes, actorId: actor.id, who,
       plannedCents: plannedCents ?? 0,
     }).run();
     return jsonResponse({ created: true, id }, 201);

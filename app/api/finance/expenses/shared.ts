@@ -539,3 +539,62 @@ export async function planExpense(
 
   return { expenseId, statements, payableIds: createdPayableIds, dreWarning };
 }
+
+/**
+ * Exclusão da despesa INTEIRA (contas, pagamentos/agendamentos e anexos,
+ * fatias do rateio, anexos da despesa) com a DRE das células tocadas
+ * recalculada — mesma regra do EXCLUIR em lote de Despesas. Pula (com o
+ * motivo) a que tem pagamento confirmado e a que veio do cartão corporativo
+ * ou do extrato (o lançamento de origem apontaria para ela). Usada também
+ * pelo Controle de Reposição ao excluir um lançamento que virou despesa.
+ */
+export async function planExpenseDeletion(
+  database: Awaited<ReturnType<typeof getD1>>,
+  expense: ExpenseRow,
+  actor: { id: string; name: string },
+): Promise<{ statements: [string, unknown[]][] } | { skip: string }> {
+  if (expense.cardId || expense.bankReconciliationId) return { skip: "DESPESA VEIO DO CARTÃO OU DO EXTRATO — EXCLUA PELA ORIGEM" };
+  const payables =
+    (
+      await database
+        .prepare(
+          `SELECT id, company_id AS companyId, finance_item_id AS financeItemId, competence_month AS competenceMonth
+           FROM accounts_payable WHERE expense_id=?1`,
+        )
+        .bind(expense.id)
+        .all<{ id: string; companyId: string; financeItemId: string; competenceMonth: string }>()
+    ).results ?? [];
+  const paid = payables.length
+    ? await database
+        .prepare(
+          `SELECT COUNT(*) AS n FROM accounts_payable_payments
+           WHERE confirmed_at <> '' AND payable_id IN (${payables.map((_, index) => `?${index + 1}`).join(",")})`,
+        )
+        .bind(...payables.map((payable) => payable.id))
+        .first<{ n: number }>()
+    : { n: 0 };
+  if (Number(paid?.n || 0)) return { skip: "TEM PAGAMENTO REGISTRADO" };
+  const statements: [string, unknown[]][] = [];
+  const slots = new Map<string, [string, string, string]>();
+  for (const payable of payables) {
+    statements.push(
+      [
+        `DELETE FROM accounts_payable_payment_attachments
+         WHERE payment_id IN (SELECT id FROM accounts_payable_payments WHERE payable_id=?1)`,
+        [payable.id],
+      ],
+      ["DELETE FROM accounts_payable_payments WHERE payable_id=?1", [payable.id]],
+      ["DELETE FROM accounts_payable WHERE id=?1", [payable.id]],
+    );
+    slots.set(`${payable.companyId}|${payable.financeItemId}|${payable.competenceMonth}`, [payable.companyId, payable.financeItemId, payable.competenceMonth]);
+  }
+  statements.push(
+    ["DELETE FROM expense_rateio_shares WHERE expense_id=?1", [expense.id]],
+    ["DELETE FROM expense_attachments WHERE expense_id=?1", [expense.id]],
+    ["DELETE FROM expenses WHERE id=?1", [expense.id]],
+  );
+  for (const [companyId, itemId, month] of slots.values()) {
+    statements.push(...recalcPayableEntrySql(crypto.randomUUID(), companyId, itemId, month, actor.id, actor.name));
+  }
+  return { statements };
+}

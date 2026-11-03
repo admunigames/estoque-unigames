@@ -322,6 +322,10 @@ test("23/10/2026: VALOR PROJETADO digitado e VALOR EFETIVAMENTE PAGO (mínimo + 
 
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
   assert.match(html, /id="declShoppingProjetado"/);
-  assert.match(html, /id="declShoppingValorPago" readonly/);
-  assert.match(html, /<th>Valor efetivamente pago<\/th>/);
+  // 02/11/2026: VALOR EFETIVAMENTE PAGO e ALUGUEL PERCENTUAL PAGO saíram da tela (dados ficam no banco).
+  assert.doesNotMatch(html, /id="declShoppingValorPago"|<th>Valor efetivamente pago<\/th>|id="declShoppingPctPago"/);
+  // Editar sem o campo PAGO mantém o que está salvo.
+  sqlite.prepare("UPDATE finance_mall_declarations SET percentage_rent_paid=1 WHERE id=?").run(id);
+  await call(route.POST, ADMIN, "POST", "/api/finance/mall-declarations", { id, companyId: "lojaP", competenceMonth: "2026-10", declaredCents: 6_000_000, contractPercentBps: 700, minimumRentCents: 700_000 });
+  assert.equal(rowOf(id).percentage_rent_paid, 1);
 });

@@ -14,7 +14,9 @@ import {
 } from "./shared";
 
 // Crediários (Financeiro 7/9).
-// GET ?companyId&month&providerId&status&q&bankEntryId: lista + cards.
+// GET ?companyId&month&providerId&status&q&loginCompanyId&bankEntryId: lista +
+//   cards (os cards somam a lista JÁ FILTRADA: bruto, líquido, taxas,
+//   quantidade pendente e pendente há mais de 7 dias).
 // GET ?lookupSaleRef&companyId: a venda existe no Ponttie (Conciliação de
 //   Vendas)? Só aviso, nunca bloqueia.
 // POST: NOVO CREDIÁRIO (proposta repetida na financeira → 409).
@@ -63,25 +65,15 @@ export async function GET(request: Request) {
     const today = todayInTimezone();
     const month = safeText(params.get("month"), 7);
     const cardMonth = MONTH_PATTERN.test(month) ? month : today.slice(0, 7);
-    const old = addDays(today, -30);
+    const old = addDays(today, -7);
     const all = (result.results ?? []).map(normalizeCreditSale).map((row) => ({
       ...row,
       status: creditSaleStatus(row),
       differenceCents: creditSaleDifference(row),
     }));
 
-    const summary = { pendingCents: 0, pendingCount: 0, pendingOver30: 0, finishedMonthCents: 0, feesMonthCents: 0, month: cardMonth };
-    for (const row of all) {
-      if (row.status === "pending") {
-        summary.pendingCents += row.netCents;
-        summary.pendingCount += 1;
-        if (row.saleDate < old) summary.pendingOver30 += 1;
-      }
-      if (row.status === "finished" && row.receivedDate.startsWith(cardMonth)) summary.finishedMonthCents += row.receivedCents;
-      if (row.status !== "canceled" && row.saleDate.startsWith(cardMonth)) summary.feesMonthCents += row.feeCents;
-    }
-
     const status = safeText(params.get("status"), 12);
+    const loginCompanyId = safeText(params.get("loginCompanyId"), 80);
     const q = safeText(params.get("q"), 60).toUpperCase();
     const bankEntryId = safeText(params.get("bankEntryId"), 80);
     const rows = all.filter(
@@ -89,8 +81,21 @@ export async function GET(request: Request) {
         (!MONTH_PATTERN.test(month) || bankEntryId || row.saleDate.startsWith(month)) &&
         (!status || row.status === status || (status === "difference" && row.differenceCents !== 0)) &&
         (!q || row.proposal.toUpperCase().includes(q) || row.saleRef.toUpperCase().includes(q)) &&
+        (!loginCompanyId || row.loginCompanyId === loginCompanyId) &&
         (!bankEntryId || row.bankEntryId === bankEntryId),
     );
+    // Cards seguem os filtros da tela; cancelado só entra se o filtro for CANCELADO.
+    const summary = { grossCents: 0, netCents: 0, feeCents: 0, pendingCount: 0, pendingOver7: 0, month: cardMonth };
+    for (const row of rows) {
+      if (row.status === "canceled" && status !== "canceled") continue;
+      summary.grossCents += row.grossCents;
+      summary.netCents += row.netCents;
+      summary.feeCents += row.feeCents;
+      if (row.status === "pending") {
+        summary.pendingCount += 1;
+        if (row.saleDate < old) summary.pendingOver7 += 1;
+      }
+    }
     return jsonResponse({ today, summary, creditSales: rows });
   } catch (error) {
     console.error("Não foi possível carregar os crediários.", error);
