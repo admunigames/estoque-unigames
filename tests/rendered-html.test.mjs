@@ -4741,7 +4741,7 @@ test("Estoque > Divergências: menu, abas, permissões divergencias:*, rota no w
   assert.match(html, /divergencias:'\/divergencias'/);
   assert.match(html, /divergencias:'DIVERGÊNCIAS'/);
   assert.match(html, /divergencias:'divergencias',/);
-  assert.match(html, /name === 'saidas' \|\| name === 'divergencias' \|\| name === 'inventario' \|\| name === 'relatoriosLogistica' \|\| name === 'assistenciaRma' \|\| name === 'comercialRelatorioNf';/);
+  assert.match(html, /name === 'saidas' \|\| name === 'divergencias' \|\| name === 'inventario' \|\| name === 'relatoriosLogistica' \|\| name === 'reintegracaoFiscal' \|\| name === 'assistenciaRma' \|\| name === 'comercialRelatorioNf';/);
   assert.match(html, /<section id="pageDivergencias" class="page wrap">/);
 
   // Abas no estilo único do site; INVENTÁRIO só com divergencias:inventory.

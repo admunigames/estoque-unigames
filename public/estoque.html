@@ -4259,6 +4259,7 @@
         <a class="nav-item sub-item" id="navDivergencias" data-page="divergencias" data-permission="divergencias" data-home-desc="Pedidos de verificação de divergência entre o físico e o sistema." title="Divergências" href="/divergencias"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Divergências</span></a>
         <a class="nav-item sub-item" id="navInventario" data-page="inventario" data-permission="inventario" data-home-desc="Inventário por loja: sobe o estoque por categoria, contagem física ao vivo, divergências com custo, PDFs para o diretor, recontagem e Pontti." title="Inventário" href="/inventario"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><path d="M8 16l2 2 4-4"/></svg></span><span class="nav-label">Inventário</span></a>
         <a class="nav-item sub-item" id="navRelatoriosLogistica" data-page="relatoriosLogistica" data-permission="relatorios_logistica" data-home-desc="A loja envia o relatório da logística (PDF ou fotos escaneadas) direto para o e-mail do estoque." title="Relatórios Logística" href="/relatorios-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 7l8 6 8-6"/></svg></span><span class="nav-label">Relatórios Logística</span></a>
+        <a class="nav-item sub-item" id="navReintegracaoFiscal" data-page="reintegracaoFiscal" data-permission="reintegracao_fiscal" data-home-desc="Cancelamentos anotados na semana e fechados com a data e o nº da nota de reintegração emitida." title="Reintegração Fiscal" href="/reintegracao-fiscal"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 14l2 2 4-4"/></svg></span><span class="nav-label">Reintegração Fiscal</span></a>
         <a class="nav-item sub-item" id="navAssistenciaRma" data-page="assistenciaRma" data-permission="rma" data-home-desc="RMAs dos produtos que seguem para o fornecedor: chegada, status, O.S., linha do tempo de atualizações, créditos e descartes. A loja acompanha só os RMAs dela." title="RMA" href="/assistencia/rma"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></span><span class="nav-label">RMA</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
       </div>
@@ -5200,6 +5201,41 @@
       <div class="table-panel responsive-table"><div class="table-scroll">
         <table><thead><tr><th>Data do relatório</th><th>Loja</th><th>Arquivo</th><th>Enviado por</th><th>Enviado em</th></tr></thead>
         <tbody id="rlogBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody></table>
+      </div></div>
+    </section>
+
+    <section id="pageReintegracaoFiscal" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Reintegração Fiscal</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnRfisReload" type="button">ATUALIZAR</button>
+        </div>
+      </header>
+      <div class="supply-dashboard-grid gd-summary" id="rfisSummary"></div>
+      <form class="table-panel" id="rfisForm" novalidate hidden style="padding:14px;margin-bottom:14px;">
+        <h3 class="supply-section-title" style="margin-top:0">NOVO CANCELAMENTO</h3>
+        <div class="purchase-form-grid assist-grid-3">
+          <div class="purchase-field"><label for="rfisStore">LOJA *</label><select id="rfisStore"><option value="">SELECIONE A LOJA</option></select></div>
+          <div class="purchase-field"><label for="rfisSale">ID DA VENDA</label><input id="rfisSale" maxlength="60" autocomplete="off"></div>
+          <div class="purchase-field"><label for="rfisInvoice">Nº DA NOTA</label><input id="rfisInvoice" maxlength="60" autocomplete="off" inputmode="numeric"></div>
+          <div class="purchase-field"><label for="rfisDate">DATA DA SOLICITAÇÃO *</label><input id="rfisDate" type="date"></div>
+          <div class="purchase-field"><label for="rfisBy">QUEM SOLICITOU</label><input id="rfisBy" maxlength="120" autocomplete="off"></div>
+        </div>
+        <p class="purchase-field-help">PREENCHA O ID DA VENDA, O Nº DA NOTA OU OS DOIS.</p>
+        <button class="btn-accent" id="btnRfisAdd" type="submit">ADICIONAR</button>
+      </form>
+      <div class="dre-toolbar">
+        <div class="field"><label for="rfisView">MOSTRAR</label>
+          <select id="rfisView"><option value="aberto">EM ABERTO</option><option value="emitido">EMITIDAS</option><option value="">TODAS</option></select>
+        </div>
+        <div class="field"><label for="rfisStoreFilter">LOJA</label><select id="rfisStoreFilter"><option value="">TODAS</option></select></div>
+      </div>
+      <div class="table-panel responsive-table"><div class="table-scroll">
+        <table><thead><tr><th>Solicitação</th><th>Loja</th><th>ID da venda</th><th>Nº da nota</th><th>Quem solicitou</th><th>Data da emissão</th><th>Nº da nota de reintegração</th><th></th></tr></thead>
+        <tbody id="rfisBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody></table>
       </div></div>
     </section>
 
@@ -11037,6 +11073,15 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Estoque - Reintegração Fiscal</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="reintegracao_fiscal:view"> Ver os lançamentos (interno: login com loja não vê)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="reintegracao_fiscal:create"> Lançar cancelamento</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="reintegracao_fiscal:emit"> Informar a emissão da reintegração e reabrir</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="reintegracao_fiscal:delete"> Excluir lançamento</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Estoque - Relatório NF</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorio_nf:view"> Ver o lançamento do dia e o histórico de dias salvos</label>
@@ -15613,6 +15658,7 @@
     divergencias:'/divergencias',
     inventario:'/inventario',
     relatoriosLogistica:'/relatorios-logistica',
+    reintegracaoFiscal:'/reintegracao-fiscal',
     assistenciaOrcamentos:'/assistencia/orcamentos',
     entradas:'/entradas',
     insumos:'/insumos',
@@ -15686,6 +15732,7 @@
     divergencias:'DIVERGÊNCIAS',
     inventario:'INVENTÁRIO',
     relatoriosLogistica:'RELATÓRIOS LOGÍSTICA',
+    reintegracaoFiscal:'REINTEGRAÇÃO FISCAL',
     assistenciaOrcamentos:'ORÇAMENTOS',
     entradas:'ENTRADA',
     insumos:'INSUMOS',
@@ -15755,6 +15802,7 @@
     divergencias:'divergencias',
     inventario:'inventario',
     relatoriosLogistica:'relatorios_logistica',
+    reintegracaoFiscal:'reintegracao_fiscal',
     assistenciaOrcamentos:'assistencia:manage',
     entradas:'inputs',
     insumos:'supplies',
@@ -16466,7 +16514,7 @@
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios' || name === 'auditoria' || name === 'infoGerais';
     const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario' || name === 'rhContabilidade';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
-    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'relatoriosLogistica' || name === 'assistenciaRma' || name === 'comercialRelatorioNf';
+    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'relatoriosLogistica' || name === 'reintegracaoFiscal' || name === 'assistenciaRma' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos' || name === 'assistenciaEstoque';
@@ -16526,6 +16574,7 @@
     if(name === 'divergencias') loadDivergencias();
     if(name === 'inventario') loadInvPage();
     if(name === 'relatoriosLogistica') loadRlogPage();
+    if(name === 'reintegracaoFiscal') loadRfisPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
@@ -16602,6 +16651,7 @@
     if(name === 'divergencias') loadDivergencias();
     if(name === 'inventario') loadInvPage();
     if(name === 'relatoriosLogistica') loadRlogPage();
+    if(name === 'reintegracaoFiscal') loadRfisPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
@@ -30179,6 +30229,92 @@ function renderHomeTasks(){
       await loadRlogPage();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
     finally{ button.disabled = false; button.textContent = 'ENVIAR POR E-MAIL'; }
+  });
+
+  // ---------- ESTOQUE · REINTEGRAÇÃO FISCAL ----------
+  // Interno (login com loja não vê). Lança durante a semana; fecha um a um
+  // com a data e o nº da nota de reintegração.
+  let rfisData = null;
+
+  async function loadRfisPage(){
+    try{
+      rfisData = await invApi('GET', null, '', '/api/reintegracao-fiscal');
+      const options = rfisData.stores.map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(String(store.name).toLocaleUpperCase('pt-BR'))+'</option>').join('');
+      for(const [id, first] of [['rfisStore', 'SELECIONE A LOJA'], ['rfisStoreFilter', 'TODAS']]){
+        const select = el(id), current = select.value;
+        select.innerHTML = '<option value="">'+first+'</option>'+options;
+        select.value = current;
+      }
+      el('rfisDate').max = todayDateKeyRecife();
+      if(!el('rfisDate').value) el('rfisDate').value = todayDateKeyRecife();
+      el('rfisForm').hidden = !rfisData.can.create;
+      renderRfis();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  function renderRfis(){
+    if(!rfisData) return;
+    const view = el('rfisView').value, store = el('rfisStoreFilter').value, today = todayDateKeyRecife();
+    const items = rfisData.items.filter(item => (!store || item.companyId === store));
+    const open = items.filter(item => item.status === 'aberto');
+    el('rfisSummary').innerHTML =
+      '<article class="supply-dashboard-card warning"><span>EM ABERTO</span><strong>'+open.length+'</strong>'+(open.length ? '<small>MAIS ANTIGO: '+escapeHtml(gdDateLabel(open[open.length - 1].requestedDate))+'</small>' : '')+'</article>'+
+      '<article class="supply-dashboard-card"><span>EMITIDAS</span><strong>'+(items.length - open.length)+'</strong></article>';
+    const rows = items.filter(item => !view || item.status === view);
+    el('rfisBody').innerHTML = rows.length ? rows.map(item => {
+      const id = escapeHtml(item.id), isOpen = item.status === 'aberto';
+      const emit = isOpen
+        ? (rfisData.can.emit
+          ? '<td data-label="Data da emissão"><input type="date" data-rfis-date="'+id+'" min="'+escapeHtml(item.requestedDate)+'" max="'+today+'" value="'+today+'"></td>'+
+            '<td data-label="Nº da nota de reintegração"><input type="text" maxlength="60" inputmode="numeric" data-rfis-number="'+id+'" placeholder="Nº DA NOTA"></td>'
+          : '<td data-label="Data da emissão">—</td><td data-label="Nº da nota de reintegração">EM ABERTO</td>')
+        : '<td data-label="Data da emissão">'+escapeHtml(gdDateLabel(item.reintegrationDate))+'</td>'+
+          '<td data-label="Nº da nota de reintegração"><strong>'+escapeHtml(item.reintegrationNumber)+'</strong><small class="os-update-meta">POR '+escapeHtml(item.closedByName+' · '+(formatDateTimeBR(item.closedAt) || ''))+'</small></td>';
+      const buttons = (isOpen && rfisData.can.emit ? '<button class="btn-accent btn-sm" type="button" data-rfis-emit="'+id+'">EMITIDA</button> ' : '')+
+        (!isOpen && rfisData.can.emit ? '<button class="btn-outline btn-sm" type="button" data-rfis-reopen="'+id+'">REABRIR</button> ' : '')+
+        (rfisData.can.delete ? '<button class="btn-outline btn-sm" type="button" data-rfis-del="'+id+'">EXCLUIR</button>' : '');
+      return '<tr><td data-label="Solicitação">'+escapeHtml(gdDateLabel(item.requestedDate))+'<small class="os-update-meta">LANÇADO POR '+escapeHtml(item.createdByName)+'</small></td>'+
+        '<td data-label="Loja">'+escapeHtml(item.companyName)+'</td><td data-label="ID da venda">'+escapeHtml(item.saleId || '—')+'</td>'+
+        '<td data-label="Nº da nota">'+escapeHtml(item.invoiceNumber || '—')+'</td><td data-label="Quem solicitou">'+escapeHtml(item.requestedBy || '—')+'</td>'+
+        emit+'<td style="white-space:nowrap">'+buttons+'</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="responsive-empty">'+(view === 'aberto' ? 'Nenhum cancelamento em aberto.' : 'Nenhum lançamento.')+'</td></tr>';
+  }
+
+  el('btnRfisReload') && el('btnRfisReload').addEventListener('click', loadRfisPage);
+  el('rfisView') && el('rfisView').addEventListener('change', renderRfis);
+  el('rfisStoreFilter') && el('rfisStoreFilter').addEventListener('change', renderRfis);
+  el('rfisForm') && el('rfisForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnRfisAdd');
+    button.disabled = true;
+    try{
+      await invApi('POST', {companyId: el('rfisStore').value, saleId: el('rfisSale').value, invoiceNumber: el('rfisInvoice').value,
+        requestedDate: el('rfisDate').value, requestedBy: el('rfisBy').value}, '', '/api/reintegracao-fiscal');
+      el('rfisSale').value = '';
+      el('rfisInvoice').value = '';
+      showPurchaseToast('CANCELAMENTO LANÇADO.');
+      await loadRfisPage();
+      el('rfisSale').focus();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; }
+  });
+  el('rfisBody') && el('rfisBody').addEventListener('click', async event => {
+    const emit = event.target.closest('[data-rfis-emit]'), reopen = event.target.closest('[data-rfis-reopen]'), del = event.target.closest('[data-rfis-del]');
+    try{
+      if(emit){
+        const id = emit.dataset.rfisEmit;
+        const row = emit.closest('tr');
+        await invApi('PATCH', {id, action:'emit', reintegrationDate: row.querySelector('[data-rfis-date]').value, reintegrationNumber: row.querySelector('[data-rfis-number]').value}, '', '/api/reintegracao-fiscal');
+        showPurchaseToast('REINTEGRAÇÃO REGISTRADA.');
+      }else if(reopen){
+        if(!await askConfirm('REABRIR ESTE LANÇAMENTO? A DATA E O Nº DA REINTEGRAÇÃO SERÃO APAGADOS.', {okText:'REABRIR'})) return;
+        await invApi('PATCH', {id: reopen.dataset.rfisReopen, action:'reopen'}, '', '/api/reintegracao-fiscal');
+      }else if(del){
+        if(!await askConfirm('EXCLUIR ESTE LANÇAMENTO?', {okText:'EXCLUIR', danger:true})) return;
+        await invApi('DELETE', {id: del.dataset.rfisDel}, '', '/api/reintegracao-fiscal');
+      }else return;
+      await loadRfisPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
   // ---------- ASSISTÊNCIA · ESTOQUE ----------

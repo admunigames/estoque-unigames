@@ -90,6 +90,7 @@ type Permission =
   | "rma:view" | "rma:create" | "rma:edit" | "rma:finance" | "rma:delete" | "rma:config"
   | "inventario:view" | "inventario:count" | "inventario:manage" | "inventario:delete"
   | "relatorios_logistica:view" | "relatorios_logistica:send"
+  | "reintegracao_fiscal:view" | "reintegracao_fiscal:create" | "reintegracao_fiscal:emit" | "reintegracao_fiscal:delete"
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
   | "treinamento:view" | "treinamento:team"
   | "audit:view"
@@ -269,6 +270,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "inventario:view", "inventario:count", "inventario:manage", "inventario:delete",
   // Estoque > Relatórios Logística — loja envia e vê só a própria (a rota confere).
   "relatorios_logistica:view", "relatorios_logistica:send",
+  // Estoque > Reintegração Fiscal — interno: login com loja não vê (a rota confere).
+  "reintegracao_fiscal:view", "reintegracao_fiscal:create", "reintegracao_fiscal:emit", "reintegracao_fiscal:delete",
   // Auditoria Operacional (checklist de loja) — loja só lê as finalizadas da própria loja (a rota confere).
   "auditoria_operacional:view", "auditoria_operacional:audit", "auditoria_operacional:manage", "auditoria_operacional:delete",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
@@ -388,6 +391,7 @@ const APP_ROUTE_PATHS = new Set([
   "/assistencia/rma",
   "/inventario",
   "/relatorios-logistica",
+  "/reintegracao-fiscal",
   "/auditoria-operacional",
   "/entradas",
   "/insumos",
@@ -1422,6 +1426,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
   inventario: ["inventario:view", "inventario:count", "inventario:manage", "inventario:delete"],
   relatoriosLogistica: ["relatorios_logistica:view", "relatorios_logistica:send"],
+  reintegracaoFiscal: ["reintegracao_fiscal:view", "reintegracao_fiscal:create", "reintegracao_fiscal:emit", "reintegracao_fiscal:delete"],
   rma: ["rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete", "rma:config"],
   estoqueAssistencia: [
     "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
@@ -1538,6 +1543,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/inventario" || path.startsWith("/api/inventario"), "inventario"],
     // Estoque > Relatórios Logística — permissão própria (relatorios_logistica:*).
     [path === "/relatorios-logistica" || path.startsWith("/api/relatorios-logistica"), "relatoriosLogistica"],
+    // Estoque > Reintegração Fiscal — permissão própria (reintegracao_fiscal:*).
+    [path === "/reintegracao-fiscal" || path.startsWith("/api/reintegracao-fiscal"), "reintegracaoFiscal"],
     // Cadastros > Auditoria — permissão própria (audit:view). Checado antes
     // do bucket "/cadastros/" (Base de Dados).
     [path === "/cadastros/auditoria" || path.startsWith("/api/audit"), "audit"],

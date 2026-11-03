@@ -5116,3 +5116,29 @@ export const logisticsReports = pgTable(
   },
   (table) => [index("logistics_reports_company_idx").on(table.companyId, table.reportDate)],
 );
+
+// Estoque > Reintegração Fiscal (0126): aberto → emitido (data + nº da nota
+// de reintegração). Interno: login com loja não vê.
+export const fiscalReintegrations = pgTable(
+  "fiscal_reintegrations",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    saleId: text("sale_id").notNull().default(""),
+    invoiceNumber: text("invoice_number").notNull().default(""),
+    requestedDate: text("requested_date").notNull(),
+    requestedBy: text("requested_by").notNull().default(""),
+    status: text("status").notNull().default("aberto"),
+    reintegrationDate: text("reintegration_date").notNull().default(""),
+    reintegrationNumber: text("reintegration_number").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    closedBy: text("closed_by").notNull().default(""),
+    closedByName: text("closed_by_name").notNull().default(""),
+    closedAt: text("closed_at").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+  },
+  (table) => [index("fiscal_reintegrations_status_idx").on(table.status, table.requestedDate)],
+);
