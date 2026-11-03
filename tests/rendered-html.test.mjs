@@ -4577,7 +4577,10 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(workerSource, /commercial: \[\s*"comercial:dashboard", "comercial:commission", "comercial:ranking",/);
   // Filtro OPERACIONAL ao lado do Vendedor (18/10/2026): escolhido, só ele aparece.
   assert.match(html, /id="comSellerFilter">[\s\S]*?<\/div>\s*<div class="field" id="comOperationalField" hidden>\s*<label for="comOperationalFilter">Operacional<\/label>/);
-  assert.match(html, /const sellers = data && !comOperationalFilter \? data\.sellers : \[\];/);
+  assert.match(html, /const sellers = data && !comOperationalFilter && comTypeFilter !== 'operacionais' \? data\.sellers : \[\];/);
+  // Filtro TIPO: VENDEDORES (com líderes e LOJA DIGITAL) ou OPERACIONAIS no Dashboard e na Comissão.
+  assert.match(html, /<select id="comTypeFilter"><option value="">TODOS<\/option><option value="vendedores">VENDEDORES<\/option><option value="operacionais">OPERACIONAIS<\/option><\/select>/);
+  assert.match(html, /if\(!data \|\| comZoneFilter \|\| comSellerFilter \|\| comTypeFilter === 'vendedores'\) return \[\];/);
   // Aba Indicação removida (16/10/2026); Meta Assistência ao lado das Regras.
   assert.doesNotMatch(html, /data-com-view="indicacao"|comercial:indications/);
   assert.match(html, /data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão<\/button>\s*<button[^>]*data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</);
