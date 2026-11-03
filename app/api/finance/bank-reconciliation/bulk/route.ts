@@ -32,6 +32,7 @@ type Entry = {
   status: string;
   salesReconStatus: string;
   payableId: string;
+  paymentId: string;
 };
 
 export async function POST(request: Request) {
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
       .prepare(
         `SELECT id, company_id AS companyId, raw_merchant AS rawMerchant, description, category_item_id AS categoryItemId,
                 subcategory, cost_center_id AS costCenterId, in_dre AS inDre, in_rateio AS inRateio, status,
-                sales_recon_status AS salesReconStatus, payable_id AS payableId
+                sales_recon_status AS salesReconStatus, payable_id AS payableId, payment_id AS paymentId
          FROM finance_bank_statement_entries WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`,
       )
       .bind(...ids)
@@ -90,6 +91,16 @@ export async function POST(request: Request) {
       const skip = (reason: string) => skipped.push({ id: entry.id, description: entry.description, reason });
       if (entry.status === "expensed") { skip("JÁ VIROU DESPESA"); continue; }
       if (entry.status === "credit_sale") { skip("VINCULADO A CREDIÁRIO — DESFAÇA PELO CREDIÁRIO"); continue; }
+      // Vínculo com pagamento JÁ registrado no Contas a Pagar: voltar para a
+      // classificar só desfaz o vínculo (o pagamento continua lá e volta a ser sugerido).
+      if (entry.paymentId) {
+        if (action !== "unclassify") { skip("VINCULADO A UM PAGAMENTO — VOLTE PARA A CLASSIFICAR ANTES"); continue; }
+        statements.push([
+          `UPDATE finance_bank_statement_entries SET status='pending', payment_id='', payable_id='', updated_by=?1, updated_by_name=?2, updated_at=CURRENT_TIMESTAMP WHERE id=?3`,
+          [who.id, who.name, entry.id],
+        ]);
+        continue;
+      }
       // Saída que baixou uma conta a pagar: o pagamento está registrado lá.
       if (entry.payableId) { skip("BAIXOU UMA CONTA A PAGAR — ESTORNE O PAGAMENTO NA CONTA ANTES"); continue; }
       if (action === "delete") {

@@ -2465,6 +2465,9 @@ export const financeBankStatementEntries = pgTable(
     // conta a pagar baixada por ele.
     activityId: text("activity_id").notNull().default(""),
     payableId: text("payable_id").notNull().default(""),
+    // Migration 0123: pagamento JÁ registrado no Contas a Pagar vinculado a
+    // esta saída (só vínculo — a DRE continua vindo da conta a pagar).
+    paymentId: text("payment_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),

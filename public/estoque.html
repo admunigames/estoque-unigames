@@ -40162,6 +40162,19 @@ function renderHomeTasks(){
     return reconEntries.filter(e => !kind || (kind === 'in' ? Number(e.amountCents) > 0 : Number(e.amountCents) < 0));
   }
   function reconSuggestionHtml(e){
+    return reconPaymentSuggestionHtml(e)+reconPayableSuggestionHtml(e);
+  }
+  // Pagamento JÁ registrado no Contas a Pagar (mesmo valor, até 5 dias):
+  // USAR preenche a linha; o vínculo só vale ao CONFIRMAR.
+  function reconPaymentSuggestionHtml(e){
+    const s = e.paymentSuggestion;
+    if(!s) return '';
+    const parts = [s.supplierName, s.description, reconItemLabel(s.financeItemId), (financeCostCenters.find(c => c.id === s.costCenterId)||{}).name].filter(Boolean);
+    return '<div class="muted" style="font-size:11px;margin-top:4px;">PAGO NO CONTAS A PAGAR: <strong>'+escapeHtml(parts[0] || 'PAGAMENTO')+'</strong>'+
+      (parts.length > 1 ? ' · '+escapeHtml(parts.slice(1).join(' · ')) : '')+' · PAGO EM '+escapeHtml(formatDateBR(s.paymentDate))+' · '+formatCentsBRL(s.amountCents)+
+      ' <button class="btn-outline btn-sm" type="button" data-recon-use-payment="'+escapeHtml(e.id)+'">USAR ESTA SUGESTÃO</button></div>';
+  }
+  function reconPayableSuggestionHtml(e){
     const s = e.payableSuggestion;
     if(!s) return '';
     return '<div class="muted" style="font-size:11px;margin-top:4px;">PARECE COM: <strong>'+escapeHtml(s.supplierName || s.description || 'CONTA A PAGAR')+'</strong>'+
@@ -40201,13 +40214,13 @@ function renderHomeTasks(){
           '<td data-label="Histórico">'+escapeHtml(e.description || '—')+'</td>'+
           '<td data-label="Valor">'+formatCentsBRL(e.amountCents)+'</td>'+
           '<td data-label="Atividade">'+escapeHtml(reconActivityLabel(e.activityId) || '—')+'</td>'+
-          '<td data-label="Categoria / Subcategoria">'+escapeHtml(reconItemLabel(e.categoryItemId) || '—')+(e.payableId ? ' <span class="receivable-tag received_ok">CONTA A PAGAR BAIXADA</span>' : '')+'</td>'+
+          '<td data-label="Categoria / Subcategoria">'+escapeHtml(reconItemLabel(e.categoryItemId) || '—')+(e.paymentId ? ' <span class="receivable-tag received_ok">PAGAMENTO VINCULADO</span>' : e.payableId ? ' <span class="receivable-tag received_ok">CONTA A PAGAR BAIXADA</span>' : '')+'</td>'+
           '<td data-label="Unidade">'+escapeHtml((companies.find(c => c.id === e.companyId)||{}).name || '—')+'</td>'+
           '<td data-label="Centro de custo">'+escapeHtml((financeCostCenters.find(c => c.id === e.costCenterId)||{}).name || '—')+'</td>'+
           '<td data-label="DRE">'+(Number(e.inDre) ? 'sim' : 'não')+'</td>'+
           '<td data-label="Rateio">'+(Number(e.inRateio) ? 'sim' : 'não')+'</td>'+
           '<td data-label="Situação">'+escapeHtml(RECON_STATUS_LABELS[e.status])+'</td>'+
-          '<td data-label="Ações">'+(e.status === 'credit_sale' ? '<button class="btn-outline btn-sm" type="button" data-recon-credit="'+escapeHtml(e.id)+'">VER CREDIÁRIO</button>' : e.status === 'expensed' ? '' : '<button class="btn-outline btn-sm" type="button" data-recon-expense="'+escapeHtml(e.id)+'">DESPESA</button>')+'</td>'+
+          '<td data-label="Ações">'+(e.status === 'credit_sale' ? '<button class="btn-outline btn-sm" type="button" data-recon-credit="'+escapeHtml(e.id)+'">VER CREDIÁRIO</button>' : (e.status === 'expensed' || e.paymentId || e.payableId) ? '' : '<button class="btn-outline btn-sm" type="button" data-recon-expense="'+escapeHtml(e.id)+'">DESPESA</button>')+'</td>'+
         '</tr>';
       }
       return '<tr data-recon-row="'+escapeHtml(e.id)+'">'+
@@ -40279,6 +40292,28 @@ function renderHomeTasks(){
       }catch(error){ showPurchaseToast(error.message, 'error'); payBtn.disabled = false; }
       return;
     }
+    const useBtn = event.target.closest('[data-recon-use-payment]');
+    if(useBtn){
+      const entry = reconEntries.find(item => item.id === useBtn.dataset.reconUsePayment);
+      const s = entry && entry.paymentSuggestion;
+      const rowEl = useBtn.closest('[data-recon-row]');
+      if(!s || !rowEl) return;
+      const setField = (field, value) => {
+        const input = rowEl.querySelector('[data-recon-field="'+field+'"]');
+        if(input && value && [...input.options].some(o => o.value === value)) input.value = value;
+      };
+      setField('categoryItemId', s.financeItemId);
+      setField('companyId', s.companyId);
+      setField('costCenterId', s.costCenterId);
+      // O valor já entrou na DRE pela conta a pagar.
+      const dre = rowEl.querySelector('[data-recon-field="inDre"]');
+      if(dre){ dre.checked = false; rowEl.dataset.dreTouched = '1'; }
+      rowEl.dataset.reconPaymentId = s.id;
+      useBtn.textContent = 'SUGESTÃO APLICADA — CONFIRME';
+      useBtn.disabled = true;
+      showPurchaseToast('Campos preenchidos com o pagamento. Confira e clique em CONFIRMAR.');
+      return;
+    }
     const confirmBtn = event.target.closest('[data-recon-confirm]');
     const expenseBtn = event.target.closest('[data-recon-expense]');
     // Crediários (Financeiro 7/9): ver o crediário do depósito / vincular a entrada.
@@ -40298,12 +40333,13 @@ function renderHomeTasks(){
       const payload = reconRowPayload(rowEl);
       if(!payload.categoryItemId){ showPurchaseToast('Escolha a categoria antes de confirmar.', 'error'); return; }
       payload.confirm = true;
+      if(rowEl.dataset.reconPaymentId) payload.paymentId = rowEl.dataset.reconPaymentId;
       confirmBtn.disabled = true;
       try{
         await financeApiRequest('/bank-reconciliation/'+encodeURIComponent(confirmBtn.dataset.reconConfirm), {
           method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
         });
-        showPurchaseToast('Lançamento confirmado. Classificação aprendida para o próximo extrato.');
+        showPurchaseToast(payload.paymentId ? 'Lançamento confirmado e vinculado ao pagamento do Contas a Pagar.' : 'Lançamento confirmado. Classificação aprendida para o próximo extrato.');
         await refreshAfterAction(() => loadReconEntries({silent:true}));
       }catch(error){ showPurchaseToast(error.message, 'error'); confirmBtn.disabled = false; }
       return;

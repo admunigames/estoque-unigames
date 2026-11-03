@@ -28,7 +28,7 @@ function num(value: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-type ReconEntry = { id: string; entryDate: string; amountCents: number; status: string; payableId: string; expenseId: string };
+type ReconEntry = { id: string; entryDate: string; amountCents: number; status: string; payableId: string; expenseId: string; paymentId: string };
 type Database = Awaited<ReturnType<typeof getD1>>;
 
 const SUGGEST_DAYS = 7;
@@ -72,6 +72,64 @@ async function suggestPayables(database: Database, entries: ReconEntry[]) {
       taken.add(best.id);
       result.set(entry.id, { ...best, openCents: Number(best.openCents) });
     }
+  }
+  return result;
+}
+
+const PAYMENT_SUGGEST_DAYS = 5;
+
+/**
+ * PAGAMENTOS já registrados no Contas a Pagar com o mesmo valor de cada SAÍDA
+ * ainda aberta do extrato e data até 5 dias antes/depois (o mais próximo).
+ * Traz fornecedor, descrição, categoria, unidade e centro de custo para
+ * preencher a linha; só sugestão — quem confirma é o usuário. Pagamento já
+ * vinculado a outra linha (ou feito pela própria conciliação) não volta.
+ */
+async function suggestPayments(database: Database, entries: ReconEntry[], financeAccountId: string, companyId: string | null) {
+  const open = entries.filter(
+    (entry) => entry.amountCents < 0 && !entry.payableId && !entry.expenseId && (entry.status === "pending" || entry.status === "classified"),
+  );
+  const result = new Map<string, Record<string, unknown>>();
+  if (!open.length) return result;
+  const amounts = [...new Set(open.map((entry) => -entry.amountCents))].slice(0, 400);
+  const dates = open.map((entry) => entry.entryDate).sort();
+  const values: unknown[] = [shiftDate(dates[0], -PAYMENT_SUGGEST_DAYS), shiftDate(dates[dates.length - 1], PAYMENT_SUGGEST_DAYS), financeAccountId, ...amounts];
+  let companyFilter = "";
+  if (companyId !== null) {
+    values.push(companyId);
+    companyFilter = `AND p.company_id=?${values.length}`;
+  }
+  const candidates = await database
+    .prepare(
+      `SELECT pay.id, pay.amount_cents AS amountCents, pay.payment_date AS paymentDate, p.id AS payableId,
+              p.description, COALESCE(s.name, '') AS supplierName, p.finance_item_id AS financeItemId,
+              COALESCE(p.cost_center_id, '') AS costCenterId, p.company_id AS companyId, p.company_name AS companyName
+       FROM accounts_payable_payments pay
+       JOIN accounts_payable p ON p.id = pay.payable_id
+       LEFT JOIN finance_suppliers s ON s.id = p.supplier_id
+       WHERE pay.confirmed_at <> '' AND p.status <> 'canceled'
+         AND pay.payment_date >= ?1 AND pay.payment_date <= ?2
+         AND (pay.finance_account_id = '' OR pay.finance_account_id = ?3)
+         AND pay.idempotency_key NOT LIKE 'bank-entry:%'
+         AND pay.amount_cents IN (${amounts.map((_, index) => `?${index + 4}`).join(",")})
+         ${companyFilter}
+         AND NOT EXISTS (SELECT 1 FROM finance_bank_statement_entries b WHERE b.payment_id = pay.id)`,
+    )
+    .bind(...values)
+    .all<{ id: string; amountCents: number; paymentDate: string; payableId: string; description: string; supplierName: string; financeItemId: string; costCenterId: string; companyId: string; companyName: string }>();
+  const taken = new Set<string>();
+  const dayDiff = (a: string, b: string) => Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86_400_000;
+  // Par (linha, pagamento) mais próximo primeiro: cada um usado uma vez só.
+  const pairs = open.flatMap((entry) =>
+    (candidates.results ?? [])
+      .filter((row) => Number(row.amountCents) === -entry.amountCents && dayDiff(row.paymentDate, entry.entryDate) <= PAYMENT_SUGGEST_DAYS)
+      .map((row) => ({ entry, row, diff: dayDiff(row.paymentDate, entry.entryDate) })),
+  );
+  pairs.sort((a, b) => a.diff - b.diff);
+  for (const { entry, row } of pairs) {
+    if (taken.has(row.id) || result.has(entry.id)) continue;
+    taken.add(row.id);
+    result.set(entry.id, { ...row, amountCents: Number(row.amountCents) });
   }
   return result;
 }
@@ -172,7 +230,7 @@ export async function GET(request: Request) {
                 amount_cents AS amountCents, category_item_id AS categoryItemId, subcategory,
                 cost_center_id AS costCenterId, company_id AS companyId, in_dre AS inDre,
                 in_rateio AS inRateio, status, expense_id AS expenseId,
-                activity_id AS activityId, payable_id AS payableId
+                activity_id AS activityId, payable_id AS payableId, payment_id AS paymentId
          FROM finance_bank_statement_entries
          WHERE ${conditions.join(" AND ")}
          ORDER BY entry_date DESC, id ASC
@@ -182,11 +240,12 @@ export async function GET(request: Request) {
       .all<ReconEntry>();
     const entries = (rows.results ?? []).map((row) => ({ ...row, amountCents: Number(row.amountCents) }));
     const suggestions = await suggestPayables(database, entries);
+    const paymentSuggestions = await suggestPayments(database, entries, financeAccountId, allStores ? null : account.companyId);
     const period = MONTH_PATTERN.test(month) ? await periodSummary(database, financeAccountId, month) : null;
 
     return jsonResponse({
       accountName: account.name,
-      entries: entries.map((entry) => ({ ...entry, payableSuggestion: suggestions.get(entry.id) ?? null })),
+      entries: entries.map((entry) => ({ ...entry, payableSuggestion: suggestions.get(entry.id) ?? null, paymentSuggestion: paymentSuggestions.get(entry.id) ?? null })),
       period,
     });
   } catch (error) {

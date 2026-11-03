@@ -16,7 +16,8 @@ import { loadPayable, planPayablePayment } from "../../payables/shared";
 // unidade/centro de custo/DRE/rateio/ATIVIDADE), confirmar, vincular a uma
 // Despesa ou BAIXAR uma conta a pagar ({ payPayableId }: registra o
 // pagamento na conta a pagar com a conta e a data deste lançamento e confirma
-// o lançamento — 23/10/2026).
+// o lançamento — 23/10/2026). CONFIRMAR com { paymentId } vincula um
+// pagamento JÁ registrado no Contas a Pagar (02/11/2026), sem lançar nada.
 // Ao CONFIRMAR, faz upsert da regra de aprendizado por nome do
 // estabelecimento (finance_bank_classification_rules).
 
@@ -45,6 +46,7 @@ type EntryRow = {
   entryDate: string;
   amountCents: number;
   description: string;
+  paymentId: string;
 };
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -68,7 +70,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
                 raw_merchant AS rawMerchant, category_item_id AS categoryItemId, subcategory,
                 cost_center_id AS costCenterId, in_dre AS inDre, in_rateio AS inRateio,
                 expense_id AS expenseId, status, activity_id AS activityId, payable_id AS payableId,
-                entry_date AS entryDate, amount_cents AS amountCents, description
+                entry_date AS entryDate, amount_cents AS amountCents, description, payment_id AS paymentId
          FROM finance_bank_statement_entries WHERE id=?1`,
       )
       .bind(entryId)
@@ -160,12 +162,42 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     }
     const status = confirm ? "confirmed" : categoryItemId ? "classified" : "pending";
 
+    // Pagamento JÁ registrado no Contas a Pagar (sugestão aceita): só vincula.
+    // A DRE já recebeu o valor pela conta a pagar, então a linha sai da DRE.
+    const paymentId = confirm ? safeText(body.paymentId, 80) : "";
+    let payableId = entry.payableId;
+    let dreFlag = inDre;
+    if (paymentId) {
+      if (Number(entry.amountCents) >= 0) return jsonResponse({ error: "SÓ SAÍDAS DO EXTRATO VINCULAM PAGAMENTOS." }, 400);
+      if (entry.payableId || entry.expenseId || entry.paymentId) {
+        return jsonResponse({ error: "ESTE LANÇAMENTO JÁ FOI CONCILIADO." }, 409);
+      }
+      const payment = await database
+        .prepare(
+          `SELECT pay.payable_id AS payableId, pay.amount_cents AS amountCents, pay.confirmed_at AS confirmedAt,
+                  pay.idempotency_key AS idempotencyKey,
+                  (SELECT COUNT(*) FROM finance_bank_statement_entries b WHERE b.payment_id = pay.id) AS linked
+           FROM accounts_payable_payments pay WHERE pay.id=?1`,
+        )
+        .bind(paymentId)
+        .first<{ payableId: string; amountCents: number; confirmedAt: string; idempotencyKey: string; linked: number }>();
+      if (!payment || !payment.confirmedAt || String(payment.idempotencyKey).startsWith("bank-entry:")) {
+        return jsonResponse({ error: "PAGAMENTO NÃO ENCONTRADO." }, 404);
+      }
+      if (Number(payment.amountCents) !== -Number(entry.amountCents)) {
+        return jsonResponse({ error: "O VALOR DO PAGAMENTO NÃO BATE COM O DO EXTRATO." }, 400);
+      }
+      if (Number(payment.linked)) return jsonResponse({ error: "ESSE PAGAMENTO JÁ ESTÁ VINCULADO A OUTRO LANÇAMENTO." }, 409);
+      payableId = payment.payableId;
+      dreFlag = 0;
+    }
+
     await database
       .prepare(
         `UPDATE finance_bank_statement_entries
          SET category_item_id=?1, subcategory=?2, cost_center_id=?3, company_id=?4,
              in_dre=?5, in_rateio=?6, status=?7, updated_by=?8, updated_by_name=?9, updated_at=CURRENT_TIMESTAMP,
-             activity_id=?11
+             activity_id=?11, payment_id=?12, payable_id=?13
          WHERE id=?10`,
       )
       .bind(
@@ -173,13 +205,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         subcategory,
         costCenterId,
         companyId,
-        inDre,
+        dreFlag,
         inRateio,
         status,
         actor.id,
         who,
         entryId,
         activityId,
+        paymentId || entry.paymentId,
+        payableId,
       )
       .run();
 
