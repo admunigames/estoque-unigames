@@ -4258,6 +4258,7 @@
         <a class="nav-item sub-item" id="navSaidas" data-page="saidas" data-permission="outputs" data-home-desc="Saídas Gerais Solicitadas pelas lojas." title="Saídas" href="/saidas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5"/><path d="M11 12h9.5"/><path d="m16.5 8 4 4-4 4"/></svg></span><span class="nav-label">Saídas</span></a>
         <a class="nav-item sub-item" id="navDivergencias" data-page="divergencias" data-permission="divergencias" data-home-desc="Pedidos de verificação de divergência entre o físico e o sistema." title="Divergências" href="/divergencias"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Divergências</span></a>
         <a class="nav-item sub-item" id="navInventario" data-page="inventario" data-permission="inventario" data-home-desc="Inventário por loja: sobe o estoque por categoria, contagem física ao vivo, divergências com custo, PDFs para o diretor, recontagem e Pontti." title="Inventário" href="/inventario"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><path d="M8 16l2 2 4-4"/></svg></span><span class="nav-label">Inventário</span></a>
+        <a class="nav-item sub-item" id="navRelatoriosLogistica" data-page="relatoriosLogistica" data-permission="relatorios_logistica" data-home-desc="A loja envia o relatório da logística (PDF ou fotos escaneadas) direto para o e-mail do estoque." title="Relatórios Logística" href="/relatorios-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 7l8 6 8-6"/></svg></span><span class="nav-label">Relatórios Logística</span></a>
         <a class="nav-item sub-item" id="navAssistenciaRma" data-page="assistenciaRma" data-permission="rma" data-home-desc="RMAs dos produtos que seguem para o fornecedor: chegada, status, O.S., linha do tempo de atualizações, créditos e descartes. A loja acompanha só os RMAs dela." title="RMA" href="/assistencia/rma"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></span><span class="nav-label">RMA</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
       </div>
@@ -5167,6 +5168,39 @@
         </div>
         <div class="print-only" id="invPrintBody"></div>
       </div>
+    </section>
+
+    <section id="pageRelatoriosLogistica" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Relatórios Logística</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnRlogReload" type="button">ATUALIZAR</button>
+        </div>
+      </header>
+      <form class="table-panel" id="rlogForm" novalidate hidden style="padding:14px;margin-bottom:14px;">
+        <div class="purchase-form-grid assist-grid-3">
+          <div class="purchase-field"><label for="rlogStore">LOJA *</label><select id="rlogStore"><option value="">SELECIONE A LOJA</option></select></div>
+          <div class="purchase-field"><label for="rlogDate">DATA DO RELATÓRIO *</label><input id="rlogDate" type="date"></div>
+        </div>
+        <div class="dre-toolbar" style="margin-top:10px;">
+          <button class="btn-outline" id="btnRlogPdf" type="button">ANEXAR PDF</button>
+          <button class="btn-outline" id="btnRlogScan" type="button">ESCANEAR (FOTOS)</button>
+          <button class="btn-outline" id="btnRlogClear" type="button" hidden>LIMPAR</button>
+          <input type="file" id="rlogPdfInput" accept="application/pdf,.pdf" hidden>
+          <input type="file" id="rlogScanInput" accept="image/*" capture="environment" multiple hidden>
+        </div>
+        <p class="purchase-field-help" id="rlogFileInfo">ANEXE O PDF OU FOTOGRAFE AS FOLHAS (UMA FOTO POR PÁGINA, PODE TIRAR VÁRIAS): O SISTEMA MONTA O PDF.</p>
+        <button class="btn-accent" id="btnRlogSend" type="submit">ENVIAR POR E-MAIL</button>
+        <p class="purchase-field-help" id="rlogEmailInfo"></p>
+      </form>
+      <h3 class="supply-section-title">ENVIADOS</h3>
+      <div class="table-panel responsive-table"><div class="table-scroll">
+        <table><thead><tr><th>Data do relatório</th><th>Loja</th><th>Arquivo</th><th>Enviado por</th><th>Enviado em</th></tr></thead>
+        <tbody id="rlogBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody></table>
+      </div></div>
     </section>
 
     <section id="pageDivergencias" class="page wrap">
@@ -11010,6 +11044,13 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Estoque - Relatórios Logística</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorios_logistica:view"> Ver os relatórios enviados (login com loja: só a própria loja)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="relatorios_logistica:send"> Enviar relatório (PDF ou fotos) para o e-mail da logística</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Estoque - RMA</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="rma:view"> Ver os RMAs (login com loja só visualiza os da própria loja e as atualizações)</label>
@@ -15571,6 +15612,7 @@
     saidas:'/saidas',
     divergencias:'/divergencias',
     inventario:'/inventario',
+    relatoriosLogistica:'/relatorios-logistica',
     assistenciaOrcamentos:'/assistencia/orcamentos',
     entradas:'/entradas',
     insumos:'/insumos',
@@ -15643,6 +15685,7 @@
     saidas:'SAÍDAS',
     divergencias:'DIVERGÊNCIAS',
     inventario:'INVENTÁRIO',
+    relatoriosLogistica:'RELATÓRIOS LOGÍSTICA',
     assistenciaOrcamentos:'ORÇAMENTOS',
     entradas:'ENTRADA',
     insumos:'INSUMOS',
@@ -15711,6 +15754,7 @@
     saidas:'outputs',
     divergencias:'divergencias',
     inventario:'inventario',
+    relatoriosLogistica:'relatorios_logistica',
     assistenciaOrcamentos:'assistencia:manage',
     entradas:'inputs',
     insumos:'supplies',
@@ -16422,7 +16466,7 @@
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios' || name === 'auditoria' || name === 'infoGerais';
     const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario' || name === 'rhContabilidade';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
-    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'assistenciaRma' || name === 'comercialRelatorioNf';
+    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'relatoriosLogistica' || name === 'assistenciaRma' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos' || name === 'assistenciaEstoque';
@@ -16481,6 +16525,7 @@
     if(name === 'saidas') loadOutputs();
     if(name === 'divergencias') loadDivergencias();
     if(name === 'inventario') loadInvPage();
+    if(name === 'relatoriosLogistica') loadRlogPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
@@ -16556,6 +16601,7 @@
     if(name === 'saidas') loadOutputs();
     if(name === 'divergencias') loadDivergencias();
     if(name === 'inventario') loadInvPage();
+    if(name === 'relatoriosLogistica') loadRlogPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
     if(name === 'insumos'){ updateSupplyRoleVisibility(); loadSupplyAdminData(); loadSupplyExitData(); loadSupplyMissing(); loadSupplyRequest(); loadSupplyRequestPendingOld(); }
     if(name === 'aparelhosEmprestimo') loadLoans();
@@ -30003,6 +30049,136 @@ function renderHomeTasks(){
     if(!button || !await askConfirm('EXCLUIR ESTE ANEXO?', {okText:'EXCLUIR', danger:true})) return;
     try{ await invApi('DELETE', {id: invId, attachmentId: button.dataset.invDelfile}, '', '/api/inventario/attachment'); await loadInvPage(); }
     catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // ---------- ESTOQUE · RELATÓRIOS LOGÍSTICA ----------
+  // O PDF (anexado ou montado das fotos aqui no navegador) vai direto para o
+  // e-mail da logística; o sistema guarda só o registro do envio.
+  let rlogPdf = null;    // File/Blob do PDF anexado
+  let rlogPhotos = [];   // fotos escaneadas (JPEG já reduzido), uma por página
+
+  async function loadRlogPage(){
+    try{
+      const data = await invApi('GET', null, '', '/api/relatorios-logistica');
+      const select = el('rlogStore');
+      const current = select.value;
+      select.innerHTML = (data.stores.length === 1 ? '' : '<option value="">SELECIONE A LOJA</option>')+
+        data.stores.map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(String(store.name).toLocaleUpperCase('pt-BR'))+'</option>').join('');
+      if(current) select.value = current;
+      el('rlogDate').max = todayDateKeyRecife();
+      if(!el('rlogDate').value) el('rlogDate').value = todayDateKeyRecife();
+      el('rlogForm').hidden = !data.canSend;
+      el('rlogEmailInfo').textContent = data.configured ? 'VAI PARA '+data.emailTo+'. O ARQUIVO NÃO FICA SALVO NO SISTEMA.' : 'ENVIO DE E-MAIL AINDA NÃO CONFIGURADO.';
+      el('rlogBody').innerHTML = data.reports.length ? data.reports.map(row =>
+        '<tr><td data-label="Data do relatório">'+escapeHtml(gdDateLabel(row.reportDate))+'</td><td data-label="Loja">'+escapeHtml(row.companyName)+'</td>'+
+        '<td data-label="Arquivo">'+escapeHtml(row.fileName)+' <small>('+(row.fileSize < 1048576 ? Math.max(1, Math.round(row.fileSize / 1024))+' KB' : (row.fileSize / 1048576).toLocaleString('pt-BR', {maximumFractionDigits:1})+' MB')+')</small></td>'+
+        '<td data-label="Enviado por">'+escapeHtml(row.sentByName)+'</td><td data-label="Enviado em">'+escapeHtml(formatDateTimeBR(row.sentAt) || '')+'</td></tr>'
+      ).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhum relatório enviado.</td></tr>';
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  function rlogShowFile(){
+    el('btnRlogClear').hidden = !rlogPdf && !rlogPhotos.length;
+    el('rlogFileInfo').textContent = rlogPdf ? 'PDF ANEXADO: '+rlogPdf.name
+      : rlogPhotos.length ? rlogPhotos.length+' PÁGINA(S) ESCANEADA(S). TIRE MAIS FOTOS PARA ACRESCENTAR PÁGINAS.'
+      : 'ANEXE O PDF OU FOTOGRAFE AS FOLHAS (UMA FOTO POR PÁGINA, PODE TIRAR VÁRIAS): O SISTEMA MONTA O PDF.';
+  }
+
+  // Foto → JPEG reduzido {bytes, width, height}.
+  async function rlogPhoto(file){
+    const bitmap = await createImageBitmap(file, {imageOrientation:'from-image'});
+    const scale = Math.min(1, UPLOAD_IMAGE_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    if(bitmap.close) bitmap.close();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.75));
+    if(!blob) throw new Error('NÃO FOI POSSÍVEL LER A FOTO.');
+    return {bytes: new Uint8Array(await blob.arrayBuffer()), width: canvas.width, height: canvas.height};
+  }
+
+  // PDF mínimo: uma página A4 por foto (JPEG embutido sem recompressão).
+  function rlogBuildPdf(photos){
+    const enc = new TextEncoder();
+    const chunks = [];
+    const offsets = [];
+    let size = 0;
+    const push = part => { const bytes = typeof part === 'string' ? enc.encode(part) : part; chunks.push(bytes); size += bytes.length; };
+    const obj = (n, body, stream) => {
+      offsets[n] = size;
+      push(n+' 0 obj\n'+body);
+      if(stream){ push('\nstream\n'); push(stream); push('\nendstream'); }
+      push('\nendobj\n');
+    };
+    push('%PDF-1.4\n');
+    const pages = photos.map((_, i) => 3 + i * 3);
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids ['+pages.map(n => n+' 0 R').join(' ')+'] /Count '+photos.length+' >>');
+    photos.forEach((photo, i) => {
+      const n = pages[i];
+      const W = 595, H = 842, fit = Math.min((W - 40) / photo.width, (H - 40) / photo.height);
+      const w = photo.width * fit, h = photo.height * fit;
+      const draw = 'q '+w.toFixed(2)+' 0 0 '+h.toFixed(2)+' '+((W - w) / 2).toFixed(2)+' '+((H - h) / 2).toFixed(2)+' cm /Im0 Do Q';
+      obj(n, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+W+' '+H+'] /Resources << /XObject << /Im0 '+(n + 1)+' 0 R >> >> /Contents '+(n + 2)+' 0 R >>');
+      obj(n + 1, '<< /Type /XObject /Subtype /Image /Width '+photo.width+' /Height '+photo.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+photo.bytes.length+' >>', photo.bytes);
+      obj(n + 2, '<< /Length '+draw.length+' >>', enc.encode(draw));
+    });
+    const total = 3 + photos.length * 3;
+    const xref = size;
+    push('xref\n0 '+total+'\n0000000000 65535 f \n'+offsets.slice(1).map(o => String(o).padStart(10, '0')+' 00000 n \n').join(''));
+    push('trailer\n<< /Size '+total+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n');
+    return new Blob(chunks, {type:'application/pdf'});
+  }
+
+  el('btnRlogReload') && el('btnRlogReload').addEventListener('click', loadRlogPage);
+  el('btnRlogPdf') && el('btnRlogPdf').addEventListener('click', () => el('rlogPdfInput').click());
+  el('btnRlogScan') && el('btnRlogScan').addEventListener('click', () => el('rlogScanInput').click());
+  el('btnRlogClear') && el('btnRlogClear').addEventListener('click', () => { rlogPdf = null; rlogPhotos = []; rlogShowFile(); });
+  el('rlogPdfInput') && el('rlogPdfInput').addEventListener('change', event => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    rlogPdf = file;
+    rlogPhotos = [];
+    rlogShowFile();
+  });
+  el('rlogScanInput') && el('rlogScanInput').addEventListener('change', async event => {
+    const files = [...event.target.files];
+    event.target.value = '';
+    try{
+      for(const file of files) rlogPhotos.push(await rlogPhoto(file));
+      rlogPdf = null;
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    rlogShowFile();
+  });
+  el('rlogForm') && el('rlogForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const companyId = el('rlogStore').value, reportDate = el('rlogDate').value;
+    if(!companyId) return showPurchaseToast('SELECIONE A LOJA.', 'error');
+    if(!reportDate) return showPurchaseToast('INFORME A DATA DO RELATÓRIO.', 'error');
+    if(!rlogPdf && !rlogPhotos.length) return showPurchaseToast('ANEXE O PDF OU ESCANEIE O RELATÓRIO.', 'error');
+    const button = el('btnRlogSend');
+    button.disabled = true;
+    button.textContent = 'ENVIANDO…';
+    try{
+      const body = rlogPdf || rlogBuildPdf(rlogPhotos);
+      if(body.size > 15 * 1024 * 1024) throw new Error('O PDF DEVE TER NO MÁXIMO 15 MB.');
+      const query = new URLSearchParams({companyId, reportDate, fileName: rlogPdf ? rlogPdf.name : 'ESCANEADO.pdf'});
+      const response = await fetch('/api/relatorios-logistica?'+query, {method:'POST', headers:{Accept:'application/json','Content-Type':'application/pdf'}, body});
+      const payload = await response.json().catch(() => ({}));
+      if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); return; }
+      if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL ENVIAR.');
+      showPurchaseToast('RELATÓRIO ENVIADO PARA '+payload.emailTo+'.');
+      rlogPdf = null;
+      rlogPhotos = [];
+      rlogShowFile();
+      await loadRlogPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; button.textContent = 'ENVIAR POR E-MAIL'; }
   });
 
   // ---------- ASSISTÊNCIA · ESTOQUE ----------

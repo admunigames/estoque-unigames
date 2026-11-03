@@ -5096,3 +5096,23 @@ export const financeDreAllocations = pgTable(
     index("finance_dre_allocations_slot_idx").on(table.storeId, table.itemId, table.month),
   ],
 );
+
+// Estoque > Relatórios Logística (0125): só o registro do envio; o PDF vai
+// por e-mail e não é guardado.
+export const logisticsReports = pgTable(
+  "logistics_reports",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    reportDate: text("report_date").notNull(),
+    fileName: text("file_name").notNull().default(""),
+    fileSize: integer("file_size").notNull().default(0),
+    emailTo: text("email_to").notNull().default(""),
+    emailId: text("email_id").notNull().default(""),
+    sentBy: text("sent_by").notNull().default(""),
+    sentByName: text("sent_by_name").notNull().default(""),
+    sentAt: text("sent_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("logistics_reports_company_idx").on(table.companyId, table.reportDate)],
+);
