@@ -7913,6 +7913,10 @@
           <label for="comAcompMonth">Mês</label>
           <input type="month" id="comAcompMonth" data-com-month>
         </div>
+        <div class="field" id="comTypeField" hidden>
+          <label for="comTypeFilter">Tipo</label>
+          <select id="comTypeFilter"><option value="">TODOS</option><option value="vendedores">VENDEDORES</option><option value="operacionais">OPERACIONAIS</option></select>
+        </div>
         <div class="field" id="comStoreField" hidden>
           <label for="comStoreFilter">Loja</label>
           <select id="comStoreFilter"><option value="">TODAS</option></select>
@@ -54069,6 +54073,8 @@ function renderHomeTasks(){
   let comSellerFilter = '';
   // Filtro de OPERACIONAL: escolhido, a tela mostra só ele (sem vendedores).
   let comOperationalFilter = '';
+  // Filtro TIPO: '' (todos), 'vendedores' (inclui líderes e LOJA DIGITAL) ou 'operacionais'.
+  let comTypeFilter = '';
   let comCurrentPage = '';
   let comView = 'dashboard';
 
@@ -54547,7 +54553,7 @@ function renderHomeTasks(){
 
   function comFilteredSellers(){
     const data = comData();
-    const sellers = data && !comOperationalFilter ? data.sellers : [];
+    const sellers = data && !comOperationalFilter && comTypeFilter !== 'operacionais' ? data.sellers : [];
     return sellers.filter(seller =>
       (!comStoreFilter || seller.companyId === comStoreFilter) &&
       (!comZoneFilter || seller.zone === comZoneFilter) &&
@@ -54559,7 +54565,7 @@ function renderHomeTasks(){
   // zona e não estão no seletor de vendedor — com esses filtros, somem).
   function comFilteredOperationals(){
     const data = comData();
-    if(!data || comZoneFilter || comSellerFilter) return [];
+    if(!data || comZoneFilter || comSellerFilter || comTypeFilter === 'vendedores') return [];
     return (data.operationals || []).filter(person =>
       (!comStoreFilter || person.companyId === comStoreFilter) &&
       (!comOperationalFilter || person.employeeId === comOperationalFilter));
@@ -54583,9 +54589,11 @@ function renderHomeTasks(){
     if(el('comStoreField')) el('comStoreField').hidden = !data || ownOnly || editing || comView === 'ranking' || !allStores;
     // No Ranking, Zona e "Rankear por" só valem para a subaba VENDEDORES.
     const storeChart = comView === 'ranking' && comRankSub !== 'vendedores';
-    if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || editing || storeChart;
-    if(el('comSellerField')) el('comSellerField').hidden = !data || ownOnly || editing || comView === 'ranking';
-    if(el('comOperationalField')) el('comOperationalField').hidden = !data || ownOnly || editing || comView === 'ranking' || !(data.operationals || []).length;
+    if(el('comZoneField')) el('comZoneField').hidden = !data || ownOnly || editing || storeChart || comTypeFilter === 'operacionais';
+    if(el('comSellerField')) el('comSellerField').hidden = !data || ownOnly || editing || comView === 'ranking' || comTypeFilter === 'operacionais';
+    const hasOperationals = Boolean(data && (data.operationals || []).length);
+    if(el('comTypeField')) el('comTypeField').hidden = !data || ownOnly || editing || comView === 'ranking' || !hasOperationals || !(data.sellers || []).length;
+    if(el('comOperationalField')) el('comOperationalField').hidden = !data || ownOnly || editing || comView === 'ranking' || !hasOperationals || comTypeFilter === 'vendedores';
     if(el('comRankMetricField')) el('comRankMetricField').hidden = comView !== 'ranking' || storeChart;
     // Regras de Comissão não dependem do mês (cada vigência tem o seu).
     if(el('comMonthField')) el('comMonthField').hidden = comView === 'regras';
@@ -54796,7 +54804,9 @@ function renderHomeTasks(){
     // Só admin SEM loja vê todas; os outros, as dos tipos que aparecem na tela
     // (a conta de vendedor/líder/operacional só vê o próprio card).
     const all = currentSession.role === 'admin' && !currentSession.companyId;
-    const wanted = all ? new Set(Object.keys(COM_LEGEND_GROUPS)) : comLegendGroupsOnScreen();
+    // Com o filtro Tipo, o admin vê só as legendas daquele tipo.
+    const wanted = all ? new Set(Object.keys(COM_LEGEND_GROUPS).filter(group =>
+      !comTypeFilter || (group === 'operacional') === (comTypeFilter === 'operacionais'))) : comLegendGroupsOnScreen();
     const items = comLegendItems().filter(item => wanted.has(item.group));
     return Object.keys(COM_LEGEND_GROUPS).filter(group => items.some(item => item.group === group)).map(group =>
       '<div class="com-legend-group"><span class="com-legend-title">LEGENDA · '+COM_LEGEND_GROUPS[group]+'</span><div class="com-legends">'+
@@ -56469,6 +56479,8 @@ function renderHomeTasks(){
       comZoneFilter = '';
       comSellerFilter = '';
       comOperationalFilter = '';
+      comTypeFilter = '';
+      if(el('comTypeFilter')) el('comTypeFilter').value = '';
       // Mostra na hora o que já veio do mês (abas de leitura) e SEMPRE busca de
       // novo: outra pessoa pode ter lançado enquanto esta aba estava fechada.
       const data = comView === 'ranking' ? comRanking : comData();
@@ -56607,6 +56619,13 @@ function renderHomeTasks(){
     comZoneFilter = el('comZoneFilter').value;
     comSellerFilter = '';
     comOperationalFilter = '';
+    comRenderCurrent();
+  });
+  // Tipo: VENDEDORES esconde os operacionais (e o filtro deles); OPERACIONAIS, o contrário.
+  if(el('comTypeFilter')) el('comTypeFilter').addEventListener('change', () => {
+    comTypeFilter = el('comTypeFilter').value;
+    if(comTypeFilter === 'vendedores') comOperationalFilter = '';
+    if(comTypeFilter === 'operacionais'){ comSellerFilter = ''; comZoneFilter = ''; }
     comRenderCurrent();
   });
   // Vendedor e Operacional se excluem: escolher um limpa o outro.
