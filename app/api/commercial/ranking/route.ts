@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       name: seller.name,
       companyName: seller.companyName,
       zone: seller.zone,
+      role: seller.role,
       revenuePercent: seller.metrics.revenue.percent,
       itemsPercent: seller.metrics.items.percent,
       warrantyPercent: seller.metrics.warranty.attachPercent,
