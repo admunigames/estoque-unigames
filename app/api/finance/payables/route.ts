@@ -28,6 +28,8 @@ const LIST_COLUMNS = `id, company_id AS companyId, company_name AS companyName, 
   installment_group_id AS installmentGroupId, installment_number AS installmentNumber,
   installment_total AS installmentTotal, expense_id AS expenseId, cost_center AS costCenter,
   cost_center_id AS costCenterId, dre_target AS dreTarget, payer_name AS payerName,
+  CASE WHEN dre_target='rateio' AND dre_rateio_scope <> '' AND NOT EXISTS
+    (SELECT 1 FROM finance_dre_allocations a WHERE a.payable_id = accounts_payable.id) THEN 1 ELSE 0 END AS rateioPending,
   created_at AS createdAt, updated_at AS updatedAt`;
 
 /**

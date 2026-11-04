@@ -1,3 +1,4 @@
+import { recalcAutoRateios } from "../../payables/dre-destination";
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { todayInTimezone } from "../../../../lib/finance-status";
@@ -211,6 +212,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
     const prepared = statements.map(([sql, sqlValues]) => database.prepare(sql).bind(...sqlValues));
     await database.batch(prepared);
+    // Rateio automático: as fatias da DRE seguem o novo valor de DRE.
+    await recalcAutoRateios(database, { expenseId: id }, { id: actor.id, name: actorName });
 
     return jsonResponse({ updated: true, id, dreWarning });
   } catch (error) {

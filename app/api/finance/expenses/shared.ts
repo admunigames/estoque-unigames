@@ -16,7 +16,9 @@ import {
 } from "../../../lib/payables-recurrence";
 import { assertFinanceAccountBelongsToCompany, assertSlotAvailableForPayable } from "../payables/shared";
 import { MONTH_PATTERN, safeText, type JsonMap } from "../shared";
-import { RATEIO_MODELS, type RateioModel } from "../../../lib/rateio-models";
+import { isAutoRateioModel, RATEIO_MODELS, type RateioModel } from "../../../lib/rateio-models";
+import { distributeAmount, type RateioShareInput } from "../../../lib/rateio-distribute";
+import { allocationSlotsOf, autoRateioShares, planDreDestination, recalcSlotsSql } from "../payables/dre-destination";
 import { computeRateioShares } from "./rateio";
 
 export {
@@ -351,7 +353,21 @@ export async function planExpense(
 
   type ExpenseShare = { companyId: string; companyName: string; amountCents: number; percentBasisPoints: number };
   let shares: ExpenseShare[];
-  if (rateioType === "rateio") {
+  // Rateio AUTOMÁTICO (04/11/2026): UMA conta por ocorrência na loja da
+  // despesa e a divisão entre as lojas só na DRE (finance_dre_allocations),
+  // pelo peso do mês de cada conta — recalculada quando o Feito/funcionários
+  // mudam (recalcAutoRateios). Sem peso no mês = RATEIO PENDENTE.
+  const autoRateio = rateioType === "rateio" && isAutoRateioModel(rateioModel);
+  const autoCompanyIds = Array.isArray(body.rateioCompanyIds)
+    ? (body.rateioCompanyIds as unknown[]).map((value) => safeText(value, 80)).filter(Boolean)
+    : [];
+  let autoPreview: RateioShareInput[] = [];
+  if (autoRateio) {
+    const preview = await autoRateioShares(database, rateioModel as RateioModel, primaryCompetenceMonth, autoCompanyIds);
+    if ("error" in preview) return reply({ error: preview.error }, preview.status);
+    autoPreview = preview;
+    shares = [{ companyId, companyName, amountCents: totalAmountCents, percentBasisPoints: 0 }];
+  } else if (rateioType === "rateio") {
     const customShares = Array.isArray(body.rateioShares)
       ? (body.rateioShares as JsonMap[]).map((entry) => ({
           companyId: safeText(entry.companyId, 80),
@@ -391,7 +407,7 @@ export async function planExpense(
     }
   }
   const conflicts = await Promise.all(
-    [...distinctSlots.values()].map((slot) =>
+    [...distinctSlots.values()].filter(() => !autoRateio).map((slot) =>
       assertSlotAvailableForPayable(database, slot.companyId, financeItemId, slot.month),
     ),
   );
@@ -455,6 +471,7 @@ export async function planExpense(
     : null;
 
   const createdPayableIds: string[] = [];
+  const autoRows: Array<{ payableId: string; month: string; amountCents: number }> = [];
   for (let shareIndex = 0; shareIndex < sharePlans.length; shareIndex += 1) {
     const { share, plan } = sharePlans[shareIndex];
     // IDs pré-gerados na ordem do plano (1ª ocorrência primeiro) pra
@@ -463,7 +480,7 @@ export async function planExpense(
     const shareDreAssignments = dreCustomized
       ? computeDreAnchorAssignments(planPayableIds, true, shareDreTotals?.get(share.companyId) ?? 0)
       : null;
-    if (rateioType === "rateio") {
+    if (rateioType === "rateio" && !autoRateio) {
       statements.push([
         `INSERT INTO expense_rateio_shares (id, expense_id, company_id, company_name, percent_basis_points, amount_cents, created_at)
          VALUES (?1,?2,?3,?4,?5,?6,CURRENT_TIMESTAMP)`,
@@ -480,6 +497,11 @@ export async function planExpense(
     plan.forEach((occurrence, occurrenceIndex) => {
       const payableId = planPayableIds[occurrenceIndex];
       createdPayableIds.push(payableId);
+      autoRows.push({
+        payableId,
+        month: occurrence.competenceMonth,
+        amountCents: shareDreAssignments ? shareDreAssignments.get(payableId) ?? 0 : occurrence.amountCents,
+      });
       statements.push([
         `INSERT INTO accounts_payable
           (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
@@ -529,6 +551,23 @@ export async function planExpense(
     });
   }
 
+  if (autoRateio) {
+    // Divisão do 1º mês para exibir na despesa; a DRE usa as fatias de cada conta.
+    for (const share of distributeAmount(totalAmountCents, autoPreview)) {
+      statements.push([
+        `INSERT INTO expense_rateio_shares (id, expense_id, company_id, company_name, percent_basis_points, amount_cents, created_at)
+         VALUES (?1,?2,?3,?4,?5,?6,CURRENT_TIMESTAMP)`,
+        [crypto.randomUUID(), expenseId, share.companyId, share.companyName, share.percentBasisPoints, share.amountCents],
+      ]);
+    }
+    const destinationPlan = await planDreDestination(
+      database,
+      { target: "rateio", itemId: financeItemId, rateioModel, shares: [], autoCompanyIds },
+      autoRows,
+    );
+    statements.push(...destinationPlan.statements, ...recalcSlotsSql(destinationPlan.slots, { id: actor.id, name: actorName }));
+  }
+
   for (const slot of distinctSlots.values()) {
     const entryId = crypto.randomUUID();
     for (const [sql, sqlValues] of recalcPayableEntrySql(entryId, slot.companyId, financeItemId, slot.month, actor.id, actorName)) {
@@ -574,7 +613,8 @@ export async function planExpenseDeletion(
         .first<{ n: number }>()
     : { n: 0 };
   if (Number(paid?.n || 0)) return { skip: "TEM PAGAMENTO REGISTRADO" };
-  const statements: [string, unknown[]][] = [];
+  const allocationSlots = await allocationSlotsOf(database, payables.map((payable) => payable.id));
+  const statements: [string, unknown[]][] = payables.map((payable) => ["DELETE FROM finance_dre_allocations WHERE payable_id=?1", [payable.id]]);
   const slots = new Map<string, [string, string, string]>();
   for (const payable of payables) {
     statements.push(
@@ -596,5 +636,6 @@ export async function planExpenseDeletion(
   for (const [companyId, itemId, month] of slots.values()) {
     statements.push(...recalcPayableEntrySql(crypto.randomUUID(), companyId, itemId, month, actor.id, actor.name));
   }
+  statements.push(...recalcSlotsSql(allocationSlots, actor));
   return { statements };
 }

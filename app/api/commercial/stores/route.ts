@@ -1,3 +1,4 @@
+import { recalcAutoRateios } from "../../finance/payables/dre-destination";
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { NO_COMPANY_ERROR } from "../../../lib/access-scope";
@@ -210,6 +211,10 @@ export async function PUT(request: Request) {
       .run();
     // Meta/feito da loja e da assistência mudam o líder e os operacionais.
     await syncHrCommissions(database, month, actor);
+    // Feito mudou: rateios automáticos do mês (GRUPO/ASSISTÊNCIA/UNIGAMES) se ajustam.
+    await recalcAutoRateios(database, { months: [month] }, { id: actor.id, name: actorName(actor) }).catch((error) =>
+      console.error("Não foi possível recalcular os rateios automáticos.", error),
+    );
     return jsonResponse({ companyId, month });
   } catch (error) {
     console.error("Não foi possível salvar a meta da loja.", error);

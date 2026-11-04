@@ -25,8 +25,14 @@ export type DreDestination = {
   itemId: string;
   /** Modelo do rateio (só em 'rateio'). */
   rateioModel: string;
-  /** Lojas e percentuais (pontos-base somando 10000). Vazio em 'none'. */
+  /** Lojas e percentuais (pontos-base somando 10000). Vazio em 'none' e no rateio automático PENDENTE. */
   shares: RateioShareInput[];
+  /**
+   * Rateio AUTOMÁTICO (04/11/2026): lojas escolhidas ([] = todas do modelo).
+   * As fatias de cada linha saem do mês dela e são recalculadas quando o
+   * faturamento/funcionários mudam; sem peso no mês = RATEIO PENDENTE.
+   */
+  autoCompanyIds?: string[];
 };
 
 export type DreAllocation = {

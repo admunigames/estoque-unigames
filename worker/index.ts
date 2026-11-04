@@ -23,6 +23,7 @@ import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } fr
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
 import { upperText } from "../app/lib/upper-text";
 import { dispatchHrAlerts } from "../app/lib/hr-alerts";
+import { recalcAutoRateios } from "../app/api/finance/payables/dre-destination";
 import { vapidFromEnv } from "../app/lib/hr-notify";
 
 export { LiveUpdates };
@@ -2248,6 +2249,17 @@ async function handleAdminUsers(
   }
 }
 
+// Rateios automáticos (04/11/2026): 1x por dia (08:00) refaz as fatias do mês
+// anterior e do atual — pega mudanças de funcionários do RH; o Feito do
+// Comercial já recalcula na hora (commercial/stores PUT).
+async function recalcAutoRateiosDaily(db: unknown) {
+  const now = recifeDateTime();
+  if (now.time < "08:00" || now.time > "08:04") return;
+  const [year, month] = now.date.slice(0, 7).split("-").map(Number);
+  const previous = month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, "0")}`;
+  await recalcAutoRateios(db as Parameters<typeof recalcAutoRateios>[0], { months: [previous, now.date.slice(0, 7)] }, { id: "sistema", name: "SISTEMA" });
+}
+
 function recifeDateTime(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Recife",
@@ -3151,6 +3163,7 @@ const worker = {
       createAutomaticBackup(env, config.sessionSecret),
       purgeOldOsNotes(env),
       purgeOldAuditLog(env),
+      recalcAutoRateiosDaily(env.DB).catch((error) => console.error("Falha no recálculo dos rateios automáticos.", error)),
     ]));
   },
 };

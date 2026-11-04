@@ -983,6 +983,8 @@ export const accountsPayable = pgTable(
     // finance_dre_allocations.
     dreTarget: text("dre_target").notNull().default(""),
     dreRateioModel: text("dre_rateio_model").notNull().default(""),
+    // Rateio automático (migration 0128): {"itemId","companyIds"} para recalcular as fatias do mês; '' = congeladas.
+    dreRateioScope: text("dre_rateio_scope").notNull().default(""),
     payerName: text("payer_name").notNull().default(""),
   },
   (table) => [

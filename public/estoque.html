@@ -8917,7 +8917,6 @@
       <div class="dre-toolbar">
         <div class="field"><label for="expensesLoja">EMPRESA/LOJA</label><select id="expensesLoja"><option value="">TODAS AS LOJAS</option></select></div>
         <div class="dre-toolbar-actions">
-          <button class="btn-outline" id="btnConfigureRateio" type="button">CONFIGURAR RATEIO</button>
           <button class="btn-outline" id="btnBatchExpenses" type="button">+ CADASTRAR EM LOTE</button>
           <button class="btn-accent" id="btnNewExpense" type="button">NOVA DESPESA</button>
         </div>
@@ -14218,16 +14217,14 @@
       </div>
       <div class="purchase-field" id="expenseRateioModelField" hidden><label for="expenseRateioModel">MODELO DE RATEIO</label>
         <select id="expenseRateioModel">
-          <option value="padrao">RATEIO PADRÃO</option>
-          <option value="administrativo">RATEIO ADMINISTRATIVO</option>
-          <option value="faturamento">RATEIO POR FATURAMENTO (VENDAS + SERVIÇOS)</option>
-          <option value="faturamento_vendas">RATEIO POR FATURAMENTO DE VENDAS</option>
-          <option value="faturamento_servicos">RATEIO POR FATURAMENTO DE SERVIÇOS</option>
+          <option value="faturamento">RATEIO GRUPO (VENDAS + SERVIÇOS)</option>
+          <option value="faturamento_servicos">RATEIO ASSISTÊNCIA (SÓ SERVIÇOS)</option>
+          <option value="faturamento_vendas">RATEIO UNIGAMES (SÓ VENDAS)</option>
           <option value="funcionarios">RATEIO POR QUANTIDADE DE FUNCIONÁRIOS</option>
           <option value="personalizado">RATEIO PERSONALIZADO</option>
         </select>
       </div>
-      <div class="purchase-field full" id="expenseRateioHelp" hidden><span class="purchase-field-help">Rateio padrão/administrativo usam os percentuais configurados em "CONFIGURAR RATEIO". Faturamento e funcionários são calculados a partir dos dados já cadastrados. Personalizado é digitado manualmente abaixo.</span></div>
+      <div class="purchase-field full" id="expenseRateioHelp" hidden><span class="purchase-field-help">GRUPO, ASSISTÊNCIA, UNIGAMES E FUNCIONÁRIOS SÃO AUTOMÁTICOS: O PERCENTUAL DE CADA LOJA SAI DO FEITO DO COMERCIAL (OU DOS FUNCIONÁRIOS ATUANTES NO RH) DO MÊS DE CADA CONTA E É RECALCULADO SOZINHO QUANDO ELES MUDAM. SEM DADOS NO MÊS, FICA RATEIO PENDENTE. PERSONALIZADO É DIGITADO ABAIXO.</span></div>
       <div class="purchase-field full" id="expenseRateioSharesArea" hidden>
         <label>LOJAS PARTICIPANTES</label>
         <div class="rateio-store-actions">
@@ -14301,43 +14298,6 @@
   </div>
 </dialog>
 
-<dialog class="purchase-dialog" id="rateioConfigDialog" aria-labelledby="rateioConfigDialogTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="rateioConfigDialogTitle">CONFIGURAR RATEIO</h3>
-    <button class="purchase-dialog-close" id="btnCloseRateioConfigDialog" type="button" aria-label="Fechar">×</button>
-  </div>
-  <div style="padding:0 20px 20px;max-height:80vh;overflow:auto;">
-    <div class="output-tabs" role="tablist" aria-label="Configuração de rateio">
-      <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rateio-config-tab="padrao">RATEIO PADRÃO</button>
-      <button class="output-tab" type="button" role="tab" aria-selected="false" data-rateio-config-tab="administrativo">RATEIO ADMINISTRATIVO</button>
-      <button class="output-tab" type="button" role="tab" aria-selected="false" data-rateio-config-tab="funcionarios">FUNCIONÁRIOS POR LOJA</button>
-    </div>
-
-    <div data-rateio-config-panel="padrao">
-      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Percentual fixo de cada loja no rateio "padrão". Precisa somar exatamente 100%.</p>
-      <div id="rateioModelSharesList-padrao"></div>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
-        <span id="rateioModelSharesTotal-padrao" style="font-size:12px;color:var(--ink-soft);"></span>
-        <button class="btn-accent" type="button" data-rateio-model-save="padrao">SALVAR</button>
-      </div>
-      <div class="user-form-status" id="rateioModelStatus-padrao" role="status" aria-live="polite"></div>
-    </div>
-    <div data-rateio-config-panel="administrativo" hidden>
-      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Percentual fixo de cada loja no rateio "administrativo". Precisa somar exatamente 100%.</p>
-      <div id="rateioModelSharesList-administrativo"></div>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
-        <span id="rateioModelSharesTotal-administrativo" style="font-size:12px;color:var(--ink-soft);"></span>
-        <button class="btn-accent" type="button" data-rateio-model-save="administrativo">SALVAR</button>
-      </div>
-      <div class="user-form-status" id="rateioModelStatus-administrativo" role="status" aria-live="polite"></div>
-    </div>
-    <div data-rateio-config-panel="funcionarios" hidden>
-      <p style="color:var(--ink-soft);font-size:12px;margin:14px 0;">Quantidade de funcionários por loja (cadastro manual, não conta usuários do sistema) — base do rateio "por quantidade de funcionários".</p>
-      <div id="rateioHeadcountList"></div>
-      <div class="user-form-status" id="rateioHeadcountStatus" role="status" aria-live="polite"></div>
-    </div>
-  </div>
-</dialog>
 
 <dialog class="purchase-dialog" id="payablesCatalogDialog" aria-labelledby="payablesCatalogDialogTitle">
   <div class="purchase-dialog-head">
@@ -33115,11 +33075,17 @@ function renderHomeTasks(){
   // mesmo cálculo do rateio da Despesa) ou NÃO INCLUIR. O marcador
   // <div data-dre-destination="prefixo"> vira os campos na abertura da página.
   const DRE_RATEIO_MODEL_OPTIONS = [
-    ['padrao','RATEIO PADRÃO'], ['administrativo','RATEIO ADMINISTRATIVO'],
-    ['faturamento','POR FATURAMENTO (VENDAS + SERVIÇOS)'], ['faturamento_vendas','POR FATURAMENTO DE VENDAS'],
-    ['faturamento_servicos','POR FATURAMENTO DE SERVIÇOS'], ['funcionarios','POR QUANTIDADE DE FUNCIONÁRIOS'],
+    ['faturamento','RATEIO GRUPO (VENDAS + SERVIÇOS)'], ['faturamento_servicos','RATEIO ASSISTÊNCIA (SÓ SERVIÇOS)'],
+    ['faturamento_vendas','RATEIO UNIGAMES (SÓ VENDAS)'], ['funcionarios','POR QUANTIDADE DE FUNCIONÁRIOS'],
     ['personalizado','PERSONALIZADO (% POR LOJA)']
   ];
+  // PADRÃO/ADMINISTRATIVO saíram (04/11/2026); conta antiga com eles ainda abre.
+  function setRateioModelValue(select, value){
+    if(value && ![...select.options].some(option => option.value === value)){
+      select.insertAdjacentHTML('beforeend', '<option value="'+escapeHtml(value)+'">'+escapeHtml(String(value).toUpperCase())+' (ANTIGO)</option>');
+    }
+    select.value = value || 'faturamento';
+  }
   const dreDestinationState = {};
   function mountDreDestinations(){
     document.querySelectorAll('[data-dre-destination]').forEach(marker => {
@@ -33137,7 +33103,7 @@ function renderHomeTasks(){
         '<div class="purchase-field full" data-dre-show="'+prefix+':include '+prefix+':rateio"><label for="'+prefix+'DreItem">CATEGORIA NA DRE</label><select id="'+prefix+'DreItem" data-finance-item-picker data-placeholder="A MESMA CATEGORIA DA CONTA"><option value="">A MESMA CATEGORIA DA CONTA</option></select></div>'+
         '<div class="purchase-field full" data-dre-show="'+prefix+':rateio" hidden><label>LOJAS DO RATEIO</label>'+
           '<div class="rateio-store-list" id="'+prefix+'DreStores"></div>'+
-          '<p class="purchase-field-help">NENHUMA MARCADA = TODAS AS LOJAS DO MODELO. MARCADAS: O MODELO É RECALCULADO SÓ ENTRE ELAS (100%). NO PERSONALIZADO, INFORME O % DE CADA LOJA MARCADA.</p></div>';
+          '<p class="purchase-field-help">NENHUMA MARCADA = TODAS AS LOJAS DO MODELO. MARCADAS: O MODELO É RECALCULADO SÓ ENTRE ELAS (100%). NO PERSONALIZADO, INFORME O % DE CADA LOJA MARCADA. GRUPO/ASSISTÊNCIA/UNIGAMES/FUNCIONÁRIOS SÃO RECALCULADOS SOZINHOS PELO MÊS DA CONTA (SEM DADOS NO MÊS = RATEIO PENDENTE).</p></div>';
       const group = document.querySelector('[data-dre-dest="'+prefix+'"]');
       group.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => {
         dreDestinationState[prefix].touched = true;
@@ -33200,7 +33166,7 @@ function renderHomeTasks(){
     const dest = destination || {target: fallbackCompany ? 'include' : 'none', itemId:'', rateioModel:'', shares: fallbackCompany ? [{companyId:fallbackCompany, percentBasisPoints:10000}] : []};
     document.querySelectorAll('input[name="'+prefix+'DreTarget"]').forEach(input => { input.checked = input.value === dest.target; });
     renderDreDestinationCompanies(prefix, dest.target === 'include' && dest.shares[0] ? dest.shares[0].companyId : fallbackCompany);
-    el(prefix+'DreModel').value = dest.rateioModel || 'padrao';
+    setRateioModelValue(el(prefix+'DreModel'), dest.rateioModel);
     if(dest.target === 'rateio'){
       dest.shares.forEach(share => {
         state.checked.add(share.companyId);
@@ -34178,7 +34144,7 @@ function renderHomeTasks(){
       if(row.isGroup) return payableGroupRowHtml(row, balance);
       return '<tr>'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(row.id, 'Selecionar '+row.description)+'</td>'+
-        '<td data-label="Descrição">'+escapeHtml(row.description)+'</td>'+
+        '<td data-label="Descrição">'+escapeHtml(row.description)+(Number(row.rateioPending) ? ' <span class="status-pill warn" title="Sem Feito/funcionários no mês: a divisão entre as lojas é feita sozinha quando o mês tiver dados.">RATEIO PENDENTE</span>' : '')+'</td>'+
         '<td data-label="Empresa/Loja">'+payableCompanyCell(row)+'</td>'+
         '<td data-label="Fornecedor">'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
         '<td data-label="Categoria">'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
@@ -45262,7 +45228,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(row.competenceMonth)+'</td>'+
         '<td>'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
         '<td>'+formatCentsBRL(row.originalAmountCents)+'</td>'+
-        '<td>'+escapeHtml(EXPENSE_RATEIO_TYPE_LABELS[row.rateioType] || row.rateioType)+'</td>'+
+        '<td>'+escapeHtml(EXPENSE_RATEIO_TYPE_LABELS[row.rateioType] || row.rateioType)+(Number(row.rateioPendingCount) ? ' <span class="status-pill warn" title="Sem Feito/funcionários no mês: a divisão entre as lojas é feita sozinha quando o mês tiver dados.">RATEIO PENDENTE</span>' : '')+'</td>'+
         '<td>'+escapeHtml(expenseInstallmentBadge(row))+'</td>'+
         '<td><button class="btn-outline" type="button" data-expense-open="'+escapeHtml(row.id)+'">ABRIR</button></td>'+
       '</tr>';
@@ -45441,6 +45407,7 @@ function renderHomeTasks(){
   });
 
   function expenseRateioIsCustom(){ return el('expenseRateioModel').value === 'personalizado'; }
+  function expenseRateioIsAuto(){ return ['faturamento','faturamento_servicos','faturamento_vendas','funcionarios'].includes(el('expenseRateioModel').value); }
 
   // Lojas marcadas por padrão = as que têm peso no modelo (prévia sem filtro).
   async function updateExpenseRateioModelFields(opts){
@@ -45459,8 +45426,10 @@ function renderHomeTasks(){
       const data = await financeApiRequest('/expenses/rateio-preview', {method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({rateioModel: el('expenseRateioModel').value, competenceMonth: expenseCompetenceMonthForPreview() || financeCurrentMonthKey(), originalAmountCents: 10000})});
       if(token !== expenseRateioDefaultsToken) return;
-      expenseRateioChecked = new Set((data.shares || []).map(share => share.companyId));
+      // Automático: todas as lojas (inclusive as que ainda não têm Feito no mês).
+      expenseRateioChecked = new Set(expenseRateioIsAuto() ? pullStoreCompanies().map(c => c.id) : (data.shares || []).map(share => share.companyId));
       renderExpenseRateioStores();
+      if(data.pending) el('expenseRateioSharesTotal').textContent = data.pending;
     }catch(error){
       if(token === expenseRateioDefaultsToken) el('expenseRateioSharesTotal').textContent = error.message;
     }
@@ -45532,7 +45501,7 @@ function renderHomeTasks(){
       });
       const shares = Array.isArray(data.shares) ? data.shares : [];
       const skipped = Array.isArray(data.skipped) ? data.skipped : [];
-      el('expenseRateioSharesList').innerHTML = (shares.length
+      el('expenseRateioSharesList').innerHTML = data.pending ? '<div class="dre-empty">'+escapeHtml(data.pending)+'</div>' : (shares.length
         ? '<table style="width:100%;"><thead><tr><th>Loja</th><th>%</th><th>Valor</th></tr></thead><tbody>'+
             shares.map(s => '<tr><td>'+escapeHtml(s.companyName)+'</td><td>'+(s.percentBasisPoints/100).toFixed(2)+'%</td><td>'+formatCentsBRL(s.amountCents)+'</td></tr>').join('')+
           '</tbody></table>'
@@ -45599,7 +45568,12 @@ function renderHomeTasks(){
       cardId:el('expenseCardId').value.trim(), bankReconciliationId:el('expenseBankReconciliationId').value.trim()
     };
     if(rateioShares) body.rateioShares = rateioShares;
-    if(rateioType === 'rateio') body.rateioCompanyIds = [...expenseRateioChecked];
+    if(rateioType === 'rateio'){
+      // Automático com TODAS as lojas marcadas = [] (loja nova entra sozinha).
+      const allStores = pullStoreCompanies().map(c => c.id);
+      const everyStore = expenseRateioIsAuto() && expenseRateioChecked.size === allStores.length && allStores.every(id => expenseRateioChecked.has(id));
+      body.rateioCompanyIds = everyStore ? [] : [...expenseRateioChecked];
+    }
     if(expenseDreTouched){
       body.dreIncluded = el('expenseDreIncludedNew').checked;
       body.dreAmountCents = parseBRLToCents(getCurrencyValue(el('expenseDreAmountNew')) || '0') || 0;
@@ -45738,7 +45712,7 @@ function renderHomeTasks(){
     el('expenseCardId').value = expense.cardId || '';
     el('expenseBankReconciliationId').value = expense.bankReconciliationId || '';
     document.querySelectorAll('input[name="expenseRateioType"]').forEach(input => { input.checked = input.value === expense.rateioType; });
-    if(expense.rateioType === 'rateio') el('expenseRateioModel').value = expense.rateioModel || 'padrao';
+    if(expense.rateioType === 'rateio') setRateioModelValue(el('expenseRateioModel'), expense.rateioModel);
     updateExpenseRateioFields();
     // Reabre com as mesmas lojas (e % do personalizado) da despesa original.
     if(expense.rateioType === 'rateio' && expenseDetailCurrentShares.length){
@@ -45827,145 +45801,6 @@ function renderHomeTasks(){
       document.querySelectorAll('[data-expenses-sort]').forEach(other => other.classList.remove('sort-asc','sort-desc'));
       th.classList.add(expensesDir === 'asc' ? 'sort-asc' : 'sort-desc');
       loadExpensesList();
-    });
-  });
-
-  // ---- Configuração de rateio (padrão/administrativo/funcionários) ----
-  let rateioModelShares = {padrao:[], administrativo:[]};
-  let rateioHeadcountRows = [];
-
-  function renderRateioModelSharesEditor(model){
-    const companyOptions = companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-    const rows = rateioModelShares[model].length ? rateioModelShares[model] : companies.map(c => ({companyId:c.id, companyName:c.name, percentBasisPoints:0}));
-    el('rateioModelSharesList-'+model).innerHTML = rows.map((row, index) =>
-      '<div class="field-inline-form" style="margin-bottom:6px;">'+
-        '<select data-rateio-model-company="'+model+':'+index+'"><option value="">SELECIONE A LOJA</option>'+companyOptions+'</select>'+
-        '<input type="number" min="0" max="100" step="0.01" data-rateio-model-percent="'+model+':'+index+'" value="'+(row.percentBasisPoints/100)+'" style="max-width:100px;">'+
-        '<button class="btn-outline" type="button" data-rateio-model-remove="'+model+':'+index+'">REMOVER</button>'+
-      '</div>'
-    ).join('')+'<button class="btn-outline" type="button" data-rateio-model-add="'+model+'" style="margin-top:6px;">+ ADICIONAR LOJA</button>';
-    rows.forEach((row, index) => {
-      const select = document.querySelector('[data-rateio-model-company="'+model+':'+index+'"]');
-      if(select) select.value = row.companyId;
-    });
-    rateioModelShares[model] = rows;
-    updateRateioModelSharesTotal(model);
-  }
-
-  function updateRateioModelSharesTotal(model){
-    const total = rateioModelShares[model].reduce((sum, row) => sum + (Number(row.percentBasisPoints) || 0) / 100, 0);
-    const totalEl = el('rateioModelSharesTotal-'+model);
-    totalEl.textContent = 'TOTAL: '+total.toFixed(2)+'%'+(Math.round(total*100) === 10000 ? ' ✓' : ' (precisa somar 100%)');
-  }
-
-  document.querySelectorAll('[id^="rateioModelSharesList-"]').forEach(container => {
-    const model = container.id.replace('rateioModelSharesList-','');
-    container.addEventListener('input', event => {
-      const percentInput = event.target.closest('[data-rateio-model-percent]');
-      if(!percentInput) return;
-      const index = Number(percentInput.dataset.rateioModelPercent.split(':')[1]);
-      rateioModelShares[model][index].percentBasisPoints = Math.round(Number(percentInput.value) * 100) || 0;
-      updateRateioModelSharesTotal(model);
-    });
-    container.addEventListener('change', event => {
-      const companySelect = event.target.closest('[data-rateio-model-company]');
-      if(!companySelect) return;
-      const index = Number(companySelect.dataset.rateioModelCompany.split(':')[1]);
-      const company = companies.find(c => c.id === companySelect.value);
-      rateioModelShares[model][index].companyId = companySelect.value;
-      rateioModelShares[model][index].companyName = company ? company.name : '';
-    });
-    container.addEventListener('click', event => {
-      const removeButton = event.target.closest('[data-rateio-model-remove]');
-      const addButton = event.target.closest('[data-rateio-model-add]');
-      if(removeButton){
-        const index = Number(removeButton.dataset.rateioModelRemove.split(':')[1]);
-        rateioModelShares[model].splice(index, 1);
-        renderRateioModelSharesEditor(model);
-      }else if(addButton){
-        rateioModelShares[model].push({companyId:'', companyName:'', percentBasisPoints:0});
-        renderRateioModelSharesEditor(model);
-      }
-    });
-  });
-
-  document.querySelectorAll('[data-rateio-model-save]').forEach(button => {
-    button.addEventListener('click', async () => {
-      const model = button.dataset.rateioModelSave;
-      const statusEl = el('rateioModelStatus-'+model);
-      statusEl.textContent = '';
-      const shares = rateioModelShares[model].filter(row => row.companyId);
-      const totalBp = shares.reduce((sum, row) => sum + row.percentBasisPoints, 0);
-      if(shares.length < 2){ statusEl.textContent = 'INFORME AO MENOS DUAS LOJAS.'; return; }
-      if(totalBp !== 10000){ statusEl.textContent = 'OS PERCENTUAIS PRECISAM SOMAR EXATAMENTE 100%.'; return; }
-      try{
-        await financeApiRequest('/rateio-models', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({model, shares})
-        });
-        showPurchaseToast('Modelo de rateio salvo.');
-      }catch(error){ statusEl.textContent = error.message; }
-    });
-  });
-
-  function renderRateioHeadcountEditor(){
-    el('rateioHeadcountList').innerHTML = companies.map(company => {
-      const row = rateioHeadcountRows.find(r => r.companyId === company.id);
-      return '<div class="field-inline-form" style="margin-bottom:6px;">'+
-        '<span style="min-width:180px;display:inline-block;">'+escapeHtml(company.name)+'</span>'+
-        '<input type="number" min="0" step="1" data-rateio-headcount="'+escapeHtml(company.id)+'" value="'+(row ? row.employeeCount : 0)+'" style="max-width:100px;">'+
-      '</div>';
-    }).join('');
-  }
-
-  el('rateioHeadcountList').addEventListener('change', async event => {
-    const input = event.target.closest('[data-rateio-headcount]');
-    if(!input) return;
-    const companyId = input.dataset.rateioHeadcount;
-    const company = companies.find(c => c.id === companyId);
-    const employeeCount = Math.max(0, Math.trunc(Number(input.value) || 0));
-    const statusEl = el('rateioHeadcountStatus');
-    statusEl.textContent = '';
-    try{
-      await financeApiRequest('/store-headcount', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({companyId, companyName: company ? company.name : '', employeeCount})
-      });
-      showPurchaseToast('Quadro de funcionários salvo.');
-    }catch(error){ statusEl.textContent = error.message; }
-  });
-
-  async function loadRateioConfigData(){
-    if(!companies.length) await loadCompanies();
-    const [padraoData, administrativoData, headcountData] = await Promise.all([
-      financeApiRequest('/rateio-models?model=padrao'),
-      financeApiRequest('/rateio-models?model=administrativo'),
-      financeApiRequest('/store-headcount')
-    ]);
-    rateioModelShares.padrao = Array.isArray(padraoData.shares) ? padraoData.shares : [];
-    rateioModelShares.administrativo = Array.isArray(administrativoData.shares) ? administrativoData.shares : [];
-    rateioHeadcountRows = Array.isArray(headcountData.rows) ? headcountData.rows : [];
-    renderRateioModelSharesEditor('padrao');
-    renderRateioModelSharesEditor('administrativo');
-    renderRateioHeadcountEditor();
-  }
-
-  el('btnConfigureRateio').addEventListener('click', async () => {
-    el('rateioConfigDialog').showModal();
-    try{ await loadRateioConfigData(); }catch(error){ showPurchaseToast(error.message, 'error'); }
-  });
-  el('btnCloseRateioConfigDialog').addEventListener('click', () => { if(el('rateioConfigDialog').open) el('rateioConfigDialog').close(); });
-
-  document.querySelectorAll('[data-rateio-config-tab]').forEach(button => {
-    button.addEventListener('click', () => {
-      const tab = button.dataset.rateioConfigTab;
-      document.querySelectorAll('[data-rateio-config-tab]').forEach(b => {
-        b.classList.toggle('active', b === button);
-        b.setAttribute('aria-selected', String(b === button));
-      });
-      document.querySelectorAll('[data-rateio-config-panel]').forEach(panel => {
-        panel.hidden = panel.dataset.rateioConfigPanel !== tab;
-      });
     });
   });
 

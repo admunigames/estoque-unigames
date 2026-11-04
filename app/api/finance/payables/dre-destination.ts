@@ -12,7 +12,8 @@ import {
   type DreDestination,
 } from "../../../lib/dre-destination";
 import { recalcPayableEntrySql } from "../../../lib/payables-recurrence";
-import { RATEIO_MODELS, type RateioModel } from "../../../lib/rateio-models";
+import { isAutoRateioModel, RATEIO_MODELS, type RateioModel } from "../../../lib/rateio-models";
+import type { RateioShareInput } from "../../../lib/rateio-distribute";
 import { computeRateioShares } from "../expenses/rateio";
 import { loadCompanyList, safeText, type JsonMap } from "../shared";
 
@@ -76,6 +77,12 @@ export async function parseDreDestination(
   const companyIds = Array.isArray(body.dreRateioCompanyIds)
     ? (body.dreRateioCompanyIds as unknown[]).map((value) => safeText(value, 80)).filter(Boolean)
     : undefined;
+  if (isAutoRateioModel(model)) {
+    // Automático: as fatias saem do mês de cada linha em planDreDestination.
+    const shares = await autoRateioShares(database, model, context.competenceMonth, companyIds ?? []);
+    if ("error" in shares) return shares;
+    return { destination: { target: "rateio", itemId, rateioModel: model, shares, autoCompanyIds: companyIds ?? [] } };
+  }
   const result = await computeRateioShares(database, {
     model,
     competenceMonth: context.competenceMonth,
@@ -92,6 +99,34 @@ export async function parseDreDestination(
       shares: result.shares.map(({ companyId, companyName, percentBasisPoints }) => ({ companyId, companyName, percentBasisPoints })),
     },
   };
+}
+
+/**
+ * Fatias de um rateio automático no mês. Sem peso no mês (Feito não lançado,
+ * nenhum funcionário) = [] → RATEIO PENDENTE, recalculado depois.
+ */
+export async function autoRateioShares(
+  database: Database,
+  model: RateioModel,
+  month: string,
+  companyIds: string[],
+): Promise<RateioShareInput[] | { error: string; status: number }> {
+  const result = await computeRateioShares(database, { model, competenceMonth: month, totalAmountCents: 10000, companyIds });
+  if ("error" in result) return result.status === 409 ? [] : result;
+  return result.shares.map(({ companyId, companyName, percentBasisPoints }) => ({ companyId, companyName, percentBasisPoints }));
+}
+
+function parseScope(raw: string): { itemId: string; companyIds: string[] } | null {
+  try {
+    const value = JSON.parse(raw || "null");
+    if (!value || typeof value !== "object") return null;
+    return {
+      itemId: String(value.itemId || ""),
+      companyIds: Array.isArray(value.companyIds) ? value.companyIds.map(String).filter(Boolean) : [],
+    };
+  } catch {
+    return null;
+  }
 }
 
 type AllocationRow = Pick<DreAllocation, "payableId" | "storeId" | "storeName" | "itemId" | "month" | "percentBasisPoints">;
@@ -126,6 +161,17 @@ export async function loadPayableDestination(
 ): Promise<DreDestination> {
   if (!payable.dreTarget || !isDreTarget(payable.dreTarget)) return legacyDestination(payable);
   const allocations = (await loadAllocations(database, [payable.id])).filter((row) => row.payableId === payable.id);
+  if (payable.dreTarget === "rateio") {
+    const row = await database
+      .prepare("SELECT dre_rateio_scope AS scope FROM accounts_payable WHERE id=?1")
+      .bind(payable.id)
+      .first<{ scope: string }>();
+    const scope = parseScope(row?.scope || "");
+    if (scope) {
+      const found = destinationFromAllocations("rateio", payable.dreRateioModel || "", allocations);
+      return { target: "rateio", itemId: scope.itemId, rateioModel: payable.dreRateioModel || "", shares: found.shares, autoCompanyIds: scope.companyIds };
+    }
+  }
   return destinationFromAllocations(payable.dreTarget, payable.dreRateioModel || "", allocations);
 }
 
@@ -141,17 +187,98 @@ export async function planDreDestination(
 ): Promise<{ statements: Statement[]; slots: Array<{ storeId: string; itemId: string; month: string }> }> {
   const ids = rows.map((row) => row.payableId);
   const previous = await loadAllocations(database, ids);
-  const next = allocationsFor(destination, rows);
+  const next = await nextAllocations(database, destination, rows);
+  const auto = destination.target === "rateio" && destination.autoCompanyIds !== undefined;
+  const scope = auto ? JSON.stringify({ itemId: destination.itemId, companyIds: destination.autoCompanyIds }) : "";
   const statements: Statement[] = [];
   for (const id of ids) statements.push(["DELETE FROM finance_dre_allocations WHERE payable_id=?1", [id]]);
   for (const id of ids) {
     statements.push([
-      "UPDATE accounts_payable SET dre_target=?1, dre_rateio_model=?2 WHERE id=?3",
-      [destination.target, destination.target === "rateio" ? destination.rateioModel : "", id],
+      "UPDATE accounts_payable SET dre_target=?1, dre_rateio_model=?2, dre_rateio_scope=?3 WHERE id=?4",
+      [destination.target, destination.target === "rateio" ? destination.rateioModel : "", scope, id],
     ]);
   }
   statements.push(...insertAllocationsSql(next));
   return { statements, slots: allocationSlots([...previous, ...next]) };
+}
+
+/** Fatias novas: no automático, cada linha pelo peso do mês dela. */
+async function nextAllocations(
+  database: Database,
+  destination: DreDestination,
+  rows: Array<{ payableId: string; month: string; amountCents: number }>,
+): Promise<DreAllocation[]> {
+  if (destination.target !== "rateio" || destination.autoCompanyIds === undefined) return allocationsFor(destination, rows);
+  const byMonth = new Map<string, RateioShareInput[]>();
+  for (const month of new Set(rows.map((row) => row.month))) {
+    const shares = await autoRateioShares(database, destination.rateioModel as RateioModel, month, destination.autoCompanyIds);
+    byMonth.set(month, "error" in shares ? [] : shares);
+  }
+  return rows.flatMap((row) => allocationsFor({ ...destination, shares: byMonth.get(row.month) ?? [] }, [row]));
+}
+
+/**
+ * Recalcula as fatias dos rateios AUTOMÁTICOS (contas não canceladas com
+ * dre_rateio_scope) dos meses pedidos — chamado quando o Feito do Comercial
+ * muda e no cron diário (funcionários do RH). Só regrava a conta cuja divisão
+ * mudou; devolve quantas mudaram.
+ */
+export async function recalcAutoRateios(
+  database: Database,
+  filter: { months?: string[]; expenseId?: string },
+  actor: { id: string; name: string },
+): Promise<number> {
+  const months = [...new Set(filter.months ?? [])];
+  if (!months.length && !filter.expenseId) return 0;
+  const where = filter.expenseId
+    ? { sql: "expense_id=?1", binds: [filter.expenseId] }
+    : { sql: `competence_month IN (${months.map((_, index) => `?${index + 1}`).join(",")})`, binds: months };
+  const rows =
+    (
+      await database
+        .prepare(
+          `SELECT id, competence_month AS month, dre_rateio_model AS model, dre_rateio_scope AS scope,
+                  COALESCE(dre_amount_cents, original_amount_cents) AS amountCents
+           FROM accounts_payable
+           WHERE dre_target='rateio' AND dre_rateio_scope <> '' AND status <> 'canceled' AND ${where.sql}`,
+        )
+        .bind(...where.binds)
+        .all<{ id: string; month: string; model: string; scope: string; amountCents: number }>()
+    ).results ?? [];
+  const ids = rows.map((row) => row.id);
+  const current = ids.length
+    ? (
+        await database
+          .prepare(
+            `SELECT payable_id AS payableId, store_id AS storeId, item_id AS itemId, month,
+                    percent_basis_points AS percentBasisPoints, amount_cents AS amountCents
+             FROM finance_dre_allocations WHERE payable_id IN (${ids.map((_, index) => `?${index + 1}`).join(",")})`,
+          )
+          .bind(...ids)
+          .all<{ payableId: string; storeId: string; itemId: string; month: string; percentBasisPoints: number; amountCents: number }>()
+      ).results ?? []
+    : [];
+  const statements: Statement[] = [];
+  const slots: Array<{ storeId: string; itemId: string; month: string }> = [];
+  let changed = 0;
+  for (const row of rows) {
+    const scope = parseScope(row.scope);
+    if (!scope || !isAutoRateioModel(row.model)) continue;
+    const destination: DreDestination = { target: "rateio", itemId: scope.itemId, rateioModel: row.model, shares: [], autoCompanyIds: scope.companyIds };
+    const line = [{ payableId: row.id, month: row.month, amountCents: Math.max(0, Number(row.amountCents) || 0) }];
+    const next = await nextAllocations(database, destination, line);
+    const key = (list: Array<{ storeId: string; itemId: string; percentBasisPoints: number; amountCents: number }>) =>
+      list.map((item) => `${item.storeId}:${item.itemId}:${Number(item.percentBasisPoints)}:${Number(item.amountCents)}`).sort().join("|");
+    const before = current.filter((item) => item.payableId === row.id);
+    if (key(before) === key(next)) continue;
+    changed += 1;
+    statements.push(["DELETE FROM finance_dre_allocations WHERE payable_id=?1", [row.id]], ...insertAllocationsSql(next));
+    slots.push(...allocationSlots([...before, ...next]));
+  }
+  if (!statements.length) return 0;
+  statements.push(...recalcSlotsSql(allocationSlots(slots), actor));
+  await database.batch(statements.map(([sql, binds]) => database.prepare(sql).bind(...binds)));
+  return changed;
 }
 
 /** Células das fatias já gravadas (para recalcular ao cancelar/excluir). */

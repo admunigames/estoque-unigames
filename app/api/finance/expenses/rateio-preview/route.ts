@@ -3,6 +3,7 @@ import { unauthorizedResponse } from "../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, type JsonMap } from "../../shared";
 import { MONTH_PATTERN, RATEIO_MODELS, type RateioModel } from "../shared";
 import { computeRateioShares, type CustomShareInput } from "../rateio";
+import { isAutoRateioModel } from "../../../../lib/rateio-models";
 
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -35,6 +36,10 @@ export async function POST(request: Request) {
 
     const database = await getD1();
     const result = await computeRateioShares(database, { model, competenceMonth, totalAmountCents, customShares, companyIds });
+    // Automático sem peso no mês: lança como RATEIO PENDENTE (não é erro).
+    if ("error" in result && result.status === 409 && isAutoRateioModel(model)) {
+      return jsonResponse({ shares: [], skipped: [], pending: `RATEIO PENDENTE — ${result.error} A DIVISÃO É FEITA SOZINHA QUANDO O MÊS TIVER DADOS.` });
+    }
     if ("error" in result) return jsonResponse({ error: result.error }, result.status);
     return jsonResponse({ shares: result.shares, skipped: result.skipped });
   } catch (error) {

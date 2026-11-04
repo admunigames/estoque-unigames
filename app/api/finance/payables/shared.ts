@@ -401,6 +401,18 @@ export async function planPayablesBulk(
         }
         if (skipped.some((row) => row.id === payable.id)) continue;
         statements.push(["UPDATE finance_dre_allocations SET item_id=?1 WHERE payable_id=?2", [nextItem, payable.id]]);
+        // Rateio automático: a categoria guardada para o recálculo acompanha.
+        const scopeRow = await database
+          .prepare("SELECT dre_rateio_scope AS scope FROM accounts_payable WHERE id=?1")
+          .bind(payable.id)
+          .first<{ scope: string }>();
+        if (scopeRow?.scope) {
+          const scope = JSON.parse(scopeRow.scope) as { companyIds?: string[] };
+          statements.push([
+            "UPDATE accounts_payable SET dre_rateio_scope=?1 WHERE id=?2",
+            [JSON.stringify({ itemId: nextItem, companyIds: scope.companyIds ?? [] }), payable.id],
+          ]);
+        }
         for (const slot of previousSlots) {
           addSlot(slot.storeId, slot.itemId, slot.month);
           addSlot(slot.storeId, nextItem, slot.month);

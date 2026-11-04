@@ -110,7 +110,10 @@ export async function GET(request: Request) {
       .prepare(
         `SELECT ${EXPENSE_SELECT_COLUMNS},
                 (SELECT COUNT(*) FROM accounts_payable ap WHERE ap.expense_id = expenses.id) AS linkedPayablesCount,
-                (SELECT COALESCE(SUM(ap.paid_amount_cents), 0) FROM accounts_payable ap WHERE ap.expense_id = expenses.id) AS paidAmountCents
+                (SELECT COALESCE(SUM(ap.paid_amount_cents), 0) FROM accounts_payable ap WHERE ap.expense_id = expenses.id) AS paidAmountCents,
+                (SELECT COUNT(*) FROM accounts_payable ap WHERE ap.expense_id = expenses.id AND ap.dre_target='rateio'
+                   AND ap.dre_rateio_scope <> '' AND ap.status <> 'canceled'
+                   AND NOT EXISTS (SELECT 1 FROM finance_dre_allocations a WHERE a.payable_id = ap.id)) AS rateioPendingCount
          FROM expenses
          ${whereSql}
          ORDER BY ${sortField} ${sortDirection}, id ASC
