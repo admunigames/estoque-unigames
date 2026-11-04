@@ -12546,6 +12546,13 @@
   <form class="purchase-form" id="cfWeeklyForm">
     <input type="hidden" id="cfWeeklyDialogWeek">
     <p class="purchase-field-help">UMA LINHA POR CONTA ATIVA. CONTA EM BRANCO NÃO É ALTERADA. SALDO NEGATIVO (CHEQUE ESPECIAL) É ACEITO.</p>
+    <details class="cf-weekly-paste" style="margin:0 0 10px;">
+      <summary style="cursor:pointer;font-weight:800;">COLAR DA PLANILHA (PREENCHE VÁRIAS CONTAS DE UMA VEZ)</summary>
+      <p class="purchase-field-help" style="margin:6px 0;">COPIE DUAS COLUNAS DA PLANILHA — NOME DA CONTA OU DA LOJA E SALDO (EX.: "GUARA&nbsp;&nbsp;R$ 13.227,10") — E COLE AQUI. CADA LINHA PREENCHE A CONTA DE MESMO NOME. TAMBÉM DÁ PARA COLAR SÓ UMA COLUNA DE VALORES DIRETO NUM CAMPO DE SALDO: PREENCHE DALI PARA BAIXO, NA ORDEM DA LISTA.</p>
+      <textarea id="cfWeeklyPasteText" rows="5" style="width:100%;" placeholder="GUARA&#9;R$ 13.227,10&#10;TACA&#9;R$ 114.476,37"></textarea>
+      <button class="btn-outline btn-sm" id="btnCfWeeklyPasteApply" type="button" style="margin-top:6px;">PREENCHER</button>
+      <div id="cfWeeklyPasteResult" role="status" aria-live="polite" style="font-size:12px;font-weight:700;margin-top:6px;"></div>
+    </details>
     <div class="table-panel responsive-table cf-weekly-table">
       <div class="table-scroll">
         <table>
@@ -36485,10 +36492,12 @@ function renderHomeTasks(){
     try{
       const informed = await cfWeekBalances(monday);
       const accounts = cfWeeklyData.accounts || [];
+      el('cfWeeklyPasteText').value = '';
+      el('cfWeeklyPasteResult').textContent = '';
       body.innerHTML = accounts.map(a =>
         '<tr data-cf-week-account="'+escapeHtml(a.accountId)+'">'+
           '<td data-label="CONTA"><strong>'+escapeHtml(a.accountName)+'</strong></td>'+
-          '<td data-label="LOJA">'+escapeHtml(a.companyName || '—')+'</td>'+
+          '<td data-label="LOJA">'+escapeHtml(cfWeeklyAccountStore(a.accountId) || '—')+'</td>'+
           '<td data-label="SALDO"><input data-cf-week-field="balance" aria-label="Saldo de '+escapeHtml(a.accountName)+'"></td>'+
           '<td data-label="OBS."><input data-cf-week-field="notes" maxlength="500" aria-label="Observação"></td>'+
         '</tr>').join('') || '<tr><td colspan="4" class="responsive-empty">Nenhuma conta ativa cadastrada nesta unidade.</td></tr>';
@@ -36500,6 +36509,69 @@ function renderHomeTasks(){
       });
     }catch(error){ body.innerHTML = '<tr><td colspan="4" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; }
   }
+  function cfWeeklyAccountStore(accountId){
+    const full = payableAccounts.find(item => item.id === accountId) || {};
+    return String((companies.find(c => c.id === full.companyId) || {}).name || full.companyName || '');
+  }
+  // COLAR DA PLANILHA: "NOME<tab>SALDO" por linha. Casa pelo nome da conta
+  // (igual) e, se não houver, pelo nome da loja ou parte do nome — só quando
+  // UMA conta bate; o resto volta como não encontrado/ambíguo.
+  function cfWeeklyPasteLines(text){
+    return String(text || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+      // Valor = o último número da linha (aceita R$, -R$, R$ - e parênteses).
+      const match = line.match(/(\(?\s*-?\s*(?:R\$)?\s*-?\s*\d[\d.]*(?:,\d{1,2})?\s*\)?)\s*$/);
+      if(!match) return {line, name: '', cents: null};
+      const raw = match[1];
+      let clean = raw.replace(/[()\-\s]/g, '');
+      // "12.345" sem vírgula = milhar brasileiro, não decimal.
+      if(!clean.includes(',') && /\.\d{3}$/.test(clean)) clean = clean.replace(/\./g, '');
+      const cents = Math.abs(parseMoneyToCents(clean));
+      const name = line.slice(0, match.index).replace(/[\t;:|]+/g, ' ').replace(/R\$\s*$/i, '').trim();
+      return {line, name, cents: /-|\(/.test(raw) ? -cents : cents};
+    });
+  }
+  function cfWeeklyMatchAccount(rows, name){
+    const key = normalizeSearchText(name);
+    if(!key) return {error: 'SEM NOME'};
+    const info = rows.map(tr => ({tr, name: normalizeSearchText(tr.querySelector('strong').textContent), store: normalizeSearchText(cfWeeklyAccountStore(tr.dataset.cfWeekAccount))}));
+    for(const test of [i => i.name === key, i => i.store === key, i => i.name.includes(key) || key.includes(i.name) || (i.store && (i.store.startsWith(key) || key.startsWith(i.store)))]){
+      const found = info.filter(test);
+      if(found.length === 1) return {tr: found[0].tr};
+      if(found.length > 1) return {error: 'MAIS DE UMA CONTA'};
+    }
+    return {error: 'NÃO ENCONTRADA'};
+  }
+  el('btnCfWeeklyPasteApply').addEventListener('click', () => {
+    const rows = Array.from(el('cfWeeklyDialogBody').querySelectorAll('tr[data-cf-week-account]'));
+    const problems = [];
+    let filled = 0;
+    cfWeeklyPasteLines(el('cfWeeklyPasteText').value).forEach(item => {
+      if(item.cents === null){ problems.push(item.line+' (SEM VALOR)'); return; }
+      const match = cfWeeklyMatchAccount(rows, item.name);
+      if(!match.tr){ problems.push(item.name+' ('+match.error+')'); return; }
+      setCurrencyValue(match.tr.querySelector('[data-cf-week-field="balance"]'), item.cents / 100);
+      filled++;
+    });
+    const result = filled+' SALDO(S) PREENCHIDO(S)'+(problems.length ? ' · NÃO PREENCHIDOS: '+problems.join(', ').toUpperCase()+' — DIGITE ESSES À MÃO OU USE O NOME COMPLETO DA CONTA' : '')+'. CONFIRA E CLIQUE EM SALVAR TUDO.';
+    el('cfWeeklyPasteResult').textContent = result;
+    el('cfWeeklyPasteResult').style.color = problems.length ? 'var(--danger, #c8402f)' : 'var(--ok, #1f8a55)';
+    el('cfWeeklyDialogStatus').textContent = result;
+  });
+  // Uma coluna de valores colada num campo de saldo preenche dali para baixo.
+  el('cfWeeklyDialogBody').addEventListener('paste', event => {
+    const input = event.target.closest('[data-cf-week-field="balance"]');
+    const text = (event.clipboardData || window.clipboardData).getData('text');
+    if(!input || !/\n/.test(text.trim())) return;
+    event.preventDefault();
+    const values = cfWeeklyPasteLines(text);
+    const rows = Array.from(el('cfWeeklyDialogBody').querySelectorAll('tr[data-cf-week-account]'));
+    const start = rows.indexOf(input.closest('tr'));
+    values.forEach((item, index) => {
+      const tr = rows[start + index];
+      if(tr && item.cents !== null) setCurrencyValue(tr.querySelector('[data-cf-week-field="balance"]'), item.cents / 100);
+    });
+    el('cfWeeklyDialogStatus').textContent = Math.min(values.length, rows.length - start)+' SALDO(S) COLADO(S) A PARTIR DE '+input.closest('tr').querySelector('strong').textContent+'. CONFIRA E CLIQUE EM SALVAR TUDO.';
+  });
   el('btnCfWeeklyInform').addEventListener('click', () => openCfWeeklyDialog(el('cfWeekDate').value));
   el('cfWeeklyPending').addEventListener('click', event => {
     const btn = event.target.closest('[data-cf-weekly-inform]');
