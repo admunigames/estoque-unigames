@@ -5,6 +5,7 @@ import {
   canManagePayroll,
   identity,
   jsonResponse,
+  loadCnpjTotals,
   loadMonthValues,
   MONTH_PATTERN,
   safeText,
@@ -21,6 +22,9 @@ import {
 //   (porcentagem × 100, só conferência), 'fgts_base' e 'fgts'.
 // O INSS e o FGTS daqui alimentam a DRE Funcionário por CNPJ, pela LOJA
 // CADASTRADA (admissão) do funcionário. Sem lançamento, FGTS = 0.
+// TOTAL DA GUIA POR CNPJ (04/11/2026): INSS e FGTS do mês por CNPJ (kinds
+// 'cnpj_inss'/'cnpj_fgts'); lançado, substitui a soma dos funcionários na DRE
+// por CNPJ e no total daqui. 0 apaga e volta a valer a soma.
 
 const FIELDS: Array<[keyof Values, MonthValueKind]> = [
   ["inssBaseCents", "inss_base"],
@@ -40,7 +44,7 @@ export async function GET(request: Request) {
   if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
   try {
     const database = await getD1();
-    const [employees, companies, ...maps] = await Promise.all([
+    const [employees, companies, cnpjTotals, ...maps] = await Promise.all([
       database
         .prepare(
           `SELECT id, full_name AS fullName, status, COALESCE(NULLIF(admission_company_id, ''), company_id) AS companyId,
@@ -49,6 +53,7 @@ export async function GET(request: Request) {
         )
         .all<{ id: string; fullName: string; status: string; companyId: string; companyName: string }>(),
       loadCompanyList(database) as Promise<Array<{ id: string; name: string; cnpj?: string }>>,
+      loadCnpjTotals(database, month),
       ...FIELDS.map(([, kind]) => loadMonthValues(database, month, kind)),
     ]);
     const valuesOf = (employeeId: string) =>
@@ -83,11 +88,36 @@ export async function GET(request: Request) {
     }
     const ordered = [...groups.values()].sort((a, b) => (!a.cnpj !== !b.cnpj ? (a.cnpj ? -1 : 1) : a.cnpj.localeCompare(b.cnpj)));
     for (const group of ordered) group.rows.sort((a, b) => a.employeeName.localeCompare(b.employeeName, "pt-BR"));
-    const total = ordered.reduce(
-      (sum, group) => ({ inssCents: sum.inssCents + group.inssCents, fgtsCents: sum.fgtsCents + group.fgtsCents, totalCents: sum.totalCents + group.totalCents }),
+    // Todos os CNPJs cadastrados (com ou sem funcionário), com a soma dos
+    // funcionários e o total da guia; o valor da DRE é a guia quando lançada.
+    const cnpjNames = new Map<string, string[]>();
+    for (const company of companies) {
+      const cnpj = String(company.cnpj || "").replace(/\D+/g, "");
+      if (!cnpj) continue;
+      cnpjNames.set(cnpj, [...(cnpjNames.get(cnpj) ?? []), company.name]);
+    }
+    for (const group of ordered) if (group.cnpj && !cnpjNames.has(group.cnpj)) cnpjNames.set(group.cnpj, group.companyNames);
+    const cnpjs = [...cnpjNames.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([cnpj, companyNames]) => {
+        const group = groups.get(cnpj);
+        const guia = cnpjTotals.get(cnpj) ?? {};
+        const employeesInssCents = group?.inssCents ?? 0;
+        const employeesFgtsCents = group?.fgtsCents ?? 0;
+        const inssCents = guia.inssCents ?? employeesInssCents;
+        const fgtsCents = guia.fgtsCents ?? employeesFgtsCents;
+        return {
+          cnpj, companyNames, employeesInssCents, employeesFgtsCents,
+          guiaInssCents: guia.inssCents ?? null, guiaFgtsCents: guia.fgtsCents ?? null,
+          inssCents, fgtsCents, totalCents: inssCents + fgtsCents,
+        };
+      });
+    const noCnpj = groups.get("");
+    const total = [...cnpjs, ...(noCnpj ? [noCnpj] : [])].reduce(
+      (sum, row) => ({ inssCents: sum.inssCents + row.inssCents, fgtsCents: sum.fgtsCents + row.fgtsCents, totalCents: sum.totalCents + row.inssCents + row.fgtsCents }),
       { inssCents: 0, fgtsCents: 0, totalCents: 0 },
     );
-    return jsonResponse({ month, groups: ordered, total });
+    return jsonResponse({ month, groups: ordered, cnpjs, total });
   } catch (error) {
     console.error("Não foi possível carregar o INSS e FGTS do mês.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O INSS E FGTS DO MÊS." }, 500);
@@ -105,9 +135,10 @@ export async function PUT(request: Request) {
     const body = (await request.json()) as JsonMap;
     const month = safeText(body.month, 7);
     if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
+    const database = await getD1();
+    if (Array.isArray(body.cnpjTotals)) return await saveCnpjTotals(database, month, body.cnpjTotals as JsonMap[], actor);
     const values = Array.isArray(body.values) ? (body.values as JsonMap[]) : [];
     if (!values.length || values.length > 1000) return jsonResponse({ error: "INFORME DE 1 A 1000 FUNCIONÁRIOS." }, 400);
-    const database = await getD1();
     const employees = await database.prepare("SELECT id, full_name AS fullName FROM hr_employees").all<{ id: string; fullName: string }>();
     const names = new Map((employees.results ?? []).map((row) => [row.id, row.fullName]));
     const statements = [];
@@ -128,4 +159,29 @@ export async function PUT(request: Request) {
     console.error("Não foi possível gravar o INSS e FGTS do mês.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL GRAVAR O INSS E FGTS DO MÊS." }, 500);
   }
+}
+
+/** TOTAL DA GUIA por CNPJ: só CNPJ cadastrado em loja; 0 apaga (volta a soma). */
+async function saveCnpjTotals(database: Awaited<ReturnType<typeof getD1>>, month: string, entries: JsonMap[], actor: ReturnType<typeof identity>) {
+  if (!entries.length || entries.length > 100) return jsonResponse({ error: "INFORME DE 1 A 100 CNPJS." }, 400);
+  const companies = (await loadCompanyList(database)) as Array<{ name: string; cnpj?: string }>;
+  const names = new Map<string, string[]>();
+  for (const company of companies) {
+    const cnpj = String(company.cnpj || "").replace(/\D+/g, "");
+    if (cnpj) names.set(cnpj, [...(names.get(cnpj) ?? []), company.name]);
+  }
+  const statements = [];
+  for (const [index, entry] of entries.entries()) {
+    const cnpj = String(entry?.cnpj ?? "").replace(/\D+/g, "");
+    if (!names.has(cnpj)) return jsonResponse({ error: `LINHA ${index + 1}: CNPJ NÃO CADASTRADO EM NENHUMA LOJA.` }, 400);
+    for (const [key, kind] of [["inssCents", "cnpj_inss"], ["fgtsCents", "cnpj_fgts"]] as const) {
+      const amountCents = Number(entry?.[key] ?? 0);
+      if (!Number.isInteger(amountCents) || amountCents < 0 || amountCents > MAX_CENTS) {
+        return jsonResponse({ error: `LINHA ${index + 1}: VALOR INVÁLIDO.` }, 400);
+      }
+      statements.push(upsertMonthValueStatement(database, { employeeId: cnpj, employeeName: (names.get(cnpj) ?? []).join(", "), month, kind, amountCents }, actor));
+    }
+  }
+  await database.batch(statements);
+  return jsonResponse({ month, saved: entries.length });
 }

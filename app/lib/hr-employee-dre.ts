@@ -314,6 +314,8 @@ export function buildCnpjSummary(
   stores: DreStore[],
   staff: DreStaff[],
   companies: Array<{ id: string; name: string; cnpj?: string }>,
+  /** TOTAL DA GUIA por CNPJ (04/11/2026): lançado, substitui a soma dos funcionários. */
+  cnpjTotals: Map<string, { inssCents?: number; fgtsCents?: number }> = new Map(),
 ): DreCnpjRow[] {
   const cnpjOf = (companyId: string) => String(companies.find((company) => company.id === companyId)?.cnpj || "").replace(/\D+/g, "");
   const nameOf = (companyId: string) => companies.find((company) => company.id === companyId)?.name || companyId || NO_STORE_LABEL;
@@ -347,6 +349,12 @@ export function buildCnpjSummary(
     row.trainingCents += store.totals.trainingCents;
     row.severanceCents += store.totals.severanceCents;
     row.terminationFgtsCents += store.totals.fgtsCents;
+  }
+  for (const [cnpj, total] of cnpjTotals) {
+    const row = rows.get(cnpj);
+    if (!row) continue;
+    if (total.inssCents !== undefined) row.inssCents = cents(total.inssCents);
+    if (total.fgtsCents !== undefined) row.fgtsMonthCents = cents(total.fgtsCents);
   }
   return [...rows.values()]
     .map((row) => ({

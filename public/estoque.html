@@ -7193,8 +7193,9 @@
           <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-custo-tab="inss">INSS E FGTS</button>
         </div>
         <div id="rhInssFgtsView" hidden>
-          <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">VALORES DA FOLHA DO MÊS POR FUNCIONÁRIO, PELA LOJA CADASTRADA (REGISTRO). O INSS E O FGTS DAQUI SÃO OS DA DRE FUNCIONÁRIO POR CNPJ; SEM LANÇAMENTO, FGTS = R$ 0,00. A % DO INSS É SÓ PARA CONFERÊNCIA (BASE × %).</p>
+          <p class="muted no-print" style="font-size:11px;margin:0 0 10px;">TOTAL DA GUIA POR CNPJ: LANÇADO, SUBSTITUI A SOMA DOS FUNCIONÁRIOS NA DRE FUNCIONÁRIO POR CNPJ (EM BRANCO OU R$ 0,00 = VALE A SOMA). ABAIXO, OS VALORES DA FOLHA POR FUNCIONÁRIO, PELA LOJA CADASTRADA (REGISTRO); SEM LANÇAMENTO, FGTS = R$ 0,00. A % DO INSS É SÓ PARA CONFERÊNCIA (BASE × %).</p>
           <div class="table-panel" id="rhInssFgtsResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+          <div id="rhInssFgtsCnpj"></div>
           <div id="rhInssFgtsConteudo"></div>
         </div>
         <div id="rhCustoFuncCustoView">
@@ -49151,6 +49152,7 @@ function renderHomeTasks(){
     const month = el('rhFolhaMes').value;
     el('rhInssFgtsResumo').textContent = 'Carregando…';
     el('rhInssFgtsConteudo').innerHTML = '';
+    el('rhInssFgtsCnpj').innerHTML = '';
     try{
       rhInssFgtsData = await rhApiRequest('/inss-fgts?month='+encodeURIComponent(month));
     }catch(error){
@@ -49162,6 +49164,23 @@ function renderHomeTasks(){
     const t = rhInssFgtsData.total;
     el('rhInssFgtsResumo').innerHTML = 'Competência '+escapeHtml(rhFormatMonth(month))+' · INSS <strong>'+formatCentsBRL(t.inssCents)+'</strong> · FGTS <strong>'+
       formatCentsBRL(t.fgtsCents)+'</strong> · TOTAL <strong>'+formatCentsBRL(t.totalCents)+'</strong>';
+    const cnpjs = rhInssFgtsData.cnpjs || [];
+    const guiaInput = (cnpj, field, value) => '<input class="no-print" style="width:120px;text-align:right;" data-rh-inss-guia="'+field+'" data-cnpj="'+escapeHtml(cnpj)+'" '+
+      'aria-label="'+(field === 'inss' ? 'Guia INSS' : 'Guia FGTS')+' do CNPJ '+escapeHtml(rhFormatCnpj(cnpj))+'" data-value="'+(value === null ? '' : value)+'">'+
+      '<span class="print-only">'+(value === null ? '—' : formatCentsBRL(value))+'</span>';
+    el('rhInssFgtsCnpj').innerHTML = cnpjs.length ? '<div class="table-panel rh-print-block" style="padding:12px 14px;margin-bottom:14px;">'+
+      '<h3 style="margin:0 0 8px;font:800 12px var(--mono);letter-spacing:.06em;">TOTAL POR CNPJ (GUIA DO MÊS)</h3>'+
+      '<div class="table-scroll"><table class="rh-print-table"><thead><tr><th>CNPJ / Lojas</th><th class="num">INSS funcionários</th><th class="num">Guia INSS</th>'+
+      '<th class="num">FGTS funcionários</th><th class="num">Guia FGTS</th><th class="num">INSS na DRE</th><th class="num">FGTS na DRE</th><th class="num">Total na DRE</th></tr></thead><tbody>'+
+      cnpjs.map(row => '<tr><td><strong>'+escapeHtml(rhFormatCnpj(row.cnpj))+'</strong><br><small>'+escapeHtml(row.companyNames.join(', ').toUpperCase())+'</small></td>'+
+        '<td class="num">'+formatCentsBRL(row.employeesInssCents)+'</td><td class="num">'+guiaInput(row.cnpj, 'inss', row.guiaInssCents)+'</td>'+
+        '<td class="num">'+formatCentsBRL(row.employeesFgtsCents)+'</td><td class="num">'+guiaInput(row.cnpj, 'fgts', row.guiaFgtsCents)+'</td>'+
+        '<td class="num">'+formatCentsBRL(row.inssCents)+'</td><td class="num">'+formatCentsBRL(row.fgtsCents)+'</td><td class="num"><strong>'+formatCentsBRL(row.totalCents)+'</strong></td></tr>').join('')+
+      '</tbody></table></div><div class="purchase-form-actions no-print" style="margin-top:10px;"><button class="btn-accent" type="button" id="btnRhInssGuiaSalvar">SALVAR TOTAIS</button></div></div>' : '';
+    el('rhInssFgtsCnpj').querySelectorAll('[data-rh-inss-guia]').forEach(input => {
+      attachCurrencyMask(input);
+      if(input.dataset.value) setCurrencyValue(input, Number(input.dataset.value)/100);
+    });
     const head = '<thead><tr><th>Funcionário</th><th>Loja cadastrada / CNPJ</th><th class="num">Base INSS</th><th class="num">% INSS</th><th class="num">Valor INSS</th>'+
       '<th class="num">Base FGTS</th><th class="num">Valor FGTS</th><th class="num">Total</th><th class="no-print"></th></tr></thead>';
     const totals = (label, row) => '<tr><td colspan="4"><strong>'+escapeHtml(label)+'</strong></td><td class="num"><strong>'+formatCentsBRL(row.inssCents)+'</strong></td><td></td>'+
@@ -49175,10 +49194,30 @@ function renderHomeTasks(){
           '<td class="num">'+formatCentsBRL(row.inssBaseCents)+'</td><td class="num">'+rhPctText(row.inssPctBps)+'%</td><td class="num">'+formatCentsBRL(row.inssCents)+'</td>'+
           '<td class="num">'+formatCentsBRL(row.fgtsBaseCents)+'</td><td class="num">'+formatCentsBRL(row.fgtsCents)+'</td><td class="num"><strong>'+formatCentsBRL(row.totalCents)+'</strong></td>'+
           '<td class="no-print"><button class="btn-outline" type="button" data-rh-inss-edit="'+escapeHtml(row.employeeId)+'">EDITAR</button></td></tr>').join('')+
-        totals('SUBTOTAL DO CNPJ', group)+'</tbody></table></div></div>';
+        totals('SOMA DOS FUNCIONÁRIOS DO CNPJ', group)+'</tbody></table></div></div>';
     }).join('')+(groups.length ? '<div class="table-panel rh-print-block" style="padding:12px 14px;"><div class="table-scroll"><table class="rh-print-table">'+head+
-      '<tbody>'+totals('TOTAL GERAL', t)+'</tbody></table></div></div>' : '<div class="dre-empty">Nenhum funcionário nesta competência.</div>');
+      '<tbody>'+totals('TOTAL GERAL (NA DRE)', t)+'</tbody></table></div></div>' : '<div class="dre-empty">Nenhum funcionário nesta competência.</div>');
   }
+  if(el('rhInssFgtsCnpj')) el('rhInssFgtsCnpj').addEventListener('click', async event => {
+    const button = event.target.closest('#btnRhInssGuiaSalvar');
+    if(!button) return;
+    const totals = new Map();
+    let invalid = false;
+    el('rhInssFgtsCnpj').querySelectorAll('[data-rh-inss-guia]').forEach(input => {
+      const cents = parseBRLToCents(getCurrencyValue(input) || '0');
+      if(cents === null){ invalid = true; return; }
+      const row = totals.get(input.dataset.cnpj) || {cnpj:input.dataset.cnpj, inssCents:0, fgtsCents:0};
+      row[input.dataset.rhInssGuia === 'inss' ? 'inssCents' : 'fgtsCents'] = cents;
+      totals.set(input.dataset.cnpj, row);
+    });
+    if(invalid){ showPurchaseToast('VALOR INVÁLIDO.','error'); return; }
+    button.disabled = true;
+    try{
+      await rhApiRequest('/inss-fgts', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month:el('rhFolhaMes').value, cnpjTotals:[...totals.values()]})});
+      showPurchaseToast('Totais por CNPJ salvos.');
+      await loadRhInssFgts();
+    }catch(error){ showPurchaseToast(error.message,'error'); button.disabled = false; }
+  });
   const RH_INSS_FGTS_MONEY = ['rhInssFgtsInssBase','rhInssFgtsInss','rhInssFgtsFgtsBase','rhInssFgtsFgts'];
   RH_INSS_FGTS_MONEY.forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
   function rhInssFgtsRowOf(employeeId){

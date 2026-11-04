@@ -9,7 +9,7 @@ import {
   type DreTermination,
 } from "../../../lib/hr-employee-dre";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, loadMonthValues, loadOvertimePayouts, safeText } from "../shared";
+import { MONTH_PATTERN, canManagePayroll, identity, jsonResponse, loadCnpjTotals, loadMonthValues, loadOvertimePayouts, safeText } from "../shared";
 import { actingStoresForMonth } from "../../../lib/acting-store";
 
 // DRE Funcionário — fechamento do mês (civil), por loja com detalhe por
@@ -93,7 +93,8 @@ export async function GET(request: Request) {
 
     // Por CNPJ: quem esteve ativo no mês, pela LOJA CADASTRADA (admissão) do
     // funcionário. INSS e FGTS = os da folha lançados em CUSTO TOTAL POR
-    // FUNCIONÁRIO > INSS E FGTS (01/11/2026); sem lançamento, FGTS = 0. A base
+    // FUNCIONÁRIO > INSS E FGTS (01/11/2026); sem lançamento, FGTS = 0. Com o
+    // TOTAL DA GUIA do CNPJ lançado (04/11/2026), ele substitui a soma. A base
     // (salário + comissão + HE + DSR, ou o salário do cadastro) segue informativa.
     const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
     const [employees, allTerminations, assignments, payroll, commissions, dsr, inss, overtimePayouts, fgts] = await Promise.all([
@@ -172,7 +173,7 @@ export async function GET(request: Request) {
       }))
       .filter((person) => !companyId || person.companyId === companyId);
     const companies = (await loadCompanyList(database)) as Array<{ id: string; name: string; cnpj?: string }>;
-    const byCnpj = buildCnpjSummary(report.stores, staff, [...companies, { id: "assistencia", name: "Assistência" }]);
+    const byCnpj = buildCnpjSummary(report.stores, staff, [...companies, { id: "assistencia", name: "Assistência" }], await loadCnpjTotals(database, month));
     // Layout compacto (modelo do fechamento da LIDIANE, 31/10/2026): férias
     // líquidas iniciadas no mês (só informativo — férias não entram na DRE) e
     // comissões do mês por colaborador, na loja atuante do mês.

@@ -80,6 +80,23 @@ test("rota: INSS/FGTS da folha pela loja cadastrada; sem lançamento FGTS = 0; b
   assert.equal(inssDoMes.values.length, 2);
 });
 
+// TOTAL DA GUIA POR CNPJ (04/11/2026): lançado, substitui a soma dos funcionários.
+test("rota: total da guia por CNPJ substitui a soma; 0 volta à soma; CNPJ precisa existir", async () => {
+  const save = (body, actor = ADMIN) => callRoute(inssFgts.PUT, actor, "PUT", "/api/hr-payroll/inss-fgts", { month: "2026-10", ...body });
+  assert.equal((await save({ cnpjTotals: [{ cnpj: "99888777000100", inssCents: 1 }] })).status, 400);
+  assert.equal((await save({ cnpjTotals: [{ cnpj: "11222333000181", inssCents: 1 }] }, { id: "loja", permissions: [] })).status, 403);
+  // Só o INSS da guia: o FGTS continua a soma dos funcionários (30.656).
+  assert.equal((await save({ cnpjTotals: [{ cnpj: "11.222.333/0001-81", inssCents: 50000, fgtsCents: 0 }] })).status, 200);
+  const tab = await (await callRoute(inssFgts.GET, ADMIN, "GET", "/api/hr-payroll/inss-fgts?month=2026-10")).json();
+  const alfa = tab.cnpjs.find((row) => row.cnpj === "11222333000181");
+  assert.deepEqual([alfa.employeesInssCents, alfa.guiaInssCents, alfa.inssCents, alfa.guiaFgtsCents, alfa.fgtsCents], [30056, 50000, 50000, null, 30656]);
+  assert.deepEqual(tab.total, { inssCents: 50000, fgtsCents: 30656, totalCents: 80656 });
+  const dreRow = async () => (await (await callRoute(dre.GET, ADMIN, "GET", "/api/hr-payroll/employee-dre?month=2026-10")).json()).byCnpj.find((item) => item.cnpj === "11222333000181");
+  assert.deepEqual([(await dreRow()).inssCents, (await dreRow()).fgtsMonthCents], [50000, 30656]);
+  await save({ cnpjTotals: [{ cnpj: "11222333000181", inssCents: 0, fgtsCents: 0 }] });
+  assert.equal((await dreRow()).inssCents, 30056, "sem guia, volta a soma dos funcionários");
+});
+
 test("tela: botão INSS DO MÊS e fechamento compacto com INSS/FGTS por CNPJ", async () => {
   const { readFile } = await import("node:fs/promises");
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
