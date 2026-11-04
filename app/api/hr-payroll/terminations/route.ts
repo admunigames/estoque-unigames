@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { identity as commercialIdentity, syncHrCommissionsSince } from "../../commercial/shared";
 import { checklistPendingCount, normalizeChecklist } from "../../../lib/hr-rh";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
@@ -195,6 +196,8 @@ export async function POST(request: Request) {
       // Desligado: o login vinculado ao funcionário é bloqueado na hora.
       deactivateLinkedLogin(database, employeeId),
     ]);
+    // Desligado sai do Comercial (operacional ativo): regrava a comissão.
+    await syncHrCommissionsSince(database, "", commercialIdentity(request));
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     console.error("Não foi possível salvar a rescisão.", error);

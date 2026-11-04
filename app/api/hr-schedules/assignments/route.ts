@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { identity as commercialIdentity, syncHrCommissionsSince } from "../../commercial/shared";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
   actorName,
@@ -131,6 +132,8 @@ export async function POST(request: Request) {
         .bind(recordId, employeeId, employeeName, companyId, companyName, referenceMonth, notes, actor.id, actorName(actor))
         .run();
     }
+    // A loja do mês muda a comissão do Comercial (meta/premiação da loja).
+    await syncHrCommissionsSince(database, referenceMonth, commercialIdentity(request));
 
     return jsonResponse(existing ? { updated: true, id: recordId } : { created: true, id: recordId }, existing ? 200 : 201);
   } catch (error) {
@@ -155,11 +158,12 @@ export async function DELETE(request: Request) {
   try {
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id FROM hr_schedule_assignments WHERE id=?1")
+      .prepare("SELECT id, reference_month AS referenceMonth FROM hr_schedule_assignments WHERE id=?1")
       .bind(id)
-      .first<{ id: string }>();
+      .first<{ id: string; referenceMonth: string }>();
     if (!existing) return jsonResponse({ error: "REGISTRO NÃO ENCONTRADO." }, 404);
     await database.prepare("DELETE FROM hr_schedule_assignments WHERE id=?1").bind(id).run();
+    await syncHrCommissionsSince(database, existing.referenceMonth, commercialIdentity(request));
     return jsonResponse({ deleted: true });
   } catch (error) {
     console.error("Não foi possível excluir a loja fixa do colaborador.", error);

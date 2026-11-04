@@ -5,7 +5,8 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // RH > Funcionários com permissões próprias (rh_funcionarios:*). Sem
 // payroll:manage, salário/PIX/banco/benefícios não saem nem são alterados.
 
-const db = await setupRouteDb(["shared_state", "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_terminations", "hr_aso_exams", "app_users"]);
+const db = await setupRouteDb(["shared_state", "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_terminations", "hr_aso_exams", "app_users",
+  "hr_schedule_assignments", "hr_payroll_settings", "commercial_monthly", "commercial_rules", "commercial_newcomers", "commercial_credit_entries", "commercial_store_goals", "commercial_roles", "commercial_indications", "commercial_weekend_goals", "hr_commission_items"]);
 db.insert("shared_state", { state_key: "companies_list", value_json: JSON.stringify([{ id: "clojaalfa1", name: "LOJA ALFA" }]) });
 const route = await import("../app/api/hr-payroll/employees/route.ts");
 const PAYROLL = { id: "rh-fin", permissions: ["payroll:manage"] };

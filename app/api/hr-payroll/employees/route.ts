@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { identity as commercialIdentity, syncHrCommissionsSince } from "../../commercial/shared";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { checklistPendingCount } from "../../../lib/hr-rh";
 import { loadCompanyList } from "../../finance/shared";
@@ -318,6 +319,8 @@ export async function POST(request: Request) {
         database.prepare("UPDATE hr_terminations SET employee_name=?1 WHERE employee_id=?2").bind(fullName, editId),
         database.prepare("UPDATE hr_aso_exams SET employee_name=?1 WHERE employee_id=?2").bind(fullName, editId),
       ]);
+      // Cadastro (situação, admissão, cargo, loja) muda quem recebe comissão no Comercial.
+      await syncHrCommissionsSince(database, "", commercialIdentity(request));
       return jsonResponse({ updated: true, id: editId });
     }
 
@@ -376,6 +379,8 @@ export async function POST(request: Request) {
           }, actor).statement]
         : []),
     ]);
+    // Cadastro (situação, admissão, cargo, loja) muda quem recebe comissão no Comercial.
+    await syncHrCommissionsSince(database, "", commercialIdentity(request));
     return jsonResponse({ created: true, id }, 201);
   } catch (error) {
     console.error("Não foi possível salvar o funcionário.", error);

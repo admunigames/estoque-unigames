@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../../db";
+import { identity as commercialIdentity, syncHrCommissionsSince } from "../../../commercial/shared";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { actingStoreFor } from "../../../../lib/acting-store";
 import { todayInTimezone } from "../../../../lib/finance-status";
@@ -78,6 +79,7 @@ async function applyMonth(request: Request, remove: boolean) {
       store = { companyId, companyName };
     }
     const current = await saveActingStoreMonth(database, actor, { employeeId, employeeName: employee.fullName, month, store });
+    await syncHrCommissionsSince(database, month, commercialIdentity(request));
     return jsonResponse({ saved: true, employeeId, month, current });
   } catch (error) {
     console.error("Não foi possível gravar a loja atuante.", error);

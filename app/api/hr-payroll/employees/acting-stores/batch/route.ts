@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../../../db";
+import { identity as commercialIdentity, syncHrCommissionsSince } from "../../../../commercial/shared";
 import { unauthorizedResponse } from "../../../../../lib/notion";
 import { actingStoresForMonth } from "../../../../../lib/acting-store";
 import { loadCompanyList } from "../../../../finance/shared";
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
     // ponytail: um mês por vez em sequência (≈70 funcionários); juntar num
     // batch só se ficar lento.
     for (const item of items) await saveActingStoreMonth(database, actor, { ...item, month });
+    await syncHrCommissionsSince(database, month, commercialIdentity(request));
     return jsonResponse({ saved: items.length });
   } catch (error) {
     console.error("Não foi possível gravar as lojas atuantes.", error);

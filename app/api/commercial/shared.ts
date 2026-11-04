@@ -1,6 +1,7 @@
 import { getD1 } from "../../../db";
 import { canSeeAllStores, hasCompany, type ScopeActor } from "../../lib/access-scope";
 import { todayInTimezone } from "../../lib/finance-status";
+import { nextMonth } from "../../lib/hr-accounting-report";
 import {
   DEFAULT_COMMERCIAL_RULES,
   ENTRY_KINDS,
@@ -751,6 +752,19 @@ export async function syncHrCommissions(database: Database, month: string, actor
     if (statements.length) await database.batch(statements);
   } catch (error) {
     console.error("Não foi possível atualizar a comissão no RH.", error);
+  }
+}
+
+/**
+ * Regrava a comissão do RH de `fromMonth` (ou COMMISSION_SYNC_FROM) até o mês
+ * corrente. Para escritas do RH que mudam quem recebe ou de qual loja (loja
+ * atuante, cadastro, desligamento, contratação): a loja atuante herda para os
+ * meses seguintes, então todos eles podem mudar.
+ */
+export async function syncHrCommissionsSince(database: Database, fromMonth: string, actor: Identity) {
+  const lastMonth = todayInTimezone().slice(0, 7);
+  for (let month = fromMonth > COMMISSION_SYNC_FROM ? fromMonth : COMMISSION_SYNC_FROM; month <= lastMonth; month = nextMonth(month)) {
+    await syncHrCommissions(database, month, actor);
   }
 }
 

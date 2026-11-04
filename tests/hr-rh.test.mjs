@@ -13,7 +13,8 @@ const db = await setupRouteDb([
   "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_terminations", "hr_aso_exams", "hr_vacations",
   "hr_recruitment_candidates", "hr_recruitment_status_history", "hr_recruitment_test_payments", "hr_leader_pdi",
   "hr_onboarding_videos", "hr_onboarding_progress", "hr_store_followups", "hr_time_tracking_entries",
-  "hr_time_tracking_settings", "hr_schedule_assignments",
+  "hr_time_tracking_settings", "hr_schedule_assignments", "hr_payroll_settings",
+  "commercial_monthly", "commercial_rules", "commercial_newcomers", "commercial_credit_entries", "commercial_store_goals", "commercial_roles", "commercial_indications", "commercial_weekend_goals", "hr_commission_items",
 ]);
 db.insert("shared_state", { state_key: "companies_list", value_json: JSON.stringify([{ id: "clojaalfa1", name: "LOJA ALFA" }, { id: "clojabeta1", name: "LOJA BETA" }]) });
 db.insert("app_users", { id: "rh1", username: "rh1", display_name: "RH", password_hash: "x", password_salt: "x", role: "user", access_group: "custom", permissions_json: JSON.stringify(["rh_recrutamento:manage", "rh_exames:view", "rh_aniversariantes:view", "rh_onboarding:track"]), active: 1 });

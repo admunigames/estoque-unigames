@@ -10,6 +10,7 @@ const db = await setupRouteDb([
   "shared_state", "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_payroll_settings",
   "hr_terminations", "hr_aso_exams", "hr_vacations", "hr_schedule_assignments", "hr_recruitment_candidates",
   "hr_recruitment_test_payments", "hr_employee_month_values", "hr_time_tracking_payouts", "hr_settings", "app_users",
+  "commercial_monthly", "commercial_rules", "commercial_newcomers", "commercial_credit_entries", "commercial_store_goals", "commercial_roles", "commercial_indications", "commercial_weekend_goals", "hr_commission_items",
 ]);
 const { vacationStatus, vacationDays } = await import("../app/lib/hr-vacations.ts");
 const { employeeBenefitRule, cycleBenefitAmounts } = await import("../app/lib/hr-benefit-cycle.ts");

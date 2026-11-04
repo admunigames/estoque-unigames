@@ -3,12 +3,10 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import {
   buildAccountingReport,
   commissionCarryChain,
-  nextMonth,
   type AccountingPerson,
   type CommissionCarry,
 } from "../../../lib/hr-accounting-report";
 import { loadCompanyList } from "../../finance/shared";
-import { COMMISSION_SYNC_FROM, identity as commercialIdentity, syncHrCommissions } from "../../commercial/shared";
 import {
   actorName,
   canManagePayroll,
@@ -33,9 +31,10 @@ import {
 //     relatório (hr_employee_month_values, kind 'he_min') — não soma no R$;
 //   PREMIAÇÃO = do Comercial + premiações lançadas no RH.
 // OBSERVAÇÕES por empresa (CNPJ) e competência: hr_accounting_notes (PUT).
-// Antes de montar, regrava a comissão/premiação do Comercial dos meses desde
-// COMMISSION_SYNC_FROM (o mesmo syncHrCommissions de cada lançamento do
-// Comercial): garante a premiação separada nos meses anteriores à migration.
+// A comissão/premiação do Comercial já chega regravada em hr_commissions: cada
+// lançamento do Comercial e cada escrita do RH que muda quem recebe (loja
+// atuante, cadastro, desligamento, contratação) chama syncHrCommissions —
+// abrir o relatório só lê (antes regravava aqui e levava ~2,4 s).
 
 type CommissionHistoryRow = {
   id: string;
@@ -59,9 +58,6 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    for (let synced = COMMISSION_SYNC_FROM; synced <= month; synced = nextMonth(synced)) {
-      await syncHrCommissions(database, synced, commercialIdentity(request));
-    }
     const [employeesResult, history, overtimeByEmployee, companies, notesResult] = await Promise.all([
       database
         .prepare(

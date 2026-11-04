@@ -1,4 +1,5 @@
 import { getD1 } from "../../../../db";
+import { identity as commercialIdentity, syncHrCommissionsSince } from "../../commercial/shared";
 import { isValidCnpj } from "../../../lib/br-documents";
 import { notifyUsers, usersWithPermission, vapidFromEnv } from "../../../lib/hr-notify";
 import { checklistValue, recifeToday, recruitmentNotice } from "../../../lib/hr-rh";
@@ -378,6 +379,8 @@ export async function POST(request: Request) {
         ).catch((error) => console.error("Não foi possível avisar a mudança de status.", error));
       }
 
+      // Contratado virou funcionário: pode entrar no Comercial como operacional.
+      if (hrEmployeeId !== existing.hrEmployeeId) await syncHrCommissionsSince(database, "", commercialIdentity(request));
       return jsonResponse({ updated: true, id: editId, hrEmployeeId });
     }
 
