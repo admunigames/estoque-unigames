@@ -206,6 +206,28 @@ const REQUEST_ITEM_SELECT = `
 
 const RECEIVED_STATUSES = new Set(["pending", "received", "not_received"]);
 
+/** Itens de várias solicitações numa consulta só (antes era uma por solicitação). */
+async function itemsByRequest(database: Awaited<ReturnType<typeof getD1>>, requestIds: string[]) {
+  const byRequest = new Map<string, RequestItemRow[]>();
+  if (!requestIds.length) return byRequest;
+  const placeholders = requestIds.map((_, index) => `?${index + 1}`).join(",");
+  const { results } = await database
+    .prepare(
+      REQUEST_ITEM_SELECT.replace("SELECT id,", "SELECT request_id AS requestId, id,").replace(
+        "WHERE request_id=?1",
+        `WHERE request_id IN (${placeholders})`,
+      ),
+    )
+    .bind(...requestIds)
+    .all<RequestItemRow & { requestId: string }>();
+  for (const { requestId, ...item } of results ?? []) {
+    const list = byRequest.get(requestId) ?? [];
+    list.push(item);
+    byRequest.set(requestId, list);
+  }
+  return byRequest;
+}
+
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -264,18 +286,16 @@ export async function GET(request: Request) {
             )
       ).all<RequestRow>();
       const requestRows = requests.results ?? [];
-      const withItems = await Promise.all(
-        requestRows.map(async (row) => {
-          const items = await database.prepare(REQUEST_ITEM_SELECT).bind(row.id).all<RequestItemRow>();
-          const itemRows = items.results ?? [];
-          return {
-            ...row,
-            items: itemRows,
-            allSeparated: itemRows.length > 0 && itemRows.every((item) => item.separated),
-            completed: isRequestCompleted(itemRows),
-          };
-        }),
-      );
+      const items = await itemsByRequest(database, requestRows.map((row) => row.id));
+      const withItems = requestRows.map((row) => {
+        const itemRows = items.get(row.id) ?? [];
+        return {
+          ...row,
+          items: itemRows,
+          allSeparated: itemRows.length > 0 && itemRows.every((item) => item.separated),
+          completed: isRequestCompleted(itemRows),
+        };
+      });
       const filtered = history ? withItems.filter((row) => row.completed) : withItems.filter((row) => !row.completed);
       return jsonResponse({ weekStart, requests: filtered });
     } catch (error) {
@@ -315,13 +335,11 @@ export async function GET(request: Request) {
         .bind(companyId, currentWeek)
         .all<RequestRow>();
       const requestRows = requests.results ?? [];
-      const withItems = await Promise.all(
-        requestRows.map(async (row) => {
-          const items = await database.prepare(REQUEST_ITEM_SELECT).bind(row.id).all<RequestItemRow>();
-          const itemRows = items.results ?? [];
-          return { ...row, items: itemRows, completed: isRequestCompleted(itemRows) };
-        }),
-      );
+      const items = await itemsByRequest(database, requestRows.map((row) => row.id));
+      const withItems = requestRows.map((row) => {
+        const itemRows = items.get(row.id) ?? [];
+        return { ...row, items: itemRows, completed: isRequestCompleted(itemRows) };
+      });
       return jsonResponse({ companyId, requests: withItems.filter((row) => !row.completed) });
     } catch (error) {
       console.error("Não foi possível carregar as solicitações pendentes de semanas anteriores.", error);
@@ -342,13 +360,11 @@ export async function GET(request: Request) {
         .bind(companyId)
         .all<RequestRow>();
       const requestRows = requests.results ?? [];
-      const withItems = await Promise.all(
-        requestRows.map(async (row) => {
-          const items = await database.prepare(REQUEST_ITEM_SELECT).bind(row.id).all<RequestItemRow>();
-          const itemRows = items.results ?? [];
-          return { ...row, items: itemRows, completed: isRequestCompleted(itemRows) };
-        }),
-      );
+      const items = await itemsByRequest(database, requestRows.map((row) => row.id));
+      const withItems = requestRows.map((row) => {
+        const itemRows = items.get(row.id) ?? [];
+        return { ...row, items: itemRows, completed: isRequestCompleted(itemRows) };
+      });
       return jsonResponse({ companyId, requests: withItems.filter((row) => row.completed) });
     } catch (error) {
       console.error("Não foi possível carregar o histórico de solicitações.", error);
