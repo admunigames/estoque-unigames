@@ -1819,7 +1819,7 @@ test("carrossel de imagens de Instruções: rotas de upload em partes, servir ar
     readFile(new URL("../drizzle/0071_instructions_carousel_deactivate.sql", import.meta.url), "utf8"),
   ]);
 
-  assert.match(carouselRoute, /MAX_IMAGES = 4/);
+  assert.match(carouselRoute, /MAX_IMAGES = 10/);
   assert.match(carouselRoute, /MAX_IMAGE_SIZE = 10 \* 1024 \* 1024/);
   assert.match(carouselRoute, /ACCEPTED_CONTENT_TYPES = new Set\(\["image\/png", "image\/jpeg", "image\/jpg", "image\/webp"\]\)/);
   assert.match(carouselRoute, /canManageInstructions\(actor\)/);

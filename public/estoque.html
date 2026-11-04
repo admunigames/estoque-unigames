@@ -5930,7 +5930,7 @@
 
       <section class="instruction-admin-panel" data-permission="instructions:manage">
         <div class="instruction-admin-head">
-          <div><h3>IMAGENS DO CARROSSEL</h3><p>Até 4 imagens em destaque no topo desta página, com troca automática a cada 10 segundos. Proporção recomendada: quase quadrada (ex.: 2000×1806px).</p></div>
+          <div><h3>IMAGENS DO CARROSSEL</h3><p>Até 10 imagens em destaque no topo desta página, com troca automática a cada 10 segundos. Proporção recomendada: quase quadrada (ex.: 2000×1806px).</p></div>
         </div>
         <div class="instruction-carousel-manage-list" id="instructionCarouselManageList"></div>
         <form id="instructionCarouselForm">
@@ -28141,7 +28141,7 @@ function renderHomeTasks(){
   // Aparece tanto na página de Instruções quanto na Início (mesmos dados,
   // um único índice/timer compartilhado — os dois alvos são só espelhos
   // visuais um do outro).
-  const INSTRUCTION_CAROUSEL_MAX_IMAGES = 4;
+  const INSTRUCTION_CAROUSEL_MAX_IMAGES = 10;
   const INSTRUCTION_CAROUSEL_CHUNK_SIZE = 512 * 1024;
   const INSTRUCTION_CAROUSEL_MAX_SIZE = 10 * 1024 * 1024;
   const INSTRUCTION_CAROUSEL_AUTOPLAY_MS = 10000;

@@ -26,7 +26,7 @@ type CarouselRow = {
   createdAt: string;
 };
 
-const MAX_IMAGES = 4;
+const MAX_IMAGES = 10;
 const IMAGE_CHUNK_SIZE = 512 * 1024;
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_CONTENT_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
