@@ -11465,7 +11465,7 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="recargaNumero">NÚMERO *</label><input id="recargaNumero" maxlength="40" required placeholder="(00) 00000-0000"></div>
       <div class="purchase-field"><label for="recargaOperadora">OPERADORA *</label><input id="recargaOperadora" maxlength="60" required></div>
-      <div class="purchase-field"><label for="recargaUnidade">UNIDADE *</label><select id="recargaUnidade" required><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="recargaUnidade">UNIDADE (OPCIONAL)</label><select id="recargaUnidade"><option value="">SEM UNIDADE</option></select></div>
       <div class="purchase-field"><label for="recargaResponsavel">RESPONSÁVEL</label><input id="recargaResponsavel" maxlength="160"></div>
       <div class="purchase-field"><label for="recargaValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="recargaUltima">DATA DA ÚLTIMA RECARGA *</label><input type="date" id="recargaUltima" required></div>
@@ -11525,6 +11525,7 @@
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="recargaEventData">DATA DA RECARGA *</label><input type="date" id="recargaEventData" required></div>
       <div class="purchase-field"><label for="recargaEventValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="recargaEventValor" placeholder="R$ 0,00" required></div>
+      <div class="purchase-field full"><label for="recargaEventLoja">LOJA DA DESPESA *</label><select id="recargaEventLoja" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="recargaEventItem">CATEGORIA *</label><select id="recargaEventItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="recargaEventObs">OBSERVAÇÕES</label><textarea id="recargaEventObs" rows="2" maxlength="1000"></textarea></div>
     </div>
@@ -11549,6 +11550,7 @@
       <div class="purchase-field" data-recarga-bulk-field="period"><label for="recargaBulkPeriodo">PERÍODO DE RECARGA *</label><select id="recargaBulkPeriodo"><option value="30">30 DIAS</option><option value="60">60 DIAS</option><option value="90" selected>90 DIAS</option></select></div>
       <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkData">DATA DA RECARGA *</label><input type="date" id="recargaBulkData"></div>
       <div class="purchase-field" data-recarga-bulk-field="recharge"><label for="recargaBulkValor">VALOR (R$)</label><input type="text" inputmode="decimal" id="recargaBulkValor" placeholder="VAZIO = ÚLTIMO VALOR DE CADA LINHA"></div>
+      <div class="purchase-field full" data-recarga-bulk-field="recharge"><label for="recargaBulkLoja">LOJA DA DESPESA</label><select id="recargaBulkLoja"><option value="">A UNIDADE DE CADA LINHA</option></select></div>
       <div class="purchase-field full" data-recarga-bulk-field="recharge"><label for="recargaBulkItem">CATEGORIA *</label><select id="recargaBulkItem" data-finance-item-picker><option value="">SELECIONE</option></select></div>
     </div>
     <p class="purchase-field-help" data-recarga-bulk-field="period">A PRÓXIMA RECARGA DE CADA LINHA É RECALCULADA A PARTIR DA ÚLTIMA RECARGA.</p>
@@ -41364,7 +41366,7 @@ function renderHomeTasks(){
     if(!canAccess('finance')) return;
     if(!companies.length) await loadCompanies();
     fase8CompanyOptions('recargaLoja', 'TODAS AS UNIDADES');
-    fase8CompanyOptions('recargaUnidade', '');
+    fase8CompanyOptions('recargaUnidade', 'SEM UNIDADE');
     await reloadRecargas();
   }
   el('btnBatchRecargas').addEventListener('click', async () => {
@@ -41376,7 +41378,7 @@ function renderHomeTasks(){
       columns: [
         {key:'phoneNumber', label:'NÚMERO', type:'text', required:true, maxLength:40},
         {key:'carrier', label:'OPERADORA', type:'text', required:true, maxLength:60},
-        {key:'companyId', label:'UNIDADE', type:'select', required:true, options: () => financeBatchCompanyOptions(false)},
+        {key:'companyId', label:'UNIDADE (OPCIONAL)', type:'select', options: () => financeBatchCompanyOptions(false)},
         {key:'responsibleName', label:'RESPONSÁVEL', type:'text', maxLength:160},
         {key:'lastRechargeDate', label:'ÚLTIMA RECARGA', type:'date', required:true, default: () => todayDateKeyRecife()},
         {key:'lastAmountCents', label:'VALOR', type:'money'},
@@ -41455,7 +41457,7 @@ function renderHomeTasks(){
   }
   function openRecargaDialog(row){
     el('recargaForm').reset();
-    fase8CompanyOptions('recargaUnidade', '');
+    fase8CompanyOptions('recargaUnidade', 'SEM UNIDADE');
     el('recargaId').value = row ? row.id : '';
     el('recargaDialogTitle').textContent = row ? 'EDITAR RECARGA' : 'NOVA RECARGA';
     el('recargaNumero').value = row ? (row.phoneNumber || '') : '';
@@ -41625,6 +41627,8 @@ function renderHomeTasks(){
     el('recargaEventTitle').textContent = 'REGISTRAR RECARGA — ' + (row.phoneNumber || '');
     el('recargaEventForm').dataset.periodDays = String(row.periodDays || 90);
     fillRecargaItemSelect('recargaEventItem');
+    fase8CompanyOptions('recargaEventLoja', '');
+    el('recargaEventLoja').value = row.companyId || '';
     recalcRecargaEventProxima();
     el('recargaEventStatus').textContent = '';
     el('recargaEventHistorico').textContent = 'Carregando histórico…';
@@ -41655,8 +41659,10 @@ function renderHomeTasks(){
       rechargeDate: el('recargaEventData').value,
       amountCents: Math.round(Number(getCurrencyValue(el('recargaEventValor'))) * 100),
       notes: el('recargaEventObs').value,
-      financeItemId: el('recargaEventItem').value
+      financeItemId: el('recargaEventItem').value,
+      companyId: el('recargaEventLoja').value
     };
+    if(!payload.companyId){ status.textContent = 'ESCOLHA A LOJA DA DESPESA.'; return; }
     if(!payload.financeItemId){ status.textContent = 'ESCOLHA A CATEGORIA DA DESPESA.'; return; }
     rememberRecargaItem(payload.financeItemId);
     try{
@@ -41681,7 +41687,7 @@ function renderHomeTasks(){
       el('recargaBulkForm').reset();
       setCurrencyValue(el('recargaBulkValor'), '');
       el('recargaBulkData').value = todayDateKeyRecife();
-      if(action === 'recharge') await fillRecargaItemSelect('recargaBulkItem');
+      if(action === 'recharge'){ await fillRecargaItemSelect('recargaBulkItem'); fase8CompanyOptions('recargaBulkLoja', 'A UNIDADE DE CADA LINHA'); }
       el('recargaBulkTitle').textContent = RECARGA_BULK_TITLES[action]+' — '+ids.length+(ids.length === 1 ? ' LINHA' : ' LINHAS');
       document.querySelectorAll('[data-recarga-bulk-field]').forEach(node => { node.hidden = node.dataset.recargaBulkField !== action; });
       el('recargaBulkStatus').textContent = '';
@@ -41700,7 +41706,7 @@ function renderHomeTasks(){
     const valor = getCurrencyValue(el('recargaBulkValor'));
     const fields = action === 'period'
       ? {periodDays: Number(el('recargaBulkPeriodo').value)}
-      : {date: el('recargaBulkData').value, amountCents: valor === '' ? null : Math.round(Number(valor) * 100), financeItemId: el('recargaBulkItem').value};
+      : {date: el('recargaBulkData').value, amountCents: valor === '' ? null : Math.round(Number(valor) * 100), financeItemId: el('recargaBulkItem').value, companyId: el('recargaBulkLoja').value};
     if(action === 'recharge' && !fields.date){ el('recargaBulkStatus').textContent = 'INFORME A DATA DA RECARGA.'; return; }
     if(action === 'recharge' && !fields.financeItemId){ el('recargaBulkStatus').textContent = 'ESCOLHA A CATEGORIA DA DESPESA.'; return; }
     if(action === 'recharge') rememberRecargaItem(fields.financeItemId);

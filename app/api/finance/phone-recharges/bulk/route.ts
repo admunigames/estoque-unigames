@@ -89,6 +89,7 @@ export async function POST(request: Request) {
         const eventId = crypto.randomUUID();
         const expense = await planRechargeExpense(database, actor, row, {
           eventId, rechargeDate: date, amountCents, financeItemId: safeText(fields.financeItemId, 80),
+          companyId: safeText(fields.companyId, 80),
         });
         if ("error" in expense) {
           skipped.push({ id: row.id, description: row.phoneNumber, reason: expense.error });

@@ -1,10 +1,11 @@
 import type { Database, Statement } from "../card-fees/shared";
 import { planExpense } from "../expenses/shared";
-import { safeText, type JsonMap } from "../shared";
+import { loadCompanyList, safeText, type JsonMap } from "../shared";
 import { nextRechargeDate as computeNextRecharge, parseRechargePeriod, RECHARGE_PERIOD_ERROR } from "../../../lib/phone-recharges";
 
 // Recarga registrada → Despesa do mês (EM ABERTO, vencimento = data da
-// recarga, na unidade da linha), pelo mesmo planExpense de Despesas — conta a
+// recarga, na LOJA ESCOLHIDA ao registrar — padrão a unidade da linha, que é
+// opcional desde 04/11/2026), pelo mesmo planExpense de Despesas — conta a
 // pagar e DRE iguais a uma despesa lançada à mão. Usado pelo REGISTRAR
 // RECARGA ([id]/recharge) e pelo lote (bulk, action 'recharge').
 
@@ -14,15 +15,18 @@ export async function planRechargeExpense(
   database: Database,
   actor: { id: string; displayName: string },
   line: RechargeLine,
-  input: { eventId: string; rechargeDate: string; amountCents: number; financeItemId: string },
+  input: { eventId: string; rechargeDate: string; amountCents: number; financeItemId: string; companyId?: string },
 ): Promise<{ error: string; status: number } | { expenseId: string; statements: Statement[] }> {
   if (!input.financeItemId) return { error: "ESCOLHA A CATEGORIA DA DESPESA DA RECARGA.", status: 400 };
-  if (!line.companyId) return { error: "A LINHA ESTÁ SEM UNIDADE — EDITE A LINHA E ESCOLHA A UNIDADE.", status: 400 };
+  const companyId = input.companyId || line.companyId;
+  if (!companyId) return { error: "ESCOLHA A LOJA DA DESPESA DA RECARGA.", status: 400 };
+  const company = (await loadCompanyList(database)).find((row) => row.id === companyId);
+  if (!company) return { error: "LOJA DA DESPESA NÃO ENCONTRADA.", status: 400 };
   const plan = await planExpense(database, actor, { allStores: true, companyId: "" }, {
     idempotencyKey: `recarga:${input.eventId}`,
     kind: "single",
-    companyId: line.companyId,
-    companyName: line.companyName,
+    companyId: company.id,
+    companyName: company.name,
     description: `RECARGA ${line.phoneNumber}${line.carrier ? ` (${line.carrier})` : ""}`.slice(0, 200),
     financeItemId: input.financeItemId,
     originalAmountCents: input.amountCents,
@@ -60,7 +64,6 @@ export function validateRechargeLine(body: JsonMap): { error: string } | { input
   if (!carrier) return { error: "INFORME A OPERADORA." };
   const companyId = safeText(body.companyId, 80);
   const companyName = safeText(body.companyName, 160);
-  if (!companyId) return { error: "SELECIONE A UNIDADE." };
   const responsibleName = safeText(body.responsibleName, 160);
   const notes = safeText(body.notes, 2000);
   const active = body.active === false ? 0 : 1;

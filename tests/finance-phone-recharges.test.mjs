@@ -7,9 +7,10 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Função pura, a mesma conta no front e as rotas reais sobre SQLite.
 
 const db = await setupRouteDb([
-  "finance_phone_recharges", "finance_phone_recharge_events", "expenses", "expense_rateio_shares", "accounts_payable",
+  "shared_state", "finance_phone_recharges", "finance_phone_recharge_events", "expenses", "expense_rateio_shares", "accounts_payable",
   "finance_store_entries", "finance_items", "finance_categories", "finance_cost_centers", "finance_accounts",
 ]);
+db.insert("shared_state", { state_key: "companies_list", value_json: JSON.stringify([{ id: "criomar01", name: "RIOMAR" }, { id: "cguara0001", name: "GUARARAPES" }]) });
 db.insert("finance_categories", { id: "cat-tel", name: "TELEFONIA" });
 db.insert("finance_items", { id: "item-recarga", category_id: "cat-tel", name: "RECARGA DE CELULAR" });
 const lib = await import("../app/lib/phone-recharges.ts");
@@ -131,4 +132,15 @@ test("registrar recarga lança a Despesa do mês EM ABERTO na unidade da linha (
   const payable = { ...db.sqlite.prepare("SELECT status, due_date, original_amount_cents FROM accounts_payable WHERE expense_id=?").get(res.expenseId) };
   assert.deepEqual(payable, { status: "open", due_date: "2026-10-09", original_amount_cents: 2500 });
   assert.equal(db.sqlite.prepare("SELECT expense_id FROM finance_phone_recharge_events WHERE recharge_id=?").get(lineId).expense_id, res.expenseId);
+});
+
+test("linha SEM unidade: cadastra; ao registrar escolhe a loja da despesa (sem loja = 400)", async () => {
+  const created = await post(route.POST, "/api/finance/phone-recharges", { ...base, phoneNumber: "81944440000", companyId: "", companyName: "" });
+  assert.equal(created.status, 201, JSON.stringify(await created.clone().json()));
+  const lineId = (await json(created)).id;
+  const noStore = await post(recharge.POST, `/api/finance/phone-recharges/${lineId}/recharge`, { rechargeDate: "2026-10-09", amountCents: 1500, financeItemId: "item-recarga" }, { id: lineId });
+  assert.equal(noStore.status, 400);
+  assert.match((await json(noStore)).error, /LOJA DA DESPESA/);
+  const res = await json(await post(recharge.POST, `/api/finance/phone-recharges/${lineId}/recharge`, { rechargeDate: "2026-10-10", amountCents: 1500, financeItemId: "item-recarga", companyId: "cguara0001" }, { id: lineId }));
+  assert.deepEqual({ ...db.sqlite.prepare("SELECT company_id, company_name FROM expenses WHERE id=?").get(res.expenseId) }, { company_id: "cguara0001", company_name: "GUARARAPES" });
 });

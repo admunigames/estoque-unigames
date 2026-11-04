@@ -56,7 +56,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const nextRechargeDate = computeNextRecharge(rechargeDate, parseRechargePeriod(existing.periodDays) ?? 90);
     // A recarga vira Despesa do mês (em aberto, vence na data da recarga).
     const eventId = crypto.randomUUID();
-    const expense = await planRechargeExpense(database, actor, existing, { eventId, rechargeDate, amountCents, financeItemId });
+    const expense = await planRechargeExpense(database, actor, existing, {
+      eventId, rechargeDate, amountCents, financeItemId, companyId: safeText(body.companyId, 80),
+    });
     if ("error" in expense) return jsonResponse({ error: expense.error }, expense.status);
     await runStatements(database, [
       [
