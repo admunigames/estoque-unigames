@@ -228,7 +228,8 @@ test("desligamento: rescisão paga com data", async () => {
 });
 
 // Desde 01/11/2026: INSS/FGTS por CNPJ pela LOJA CADASTRADA, FGTS só o lançado
-// (sem lançamento = 0) e custos do Recrutamento fora da DRE Funcionário.
+// (sem lançamento = 0) e treinamento pago do Recrutamento fora da DRE
+// Funcionário. O ASO admissional do candidato entra (voltou em 04/11/2026).
 test("DRE: por CNPJ pela loja cadastrada, FGTS só lançado e treinamento do recrutamento fora", async () => {
   db.sqlite.exec("DELETE FROM hr_employees; DELETE FROM hr_terminations; DELETE FROM hr_recruitment_candidates; DELETE FROM hr_aso_exams;");
   db.sqlite.prepare("UPDATE shared_state SET value_json=? WHERE state_key='companies_list'").run(JSON.stringify([
@@ -244,6 +245,8 @@ test("DRE: por CNPJ pela loja cadastrada, FGTS só lançado e treinamento do rec
   db.insert("hr_schedule_assignments", { id: "s1", employee_id: "p3", employee_name: "P3", company_id: "clojaalfa1", reference_month: "2026-10" });
   db.insert("hr_recruitment_candidates", { id: "c-tr", full_name: "TREINO", status: "em_treinamento", fixed_unit_id: "clojaalfa1", fixed_unit_name: "LOJA ALFA", created_by: "x" });
   db.insert("hr_recruitment_test_payments", { id: "tp1", candidate_id: "c-tr", amount_cents: 5000, paid_date: "2026-10-05" });
+  db.insert("hr_recruitment_candidates", { id: "c-aso", full_name: "ADRIAN", status: "contratado", admission_company_id: "clojaalfa1", admission_company_name: "LOJA ALFA", aso_clinic: "APTMED", aso_value_cents: 4000, aso_date: "2026-10-07", created_by: "x" });
+  db.insert("hr_recruitment_candidates", { id: "c-sem-data", full_name: "ALEX", status: "contratado", admission_company_id: "clojaalfa1", aso_value_cents: 4000, aso_date: "", created_by: "x" });
   db.insert("hr_recruitment_test_payments", { id: "tp2", candidate_id: "c-tr", amount_cents: 5000, paid_date: "2026-10-03" });
   const report = await (await callRoute(dre.GET, ADMIN, "GET", "/api/hr-payroll/employee-dre?month=2026-10")).json();
   const sameCnpj = report.byCnpj.find((row) => row.cnpj === "11222333000181");
@@ -253,6 +256,9 @@ test("DRE: por CNPJ pela loja cadastrada, FGTS só lançado e treinamento do rec
   assert.equal(sameCnpj.trainingCents, 0, "treinamento pago do recrutamento não entra");
   assert.equal(report.byCnpj.find((row) => row.cnpj === "").headcount, 1, "só P3; admitido em novembro não conta em outubro");
   assert.equal(report.stores.flatMap((store) => store.people).some((item) => item.personName === "TREINO"), false);
+  assert.equal(sameCnpj.asoCents, 4000, "ASO admissional do candidato entra no mês do exame; sem data não entra");
+  const alfa = report.stores.find((store) => store.companyId === "clojaalfa1");
+  assert.deepEqual(alfa.aso.map((exam) => [exam.personName, exam.clinicName, exam.amountCents]), [["ADRIAN", "APTMED", 4000]]);
 });
 
 test("acompanhamento por liderado: ciclo com 3 encontros (online, online, presencial) e filtro por loja", async () => {

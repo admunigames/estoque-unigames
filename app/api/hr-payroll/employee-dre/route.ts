@@ -15,9 +15,13 @@ import { actingStoresForMonth } from "../../../lib/acting-store";
 // DRE Funcionário — fechamento do mês (civil), por loja com detalhe por
 // colaborador. Tudo calculado ao vivo a partir das fontes; nada é gravado.
 // Aniversariantes vêm do cadastro de funcionários (mesma fonte do módulo
-// Aniversariantes). Os custos do Recrutamento (treinamento/teste pago e ASO
-// do candidato) NÃO entram desde 01/11/2026 — ficam só como histórico no
-// candidato (decisão do usuário).
+// Aniversariantes). O ASO admissional do candidato (Recrutamento) ENTRA, na
+// unidade fixa (ou, sem ela, na loja de admissão) — voltou em 04/11/2026; o
+// treinamento/teste pago do Recrutamento NÃO entra desde 01/11/2026 (só
+// histórico no candidato). Decisões do usuário.
+
+const CANDIDATE_COMPANY_ID = "COALESCE(NULLIF(c.fixed_unit_id, ''), c.admission_company_id)";
+const CANDIDATE_COMPANY_NAME = "COALESCE(NULLIF(c.fixed_unit_name, ''), c.admission_company_name)";
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -35,7 +39,7 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    const [asoExams, terminations, birthdays] = await Promise.all([
+    const [asoExams, candidateAso, terminations, birthdays] = await Promise.all([
       database
         .prepare(
           `SELECT employee_id AS employeeId, '' AS candidateId, employee_name AS personName,
@@ -43,6 +47,17 @@ export async function GET(request: Request) {
                   exam_date AS examDate, clinic_name AS clinicName, clinic_cnpj AS clinicCnpj,
                   amount_cents AS amountCents, 'aso' AS source
            FROM hr_aso_exams WHERE substr(exam_date, 1, 7) = ?1`,
+        )
+        .bind(month)
+        .all<DreAso>(),
+      database
+        .prepare(
+          `SELECT c.hr_employee_id AS employeeId, c.id AS candidateId, c.full_name AS personName,
+                  ${CANDIDATE_COMPANY_ID} AS companyId, ${CANDIDATE_COMPANY_NAME} AS companyName,
+                  'admissional' AS examType, c.aso_date AS examDate, c.aso_clinic AS clinicName,
+                  c.aso_clinic_cnpj AS clinicCnpj, c.aso_value_cents AS amountCents,
+                  'recrutamento' AS source
+           FROM hr_recruitment_candidates c WHERE substr(c.aso_date, 1, 7) = ?1`,
         )
         .bind(month)
         .all<DreAso>(),
@@ -70,7 +85,7 @@ export async function GET(request: Request) {
       (rows ?? []).filter((row) => !companyId || (row.companyId || "") === companyId);
 
     const report = buildEmployeeDre(month, {
-      aso: byCompany(asoExams.results),
+      aso: byCompany([...(asoExams.results ?? []), ...(candidateAso.results ?? [])]),
       trainings: [],
       terminations: byCompany(terminations.results),
       birthdays: byCompany(birthdays.results),
