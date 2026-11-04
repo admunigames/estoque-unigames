@@ -1834,6 +1834,7 @@
   .dre-flat-row .dre-flat-name{font:800 12px var(--mono);letter-spacing:.05em;color:var(--ink)}
   .dre-flat-row .dre-flat-total{font:800 13px var(--mono);color:var(--accent)}
   .dre-bar-chart{display:grid;gap:10px;margin-top:16px}
+  .dre-variation{display:block;font-size:10px;color:var(--ink-soft);font-weight:700}
   .dre-bar-row{display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:center;font-size:12px}
   .dre-bar-row .dre-bar-label{font:800 11px var(--mono);letter-spacing:.04em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dre-bar-row .dre-bar-track{background:rgba(79,134,189,.08);border-radius:6px;height:18px;overflow:hidden}
@@ -4321,7 +4322,7 @@
         <a class="nav-item sub-item" id="navFinanceiroReposicao" data-page="financeiroReposicao" data-permission="finance" data-home-desc="Valores repostos e gastos por Assistência, Logística e outros setores." title="Controle de Reposição" href="/financeiro/controle-reposicao"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 14-4l2 2"/><path d="M20 16a8 8 0 0 1-14 4l-2-2"/><path d="M18 2v4h-4M6 22v-4h4"/></svg></span><span class="nav-label">Controle de Reposição</span></a>
         <a class="nav-item sub-item" id="navFinanceiroDeclaracaoShopping" data-page="financeiroDeclaracaoShopping" data-permission="finance" data-home-desc="Declaração de vendas por loja, com faturamento puxado do cadastro, cadastro em lote e alerta de aluguel percentual." title="Declaração de Vendas" href="/financeiro/declaracao-shopping"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></span><span class="nav-label">Declaração de Vendas</span></a>
         <a class="nav-item sub-item" id="navFinanceiroExpenses" data-page="financeiroExpenses" data-permission="finance" data-home-desc="Cadastro completo de despesas, com rateio entre lojas." title="Despesas" href="/financeiro/despesas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z"/><path d="M14.5 3.5V7h3.5"/><path d="M8 12h8M8 15.5h8M8 18.5h5"/></svg></span><span class="nav-label">Despesas</span></a>
-        <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e gerencial." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
+        <a class="nav-item sub-item" id="navFinanceiro" data-page="financeiro" data-permission="finance" data-home-desc="DRE por loja, consolidada e análises." title="DRE" href="/financeiro/dre"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.5" cy="14.2" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">DRE</span></a>
         <a class="nav-item sub-item" id="navFinanceiroFluxoCaixa" data-page="financeiroFluxoCaixa" data-permission="finance" data-home-desc="Projeção de pagamentos dia a dia e por semana, caixa semanal com o saldo de cada conta toda segunda e recebíveis futuros." title="Fluxo de Caixa" href="/financeiro/fluxo-de-caixa"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 18.5L9 12l3.5 3.5L20.5 6"/><path d="M15.5 6h5v5"/></svg></span><span class="nav-label">Fluxo de Caixa</span></a>
         <a class="nav-item sub-item" id="navFinanceiroSupplierStatement" data-page="financeiroSupplierStatement" data-permission="finance" data-home-desc="Resumo geral e extrato (conta corrente) de cada fornecedor." title="Fornecedores" href="/financeiro/fornecedores/conta-corrente"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12" rx="2"/><path d="M3.5 10.5h17"/><circle cx="8" cy="14.2" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Fornecedores</span></a>
         <a class="nav-item sub-item" id="navFinanceiroMaquinetas" data-page="financeiroMaquinetas" data-permission="finance" data-home-desc="Maquinetas por unidade com taxas próprias, arquivo de vendas com conferência da taxa cobrada e total pago em taxas (lojas × assistência)." title="Maquinetas" href="/financeiro/maquinetas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><rect x="9" y="6" width="6" height="4"/><path d="M9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg></span><span class="nav-label">Maquinetas</span></a>
@@ -8629,12 +8630,7 @@
       <div class="output-tabs" role="tablist" aria-label="Visão da DRE">
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-dre-tab="porLoja">POR LOJA</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="consolidada">CONSOLIDADA</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="gerencial">GERENCIAL</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="unidades">COMPARATIVO UNIDADES</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="temporal">DRE POR COMPETÊNCIA</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="vertical">ANÁLISE VERTICAL</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="horizontal">ANÁLISE HORIZONTAL</button>
-        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="orcado">REALIZADO X ORÇADO</button>
+        <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-tab="analises">ANÁLISES</button>
       </div>
 
       <div id="dreTabPorLoja">
@@ -8645,6 +8641,7 @@
           <div class="field"><label for="dreRevenueServices">RECEITA — SERVIÇOS (R$)</label><input type="text" id="dreRevenueServices" placeholder="R$ 0,00" readonly></div>
           <div class="dre-toolbar-actions">
             <button class="btn-outline" id="btnOpenFinanceCatalog" type="button">GERENCIAR CATEGORIAS</button>
+            <button class="btn-outline" id="btnDreOverhead" type="button">RATEIO DEPÓSITO/ESCRITÓRIO</button>
           </div>
         </div>
         <p class="purchase-field-help" id="dreRevenueSource">A RECEITA VEM DO COMERCIAL: VENDAS = META LOJA (FEITO) · SERVIÇOS = META ASSISTÊNCIA (FEITO ASSISTÊNCIA). O CUSTO DO RH ENTRA AUTOMÁTICO EM PESSOAL — RH.</p>
@@ -8678,97 +8675,42 @@
         </div>
       </div>
 
-      <div id="dreTabGerencial" hidden>
-        <div class="dre-toolbar">
-          <div class="field"><label for="dreGerencialMes">MÊS</label><input type="month" id="dreGerencialMes"></div>
+      <div id="dreTabAnalises" hidden>
+        <div class="output-tabs" role="tablist" aria-label="Análises da DRE">
+          <button class="output-tab active" type="button" role="tab" aria-selected="true" data-dre-analysis="unidades">COMPARATIVO UNIDADES</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-analysis="categoria">COMPARATIVO POR CATEGORIA</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-dre-analysis="meses">COMPARATIVA DE MESES</button>
         </div>
-
-        <section class="summary" aria-label="Resumo da DRE Gerencial">
-          <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreGerencialSummaryRevenue">R$ 0,00</div></div>
-          <div class="card neg"><div class="lbl">DESPESA TOTAL</div><div class="num" id="dreGerencialSummaryExpense">R$ 0,00</div></div>
-          <div class="card" id="dreGerencialSummaryResultCard"><div class="lbl">RESULTADO</div><div class="num" id="dreGerencialSummaryResult">R$ 0,00</div></div>
-          <div class="card"><div class="lbl">MARGEM</div><div class="num" id="dreGerencialSummaryMargin">0,00%</div></div>
-        </section>
-
-        <div class="dre-categories" id="dreGerencialCategoryList">
-          <div class="dre-empty">Selecione o mês para ver a DRE Gerencial.</div>
-        </div>
-      </div>
-
-      <div id="dreTabUnidades" hidden>
-        <div class="dre-toolbar">
-          <div class="field"><label for="dreUnidadesMes">MÊS</label><input type="month" id="dreUnidadesMes"></div>
-        </div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="dreUnidadesTable"><tbody><tr><td class="responsive-empty">Selecione o mês para comparar as lojas.</td></tr></tbody></table>
+        <div data-dre-analysis-panel="unidades">
+          <div class="dre-toolbar">
+            <div class="field"><label for="dreUnidadesMes">MÊS</label><input type="month" id="dreUnidadesMes"></div>
+          </div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="dreUnidadesTable"><tbody><tr><td class="responsive-empty">Selecione o mês para comparar as lojas.</td></tr></tbody></table>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div id="dreTabTemporal" hidden>
-        <div class="dre-toolbar">
-          <div class="field"><label for="dreTemporalScope">VISÃO</label>
-            <select id="dreTemporalScope">
-              <option value="consolidated">CONSOLIDADA (TODAS AS LOJAS)</option>
-              <option value="store">UMA LOJA</option>
-            </select>
+        <div data-dre-analysis-panel="categoria" hidden>
+          <div class="dre-toolbar">
+            <div class="field"><label for="dreCategoriaMes">MÊS</label><input type="month" id="dreCategoriaMes"></div>
+            <div class="field"><label for="dreCategoriaSel">CATEGORIA</label><select id="dreCategoriaSel"><option value="">TODAS AS CATEGORIAS (CONSOLIDADO)</option></select></div>
           </div>
-          <div class="field" id="dreTemporalLojaField" hidden><label for="dreTemporalLoja">LOJA</label><select id="dreTemporalLoja"><option value="">SELECIONE</option></select></div>
-          <div class="field"><label for="dreTemporalPeriodo">PERÍODO</label>
-            <select id="dreTemporalPeriodo">
-              <option value="mensal">COMPARATIVO MENSAL (ÚLTIMOS 6 MESES)</option>
-              <option value="anual">COMPARATIVO ANUAL (JAN-DEZ DE UM ANO)</option>
-            </select>
+          <p class="purchase-field-help">TODAS AS CATEGORIAS = QUANTO CADA CATEGORIA REPRESENTA NA RECEITA DO GRUPO. COM UMA CATEGORIA = O VALOR DELA EM CADA LOJA E QUANTO REPRESENTA NA RECEITA DA LOJA.</p>
+          <div id="dreCategoriaChart" class="dre-bar-chart"><div class="dre-empty">Selecione o mês.</div></div>
+        </div>
+        <div data-dre-analysis-panel="meses" hidden>
+          <div class="dre-toolbar">
+            <div class="field"><label for="dreMesesDe">DE</label><input type="month" id="dreMesesDe"></div>
+            <div class="field"><label for="dreMesesAte">ATÉ</label><input type="month" id="dreMesesAte"></div>
+            <div class="field"><label for="dreMesesLoja">LOJA</label><select id="dreMesesLoja"><option value="">TODAS AS LOJAS</option></select></div>
+            <div class="field"><label for="dreMesesCategoria">CATEGORIA</label><select id="dreMesesCategoria"><option value="">TODAS AS CATEGORIAS</option></select></div>
           </div>
-          <div class="field" id="dreTemporalAnoField" hidden><label for="dreTemporalAno">ANO</label><input type="number" id="dreTemporalAno" min="2000" max="2100" step="1"></div>
-        </div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="dreTemporalTable"><tbody><tr><td class="responsive-empty">Selecione o período para comparar.</td></tr></tbody></table>
-          </div>
-        </div>
-      </div>
-
-      <div id="dreTabVertical" hidden>
-        <div class="dre-toolbar">
-          <div class="field"><label for="dreVerticalScope">VISÃO</label>
-            <select id="dreVerticalScope">
-              <option value="consolidated">CONSOLIDADA (TODAS AS LOJAS)</option>
-              <option value="store">UMA LOJA</option>
-            </select>
-          </div>
-          <div class="field" id="dreVerticalLojaField" hidden><label for="dreVerticalLoja">LOJA</label><select id="dreVerticalLoja"><option value="">SELECIONE</option></select></div>
-          <div class="field"><label for="dreVerticalMes">MÊS</label><input type="month" id="dreVerticalMes"></div>
-        </div>
-        <div id="dreVerticalChart" class="dre-bar-chart"><div class="dre-empty">Selecione o mês para ver a análise vertical.</div></div>
-      </div>
-
-      <div id="dreTabHorizontal" hidden>
-        <div class="dre-toolbar">
-          <div class="field"><label for="dreHorizontalScope">VISÃO</label>
-            <select id="dreHorizontalScope">
-              <option value="consolidated">CONSOLIDADA (TODAS AS LOJAS)</option>
-              <option value="store">UMA LOJA</option>
-            </select>
-          </div>
-          <div class="field" id="dreHorizontalLojaField" hidden><label for="dreHorizontalLoja">LOJA</label><select id="dreHorizontalLoja"><option value="">SELECIONE</option></select></div>
-          <div class="field"><label for="dreHorizontalCategoria">CATEGORIA</label><select id="dreHorizontalCategoria"><option value="">SELECIONE</option></select></div>
-        </div>
-        <div id="dreHorizontalChart" class="dre-bar-chart"><div class="dre-empty">Selecione a categoria para ver a análise horizontal (últimos 6 meses).</div></div>
-      </div>
-
-      <div id="dreTabOrcado" hidden>
-        <div class="dre-toolbar">
-          <div class="field" id="dreOrcadoLojaField"><label for="dreOrcadoLoja">LOJA</label><select id="dreOrcadoLoja"><option value="">TODAS AS LOJAS (CONSOLIDADO)</option></select></div>
-          <div class="field"><label for="dreOrcadoMes">MÊS</label><input type="month" id="dreOrcadoMes"></div>
-        </div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="dreOrcadoTable">
-              <thead><tr><th>Categoria</th><th>Centro de Custo</th><th>Orçado</th><th>Realizado</th><th>Diferença</th><th>Saldo</th><th>% Utilizado</th></tr></thead>
-              <tbody id="dreOrcadoTableBody"><tr><td colspan="7" class="responsive-empty">Selecione o mês para ver o comparativo.</td></tr></tbody>
-            </table>
+          <p class="purchase-field-help">SEM CATEGORIA = DRE DA LOJA (OU DO GRUPO) MÊS A MÊS. COM CATEGORIA = O VALOR DELA EM CADA LOJA MÊS A MÊS, COM A VARIAÇÃO SOBRE O MÊS ANTERIOR. ATÉ 36 MESES.</p>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="dreMesesTable"><tbody><tr><td class="responsive-empty">Selecione o período.</td></tr></tbody></table>
+            </div>
           </div>
         </div>
       </div>
@@ -9320,12 +9262,13 @@
         <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="image">GERAR IMAGEM</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-action="reschedule">ALTERAR VENCIMENTO</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
       </div>
-      <p class="purchase-field-help">SÓ CONTAS A PAGAR, DESPESAS E FORNECEDORES EM ABERTO TÊM SELEÇÃO — FOLHA, BENEFÍCIOS E COMISSÕES SÃO PAGOS NA FOLHA. CANCELAR OU EXCLUIR, SÓ EM CONTAS A PAGAR.</p>
+      <p class="purchase-field-help">GERAR IMAGEM VALE PARA QUALQUER LANÇAMENTO SELECIONADO. MARCAR COMO PAGO E ALTERAR VENCIMENTO SÓ VALEM PARA CONTAS A PAGAR, DESPESAS E FORNECEDORES EM ABERTO — FOLHA, BENEFÍCIOS E COMISSÕES SÃO PAGOS NA FOLHA. CANCELAR OU EXCLUIR, SÓ EM CONTAS A PAGAR.</p>
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="cfPayTable">
@@ -10394,6 +10337,21 @@
      etapa intermediária de "converter em pedido". -->
 <!-- Comercial > Regras de Comissão: nova vigência / editar. Percentuais em %
      na tela, enviados em basis points (1% = 100). -->
+<dialog class="purchase-dialog" id="dreOverheadDialog" aria-labelledby="dreOverheadDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="dreOverheadDialogTitle">RATEIO DO DEPÓSITO E DO ESCRITÓRIO</h3>
+    <button class="purchase-dialog-close" id="btnCloseDreOverhead" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="dreOverheadForm" novalidate>
+    <p class="purchase-field-help">O CUSTO DOS FUNCIONÁRIOS DO DEPÓSITO E DO ESCRITÓRIO (FOLHA, BENEFÍCIOS E COMISSÕES) É DIVIDIDO ENTRE AS LOJAS NA DRE POR LOJA, PELO PERCENTUAL DO MÊS. SEM FATURAMENTO/FUNCIONÁRIOS NO MÊS, O CUSTO FICA SÓ NA CONSOLIDADA.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="dreOverheadDeposito">DEPÓSITO</label><select id="dreOverheadDeposito"></select></div>
+      <div class="purchase-field"><label for="dreOverheadEscritorio">ESCRITÓRIO / ADMINISTRATIVO</label><select id="dreOverheadEscritorio"></select></div>
+    </div>
+    <div class="user-form-status" id="dreOverheadStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions"><button class="btn-accent" type="submit">SALVAR</button></div>
+  </form>
+</dialog>
 <dialog class="purchase-dialog" id="comRuleDialog" aria-labelledby="comRuleDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="comRuleDialogTitle">NOVA VIGÊNCIA</h3>
@@ -14894,8 +14852,6 @@
   let financeLoading = false;
   let financeDreConsolidada = null;
   let financeConsolidadaLoading = false;
-  let financeDreGerencial = null;
-  let financeGerencialLoading = false;
   let dreActiveTab = 'porLoja';
 
   let purchaseRows = [];
@@ -33536,69 +33492,6 @@ function renderHomeTasks(){
 
   el('dreConsolidadaMes').addEventListener('change', loadDreConsolidada);
 
-  function dreGerencialItemRowHtml(item){
-    return '<div class="dre-flat-row"><span class="dre-flat-name">'+escapeHtml(item.name)+'</span><span class="dre-flat-total">'+formatCentsBRL(item.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-item="'+escapeHtml(item.id)+'" title="Ver lançamentos deste item">DETALHES</button></div>';
-  }
-
-  function dreGerencialCategoryCardHtml(category){
-    const itemsHtml = category.items.map(item => dreGerencialItemRowHtml(item)).join('') ||
-      (category.subgroups.length ? '' : '<div class="dre-empty">Nenhum item nesta categoria.</div>');
-    const subgroupsHtml = category.subgroups.map(subgroup => (
-      '<details class="dre-subgroup"><summary><span>'+escapeHtml(subgroup.name)+'</span><span class="dre-subgroup-total">'+formatCentsBRL(subgroup.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-category="'+escapeHtml(subgroup.id)+'" title="Ver lançamentos deste subgrupo">DETALHES</button></summary>'+
-      '<div class="dre-subgroup-body">'+(subgroup.items.map(item => dreGerencialItemRowHtml(item)).join('') || '<div class="dre-empty">Nenhum item neste subgrupo.</div>')+'</div>'+
-      '</details>'
-    )).join('');
-    return (
-      '<details class="dre-category"><summary><span>'+escapeHtml(category.name)+'</span><span class="dre-category-total">'+formatCentsBRL(category.totalCents)+'</span><button class="btn-outline" type="button" data-dre-detail-category="'+escapeHtml(category.id)+'" title="Ver lançamentos desta categoria">DETALHES</button></summary>'+
-      '<div class="dre-category-body">'+itemsHtml+subgroupsHtml+'</div>'+
-      '</details>'
-    );
-  }
-
-  function renderDreGerencialSummary(){
-    const data = financeDreGerencial;
-    el('dreGerencialSummaryRevenue').textContent = formatCentsBRL(data ? data.revenueCents : 0);
-    el('dreGerencialSummaryExpense').textContent = formatCentsBRL(data ? data.expenseTotalCents : 0);
-    el('dreGerencialSummaryResult').textContent = formatCentsBRL(data ? data.resultCents : 0);
-    const marginPercent = ((data ? data.marginBasisPoints : 0)/100).toFixed(2);
-    el('dreGerencialSummaryMargin').textContent = marginPercent.replace('.',',')+'%';
-    el('dreGerencialSummaryResultCard').classList.toggle('neg', Boolean(data && data.resultCents < 0));
-  }
-
-  function renderDreGerencialCategories(){
-    const container = el('dreGerencialCategoryList');
-    if(!financeDreGerencial){
-      container.innerHTML = '<div class="dre-empty">Selecione o mês para ver a DRE Gerencial.</div>';
-      return;
-    }
-    if(!financeDreGerencial.categories.length){
-      container.innerHTML = '<div class="dre-empty">Nenhuma categoria cadastrada ainda.</div>';
-      return;
-    }
-    container.innerHTML = financeDreGerencial.categories.map(category => dreGerencialCategoryCardHtml(category)).join('');
-  }
-
-  async function loadDreGerencial(){
-    if(!canAccess('finance') || financeGerencialLoading) return;
-    if(!el('dreGerencialMes').value) el('dreGerencialMes').value = financeCurrentMonthKey();
-    const month = el('dreGerencialMes').value;
-    financeGerencialLoading = true;
-    el('dreGerencialCategoryList').innerHTML = '<div class="dre-empty">Carregando…</div>';
-    try{
-      financeDreGerencial = await financeApiRequest('/dre?scope=managerial&month='+encodeURIComponent(month));
-      renderDreGerencialSummary();
-      renderDreGerencialCategories();
-    }catch(error){
-      financeDreGerencial = null;
-      el('dreGerencialCategoryList').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
-      renderDreGerencialSummary();
-    }finally{
-      financeGerencialLoading = false;
-    }
-  }
-
-  el('dreGerencialMes').addEventListener('change', loadDreGerencial);
-
   // ================= DRE: DETALHAMENTO DE LANÇAMENTOS =================
   function dreCategoryLabel(categoryId){
     const category = financeCategories.find(c => c.id === categoryId);
@@ -33689,7 +33582,6 @@ function renderHomeTasks(){
   }
   wireDreDetailButtons('dreCategoryList', () => el('dreMes').value, () => el('dreLoja').value);
   wireDreDetailButtons('dreConsolidadaCategoryList', () => el('dreConsolidadaMes').value, null);
-  wireDreDetailButtons('dreGerencialCategoryList', () => el('dreGerencialMes').value, null);
 
   // ================= DRE: COMPARATIVO ENTRE UNIDADES =================
   function renderDreUnidadesTable(data){
@@ -33729,78 +33621,7 @@ function renderHomeTasks(){
   }
   el('dreUnidadesMes').addEventListener('change', loadDreUnidades);
 
-  // ================= DRE: COMPARATIVO MENSAL/ANUAL =================
-  function renderDreScopedLojaSelect(selectId){
-    const select = el(selectId);
-    if(!select || select.options.length > 1) return;
-    select.innerHTML = '<option value="">SELECIONE</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-  }
-
-  function dreTemporalRange(){
-    const periodo = el('dreTemporalPeriodo').value;
-    if(periodo === 'anual'){
-      const year = Number(el('dreTemporalAno').value) || new Date().getFullYear();
-      return {monthFrom: year+'-01', monthTo: year+'-12'};
-    }
-    const now = new Date();
-    const to = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-    const fromDate = new Date(now.getFullYear(), now.getMonth()-5, 1);
-    const from = fromDate.getFullYear()+'-'+String(fromDate.getMonth()+1).padStart(2,'0');
-    return {monthFrom: from, monthTo: to};
-  }
-
-  function renderDreTemporalTable(data){
-    const table = el('dreTemporalTable');
-    if(!data || !data.series.length){
-      table.innerHTML = '<tbody><tr><td class="responsive-empty">Sem dados para o período.</td></tr></tbody>';
-      return;
-    }
-    const categoryNames = data.series[0].categories.map(c => c.name);
-    const fmtMonth = m => { const p = String(m).split('-'); return p.length === 2 ? p[1]+'/'+p[0] : m; };
-    const headRow = '<tr><th>Competência</th>'+data.series.map(s => '<th>'+escapeHtml(fmtMonth(s.month))+'</th>').join('')+'</tr>';
-    function metricRow(label, getter){
-      return '<tr><td><strong>'+label+'</strong></td>'+data.series.map(s => '<td>'+formatCentsBRL(getter(s))+'</td>').join('')+'</tr>';
-    }
-    const categoryRows = categoryNames.map((name, index) => (
-      '<tr><td>'+escapeHtml(name)+'</td>'+data.series.map(s => '<td>'+formatCentsBRL((s.categories[index] || {totalCents:0}).totalCents)+'</td>').join('')+'</tr>'
-    )).join('');
-    table.innerHTML =
-      '<thead>'+headRow+'</thead><tbody>'+
-        metricRow('RECEITA', s => s.revenueCents)+
-        metricRow('DESPESA TOTAL', s => s.expenseTotalCents)+
-        metricRow('RESULTADO', s => s.resultCents)+
-        categoryRows+
-      '</tbody>';
-  }
-
-  async function loadDreTemporal(){
-    if(!canAccess('finance')) return;
-    renderDreScopedLojaSelect('dreTemporalLoja');
-    const scope = el('dreTemporalScope').value;
-    el('dreTemporalLojaField').hidden = scope !== 'store';
-    if(!el('dreTemporalAno').value) el('dreTemporalAno').value = new Date().getFullYear();
-    el('dreTemporalAnoField').hidden = el('dreTemporalPeriodo').value !== 'anual';
-    if(scope === 'store' && !el('dreTemporalLoja').value){
-      el('dreTemporalTable').innerHTML = '<tbody><tr><td class="responsive-empty">Selecione a loja.</td></tr></tbody>';
-      return;
-    }
-    const {monthFrom, monthTo} = dreTemporalRange();
-    const params = new URLSearchParams({scope:'series', seriesScope:scope, monthFrom, monthTo});
-    if(scope === 'store') params.set('storeId', el('dreTemporalLoja').value);
-    el('dreTemporalTable').innerHTML = '<tbody><tr><td class="responsive-empty">Carregando…</td></tr></tbody>';
-    try{
-      const data = await financeApiRequest('/dre?'+params.toString());
-      renderDreTemporalTable(data);
-    }catch(error){
-      el('dreTemporalTable').innerHTML = '<tbody><tr><td class="responsive-empty">'+escapeHtml(error.message)+'</td></tr></tbody>';
-    }
-  }
-  el('dreTemporalScope').addEventListener('change', loadDreTemporal);
-  el('dreTemporalLoja').addEventListener('change', loadDreTemporal);
-  el('dreTemporalPeriodo').addEventListener('change', loadDreTemporal);
-  el('dreTemporalAno').addEventListener('change', loadDreTemporal);
-
-  // ================= DRE: ANÁLISE VERTICAL =================
+  // ================= DRE: ANÁLISES =================
   function dreBarRowHtml(label, valueCents, maxCents, sublabel){
     const pct = maxCents > 0 ? Math.min(100, Math.abs(valueCents) / maxCents * 100) : 0;
     return '<div class="dre-bar-row">'+
@@ -33809,98 +33630,137 @@ function renderHomeTasks(){
       '<span class="dre-bar-value">'+(sublabel || formatCentsBRL(valueCents))+'</span>'+
     '</div>';
   }
+  const drePct = value => value.toFixed(2).replace('.',',')+'%';
+  function renderDreScopedLojaSelect(selectId, firstLabel){
+    const select = el(selectId);
+    if(!select || select.options.length > 1) return;
+    select.innerHTML = '<option value="">'+(firstLabel || 'SELECIONE')+'</option>'+companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+  }
+  const dreFmtMonth = m => { const p = String(m).split('-'); return p.length === 2 ? p[1]+'/'+p[0] : m; };
+  function dreAddMonths(month, count){
+    const [y, m] = month.split('-').map(Number);
+    const d = new Date(y, m - 1 + count, 1);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  // Categorias de topo da DRE (+ PESSOAL — RH, fixa no servidor).
+  async function fillDreCategorySelect(selectId, firstLabel){
+    const select = el(selectId);
+    if(select.options.length > 1) return;
+    if(!financeCategories.length) await loadFinanceCatalog();
+    const tops = financeCategories.filter(c => !c.parentId).map(c => ({id:c.id, name:c.name})).concat([{id:'rh-pessoal', name:'PESSOAL — RH (AUTOMÁTICO)'}]);
+    select.innerHTML = '<option value="">'+firstLabel+'</option>'+tops.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+  }
 
-  async function loadDreVertical(){
+  async function loadDreCategoria(){
     if(!canAccess('finance')) return;
-    renderDreScopedLojaSelect('dreVerticalLoja');
-    const scope = el('dreVerticalScope').value;
-    el('dreVerticalLojaField').hidden = scope !== 'store';
-    if(!el('dreVerticalMes').value) el('dreVerticalMes').value = financeCurrentMonthKey();
-    const month = el('dreVerticalMes').value;
-    if(scope === 'store' && !el('dreVerticalLoja').value){
-      el('dreVerticalChart').innerHTML = '<div class="dre-empty">Selecione a loja.</div>';
-      return;
-    }
-    const params = new URLSearchParams({scope, month});
-    if(scope === 'store') params.set('storeId', el('dreVerticalLoja').value);
-    el('dreVerticalChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    await fillDreCategorySelect('dreCategoriaSel', 'TODAS AS CATEGORIAS (CONSOLIDADO)');
+    if(!el('dreCategoriaMes').value) el('dreCategoriaMes').value = financeCurrentMonthKey();
+    const month = el('dreCategoriaMes').value;
+    const categoryId = el('dreCategoriaSel').value;
+    const chart = el('dreCategoriaChart');
+    chart.innerHTML = '<div class="dre-empty">Carregando…</div>';
     try{
-      const data = await financeApiRequest('/dre?'+params.toString());
-      const revenueCents = data.revenueCents || 0;
-      if(!revenueCents){
-        el('dreVerticalChart').innerHTML = '<div class="dre-empty">Cadastre a receita do período para calcular a análise vertical.</div>';
+      if(!categoryId){
+        const data = await financeApiRequest('/dre?scope=consolidated&month='+encodeURIComponent(month));
+        const revenueCents = data.revenueCents || 0;
+        if(!revenueCents){ chart.innerHTML = '<div class="dre-empty">Sem receita no Comercial neste mês para calcular o percentual.</div>'; return; }
+        chart.innerHTML = [dreBarRowHtml('RECEITA', revenueCents, revenueCents, formatCentsBRL(revenueCents)+' · 100,00%')].concat(
+          data.categories.map(c => dreBarRowHtml(c.name, c.totalCents, revenueCents, formatCentsBRL(c.totalCents)+' · '+drePct(c.totalCents / revenueCents * 100)))
+        ).join('');
         return;
       }
-      const rows = [dreBarRowHtml('RECEITA', revenueCents, revenueCents, '100,00%')].concat(
-        data.categories.map(category => {
-          const pct = (category.totalCents / revenueCents) * 100;
-          return dreBarRowHtml(category.name, category.totalCents, revenueCents, pct.toFixed(2).replace('.',',')+'%');
-        })
-      );
-      el('dreVerticalChart').innerHTML = rows.join('');
+      const data = await financeApiRequest('/dre?scope=by-store&month='+encodeURIComponent(month));
+      const rows = data.stores.map(s => ({
+        name: s.storeName, revenueCents: s.revenueCents,
+        cents: (s.categories.find(c => c.id === categoryId) || {totalCents:0}).totalCents
+      })).filter(r => r.cents || r.revenueCents).sort((a, b) => b.cents - a.cents);
+      const total = rows.reduce((sum, r) => sum + r.cents, 0);
+      const revenue = rows.reduce((sum, r) => sum + r.revenueCents, 0);
+      const max = Math.max(1, ...rows.map(r => Math.abs(r.cents)));
+      const label = r => formatCentsBRL(r.cents)+' · '+(r.revenueCents ? drePct(r.cents / r.revenueCents * 100)+' DA RECEITA' : 'SEM RECEITA')+(total ? ' · '+drePct(r.cents / total * 100)+' DA CATEGORIA' : '');
+      chart.innerHTML = rows.length
+        ? rows.map(r => dreBarRowHtml(r.name, r.cents, max, label(r))).join('')+
+          dreBarRowHtml('TOTAL', total, Math.max(max, Math.abs(total)), formatCentsBRL(total)+(revenue ? ' · '+drePct(total / revenue * 100)+' DA RECEITA' : ''))
+        : '<div class="dre-empty">Nenhuma loja com valor nesta categoria no mês.</div>';
     }catch(error){
-      el('dreVerticalChart').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      chart.innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
     }
   }
-  el('dreVerticalScope').addEventListener('change', loadDreVertical);
-  el('dreVerticalLoja').addEventListener('change', loadDreVertical);
-  el('dreVerticalMes').addEventListener('change', loadDreVertical);
+  el('dreCategoriaMes').addEventListener('change', loadDreCategoria);
+  el('dreCategoriaSel').addEventListener('change', loadDreCategoria);
 
-  // ================= DRE: ANÁLISE HORIZONTAL =================
-  function renderDreHorizontalCategoryOptions(){
-    const select = el('dreHorizontalCategoria');
-    if(select.options.length > 1) return;
-    select.innerHTML = '<option value="">SELECIONE</option>'+
-      financeCategories.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(dreCategoryLabel(c.id))+'</option>').join('');
+  function dreMonthsTableHtml(months, rows){
+    const head = '<tr><th>'+(rows.kind === 'stores' ? 'Loja' : 'Indicador')+'</th>'+months.map(m => '<th>'+escapeHtml(dreFmtMonth(m))+'</th>').join('')+'<th>Total</th></tr>';
+    const body = rows.list.map(row => {
+      const cells = row.values.map((cents, index) => {
+        const prev = index > 0 ? row.values[index - 1] : 0;
+        const variation = rows.variation && prev ? ' <small class="dre-variation">'+(cents >= prev ? '+' : '')+((cents - prev) / Math.abs(prev) * 100).toFixed(1).replace('.',',')+'%</small>' : '';
+        return '<td>'+formatCentsBRL(cents)+variation+'</td>';
+      }).join('');
+      const total = row.values.reduce((sum, v) => sum + v, 0);
+      return '<tr><td>'+(row.strong ? '<strong>'+escapeHtml(row.name)+'</strong>' : escapeHtml(row.name))+'</td>'+cells+'<td><strong>'+formatCentsBRL(total)+'</strong></td></tr>';
+    }).join('');
+    return '<thead>'+head+'</thead><tbody>'+body+'</tbody>';
   }
 
-  async function loadDreHorizontal(){
+  async function loadDreMeses(){
     if(!canAccess('finance')) return;
-    if(!financeCategories.length) await loadFinanceCatalog();
-    renderDreScopedLojaSelect('dreHorizontalLoja');
-    renderDreHorizontalCategoryOptions();
-    const scope = el('dreHorizontalScope').value;
-    el('dreHorizontalLojaField').hidden = scope !== 'store';
-    const categoryId = el('dreHorizontalCategoria').value;
-    if(!categoryId || (scope === 'store' && !el('dreHorizontalLoja').value)){
-      el('dreHorizontalChart').innerHTML = '<div class="dre-empty">Selecione a categoria'+(scope === 'store' ? ' e a loja' : '')+'.</div>';
-      return;
-    }
-    const {monthFrom, monthTo} = {monthFrom: (() => { const d = new Date(); d.setMonth(d.getMonth()-5); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })(), monthTo: financeCurrentMonthKey()};
-    const params = new URLSearchParams({scope:'series', seriesScope:scope, monthFrom, monthTo});
-    if(scope === 'store') params.set('storeId', el('dreHorizontalLoja').value);
-    el('dreHorizontalChart').innerHTML = '<div class="dre-empty">Carregando…</div>';
+    renderDreScopedLojaSelect('dreMesesLoja', 'TODAS AS LOJAS');
+    await fillDreCategorySelect('dreMesesCategoria', 'TODAS AS CATEGORIAS');
+    const now = financeCurrentMonthKey();
+    if(!el('dreMesesAte').value) el('dreMesesAte').value = now;
+    if(!el('dreMesesDe').value) el('dreMesesDe').value = dreAddMonths(el('dreMesesAte').value, -5);
+    const monthFrom = el('dreMesesDe').value, monthTo = el('dreMesesAte').value;
+    const storeId = el('dreMesesLoja').value, categoryId = el('dreMesesCategoria').value;
+    const table = el('dreMesesTable');
+    if(!monthFrom || !monthTo || monthFrom > monthTo){ table.innerHTML = '<tbody><tr><td class="responsive-empty">Informe um período válido (DE até ATÉ).</td></tr></tbody>'; return; }
+    table.innerHTML = '<tbody><tr><td class="responsive-empty">Carregando…</td></tr></tbody>';
     try{
+      if(categoryId){
+        const data = await financeApiRequest('/dre?'+new URLSearchParams({scope:'by-store-series', monthFrom, monthTo}).toString());
+        const stores = new Map();
+        data.series.forEach((entry, index) => entry.stores.forEach(s => {
+          if(storeId && s.storeId !== storeId) return;
+          if(!stores.has(s.storeId)) stores.set(s.storeId, {name:s.storeName, values:data.months.map(() => 0)});
+          stores.get(s.storeId).values[index] = (s.categories.find(c => c.id === categoryId) || {totalCents:0}).totalCents;
+        }));
+        const list = [...stores.values()].filter(r => r.values.some(Boolean));
+        if(!storeId && list.length > 1) list.push({name:'TOTAL', strong:true, values:data.months.map((_, i) => list.reduce((sum, r) => sum + r.values[i], 0))});
+        table.innerHTML = list.length ? dreMonthsTableHtml(data.months, {kind:'stores', variation:true, list}) : '<tbody><tr><td class="responsive-empty">Nenhum valor nesta categoria no período.</td></tr></tbody>';
+        return;
+      }
+      const params = new URLSearchParams({scope:'series', seriesScope: storeId ? 'store' : 'consolidated', monthFrom, monthTo});
+      if(storeId) params.set('storeId', storeId);
       const data = await financeApiRequest('/dre?'+params.toString());
-      const values = data.series.map(entry => ({
-        month: entry.month,
-        totalCents: (entry.categories.find(c => c.id === categoryId) || {totalCents:0}).totalCents
-      }));
-      const maxCents = Math.max(1, ...values.map(v => Math.abs(v.totalCents)));
-      const rows = values.map((v, index) => {
-        const prev = index > 0 ? values[index-1].totalCents : null;
-        const variation = prev ? (((v.totalCents - prev) / Math.abs(prev)) * 100) : null;
-        const sublabel = formatCentsBRL(v.totalCents)+(variation !== null ? ' ('+(variation >= 0 ? '+' : '')+variation.toFixed(1).replace('.',',')+'%)' : '');
-        return dreBarRowHtml(v.month, v.totalCents, maxCents, sublabel);
-      });
-      el('dreHorizontalChart').innerHTML = rows.join('');
+      if(!data.series.length){ table.innerHTML = '<tbody><tr><td class="responsive-empty">Sem dados para o período.</td></tr></tbody>'; return; }
+      const metric = (name, getter) => ({name, strong:true, values:data.series.map(getter)});
+      const list = [metric('RECEITA', s => s.revenueCents), metric('DESPESA TOTAL', s => s.expenseTotalCents), metric('RESULTADO', s => s.resultCents)]
+        .concat(data.series[0].categories.map((c, index) => ({name:c.name, values:data.series.map(s => (s.categories[index] || {totalCents:0}).totalCents)})));
+      table.innerHTML = dreMonthsTableHtml(data.months, {kind:'metrics', variation:false, list});
     }catch(error){
-      el('dreHorizontalChart').innerHTML = '<div class="dre-empty">'+escapeHtml(error.message)+'</div>';
+      table.innerHTML = '<tbody><tr><td class="responsive-empty">'+escapeHtml(error.message)+'</td></tr></tbody>';
     }
   }
-  el('dreHorizontalScope').addEventListener('change', loadDreHorizontal);
-  el('dreHorizontalLoja').addEventListener('change', loadDreHorizontal);
-  el('dreHorizontalCategoria').addEventListener('change', loadDreHorizontal);
+  ['dreMesesDe','dreMesesAte','dreMesesLoja','dreMesesCategoria'].forEach(id => el(id).addEventListener('change', loadDreMeses));
+
+  let dreAnalysisTab = 'unidades';
+  const DRE_ANALYSIS_LOADERS = {unidades: loadDreUnidades, categoria: loadDreCategoria, meses: loadDreMeses};
+  function setDreAnalysisTab(tab){
+    dreAnalysisTab = DRE_ANALYSIS_LOADERS[tab] ? tab : 'unidades';
+    document.querySelectorAll('[data-dre-analysis]').forEach(button => {
+      const active = button.dataset.dreAnalysis === dreAnalysisTab;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('[data-dre-analysis-panel]').forEach(panel => { panel.hidden = panel.dataset.dreAnalysisPanel !== dreAnalysisTab; });
+    DRE_ANALYSIS_LOADERS[dreAnalysisTab]();
+  }
+  document.querySelectorAll('[data-dre-analysis]').forEach(button => button.addEventListener('click', () => setDreAnalysisTab(button.dataset.dreAnalysis)));
 
   const DRE_TAB_LOADERS = {
     porLoja: loadDrePorLoja,
     consolidada: loadDreConsolidada,
-    gerencial: loadDreGerencial,
-    unidades: loadDreUnidades,
-    temporal: loadDreTemporal,
-    vertical: loadDreVertical,
-    horizontal: loadDreHorizontal,
-    orcado: loadDreOrcado
+    analises: () => setDreAnalysisTab(dreAnalysisTab)
   };
 
   function setDreActiveTab(tab){
@@ -33912,14 +33772,35 @@ function renderHomeTasks(){
     });
     el('dreTabPorLoja').hidden = dreActiveTab !== 'porLoja';
     el('dreTabConsolidada').hidden = dreActiveTab !== 'consolidada';
-    el('dreTabGerencial').hidden = dreActiveTab !== 'gerencial';
-    el('dreTabUnidades').hidden = dreActiveTab !== 'unidades';
-    el('dreTabTemporal').hidden = dreActiveTab !== 'temporal';
-    el('dreTabVertical').hidden = dreActiveTab !== 'vertical';
-    el('dreTabHorizontal').hidden = dreActiveTab !== 'horizontal';
-    el('dreTabOrcado').hidden = dreActiveTab !== 'orcado';
+    el('dreTabAnalises').hidden = dreActiveTab !== 'analises';
     DRE_TAB_LOADERS[dreActiveTab]();
   }
+
+  // Rateio do custo de funcionários do Depósito/Escritório (DRE Por Loja).
+  const DRE_OVERHEAD_MODELS = [['faturamento','RATEIO GRUPO (VENDAS + SERVIÇOS)'], ['faturamento_servicos','RATEIO ASSISTÊNCIA (SÓ SERVIÇOS)'], ['faturamento_vendas','RATEIO UNIGAMES (SÓ VENDAS)'], ['funcionarios','RATEIO POR QUANTIDADE DE FUNCIONÁRIOS']];
+  el('btnDreOverhead').addEventListener('click', async () => {
+    const options = DRE_OVERHEAD_MODELS.map(([value, label]) => '<option value="'+value+'">'+label+'</option>').join('');
+    el('dreOverheadDeposito').innerHTML = options;
+    el('dreOverheadEscritorio').innerHTML = options;
+    el('dreOverheadStatus').textContent = 'Carregando…';
+    el('dreOverheadDialog').showModal();
+    try{
+      const data = await financeApiRequest('/dre/settings');
+      el('dreOverheadDeposito').value = data.overhead.deposito;
+      el('dreOverheadEscritorio').value = data.overhead.escritorio;
+      el('dreOverheadStatus').textContent = '';
+    }catch(error){ el('dreOverheadStatus').textContent = error.message; }
+  });
+  el('btnCloseDreOverhead').addEventListener('click', () => el('dreOverheadDialog').close());
+  el('dreOverheadForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      await financeApiRequest('/dre/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({overhead:{deposito: el('dreOverheadDeposito').value, escritorio: el('dreOverheadEscritorio').value}})});
+      el('dreOverheadDialog').close();
+      showPurchaseToast('RATEIO DO DEPÓSITO/ESCRITÓRIO SALVO.');
+      loadFinanceiroTab();
+    }catch(error){ el('dreOverheadStatus').textContent = error.message; }
+  });
 
   function loadFinanceiroTab(){
     DRE_TAB_LOADERS[dreActiveTab]();
@@ -35461,10 +35342,8 @@ function renderHomeTasks(){
   // competência (/api/finance/budgets). O Realizado já vem calculado do
   // back-end (app/api/finance/budgets/shared.ts) — reaproveita a mesma fonte
   // da DRE (finance_store_entries) quando o orçamento não tem centro de
-  // custo, ou soma accounts_payable quando tem. Esta tela SÓ cadastra/lista;
-  // a aba "REALIZADO X ORÇADO" da DRE (ver loadDreOrcado) usa a MESMA rota e
-  // o MESMO renderizador de tabela (renderBudgetsTable), só que somente
-  // leitura (sem botão de novo orçamento).
+  // custo, ou soma accounts_payable quando tem. (A aba REALIZADO X ORÇADO
+  // da DRE saiu em 04/11/2026.)
   let budgetsCurrentRows = [];
 
   const BUDGET_ALERT_TONE = {ok:'done', warning:'waiting', over:'alert'};
@@ -36281,9 +36160,8 @@ function renderHomeTasks(){
       Object.keys(byOrigin).map(o => '<div class="card"><div class="lbl">'+escapeHtml(CF_ORIGIN_LABELS[o])+'</div><div class="num">'+formatCentsBRL(byOrigin[o])+'</div></div>').join('');
     const row = i => {
       const status = CF_ITEM_STATUS[i.status] || ['', i.status];
-      const selectable = i.payableId && i.key.indexOf('open:') === 0;
       return '<tr>'+
-        '<td data-label="SELECIONAR">'+(selectable ? bulkRowCheckbox(i.payableId, 'Selecionar '+i.description) : '')+'</td>'+
+        '<td data-label="SELECIONAR">'+bulkRowCheckbox(i.key, 'Selecionar '+i.description)+'</td>'+
         '<td data-label="DATA">'+escapeHtml(formatDateBR(i.date))+'</td>'+
         '<td data-label="ORIGEM">'+escapeHtml(CF_ORIGIN_LABELS[i.origin] || i.origin)+'</td>'+
         '<td data-label="DESCRIÇÃO">'+(i.payableId ? '<button class="cf-link" type="button" data-cf-open-payable="'+escapeHtml(i.payableId)+'" title="Abrir em Contas a Pagar">'+escapeHtml(i.description || '—')+'</button>' : escapeHtml(i.description || '—'))+'</td>'+
@@ -36319,8 +36197,67 @@ function renderHomeTasks(){
     if(el('pageFinanceiroFluxoCaixa').classList.contains('active') && cashFlowTab === 'projecao') loadCashFlowTab();
   });
 
+  // Imagem dos lançamentos selecionados (mesma moldura das outras imagens).
+  async function cfPayBuildImage(items){
+    const pal = COM_IMAGE_PALETTE;
+    const red = '#c8402f', blue = '#1d487e';
+    const W = 1080, rowH = 84;
+    const total = items.reduce((sum, i) => sum + i.amountCents, 0);
+    const H = 178 + 32 + items.length * rowH + 24 + 104 + 30 + 58;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const dates = items.map(i => i.date).sort();
+    const period = dates[0] === dates[dates.length - 1] ? formatDateBR(dates[0]) : formatDateBR(dates[0])+' A '+formatDateBR(dates[dates.length - 1]);
+    const {HEADER} = await comDrawImageFrame(ctx, W, H, {
+      title: 'FLUXO DE CAIXA', subtitle: 'LANÇAMENTOS SELECIONADOS',
+      pill: items.length+(items.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS'),
+      footer: 'UNIGAMES · FLUXO DE CAIXA', footerRight: period,
+    });
+    const text = (value, x, y, size, color, align, weight) => {
+      ctx.textAlign = align || 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.font = comFont(weight || 800, size);
+      ctx.fillText(value, x, y);
+    };
+    let y = HEADER + 32;
+    ctx.fillStyle = '#ffffff';
+    comRoundRect(ctx, 40, y, W - 80, items.length * rowH, 22);
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = pal.grid; ctx.stroke();
+    items.forEach((i, index) => {
+      const ry = y + index * rowH;
+      if(index){ ctx.fillStyle = pal.grid; ctx.fillRect(62, ry, W - 124, 1); }
+      const status = (CF_ITEM_STATUS[i.status] || ['', i.status])[1];
+      ctx.font = comFont(800, 24);
+      text(comFitText(ctx, String(i.description || '—').toUpperCase(), W - 420), 66, ry + 30, 24, pal.ink, 'left', 800);
+      text(formatCentsBRL(i.amountCents), W - 66, ry + 30, 26, pal.ink, 'right', 900);
+      const info = [formatDateBR(i.date), CF_ORIGIN_LABELS[i.origin] || i.origin, i.supplierName, i.categoryName].filter(Boolean).join(' · ');
+      ctx.font = comFont(700, 18);
+      text(comFitText(ctx, String(info).toUpperCase(), W - 420), 66, ry + 60, 18, pal.soft, 'left', 700);
+      text(String(status).toUpperCase(), W - 66, ry + 60, 18, i.status === 'overdue' ? red : pal.soft, 'right', 800);
+    });
+    y += items.length * rowH + 24;
+    ctx.fillStyle = blue;
+    comRoundRect(ctx, 40, y, W - 80, 104, 22);
+    ctx.fill();
+    text('TOTAL', 76, y + 52, 40, '#ffffff', 'left', 900);
+    text(formatCentsBRL(total), W - 76, y + 52, 46, '#ffffff', 'right', 900);
+    return canvas;
+  }
+
   let cfPayBulkIds = [];
-  const cfPayBulk = setupBulkSelection(el('cfPayBulkBar'), el('cfPayBody'), async (action, ids) => {
+  const cfPayBulk = setupBulkSelection(el('cfPayBulkBar'), el('cfPayBody'), async (action, keys) => {
+    const chosen = cfPayData ? cfPayData.overdue.concat(cfPayData.items).filter(i => keys.includes(i.key)) : [];
+    if(action === 'image'){
+      const sorted = chosen.slice().sort((a, b) => a.date.localeCompare(b.date));
+      await shareCanvasImage(await cfPayBuildImage(sorted), 'fluxo-de-caixa-lancamentos-'+todayDateKeyRecife()+'.png');
+      return false;
+    }
+    const ids = [...new Set(chosen.filter(i => i.payableId && i.key.indexOf('open:') === 0).map(i => i.payableId))];
+    if(!ids.length){ showPurchaseToast('NENHUM DOS SELECIONADOS É CONTA A PAGAR, DESPESA OU FORNECEDOR EM ABERTO.', 'error'); return false; }
     cfPayBulkIds = ids;
     el('cfPayBulkForm').reset();
     el('cfPayBulkAction').value = action;
@@ -41018,30 +40955,6 @@ function renderHomeTasks(){
     if(el('cashFlowShareDialog').open) el('cashFlowShareDialog').close();
   });
 
-  // Aba "REALIZADO X ORÇADO" da DRE — mesma rota/renderizador acima, só
-  // leitura (a gestão do cadastro fica só na tela de Orçamento).
-  async function loadDreOrcado(){
-    if(!canAccess('finance')) return;
-    if(!companies.length) await loadCompanies();
-    if(el('dreOrcadoLoja').options.length <= 1){
-      const selected = el('dreOrcadoLoja').value;
-      el('dreOrcadoLoja').innerHTML = '<option value="">TODAS AS LOJAS (CONSOLIDADO)</option>'+
-        companies.map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
-      if(companies.some(c => c.id === selected)) el('dreOrcadoLoja').value = selected;
-    }
-    if(!el('dreOrcadoMes').value) el('dreOrcadoMes').value = financeCurrentMonthKey();
-    const companyId = el('dreOrcadoLoja').value;
-    const month = el('dreOrcadoMes').value;
-    el('dreOrcadoTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
-    try{
-      const rows = await loadBudgetsFor(companyId, month);
-      renderBudgetsTable('dreOrcadoTableBody', rows, {readOnly:true});
-    }catch(error){
-      el('dreOrcadoTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-    }
-  }
-  el('dreOrcadoLoja') && el('dreOrcadoLoja').addEventListener('change', loadDreOrcado);
-  el('dreOrcadoMes') && el('dreOrcadoMes').addEventListener('change', loadDreOrcado);
 
   // ================= FINANCEIRO FASE 8: ITENS DIVERSOS =================
 
@@ -45087,18 +45000,19 @@ function renderHomeTasks(){
       if(el('dreMes')) el('dreMes').value = target.month || '';
     }else if(target.tab === 'consolidada'){
       if(el('dreConsolidadaMes')) el('dreConsolidadaMes').value = target.month || '';
-    }else if(target.tab === 'gerencial'){
-      if(el('dreGerencialMes')) el('dreGerencialMes').value = target.month || '';
     }else if(target.tab === 'temporal'){
-      if(el('dreTemporalScope')) el('dreTemporalScope').value = target.scope || 'consolidated';
-      if(el('dreTemporalPeriodo')) el('dreTemporalPeriodo').value = 'anual';
-      if(el('dreTemporalAno')) el('dreTemporalAno').value = String(target.year || new Date().getFullYear());
+      // Ano → ANÁLISES › COMPARATIVA DE MESES (jan–dez).
+      const year = String(target.year || new Date().getFullYear());
+      renderDreScopedLojaSelect('dreMesesLoja', 'TODAS AS LOJAS');
+      el('dreMesesDe').value = year+'-01';
+      el('dreMesesAte').value = year+'-12';
+      el('dreMesesLoja').value = target.scope === 'store' ? (target.storeId || '') : '';
+      el('dreMesesCategoria').value = '';
+      dreAnalysisTab = 'meses';
+      setDreActiveTab('analises');
+      return;
     }
     setDreActiveTab(target.tab);
-    if(target.tab === 'temporal' && target.scope === 'store'){
-      el('dreTemporalLoja').value = target.storeId || '';
-      loadDreTemporal();
-    }
   }
 
   // Decide se o clique em Faturamento/Resultado/Gastos por unidade leva pra
@@ -45151,10 +45065,10 @@ function renderHomeTasks(){
     const row = event.target.closest('[data-dashboard-category]');
     if(!row || !financeDashboardData) return;
     const data = financeDashboardData;
-    // Gerencial é sempre mensal — num período "Ano" cai no último mês do
+    // A DRE é sempre mensal — num período "Ano" cai no último mês do
     // intervalo (o mesmo usado pelo comparativo anual como referência).
     const month = data.period === 'year' ? data.monthTo : data.month;
-    dashboardGoToDre({tab:'gerencial', month});
+    dashboardGoToDre({tab:'consolidada', month});
   });
 
   el('dashboardByCostCenterList') && el('dashboardByCostCenterList').addEventListener('click', event => {

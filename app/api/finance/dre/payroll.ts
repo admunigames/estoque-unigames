@@ -1,6 +1,11 @@
 import type { getD1 } from "../../../../db";
 import { actingStoresForMonth } from "../../../lib/acting-store";
 import { loadOvertimePayouts } from "../../hr-payroll/shared";
+import { companyRole } from "../../../lib/company-role";
+import { distributeAmount, weightsToBasisPoints, type RateioWeight } from "../../../lib/rateio-distribute";
+import { isAutoRateioModel, type AutoRateioModel } from "../../../lib/rateio-models";
+import { loadCompanyList } from "../shared";
+import { loadAutoRateioWeights } from "../expenses/rateio";
 
 // Contribuição do RH (Folha, Benefícios, Comissões) para a DRE — item 13.
 //
@@ -28,9 +33,33 @@ type Database = Awaited<ReturnType<typeof getD1>>;
 export type PayrollDreContribution = {
   /** financeItemId → total de centavos a somar naquele item da DRE. */
   byItem: Map<string, number>;
-  /** Detalhe por bloco (para o drill-down da célula). */
-  blocks: Array<{ block: PayrollBlock; financeItemId: string; amountCents: number }>;
+  /** Detalhe por bloco (para o drill-down da célula); label = parte rateada do Depósito/Escritório. */
+  blocks: Array<{ block: PayrollBlock; financeItemId: string; amountCents: number; label?: string }>;
 };
+
+// Custo de funcionário do DEPÓSITO e do ESCRITÓRIO (04/11/2026): rateado
+// entre as lojas pelo modelo escolhido (padrão RATEIO GRUPO), calculado ao
+// vivo a cada mês. Sem peso no mês (ex.: Feito ainda não lançado) o custo
+// fica só na Consolidada, como antes.
+export type OverheadKind = "deposito" | "escritorio";
+export const OVERHEAD_LABELS: Record<OverheadKind, string> = { deposito: "DEPÓSITO", escritorio: "ESCRITÓRIO" };
+export const OVERHEAD_SETTINGS_KEY = "finance_dre_overhead_rateio";
+export type OverheadSettings = Record<OverheadKind, AutoRateioModel>;
+
+export async function loadOverheadSettings(database: Database): Promise<OverheadSettings> {
+  const row = await database
+    .prepare("SELECT value_json AS value FROM shared_state WHERE state_key=?1")
+    .bind(OVERHEAD_SETTINGS_KEY)
+    .first<{ value: string }>();
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = JSON.parse(row?.value || "{}") || {};
+  } catch {
+    parsed = {};
+  }
+  const pick = (value: unknown): AutoRateioModel => (isAutoRateioModel(value) ? value : "faturamento");
+  return { deposito: pick(parsed.deposito), escritorio: pick(parsed.escritorio) };
+}
 
 export const PAYROLL_DRE_CATEGORY = { id: "rh-pessoal", name: "PESSOAL — RH (AUTOMÁTICO)" };
 export const PAYROLL_DRE_ITEMS: Record<PayrollBlock, { id: string; name: string }> = {
@@ -60,7 +89,7 @@ export type PayrollDreMonth = Awaited<ReturnType<typeof loadPayrollDreMonth>>;
  * comparativo (payrollDreContributionFrom é só cálculo).
  */
 export async function loadPayrollDreMonth(database: Database, month: string) {
-  const [actingStores, chargesRow, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts] = await Promise.all([
+  const [actingStores, chargesRow, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts, companies, overheadSettings] = await Promise.all([
     actingStoresForMonth(database, month),
     database
       .prepare("SELECT employer_charges_bps AS bps FROM hr_payroll_settings WHERE company_id='' LIMIT 1")
@@ -101,8 +130,24 @@ export async function loadPayrollDreMonth(database: Database, month: string) {
     // HE A PAGAR do Controle de Horas substitui a HE digitada na Folha (e conta
     // mesmo para quem ainda não tem folha lançada no mês).
     loadOvertimePayouts(database, month),
+    loadCompanyList(database),
+    loadOverheadSettings(database),
   ]);
+  const overheadOf = new Map<string, OverheadKind>();
+  for (const company of companies) {
+    const role = companyRole(company.name);
+    if (role === "depot") overheadOf.set(company.id, "deposito");
+    if (role === "office") overheadOf.set(company.id, "escritorio");
+  }
+  const overheadWeights = new Map<OverheadKind, RateioWeight[]>();
+  for (const kind of Object.keys(OVERHEAD_LABELS) as OverheadKind[]) {
+    if ([...overheadOf.values()].includes(kind)) {
+      overheadWeights.set(kind, await loadAutoRateioWeights(database, overheadSettings[kind], month));
+    }
+  }
   return {
+    overheadOf,
+    overheadWeights,
     actingStores,
     employerChargesBps: Math.max(0, Number(chargesRow?.bps ?? 0)),
     folhaRows,
@@ -117,7 +162,7 @@ export function payrollDreContributionFrom(
   data: PayrollDreMonth,
   scope: { companyId: string } | "stores",
 ): PayrollDreContribution {
-  const { actingStores, employerChargesBps, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts } = data;
+  const { actingStores, employerChargesBps, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts, overheadOf, overheadWeights } = data;
   const mapping = new Map<PayrollBlock, string>(
     (Object.keys(PAYROLL_DRE_ITEMS) as PayrollBlock[]).map((block) => [block, PAYROLL_DRE_ITEMS[block].id]),
   );
@@ -128,30 +173,52 @@ export function payrollDreContributionFrom(
   // com a loja gravada no lançamento como reserva. "stores" = todas as lojas
   // reais: exclui RH sem loja e o da Assistência.
   const storeOf = (row: { employeeId: string; companyId: string }) => actingStores.get(row.employeeId)?.companyId || row.companyId || "";
-  const inScope = (store: string) => (isStore ? store === companyId : store !== "" && store !== "assistencia");
 
-  const folha = (folhaRows.results ?? []).filter((row) => inScope(storeOf(row)));
-  const withFolha = new Set((folhaRows.results ?? []).map((row) => row.employeeId));
-  const overtimeAdjust =
-    folha.reduce((sum, row) => {
-      const payout = overtimePayouts.get(row.employeeId);
-      return payout === undefined ? sum : sum - Number(row.overtimeTotal || 0) + payout;
-    }, 0) +
-    [...overtimePayouts]
-      .filter(([employeeId]) => !withFolha.has(employeeId) && inScope(storeOf({ employeeId, companyId: "" })))
-      .reduce((sum, [, cents]) => sum + cents, 0);
-  const sumOf = (rows: Array<{ employeeId: string; companyId: string; total: number }> | undefined) =>
-    (rows ?? []).filter((row) => inScope(storeOf(row))).reduce((sum, row) => sum + Number(row.total || 0), 0);
-
-  const amounts: Record<PayrollBlock, number> = {
-    folha:
-      folha.reduce((sum, row) => sum + Number(row.salaryGross || 0), 0) +
-      overtimeAdjust +
-      sumOf(dsrRows.results) +
-      Math.round((folha.reduce((sum, row) => sum + Number(row.baseTotal || 0), 0) * employerChargesBps) / 10000),
-    beneficios: sumOf(beneficiosRows.results),
-    comissoes: sumOf(comissoesRows.results),
+  /** Custo total por bloco dos funcionários cuja loja do mês passa no filtro. */
+  const amountsFor = (inScope: (store: string) => boolean): Record<PayrollBlock, number> => {
+    const folha = (folhaRows.results ?? []).filter((row) => inScope(storeOf(row)));
+    const withFolha = new Set((folhaRows.results ?? []).map((row) => row.employeeId));
+    const overtimeAdjust =
+      folha.reduce((sum, row) => {
+        const payout = overtimePayouts.get(row.employeeId);
+        return payout === undefined ? sum : sum - Number(row.overtimeTotal || 0) + payout;
+      }, 0) +
+      [...overtimePayouts]
+        .filter(([employeeId]) => !withFolha.has(employeeId) && inScope(storeOf({ employeeId, companyId: "" })))
+        .reduce((sum, [, cents]) => sum + cents, 0);
+    const sumOf = (rows: Array<{ employeeId: string; companyId: string; total: number }> | undefined) =>
+      (rows ?? []).filter((row) => inScope(storeOf(row))).reduce((sum, row) => sum + Number(row.total || 0), 0);
+    return {
+      folha:
+        folha.reduce((sum, row) => sum + Number(row.salaryGross || 0), 0) +
+        overtimeAdjust +
+        sumOf(dsrRows.results) +
+        Math.round((folha.reduce((sum, row) => sum + Number(row.baseTotal || 0), 0) * employerChargesBps) / 10000),
+      beneficios: sumOf(beneficiosRows.results),
+      comissoes: sumOf(comissoesRows.results),
+    };
   };
+
+  const allocated = (kind: OverheadKind | undefined) => Boolean(kind && overheadWeights.get(kind)?.length);
+  const amounts: Record<PayrollBlock, number> = isStore
+    ? allocated(overheadOf.get(companyId))
+      ? { folha: 0, beneficios: 0, comissoes: 0 } // custo já distribuído entre as lojas
+      : amountsFor((store) => store === companyId)
+    : amountsFor((store) => store !== "" && store !== "assistencia");
+
+  // Parte desta loja no custo do Depósito/Escritório (pelo peso do mês).
+  const shares: Array<{ block: PayrollBlock; amountCents: number; label: string }> = [];
+  if (isStore) {
+    for (const [kind, weights] of overheadWeights) {
+      if (!weights.some((item) => item.companyId === companyId)) continue;
+      const totals = amountsFor((store) => overheadOf.get(store) === kind);
+      const basis = weightsToBasisPoints(weights);
+      for (const block of Object.keys(totals) as PayrollBlock[]) {
+        const amountCents = distributeAmount(totals[block], basis).find((share) => share.companyId === companyId)?.amountCents ?? 0;
+        if (amountCents) shares.push({ block, amountCents, label: `${PAYROLL_BLOCK_LABELS[block]} — RATEIO ${OVERHEAD_LABELS[kind]}` });
+      }
+    }
+  }
 
   const byItem = new Map<string, number>();
   const blocks: PayrollDreContribution["blocks"] = [];
@@ -160,6 +227,11 @@ export function payrollDreContributionFrom(
     if (!amountCents) continue;
     byItem.set(financeItemId, (byItem.get(financeItemId) ?? 0) + amountCents);
     blocks.push({ block, financeItemId, amountCents });
+  }
+  for (const share of shares) {
+    const financeItemId = mapping.get(share.block)!;
+    byItem.set(financeItemId, (byItem.get(financeItemId) ?? 0) + share.amountCents);
+    blocks.push({ block: share.block, financeItemId, amountCents: share.amountCents, label: share.label });
   }
   return { byItem, blocks };
 }

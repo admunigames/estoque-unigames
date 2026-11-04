@@ -75,25 +75,6 @@ export type ConsolidatedCategory = {
   totalCents: number;
 };
 
-export type ManagerialItem = {
-  id: string;
-  name: string;
-  totalCents: number;
-};
-
-export type ManagerialCategory = {
-  id: string;
-  name: string;
-  totalCents: number;
-  items: ManagerialItem[];
-  subgroups: Array<{
-    id: string;
-    name: string;
-    totalCents: number;
-    items: ManagerialItem[];
-  }>;
-};
-
 export type StoreDreResult = {
   revenueCents: number;
   expenseTotalCents: number;
@@ -108,14 +89,6 @@ export type ConsolidatedDreResult = {
   resultCents: number;
   marginBasisPoints: number;
   categories: ConsolidatedCategory[];
-};
-
-export type ManagerialDreResult = {
-  revenueCents: number;
-  expenseTotalCents: number;
-  resultCents: number;
-  marginBasisPoints: number;
-  categories: ManagerialCategory[];
 };
 
 export type ByStoreDreResult = {
@@ -274,7 +247,7 @@ export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof ge
 
   // Soma todos os lançamentos de todas as lojas por item (sem manter a
   // quebra por loja) — usado tanto pela DRE Consolidada (só total por
-  // categoria) quanto pela Gerencial (total por item, dentro da categoria).
+  // categoria) (o Por Loja usa storeDreFrom).
   const totalByItem = new Map<string, number>();
   for (const entry of entries.results ?? []) {
     totalByItem.set(entry.itemId, (totalByItem.get(entry.itemId) ?? 0) + itemTotal(entry));
@@ -315,42 +288,6 @@ export async function buildConsolidatedDre(
       0,
     );
     return { id: category.id, name: category.name, totalCents: directTotal + subgroupsTotal };
-  });
-
-  const expenseTotalCents = dreCategories.reduce((sum, category) => sum + category.totalCents, 0);
-  const resultCents = revenueCents - expenseTotalCents;
-  const marginBasisPoints = revenueCents > 0 ? Math.round((resultCents / revenueCents) * 10000) : 0;
-
-  return { revenueCents, expenseTotalCents, resultCents, marginBasisPoints, categories: dreCategories };
-}
-
-export async function buildManagerialDre(
-  database: Awaited<ReturnType<typeof getD1>>,
-  month: string,
-): Promise<ManagerialDreResult> {
-  const { allCategories, allItems, totalByItem, revenueCents } = await loadMonthWideTotals(
-    database,
-    month,
-  );
-
-  const { topCategories, subcategoriesByParent } = groupCategories(allCategories);
-  const itemsByCategory = groupItemsByCategory(allItems);
-
-  function buildManagerialItem(item: ItemRow): ManagerialItem {
-    return { id: item.id, name: item.name, totalCents: totalByItem.get(item.id) ?? 0 };
-  }
-
-  const dreCategories: ManagerialCategory[] = topCategories.map((category) => {
-    const directItems = (itemsByCategory.get(category.id) ?? []).map(buildManagerialItem);
-    const subgroups = (subcategoriesByParent.get(category.id) ?? []).map((subgroup) => {
-      const subgroupItems = (itemsByCategory.get(subgroup.id) ?? []).map(buildManagerialItem);
-      const totalCents = subgroupItems.reduce((sum, item) => sum + item.totalCents, 0);
-      return { id: subgroup.id, name: subgroup.name, totalCents, items: subgroupItems };
-    });
-    const totalCents =
-      directItems.reduce((sum, item) => sum + item.totalCents, 0) +
-      subgroups.reduce((sum, subgroup) => sum + subgroup.totalCents, 0);
-    return { id: category.id, name: category.name, totalCents, items: directItems, subgroups };
   });
 
   const expenseTotalCents = dreCategories.reduce((sum, category) => sum + category.totalCents, 0);
@@ -466,5 +403,12 @@ export async function buildDreSeries(
       };
     }),
   );
+  return { months, series };
+}
+
+/** COMPARATIVA DE MESES por categoria: o comparativo de unidades de cada mês do período. */
+export async function buildByStoreSeries(database: Awaited<ReturnType<typeof getD1>>, monthFrom: string, monthTo: string) {
+  const months = monthsBetween(monthFrom, monthTo);
+  const series = await Promise.all(months.map(async (month) => ({ month, ...(await buildByStoreDre(database, month)) })));
   return { months, series };
 }

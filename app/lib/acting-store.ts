@@ -105,3 +105,46 @@ export async function actingStoreFor(database: Database, employeeId: string, mon
     .all<MonthAssignment>();
   return resolveActingStore(assignments.results ?? [], month, fallbackOf(employee), currentOf(employee));
 }
+
+/**
+ * Trabalhou no mês: admitido até o fim do mês e não desligado antes do início
+ * dele. lastTermination = último desligamento ('' = nunca); um desligamento
+ * anterior à admissão atual (recontratação) não conta.
+ */
+export function workedInMonth(
+  employee: { status: string; admissionDate: string },
+  lastTermination: string,
+  month: string,
+): boolean {
+  if (employee.admissionDate && employee.admissionDate > `${month}-31`) return false;
+  if (lastTermination && lastTermination >= employee.admissionDate) return lastTermination >= `${month}-01`;
+  return employee.status === "active";
+}
+
+/**
+ * RATEIO POR FUNCIONÁRIOS (04/11/2026): quantos funcionários ATUAM em cada
+ * loja no mês (loja atuante acima + workedInMonth) — sem digitar quadro.
+ */
+export async function actingHeadcountForMonth(
+  database: Database,
+  month: string,
+  actingStores?: Map<string, StoreRef>,
+): Promise<Map<string, number>> {
+  const [stores, employees, terminations] = await Promise.all([
+    actingStores ?? actingStoresForMonth(database, month),
+    database
+      .prepare("SELECT id, status, admission_date AS admissionDate FROM hr_employees")
+      .all<{ id: string; status: string; admissionDate: string }>(),
+    database
+      .prepare("SELECT employee_id AS employeeId, MAX(termination_date) AS lastDate FROM hr_terminations GROUP BY employee_id")
+      .all<{ employeeId: string; lastDate: string }>(),
+  ]);
+  const lastTermination = new Map((terminations.results ?? []).map((row) => [row.employeeId, String(row.lastDate || "")]));
+  const counts = new Map<string, number>();
+  for (const employee of employees.results ?? []) {
+    if (!workedInMonth(employee, lastTermination.get(employee.id) ?? "", month)) continue;
+    const companyId = stores.get(employee.id)?.companyId;
+    if (companyId) counts.set(companyId, (counts.get(companyId) ?? 0) + 1);
+  }
+  return counts;
+}

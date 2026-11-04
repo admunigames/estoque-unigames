@@ -188,8 +188,8 @@ export async function GET(request: Request) {
       .filter((entry) => itemIdSet.has(entry.financeItemId))
       .map((entry) => ({
         kind: "payroll" as const,
-        id: `payroll:${entry.block}`,
-        description: PAYROLL_BLOCK_LABELS[entry.block],
+        id: `payroll:${entry.block}:${entry.label || ""}`,
+        description: entry.label || PAYROLL_BLOCK_LABELS[entry.block],
         amountCents: entry.amountCents,
       }));
 

@@ -2566,10 +2566,15 @@ test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por 
   // Abas dentro de #pageFinanceiro, não páginas/itens de menu separados.
   assert.match(html, /data-dre-tab="porLoja"/);
   assert.match(html, /data-dre-tab="consolidada"/);
-  assert.match(html, /data-dre-tab="gerencial"/);
+  assert.match(html, /data-dre-tab="analises"/);
+  // 04/11/2026: só POR LOJA, CONSOLIDADA e ANÁLISES (unidades, categoria, meses).
+  assert.doesNotMatch(html, /data-dre-tab="(gerencial|unidades|temporal|vertical|horizontal|orcado)"/);
+  assert.match(html, /data-dre-analysis="unidades"[\s\S]*data-dre-analysis="categoria"[\s\S]*data-dre-analysis="meses"/);
+  assert.match(html, /scope:'by-store-series'/);
+  assert.match(html, /id="btnDreOverhead"/);
   assert.match(html, /id="dreTabPorLoja"/);
   assert.match(html, /id="dreTabConsolidada" hidden/);
-  assert.match(html, /id="dreTabGerencial" hidden/);
+  assert.match(html, /id="dreTabAnalises" hidden/);
   assert.match(html, /function setDreActiveTab\(tab\)/);
   assert.doesNotMatch(html, /id="navDrePorLoja"/);
   assert.doesNotMatch(html, /id="navDreConsolidada"/);
@@ -2586,11 +2591,6 @@ test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por 
     html,
     /renderDreConsolidadaCategories[\s\S]{0,400}dre-item-row/,
   );
-  assert.match(html, /function loadDreGerencial\(\)/);
-  // Diferente da Consolidada, a Gerencial abre os itens (soma entre lojas)
-  // dentro de cada categoria/subgrupo.
-  assert.match(html, /function dreGerencialCategoryCardHtml\(category\)/);
-  assert.match(html, /function dreGerencialItemRowHtml\(item\)/);
 
   assert.match(dreRoute, /scope === "consolidated"/);
   assert.match(dreShared, /FROM finance_store_entries WHERE month=\?1/);
@@ -2598,8 +2598,8 @@ test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por 
   assert.match(dreShared, /loadCommercialRevenueByStore\(database, month\)/);
   // Percentual continua fora da soma de despesa também na Consolidada.
   assert.match(dreShared, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
-  assert.match(dreRoute, /scope === "managerial"/);
-  assert.match(dreShared, /async function buildManagerialDre/);
+  assert.doesNotMatch(dreRoute, /managerial/);
+  assert.match(dreShared, /async function buildByStoreSeries/);
   assert.match(dreShared, /async function loadMonthWideTotals/);
 });
 

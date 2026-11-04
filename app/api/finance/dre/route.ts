@@ -3,9 +3,9 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, MONTH_PATTERN, safeText } from "../shared";
 import {
   buildByStoreDre,
+  buildByStoreSeries,
   buildConsolidatedDre,
   buildDreSeries,
-  buildManagerialDre,
   buildStoreDre,
 } from "./shared";
 
@@ -24,7 +24,8 @@ export async function GET(request: Request) {
   const scope = safeText(url.searchParams.get("scope"), 20) || "store";
 
   // A aba DRE ASSISTÊNCIA saiu (22/10/2026); os lançamentos ficam guardados.
-  const VALID_SCOPES = new Set(["store", "consolidated", "managerial", "by-store", "series"]);
+  // GERENCIAL saiu em 04/11/2026 (DRE = POR LOJA, CONSOLIDADA e ANÁLISES).
+  const VALID_SCOPES = new Set(["store", "consolidated", "by-store", "series", "by-store-series"]);
   if (!VALID_SCOPES.has(scope)) {
     return jsonResponse({ error: "ESCOPO DE DRE AINDA NÃO DISPONÍVEL." }, 400);
   }
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
 
-    if (scope === "series") {
+    if (scope === "series" || scope === "by-store-series") {
       const seriesScope = safeText(url.searchParams.get("seriesScope"), 20) === "store" ? "store" : "consolidated";
       const monthFrom = safeText(url.searchParams.get("monthFrom"), 7);
       const monthTo = safeText(url.searchParams.get("monthTo"), 7);
@@ -42,6 +43,7 @@ export async function GET(request: Request) {
       if (monthFrom > monthTo) {
         return jsonResponse({ error: "O MÊS INICIAL NÃO PODE SER DEPOIS DO MÊS FINAL." }, 400);
       }
+      if (scope === "by-store-series") return jsonResponse({ scope, ...(await buildByStoreSeries(database, monthFrom, monthTo)) });
       const storeId = safeText(url.searchParams.get("storeId"), 80);
       if (seriesScope === "store" && !storeId) {
         return jsonResponse({ error: "SELECIONE A LOJA." }, 400);
@@ -62,11 +64,6 @@ export async function GET(request: Request) {
 
     if (scope === "consolidated") {
       const result = await buildConsolidatedDre(database, month);
-      return jsonResponse({ scope, month, ...result });
-    }
-
-    if (scope === "managerial") {
-      const result = await buildManagerialDre(database, month);
       return jsonResponse({ scope, month, ...result });
     }
 

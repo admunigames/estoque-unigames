@@ -10,6 +10,9 @@ import {
 } from "../../../lib/rateio-distribute";
 import { loadCompanyList } from "../shared";
 import { loadCommercialRevenueByStore } from "../revenue/commercial";
+import { actingHeadcountForMonth } from "../../../lib/acting-store";
+import { companyRole } from "../../../lib/company-role";
+import { isAutoRateioModel, type AutoRateioModel } from "../../../lib/rateio-models";
 import type { RateioModel } from "./shared";
 
 export { BASIS_POINTS_TOTAL, distributeAmount };
@@ -106,68 +109,56 @@ export async function computeRateioShares(
     );
   }
 
-  if (model === "faturamento" || model === "faturamento_vendas" || model === "faturamento_servicos") {
-    // Base do rateio: total (vendas+serviços), só vendas, ou só serviços.
-    // Recalculado a cada mês a partir do faturamento real da competência.
-    // Base: o faturamento do Comercial na competência (mesma leitura da DRE).
-    const pick = (row: { salesCents: number; servicesCents: number; amountCents: number }) =>
-      model === "faturamento_vendas" ? row.salesCents : model === "faturamento_servicos" ? row.servicesCents : row.amountCents;
-    const baseLabel =
-      model === "faturamento_vendas"
-        ? "FATURAMENTO DE VENDAS"
-        : model === "faturamento_servicos"
-          ? "FATURAMENTO DE SERVIÇOS"
-          : "FATURAMENTO";
-    const revenueRows = [...(await loadCommercialRevenueByStore(database, competenceMonth)).values()]
-      .map((row) => ({ companyId: row.storeId, amountCents: pick(row) }))
-      .filter((row) => row.amountCents > 0)
-      .sort((a, b) => a.companyId.localeCompare(b.companyId));
-    const total = revenueRows.reduce((sum, row) => sum + row.amountCents, 0);
-    if (!revenueRows.length || total <= 0) {
+  if (isAutoRateioModel(model)) {
+    // Percentual automático do mês: o peso de cada loja ÷ o total das lojas.
+    const weights = await loadAutoRateioWeights(database, model, competenceMonth);
+    if (!weights.length) {
       if (chosen.length === 1) return done([{ companyId: chosen[0].id, companyName: chosen[0].name, percentBasisPoints: BASIS_POINTS_TOTAL }]);
       return {
-        error: `NÃO HÁ ${baseLabel} LANÇADO NO COMERCIAL PARA A COMPETÊNCIA ${competenceMonth} — LANCE O FEITO DAS LOJAS NO COMERCIAL ANTES DE USAR ESSE RATEIO NESSE MÊS.`,
+        error:
+          model === "funcionarios"
+            ? `NÃO HÁ FUNCIONÁRIOS ATUANTES NAS LOJAS EM ${competenceMonth} (RH > FUNCIONÁRIOS).`
+            : `NÃO HÁ ${AUTO_RATEIO_BASE[model]} LANÇADO NO COMERCIAL PARA A COMPETÊNCIA ${competenceMonth}.`,
         status: 409,
       };
     }
-    const nameOf = (id: string) => companies.find((c) => c.id === id)?.name || id;
-    return fromWeights(
-      revenueRows.map((row) => ({ companyId: row.companyId, companyName: nameOf(row.companyId), weight: row.amountCents })),
-      () =>
-        revenueRows.map((row) => ({
-          companyId: row.companyId,
-          companyName: nameOf(row.companyId),
-          percentBasisPoints: Math.round((row.amountCents * BASIS_POINTS_TOTAL) / total),
-        })),
-    );
-  }
-
-  if (model === "funcionarios") {
-    const rows = await database
-      .prepare(
-        `SELECT company_id AS companyId, company_name AS companyName, employee_count AS employeeCount
-         FROM finance_store_headcount WHERE employee_count > 0 ORDER BY company_id`,
-      )
-      .all<{ companyId: string; companyName: string; employeeCount: number }>();
-    const headcountRows = (rows.results ?? []).map((row) => ({ ...row, employeeCount: Number(row.employeeCount) }));
-    const total = headcountRows.reduce((sum, row) => sum + row.employeeCount, 0);
-    if (!headcountRows.length || total <= 0) {
-      if (chosen.length === 1) return done([{ companyId: chosen[0].id, companyName: chosen[0].name, percentBasisPoints: BASIS_POINTS_TOTAL }]);
-      return {
-        error: "NÃO HÁ QUADRO DE FUNCIONÁRIOS CADASTRADO — CADASTRE A QUANTIDADE DE FUNCIONÁRIOS POR LOJA ANTES DE USAR O RATEIO POR FUNCIONÁRIOS.",
-        status: 409,
-      };
-    }
-    return fromWeights(
-      headcountRows.map((row) => ({ companyId: row.companyId, companyName: row.companyName, weight: row.employeeCount })),
-      () =>
-        headcountRows.map((row) => ({
-          companyId: row.companyId,
-          companyName: row.companyName,
-          percentBasisPoints: Math.round((row.employeeCount * BASIS_POINTS_TOTAL) / total),
-        })),
-    );
+    return fromWeights(weights, () => weightsToBasisPoints(weights));
   }
 
   return { error: "MODELO DE RATEIO INVÁLIDO.", status: 400 };
+}
+
+const AUTO_RATEIO_BASE: Record<Exclude<AutoRateioModel, "funcionarios">, string> = {
+  faturamento: "FATURAMENTO",
+  faturamento_vendas: "FATURAMENTO DE VENDAS",
+  faturamento_servicos: "FATURAMENTO DE SERVIÇOS",
+};
+
+/**
+ * Peso de cada LOJA (sem Depósito/Assistência/Escritório) num rateio
+ * automático do mês: Feito do Comercial (total, vendas ou serviços) ou
+ * funcionários atuantes. Só lojas com peso > 0, em ordem de id.
+ */
+export async function loadAutoRateioWeights(
+  database: Awaited<ReturnType<typeof getD1>>,
+  model: AutoRateioModel,
+  month: string,
+): Promise<RateioWeight[]> {
+  const stores = (await loadCompanyList(database)).filter((company) => companyRole(company.name) === "store");
+  let valueOf: (companyId: string) => number;
+  if (model === "funcionarios") {
+    const headcount = await actingHeadcountForMonth(database, month);
+    valueOf = (companyId) => headcount.get(companyId) ?? 0;
+  } else {
+    const revenue = await loadCommercialRevenueByStore(database, month);
+    valueOf = (companyId) => {
+      const row = revenue.get(companyId);
+      if (!row) return 0;
+      return model === "faturamento_vendas" ? row.salesCents : model === "faturamento_servicos" ? row.servicesCents : row.amountCents;
+    };
+  }
+  return stores
+    .map((company) => ({ companyId: company.id, companyName: company.name, weight: Math.max(0, Number(valueOf(company.id)) || 0) }))
+    .filter((item) => item.weight > 0)
+    .sort((a, b) => a.companyId.localeCompare(b.companyId));
 }
