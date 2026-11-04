@@ -29,7 +29,7 @@ import {
 // (bruto, desconto, líquido) são desnormalizados a partir delas no mesmo
 // batch. Vários lançamentos do mesmo funcionário no mesmo mês continuam
 // permitidos (sem índice único). A Folha lê o total líquido do mês
-// (computedBenefitsCentsFor = Σ amount_cents).
+// (loadMonthBenefits: netCents = Σ amount_cents).
 
 type BenefitRow = {
   id: string;

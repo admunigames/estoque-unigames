@@ -329,100 +329,53 @@ export function commissionNetCents(row: CommissionTotalsRow) {
 }
 
 /**
- * Comissão do funcionário no mês, sempre recalculada a partir de
- * hr_commissions — a Folha NUNCA guarda esse valor em coluna própria, pra
- * não divergir da fonte quando o comissionamento é editado depois.
+ * Comissão de TODOS os funcionários no mês (líquida e bruta), sempre
+ * recalculada a partir de hr_commissions — a Folha NUNCA guarda esse valor
+ * em coluna própria, pra não divergir da fonte quando o comissionamento é
+ * editado depois. Bruta = sem subtrair os descontos (usada pelo "Custo
+ * Total"). Uma consulta para o mês inteiro (antes era uma por funcionário).
  */
-export async function computedCommissionCentsFor(
-  database: Database,
-  employeeId: string,
-  month: string,
-): Promise<number> {
-  const row = await database
+export async function loadMonthCommissions(database: Database, month: string) {
+  const { results } = await database
     .prepare(
-      `SELECT commission_cents AS commissionCents, commercial_premium_cents AS commercialPremiumCents,
-              bonuses_cents AS bonusesCents, premiums_cents AS premiumsCents, discounts_cents AS discountsCents,
+      `SELECT employee_id AS employeeId, commission_cents AS commissionCents,
+              commercial_premium_cents AS commercialPremiumCents, bonuses_cents AS bonusesCents,
+              premiums_cents AS premiumsCents, discounts_cents AS discountsCents,
               adjustments_cents AS adjustmentsCents
-       FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1`,
+       FROM hr_commissions WHERE month=?1`,
     )
-    .bind(employeeId, month)
-    .first<CommissionTotalsRow>();
-  return row ? commissionNetCents(row) : 0;
+    .bind(month)
+    .all<CommissionTotalsRow & { employeeId: string }>();
+  const byEmployee = new Map<string, { netCents: number; grossCents: number }>();
+  for (const row of results ?? []) {
+    const netCents = commissionNetCents(row);
+    byEmployee.set(row.employeeId, { netCents, grossCents: netCents + Number(row.discountsCents || 0) });
+  }
+  return byEmployee;
 }
 
 /**
- * Total de benefícios do funcionário na competência — soma de todos os
- * lançamentos de hr_benefits (vários por mês são permitidos). Também
- * recalculado ao vivo, nunca gravado na Folha.
+ * Benefícios de TODOS os funcionários no mês — soma de todos os lançamentos
+ * de hr_benefits (vários por mês são permitidos): líquido (Σ amount_cents),
+ * bruto (Σ gross_cents, alimenta o Custo Total) e a parte líquida paga via
+ * Pix (alimenta a Folha Paga). Recalculado ao vivo, nunca gravado na Folha.
  */
-export async function computedBenefitsCentsFor(
-  database: Database,
-  employeeId: string,
-  month: string,
-): Promise<number> {
-  const row = await database
+export async function loadMonthBenefits(database: Database, month: string) {
+  const { results } = await database
     .prepare(
-      `SELECT COALESCE(SUM(amount_cents), 0) AS total
-       FROM hr_benefits WHERE employee_id=?1 AND month=?2`,
-    )
-    .bind(employeeId, month)
-    .first<{ total: number }>();
-  return Number(row?.total ?? 0);
-}
-
-/**
- * Comissão BRUTA do funcionário no mês — sem subtrair os descontos
- * (comissão + bônus + prêmios + ajustes). Usada pelo "Custo Total".
- */
-export async function computedCommissionGrossCentsFor(
-  database: Database,
-  employeeId: string,
-  month: string,
-): Promise<number> {
-  const row = await database
-    .prepare(
-      `SELECT commission_cents + commercial_premium_cents AS commissionCents, bonuses_cents AS bonusesCents,
-              premiums_cents AS premiumsCents, adjustments_cents AS adjustmentsCents
-       FROM hr_commissions WHERE employee_id=?1 AND month=?2 LIMIT 1`,
-    )
-    .bind(employeeId, month)
-    .first<{
-      commissionCents: number;
-      bonusesCents: number;
-      premiumsCents: number;
-      adjustmentsCents: number;
-    }>();
-  if (!row) return 0;
-  return (
-    Number(row.commissionCents || 0) +
-    Number(row.bonusesCents || 0) +
-    Number(row.premiumsCents || 0) +
-    Number(row.adjustmentsCents || 0)
-  );
-}
-
-/**
- * Benefícios BRUTOS do mês (Σ gross_cents) e a parte líquida paga via Pix
- * (Σ amount_cents onde payment_method='pix') — a primeira alimenta o Custo
- * Total, a segunda a Folha Paga.
- */
-export async function computedBenefitsSplitFor(
-  database: Database,
-  employeeId: string,
-  month: string,
-): Promise<{ grossCents: number; pixNetCents: number }> {
-  const row = await database
-    .prepare(
-      `SELECT COALESCE(SUM(gross_cents), 0) AS grossCents,
+      `SELECT employee_id AS employeeId, COALESCE(SUM(amount_cents), 0) AS netCents,
+              COALESCE(SUM(gross_cents), 0) AS grossCents,
               COALESCE(SUM(CASE WHEN payment_method = 'pix' THEN amount_cents ELSE 0 END), 0) AS pixNetCents
-       FROM hr_benefits WHERE employee_id=?1 AND month=?2`,
+       FROM hr_benefits WHERE month=?1 GROUP BY employee_id`,
     )
-    .bind(employeeId, month)
-    .first<{ grossCents: number; pixNetCents: number }>();
-  return {
-    grossCents: Number(row?.grossCents ?? 0),
-    pixNetCents: Number(row?.pixNetCents ?? 0),
-  };
+    .bind(month)
+    .all<{ employeeId: string; netCents: number; grossCents: number; pixNetCents: number }>();
+  return new Map(
+    (results ?? []).map((row) => [
+      row.employeeId,
+      { netCents: Number(row.netCents || 0), grossCents: Number(row.grossCents || 0), pixNetCents: Number(row.pixNetCents || 0) },
+    ]),
+  );
 }
 
 /**

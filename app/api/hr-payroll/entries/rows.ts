@@ -1,9 +1,7 @@
 import {
-  computedBenefitsCentsFor,
-  computedBenefitsSplitFor,
-  computedCommissionCentsFor,
-  computedCommissionGrossCentsFor,
   loadEmployerChargesBps,
+  loadMonthBenefits,
+  loadMonthCommissions,
   loadMonthValues,
   loadOvertimePayouts,
   type Database,
@@ -78,7 +76,7 @@ async function loadEmployeesFor(database: Database, companyId: string) {
 }
 
 export async function loadPayrollRows(database: Database, month: string, companyId: string) {
-  const [allEmployees, entriesResult, employerChargesBps, actingStores, dsrByEmployee, overtimePayouts, recurringResult] = await Promise.all([
+  const [allEmployees, entriesResult, employerChargesBps, actingStores, dsrByEmployee, overtimePayouts, recurringResult, commissions, benefits] = await Promise.all([
     loadEmployeesFor(database, ""),
     database
       .prepare(`SELECT ${ENTRY_COLUMNS} FROM hr_payroll_entries WHERE month=?1`)
@@ -99,6 +97,8 @@ export async function loadPayrollRows(database: Database, month: string, company
       )
       .bind(month)
       .all<{ employeeId: string; description: string; amountCents: number }>(),
+    loadMonthCommissions(database, month),
+    loadMonthBenefits(database, month),
   ]);
   const recurringByEmployee = new Map<string, Array<{ description: string; amountCents: number }>>();
   for (const row of recurringResult.results ?? []) {
@@ -121,84 +121,79 @@ export async function loadPayrollRows(database: Database, month: string, company
     (employee) => employee.status === "active" || entriesByEmployee.has(employee.id),
   );
 
-  const rows = await Promise.all(
-    visible.map(async (employee) => {
-      const entry = entriesByEmployee.get(employee.id) ?? null;
-      const values: PayrollManualValues = entry
-        ? {
-            baseSalaryCents: Number(entry.baseSalaryCents || 0),
-            bonusCents: Number(entry.bonusCents || 0),
-            overtimeCents: Number(entry.overtimeCents || 0),
-            additionsCents: Number(entry.additionsCents || 0),
-            deductionsCents: Number(entry.deductionsCents || 0),
-            otherCents: Number(entry.otherCents || 0),
-          }
-        : {
-            baseSalaryCents: Number(employee.salaryCents || 0),
-            bonusCents: 0,
-            overtimeCents: 0,
-            additionsCents: 0,
-            deductionsCents: 0,
-            otherCents: 0,
-          };
-      const overtimePayoutCents = overtimePayouts.get(employee.id);
-      if (overtimePayoutCents !== undefined) values.overtimeCents = overtimePayoutCents;
-      const [commissionCents, benefitsCents, commissionGrossCents, benefitsSplit] =
-        await Promise.all([
-          computedCommissionCentsFor(database, employee.id, month),
-          computedBenefitsCentsFor(database, employee.id, month),
-          computedCommissionGrossCentsFor(database, employee.id, month),
-          computedBenefitsSplitFor(database, employee.id, month),
-        ]);
-      const inputs = {
-        commissionNetCents: commissionCents,
-        commissionGrossCents,
-        benefitsNetCents: benefitsCents,
-        benefitsGrossCents: benefitsSplit.grossCents,
-        benefitsPixNetCents: benefitsSplit.pixNetCents,
-        employerChargesBps,
-        dsrCents: dsrByEmployee.get(employee.id) ?? 0,
-      };
-      // deductionsCents segue sendo só o AVULSO (o que a tela edita); o
-      // recorrente entra no cálculo e vem à parte.
-      const recurringDeductions = recurringByEmployee.get(employee.id) ?? [];
-      const recurringDeductionsCents = recurringDeductions.reduce((sum, item) => sum + item.amountCents, 0);
-      const withRecurring = { ...values, deductionsCents: values.deductionsCents + recurringDeductionsCents };
-      const breakdown = computePayrollBreakdown(withRecurring, inputs);
-      return {
-        id: entry?.id ?? "",
-        saved: Boolean(entry),
-        employeeId: employee.id,
-        employeeName: employee.fullName,
-        employeeStatus: employee.status,
-        roleTitle: employee.roleTitle,
-        admissionDate: employee.admissionDate,
-        companyId: employee.companyId,
-        companyName: employee.companyName,
-        month,
-        ...values,
-        recurringDeductionsCents,
-        recurringDeductions,
-        totalDeductionsCents: withRecurring.deductionsCents,
-        commissionCents,
-        benefitsCents,
-        commissionGrossCents,
-        benefitsGrossCents: benefitsSplit.grossCents,
-        dsrCents: inputs.dsrCents,
-        overtimeFromTimeTracking: overtimePayoutCents !== undefined,
-        employerChargesBps,
-        employerChargesCents: breakdown.employerChargesCents,
-        folhaPagaCents: breakdown.folhaPagaCents,
-        custoTotalCents: breakdown.custoTotalCents,
-        netCents: legacyNetCents(withRecurring, inputs),
-        notes: entry?.notes ?? "",
-        paymentDone: Number(entry?.paymentDone ?? 0),
-        paymentDate: entry?.paymentDate ?? "",
-        attachmentFileName: entry?.attachmentFileName ?? "",
-        attachmentSizeBytes: Number(entry?.attachmentSizeBytes ?? 0),
-      };
-    }),
-  );
-
-  return rows;
+  return visible.map((employee) => {
+    const entry = entriesByEmployee.get(employee.id) ?? null;
+    const values: PayrollManualValues = entry
+      ? {
+          baseSalaryCents: Number(entry.baseSalaryCents || 0),
+          bonusCents: Number(entry.bonusCents || 0),
+          overtimeCents: Number(entry.overtimeCents || 0),
+          additionsCents: Number(entry.additionsCents || 0),
+          deductionsCents: Number(entry.deductionsCents || 0),
+          otherCents: Number(entry.otherCents || 0),
+        }
+      : {
+          baseSalaryCents: Number(employee.salaryCents || 0),
+          bonusCents: 0,
+          overtimeCents: 0,
+          additionsCents: 0,
+          deductionsCents: 0,
+          otherCents: 0,
+        };
+    const overtimePayoutCents = overtimePayouts.get(employee.id);
+    if (overtimePayoutCents !== undefined) values.overtimeCents = overtimePayoutCents;
+    const commission = commissions.get(employee.id);
+    const benefit = benefits.get(employee.id);
+    const commissionCents = commission?.netCents ?? 0;
+    const commissionGrossCents = commission?.grossCents ?? 0;
+    const benefitsCents = benefit?.netCents ?? 0;
+    const benefitsSplit = { grossCents: benefit?.grossCents ?? 0, pixNetCents: benefit?.pixNetCents ?? 0 };
+    const inputs = {
+      commissionNetCents: commissionCents,
+      commissionGrossCents,
+      benefitsNetCents: benefitsCents,
+      benefitsGrossCents: benefitsSplit.grossCents,
+      benefitsPixNetCents: benefitsSplit.pixNetCents,
+      employerChargesBps,
+      dsrCents: dsrByEmployee.get(employee.id) ?? 0,
+    };
+    // deductionsCents segue sendo só o AVULSO (o que a tela edita); o
+    // recorrente entra no cálculo e vem à parte.
+    const recurringDeductions = recurringByEmployee.get(employee.id) ?? [];
+    const recurringDeductionsCents = recurringDeductions.reduce((sum, item) => sum + item.amountCents, 0);
+    const withRecurring = { ...values, deductionsCents: values.deductionsCents + recurringDeductionsCents };
+    const breakdown = computePayrollBreakdown(withRecurring, inputs);
+    return {
+      id: entry?.id ?? "",
+      saved: Boolean(entry),
+      employeeId: employee.id,
+      employeeName: employee.fullName,
+      employeeStatus: employee.status,
+      roleTitle: employee.roleTitle,
+      admissionDate: employee.admissionDate,
+      companyId: employee.companyId,
+      companyName: employee.companyName,
+      month,
+      ...values,
+      recurringDeductionsCents,
+      recurringDeductions,
+      totalDeductionsCents: withRecurring.deductionsCents,
+      commissionCents,
+      benefitsCents,
+      commissionGrossCents,
+      benefitsGrossCents: benefitsSplit.grossCents,
+      dsrCents: inputs.dsrCents,
+      overtimeFromTimeTracking: overtimePayoutCents !== undefined,
+      employerChargesBps,
+      employerChargesCents: breakdown.employerChargesCents,
+      folhaPagaCents: breakdown.folhaPagaCents,
+      custoTotalCents: breakdown.custoTotalCents,
+      netCents: legacyNetCents(withRecurring, inputs),
+      notes: entry?.notes ?? "",
+      paymentDone: Number(entry?.paymentDone ?? 0),
+      paymentDate: entry?.paymentDate ?? "",
+      attachmentFileName: entry?.attachmentFileName ?? "",
+      attachmentSizeBytes: Number(entry?.attachmentSizeBytes ?? 0),
+    };
+  });
 }
