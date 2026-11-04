@@ -102,11 +102,26 @@ test("férias: cadastra, lista no acompanhamento e só com RH Financeiro", async
   const ok = await callRoute(vacationsRoute.POST, ADMIN, "POST", "/api/hr-payroll/vacations", {
     employeeId: "e2", acquisitionStart: "2025-01-01", startDate: "2026-02-01", endDate: "2026-03-02", netCents: 250000, notes: "ok",
   });
-  assert.equal(ok.status, 201);
+  assert.equal(ok.status, 400, "sem DATA DO PAGAMENTO não salva");
+  const paid = await callRoute(vacationsRoute.POST, ADMIN, "POST", "/api/hr-payroll/vacations", {
+    employeeId: "e2", acquisitionStart: "2025-01-01", startDate: "2026-02-01", endDate: "2026-03-02", paymentDate: "2026-01-29", netCents: 250000, notes: "ok",
+  });
+  assert.equal(paid.status, 201, JSON.stringify(await paid.clone().json()));
   const data = await (await callRoute(vacationsRoute.GET, ADMIN, "GET", "/api/hr-payroll/vacations")).json();
   assert.equal(data.vacations[0].days, 30);
   assert.equal(data.vacations[0].notes, "OK");
   const bruno = data.summary.find((item) => item.employeeId === "e2");
   assert.equal(bruno.periods[0].remainingDays, 0);
   assert.equal(bruno.lastReturn, "2026-03-03");
+  assert.equal(data.vacations[0].paymentDate, "2026-01-29");
+  // DRE Funcionário: as férias aparecem no mês do PAGAMENTO, não no do gozo.
+  const dreRoute = await import("../app/api/hr-payroll/employee-dre/route.ts");
+  const dreOf = async (month) => (await (await callRoute(dreRoute.GET, ADMIN, "GET", `/api/hr-payroll/employee-dre?month=${month}`)).json()).vacations;
+  assert.deepEqual((await dreOf("2026-01")).map((row) => [row.personName, row.paymentDate, row.amountCents]), [["BRUNO", "2026-01-29", 250000]]);
+  assert.equal((await dreOf("2026-02")).length, 0);
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /<label for="rhFeriasFim">DATA DE RETORNO \*<\/label>/);
+  assert.match(html, /<label for="rhFeriasPagamento">DATA DO PAGAMENTO \*<\/label>/);
+  assert.match(html, /endDate:rhAddDays\(el\('rhFeriasFim'\)\.value, -1\)/);
 });

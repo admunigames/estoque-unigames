@@ -182,9 +182,15 @@ export async function GET(request: Request) {
     const storeIdOf = (employeeId: string) => monthStoreOf.get(employeeId) ||
       (employees.results ?? []).find((employee) => employee.id === employeeId)?.companyId || "";
     const vacationRows = await database
-      .prepare("SELECT employee_id AS employeeId, employee_name AS personName, start_date AS startDate, end_date AS endDate, net_cents AS amountCents, notes FROM hr_vacations WHERE substr(start_date, 1, 7) = ?1 ORDER BY employee_name")
+      // Mês do PAGAMENTO das férias (04/11/2026); sem data de pagamento, o do início.
+      .prepare(
+        `SELECT employee_id AS employeeId, employee_name AS personName, start_date AS startDate, end_date AS endDate,
+                payment_date AS paymentDate, net_cents AS amountCents, notes
+         FROM hr_vacations WHERE substr(CASE WHEN payment_date <> '' THEN payment_date ELSE start_date END, 1, 7) = ?1
+         ORDER BY employee_name`,
+      )
       .bind(month)
-      .all<{ employeeId: string; personName: string; startDate: string; endDate: string; amountCents: number; notes: string }>();
+      .all<{ employeeId: string; personName: string; startDate: string; endDate: string; paymentDate: string; amountCents: number; notes: string }>();
     const vacations = (vacationRows.results ?? [])
       .map((row) => ({ ...row, amountCents: Number(row.amountCents) || 0, companyName: storeNameOf(row.employeeId) }))
       .filter((row) => !companyId || storeIdOf(row.employeeId) === companyId);

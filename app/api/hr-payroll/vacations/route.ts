@@ -15,20 +15,22 @@ import {
 } from "../shared";
 
 // RH > Funcionários > FÉRIAS (31/10/2026): férias gozadas (início, fim,
-// valor líquido pago, observações), ligadas ao período aquisitivo, e o
-// ACOMPANHAMENTO de cada ativo (próximas férias e vencimento pela CLT —
-// app/lib/hr-vacations.ts). Férias NÃO entram na DRE.
+// valor líquido pago, DATA DO PAGAMENTO, observações), ligadas ao período
+// aquisitivo, e o ACOMPANHAMENTO de cada ativo (próximas férias e vencimento
+// pela CLT — app/lib/hr-vacations.ts). Na DRE Funcionário aparecem no mês do
+// PAGAMENTO (04/11/2026), só informativas. end_date = último dia de gozo; a
+// tela pede a DATA DE RETORNO (end_date + 1).
 //   GET               → { vacations, summary }
-//   POST {id?, employeeId, acquisitionStart, startDate, endDate, netCents, notes}
+//   POST {id?, employeeId, acquisitionStart, startDate, endDate, paymentDate, netCents, notes}
 //   DELETE ?id
 
 const COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName, acquisition_start AS acquisitionStart,
-  start_date AS startDate, end_date AS endDate, net_cents AS netCents, notes,
+  start_date AS startDate, end_date AS endDate, payment_date AS paymentDate, net_cents AS netCents, notes,
   updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
 type VacationRow = {
   id: string; employeeId: string; employeeName: string; acquisitionStart: string;
-  startDate: string; endDate: string; netCents: number; notes: string;
+  startDate: string; endDate: string; paymentDate: string; netCents: number; notes: string;
 };
 
 function guard(request: Request, write: boolean) {
@@ -84,12 +86,14 @@ export async function POST(request: Request) {
     const acquisitionStart = safeText(body.acquisitionStart, 10);
     const startDate = safeText(body.startDate, 10);
     const endDate = safeText(body.endDate, 10);
+    const paymentDate = safeText(body.paymentDate, 10);
     const netCents = centsValue(body.netCents ?? 0);
     const notes = safeText(body.notes, 500);
     if (!employeeId) return jsonResponse({ error: "SELECIONE O FUNCIONÁRIO." }, 400);
     if (!DATE_PATTERN.test(acquisitionStart)) return jsonResponse({ error: "ESCOLHA O PERÍODO AQUISITIVO." }, 400);
-    if (!DATE_PATTERN.test(startDate) || !DATE_PATTERN.test(endDate)) return jsonResponse({ error: "INFORME O INÍCIO E O FIM DAS FÉRIAS." }, 400);
-    if (endDate < startDate) return jsonResponse({ error: "O FIM DAS FÉRIAS NÃO PODE SER ANTES DO INÍCIO." }, 400);
+    if (!DATE_PATTERN.test(startDate) || !DATE_PATTERN.test(endDate)) return jsonResponse({ error: "INFORME O INÍCIO E O RETORNO DAS FÉRIAS." }, 400);
+    if (endDate < startDate) return jsonResponse({ error: "O RETORNO PRECISA SER DEPOIS DO INÍCIO DAS FÉRIAS." }, 400);
+    if (!DATE_PATTERN.test(paymentDate)) return jsonResponse({ error: "INFORME A DATA DO PAGAMENTO DAS FÉRIAS." }, 400);
     if (!Number.isFinite(netCents) || netCents < 0) return jsonResponse({ error: "INFORME UM VALOR LÍQUIDO VÁLIDO." }, 400);
     const database = await getD1();
     const employee = await database
@@ -101,10 +105,10 @@ export async function POST(request: Request) {
       const row = await database
         .prepare(
           `UPDATE hr_vacations SET employee_id=?1, employee_name=?2, acquisition_start=?3, start_date=?4, end_date=?5,
-             net_cents=?6, notes=?7, updated_by=?8, updated_by_name=?9, updated_at=CURRENT_TIMESTAMP
+             net_cents=?6, notes=?7, updated_by=?8, updated_by_name=?9, updated_at=CURRENT_TIMESTAMP, payment_date=?11
            WHERE id=?10 RETURNING id`,
         )
-        .bind(employeeId, employee.fullName, acquisitionStart, startDate, endDate, netCents, notes, actor.id, actorName(actor), id)
+        .bind(employeeId, employee.fullName, acquisitionStart, startDate, endDate, netCents, notes, actor.id, actorName(actor), id, paymentDate)
         .first<{ id: string }>();
       if (!row) return jsonResponse({ error: "FÉRIAS NÃO ENCONTRADAS." }, 404);
       return jsonResponse({ updated: true, id });
@@ -113,10 +117,10 @@ export async function POST(request: Request) {
     await database
       .prepare(
         `INSERT INTO hr_vacations (id, employee_id, employee_name, acquisition_start, start_date, end_date, net_cents, notes,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CURRENT_TIMESTAMP, ?9, ?10, CURRENT_TIMESTAMP)`,
+           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, payment_date)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CURRENT_TIMESTAMP, ?9, ?10, CURRENT_TIMESTAMP, ?11)`,
       )
-      .bind(newId, employeeId, employee.fullName, acquisitionStart, startDate, endDate, netCents, notes, actor.id, actorName(actor))
+      .bind(newId, employeeId, employee.fullName, acquisitionStart, startDate, endDate, netCents, notes, actor.id, actorName(actor), paymentDate)
       .run();
     return jsonResponse({ created: true, id: newId }, 201);
   } catch (error) {

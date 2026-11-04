@@ -3761,6 +3761,8 @@ export const hrVacations = pgTable(
     acquisitionStart: text("acquisition_start").notNull().default(""),
     startDate: text("start_date").notNull(),
     endDate: text("end_date").notNull(),
+    // Dia em que as férias foram PAGAS (migration 0127) — mês da DRE.
+    paymentDate: text("payment_date").notNull().default(""),
     netCents: integer("net_cents").notNull().default(0),
     notes: text("notes").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),

@@ -7108,7 +7108,7 @@
             <button class="btn-accent" id="btnRhFeriasNova" type="button">REGISTRAR FÉRIAS</button>
           </div>
         </div>
-        <p class="purchase-field-help">REGRA CLT: CADA 12 MESES DESDE A ADMISSÃO DÃO 30 DIAS; AS FÉRIAS DO PERÍODO VENCEM 12 MESES DEPOIS DO FIM DELE. FÉRIAS NÃO ENTRAM NA DRE.</p>
+        <p class="purchase-field-help">REGRA CLT: CADA 12 MESES DESDE A ADMISSÃO DÃO 30 DIAS; AS FÉRIAS DO PERÍODO VENCEM 12 MESES DEPOIS DO FIM DELE. GOZO = DO INÍCIO ATÉ A VÉSPERA DO RETORNO. NA DRE FUNCIONÁRIO AS FÉRIAS APARECEM NO MÊS DO PAGAMENTO (SÓ INFORMATIVO, NÃO SOMAM NO TOTAL).</p>
         <div class="table-panel responsive-table" id="rhFeriasAnualPanel">
           <div class="table-scroll">
             <table>
@@ -7120,7 +7120,7 @@
         <div class="table-panel responsive-table" id="rhFeriasRegistrosPanel" hidden>
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Funcionário</th><th>Período aquisitivo</th><th>Início</th><th>Fim</th><th>Dias</th><th>Retorno</th><th>Valor líquido</th><th>Observações</th><th class="no-print"></th></tr></thead>
+              <thead><tr><th>Funcionário</th><th>Período aquisitivo</th><th>Início</th><th>Retorno</th><th>Dias de gozo</th><th>Pagamento</th><th>Valor líquido</th><th>Observações</th><th class="no-print"></th></tr></thead>
               <tbody id="rhFeriasRegistrosBody"><tr><td colspan="9" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
@@ -13250,7 +13250,8 @@
       <div class="purchase-field full"><label for="rhFeriasFuncionario">FUNCIONÁRIO *</label><select id="rhFeriasFuncionario" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field full"><label for="rhFeriasPeriodo">PERÍODO AQUISITIVO *</label><select id="rhFeriasPeriodo" required></select></div>
       <div class="purchase-field"><label for="rhFeriasInicio">INÍCIO DAS FÉRIAS *</label><input type="date" id="rhFeriasInicio" required></div>
-      <div class="purchase-field"><label for="rhFeriasFim">FIM DAS FÉRIAS *</label><input type="date" id="rhFeriasFim" required></div>
+      <div class="purchase-field"><label for="rhFeriasFim">DATA DE RETORNO *</label><input type="date" id="rhFeriasFim" required></div>
+      <div class="purchase-field"><label for="rhFeriasPagamento">DATA DO PAGAMENTO *</label><input type="date" id="rhFeriasPagamento" required></div>
       <div class="purchase-field"><label for="rhFeriasValor">VALOR LÍQUIDO PAGO (R$)</label><input type="text" inputmode="decimal" id="rhFeriasValor" placeholder="R$ 0,00"></div>
       <div class="purchase-field"><label>PERÍODO GOZADO</label><p class="purchase-field-help" id="rhFeriasDias" style="margin:8px 0 0;">—</p></div>
       <div class="purchase-field full"><label for="rhFeriasObs">OBSERVAÇÕES DAS FÉRIAS</label><textarea id="rhFeriasObs" rows="2" maxlength="500"></textarea></div>
@@ -48317,9 +48318,9 @@ function renderHomeTasks(){
       '<td data-label="Funcionário"><strong>'+escapeHtml(row.employeeName)+'</strong></td>'+
       '<td data-label="Período aquisitivo">'+escapeHtml(rhFormatDate(row.acquisitionStart)+' A '+rhFormatDate(rhAddDays(rhAddYears(row.acquisitionStart, 1), -1)))+'</td>'+
       '<td data-label="Início">'+escapeHtml(rhFormatDate(row.startDate))+'</td>'+
-      '<td data-label="Fim">'+escapeHtml(rhFormatDate(row.endDate))+'</td>'+
-      '<td data-label="Dias">'+row.days+'</td>'+
       '<td data-label="Retorno">'+escapeHtml(rhFormatDate(rhAddDays(row.endDate, 1)))+'</td>'+
+      '<td data-label="Dias de gozo">'+row.days+'</td>'+
+      '<td data-label="Pagamento">'+(row.paymentDate ? escapeHtml(rhFormatDate(row.paymentDate)) : '<span class="status-pill waiting">SEM DATA</span>')+'</td>'+
       '<td data-label="Valor líquido">'+formatCentsBRL(row.netCents)+'</td>'+
       '<td data-label="Observações">'+escapeHtml(row.notes || '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;"><button class="btn-outline btn-sm" type="button" data-rh-ferias-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
@@ -48335,10 +48336,12 @@ function renderHomeTasks(){
       : '<option value="">CADASTRE A DATA DE ADMISSÃO DO FUNCIONÁRIO</option>';
     el('rhFeriasPeriodo').value = selected || (item && item.next ? item.next.start : '') || el('rhFeriasPeriodo').value;
   }
+  // DATA DE RETORNO = dia em que volta ao trabalho; o gozo vai do início até
+  // a véspera do retorno (end_date gravado = retorno − 1).
   function rhFeriasUpdateDays(){
-    const start = el('rhFeriasInicio').value, end = el('rhFeriasFim').value;
-    const days = rhVacationDays(start, end);
-    el('rhFeriasDias').textContent = days ? days+' DIAS · RETORNO EM '+rhFormatDate(rhAddDays(end, 1)) : '—';
+    const start = el('rhFeriasInicio').value, back = el('rhFeriasFim').value;
+    const days = back > start ? rhVacationDays(start, rhAddDays(back, -1)) : 0;
+    el('rhFeriasDias').textContent = days ? days+' DIAS DE GOZO · DE '+rhFormatDate(start)+' ATÉ O RETORNO EM '+rhFormatDate(back) : '—';
   }
   function openRhFerias(row, employeeId){
     el('rhFeriasForm').reset();
@@ -48350,7 +48353,8 @@ function renderHomeTasks(){
     el('rhFeriasFuncionario').value = row ? row.employeeId : (employeeId || '');
     rhFeriasFillPeriods(el('rhFeriasFuncionario').value, row ? row.acquisitionStart : '');
     el('rhFeriasInicio').value = row ? row.startDate : '';
-    el('rhFeriasFim').value = row ? row.endDate : '';
+    el('rhFeriasFim').value = row ? rhAddDays(row.endDate, 1) : '';
+    el('rhFeriasPagamento').value = row ? (row.paymentDate || '') : '';
     if(row && row.netCents) setCurrencyValue(el('rhFeriasValor'), row.netCents / 100); else { el('rhFeriasValor').value = ''; el('rhFeriasValor').dataset.rawValue = ''; }
     el('rhFeriasObs').value = row ? row.notes || '' : '';
     el('rhFeriasStatus').textContent = '';
@@ -48378,10 +48382,12 @@ function renderHomeTasks(){
     const status = el('rhFeriasStatus');
     const netCents = parseBRLToCents(getCurrencyValue(el('rhFeriasValor')) || '0');
     if(netCents === null){ status.textContent = 'INFORME UM VALOR LÍQUIDO VÁLIDO.'; return; }
+    if(!(el('rhFeriasFim').value > el('rhFeriasInicio').value)){ status.textContent = 'O RETORNO PRECISA SER DEPOIS DO INÍCIO DAS FÉRIAS.'; return; }
     try{
       await rhApiRequest('/vacations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         id:el('rhFeriasId').value || undefined, employeeId:el('rhFeriasFuncionario').value, acquisitionStart:el('rhFeriasPeriodo').value,
-        startDate:el('rhFeriasInicio').value, endDate:el('rhFeriasFim').value, netCents, notes:el('rhFeriasObs').value
+        startDate:el('rhFeriasInicio').value, endDate:rhAddDays(el('rhFeriasFim').value, -1), paymentDate:el('rhFeriasPagamento').value,
+        netCents, notes:el('rhFeriasObs').value
       })});
       el('rhFeriasDialog').close();
       await loadRhFerias();
@@ -50225,7 +50231,8 @@ function renderHomeTasks(){
           'CUSTO TOTAL: '+money(sum(list,'amountCents')))).join(''),
         faceponto.length ? 'TOTAL GERAL FACEPONTO: '+money(sum(faceponto,'amountCents')) : ''),
       block('FÉRIAS LÍQUIDAS',
-        vacations.length ? '<ul>'+vacations.map(item => li(escapeHtml(item.personName)+' — '+money(item.amountCents)+' ('+ddmm(item.startDate)+' A '+ddmm(item.endDate)+')'+(item.notes ? ' — '+escapeHtml(item.notes) : ''))).join('')+'</ul>' : '',
+        vacations.length ? '<ul>'+vacations.map(item => li(escapeHtml(item.personName)+' — '+money(item.amountCents)+(item.paymentDate ? ' · PAGO EM '+ddmm(item.paymentDate) : '')+
+          ' · GOZO '+ddmm(item.startDate)+' ATÉ O RETORNO '+ddmm(rhAddDays(item.endDate, 1))+(item.notes ? ' — '+escapeHtml(item.notes) : ''))).join('')+'</ul>' : '',
         vacations.length ? 'TOTAL GERAL FÉRIAS LÍQUIDAS: '+money(sum(vacations,'amountCents'))+' · INFORMATIVO, NÃO ENTRA NA DRE' : ''),
       block('RESCISÃO',
         terminations.length ? '<ul>'+terminations.map(item => li(escapeHtml(item.personName)+' — '+money(item.severanceCents)+
