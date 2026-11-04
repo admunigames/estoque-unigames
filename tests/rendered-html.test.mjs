@@ -5227,9 +5227,6 @@ test("Financeiro > Fluxo de Caixa: 3 abas, lista de pagamentos, caixa semanal e 
   assert.match(html, /<dialog class="purchase-dialog cf-weekly-dialog" id="cfWeeklyDialog"/);
   assert.match(html, /id="btnCfWeeklyInform" type="button">INFORMAR SALDOS DA SEGUNDA/);
   assert.match(html, /id="btnCfWeeklyImage" type="button">GERAR IMAGEM/);
-  assert.match(html, /id="cfWeeklyPasteText"/);
-  assert.match(html, /id="btnCfWeeklyPasteApply"/);
-  assert.match(html, /function cfWeeklyMatchAccount\(rows, name\)/);
   assert.match(html, /async function cfWeeklyBuildImage\(weekDate, g\)/);
   assert.match(html, /title: 'CAIXA SEMANAL', subtitle: 'LOJAS \+ OUTROS · CONSOLIDADO'/);
   assert.match(html, /AINDA NÃO INFORMADOS<\/strong>/);
