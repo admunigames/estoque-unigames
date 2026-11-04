@@ -2388,7 +2388,7 @@ test("oferece documentos para todos os grupos e separa cadastrar/editar/excluir 
   assert.match(html, /const UPLOAD_IMAGE_MAX_SIDE = 1600;/);
   for (const sig of [
     "uploadDocument(file, opts)", "uploadOsNoteAttachment(osNoteId, file)", "uploadPaymentReceipt(payableId, paymentId, file)",
-    "uploadObraEntryAttachment(entryId, file)", "uploadInvoiceFile(uploadUrl, file, extraFields)", "uploadRhFolhaAttachment(entryId, file)",
+    "uploadObraEntryAttachment(entryId, file)", "uploadInvoiceFile(uploadUrl, file, extraFields)",
     "uploadRhStoreTrackAttachment(kind, id, file)", "uploadRecAttachment(kind, candidateId, file)", "uploadFardTermFile(termId, file)",
   ]) {
     assert.ok(html.includes(`async function ${sig}{\n    file = await prepareUploadFile(file);`), sig + " reduz a imagem antes de subir");

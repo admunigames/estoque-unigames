@@ -1623,6 +1623,8 @@ export const hrPayrollEntries = pgTable(
     companyName: text("company_name").notNull().default(""),
     month: text("month").notNull(),
     baseSalaryCents: integer("base_salary_cents").notNull().default(0),
+    // CONTRACHEQUE digitado (migration 0129) — só para o pagamento da Folha.
+    payslipCents: integer("payslip_cents").notNull().default(0),
     bonusCents: integer("bonus_cents").notNull().default(0),
     overtimeCents: integer("overtime_cents").notNull().default(0),
     additionsCents: integer("additions_cents").notNull().default(0),
@@ -1846,6 +1848,8 @@ export const hrCommissions = pgTable(
     commissionCents: integer("commission_cents").notNull().default(0),
     // PREMIAÇÃO do Comercial, separada da comissão (migration 0110).
     commercialPremiumCents: integer("commercial_premium_cents").notNull().default(0),
+    // Operacional (migration 0129): parte de comissão+premiação que é despesa da ASSISTÊNCIA na DRE.
+    assistCents: integer("assist_cents").notNull().default(0),
     bonusesCents: integer("bonuses_cents").notNull().default(0),
     premiumsCents: integer("premiums_cents").notNull().default(0),
     discountsCents: integer("discounts_cents").notNull().default(0),

@@ -71,8 +71,8 @@ test("rota: INSS/FGTS da folha pela loja cadastrada; sem lançamento FGTS = 0; b
   const row = report.byCnpj.find((item) => item.cnpj === "11222333000181");
   const byName = Object.fromEntries(row.people.map((p) => [p.personName, p]));
   assert.deepEqual([byName.ANA.fgtsCents, byName.BIA.fgtsCents, byName.DAVI.fgtsCents], [16000, 0, 14656]);
-  // CAIO: 1.500 + 300 + 50 (premiação) + 100 (HE) + 50 (DSR) = 2.000 de base; sem lançamento, FGTS 0.
-  assert.deepEqual([byName.CAIO.baseCents, byName.CAIO.fgtsCents], [200000, 0]);
+  // CAIO: 1.500 + 300 + 50 (premiação) + 100 (HE) = 1.950 de base (o DSR saiu em 04/11/2026); sem lançamento, FGTS 0.
+  assert.deepEqual([byName.CAIO.baseCents, byName.CAIO.fgtsCents], [195000, 0]);
   assert.equal(row.fgtsMonthCents, 30656);
   assert.equal(row.inssCents, 30056);
   // O INSS DO MÊS da DRE e o da aba são o mesmo valor (kind 'inss'), sem duplicar.

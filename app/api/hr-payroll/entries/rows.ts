@@ -2,7 +2,6 @@ import {
   loadEmployerChargesBps,
   loadMonthBenefits,
   loadMonthCommissions,
-  loadMonthValues,
   loadOvertimePayouts,
   type Database,
 } from "../shared";
@@ -26,6 +25,7 @@ export type EntryRow = {
   additionsCents: number;
   deductionsCents: number;
   otherCents: number;
+  payslipCents: number;
   notes: string;
   paymentDone: number;
   paymentDate: string;
@@ -49,13 +49,17 @@ export type EmployeeBasics = {
   admissionDate: string;
   salaryCents: number;
   status: string;
+  admissionCompanyId: string;
+  admissionCompanyName: string;
+  pixKey: string;
+  bankName: string;
 };
 
 export const ENTRY_COLUMNS = `id, employee_id AS employeeId, employee_name AS employeeName,
   company_id AS companyId, company_name AS companyName, month,
   base_salary_cents AS baseSalaryCents, bonus_cents AS bonusCents,
   overtime_cents AS overtimeCents, additions_cents AS additionsCents,
-  deductions_cents AS deductionsCents, other_cents AS otherCents, notes,
+  deductions_cents AS deductionsCents, other_cents AS otherCents, payslip_cents AS payslipCents, notes,
   payment_done AS paymentDone, payment_date AS paymentDate,
   attachment_file_name AS attachmentFileName, attachment_r2_key AS attachmentR2Key,
   attachment_size_bytes AS attachmentSizeBytes, created_by AS createdBy,
@@ -67,7 +71,9 @@ async function loadEmployeesFor(database: Database, companyId: string) {
   const result = await database
     .prepare(
       `SELECT id, full_name AS fullName, company_id AS companyId, company_name AS companyName,
-              role_title AS roleTitle, admission_date AS admissionDate, salary_cents AS salaryCents, status
+              role_title AS roleTitle, admission_date AS admissionDate, salary_cents AS salaryCents, status,
+              admission_company_id AS admissionCompanyId, admission_company_name AS admissionCompanyName,
+              pix_key AS pixKey, bank_name AS bankName
        FROM hr_employees ${where} ORDER BY full_name ASC`,
     )
     .bind(...(companyId ? [companyId] : []))
@@ -76,7 +82,7 @@ async function loadEmployeesFor(database: Database, companyId: string) {
 }
 
 export async function loadPayrollRows(database: Database, month: string, companyId: string) {
-  const [allEmployees, entriesResult, employerChargesBps, actingStores, dsrByEmployee, overtimePayouts, recurringResult, commissions, benefits] = await Promise.all([
+  const [allEmployees, entriesResult, employerChargesBps, actingStores, overtimePayouts, recurringResult, commissions, benefits] = await Promise.all([
     loadEmployeesFor(database, ""),
     database
       .prepare(`SELECT ${ENTRY_COLUMNS} FROM hr_payroll_entries WHERE month=?1`)
@@ -84,8 +90,6 @@ export async function loadPayrollRows(database: Database, month: string, company
       .all<EntryRow>(),
     loadEmployerChargesBps(database),
     actingStoresForMonth(database, month),
-    // DSR MANUAL do mês (hr_employee_month_values) — entra no custo total.
-    loadMonthValues(database, month, "dsr"),
     // HE A PAGAR do Controle de Horas (fonte única quando lançada).
     loadOvertimePayouts(database, month),
     // DESCONTO RECORRENTE vigente no mês (migration 0124) — somado ao avulso.
@@ -155,7 +159,6 @@ export async function loadPayrollRows(database: Database, month: string, company
       benefitsGrossCents: benefitsSplit.grossCents,
       benefitsPixNetCents: benefitsSplit.pixNetCents,
       employerChargesBps,
-      dsrCents: dsrByEmployee.get(employee.id) ?? 0,
     };
     // deductionsCents segue sendo só o AVULSO (o que a tela edita); o
     // recorrente entra no cálculo e vem à parte.
@@ -178,11 +181,18 @@ export async function loadPayrollRows(database: Database, month: string, company
       recurringDeductionsCents,
       recurringDeductions,
       totalDeductionsCents: withRecurring.deductionsCents,
+      // Pagamento (04/11/2026): VALOR TOTAL = CONTRACHEQUE + PREMIAÇÃO − DESCONTOS.
+      bankName: employee.bankName,
+      pixKey: employee.pixKey,
+      admissionCompanyId: employee.admissionCompanyId || employee.companyId,
+      admissionCompanyName: employee.admissionCompanyName || employee.companyName,
+      payslipCents: Number(entry?.payslipCents ?? 0),
+      premiumCents: commission?.premiumCents ?? 0,
+      totalPayCents: Number(entry?.payslipCents ?? 0) + (commission?.premiumCents ?? 0) - withRecurring.deductionsCents,
       commissionCents,
       benefitsCents,
       commissionGrossCents,
       benefitsGrossCents: benefitsSplit.grossCents,
-      dsrCents: inputs.dsrCents,
       overtimeFromTimeTracking: overtimePayoutCents !== undefined,
       employerChargesBps,
       employerChargesCents: breakdown.employerChargesCents,

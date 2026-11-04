@@ -1,7 +1,7 @@
 // CUSTO TOTAL POR FUNCIONÁRIO (RH > Folha de Pagamento, só para quem tem
 // Financeiro) — lógica pura, sem banco. Fórmulas conferidas com a planilha de
 // exemplo do usuário (22/10/2026), linha ALEXANDRE:
-//   remuneração = salário base + comissão + HE + DSR (1.648,00 + 1.760,00 + 655,38 = 4.063,38)
+//   remuneração = salário base + comissão + HE (o DSR saiu em 04/11/2026)
 //   FGTS mensal              = 8% × remuneração                         → 325,07
 //   provisão férias + 1/3    = remuneração ÷ 12 × 4/3                   → 451,49
 //   provisão 13º             = remuneração ÷ 12                         → 338,62
@@ -10,8 +10,7 @@
 //   provisão FGTS rescisório = 40% × (FGTS mensal + FGTS férias + FGTS 13º) → 155,31
 //   custo total = remuneração + todas as colunas de FGTS/provisão.
 // Cada coluna é arredondada ao centavo antes de entrar na seguinte (como na
-// planilha). O DSR é MANUAL (hr_employee_month_values, kind 'dsr') — sem
-// cálculo automático até o usuário definir as verbas.
+// planilha).
 
 export const FGTS_RATE = 0.08;
 export const FGTS_TERMINATION_RATE = 0.4;
@@ -20,7 +19,6 @@ export type EmployeeCostInput = {
   baseSalaryCents: number;
   commissionCents: number;
   overtimeCents: number;
-  dsrCents: number;
 };
 
 export type EmployeeCost = EmployeeCostInput & {
@@ -40,8 +38,8 @@ export function computeEmployeeCost(input: EmployeeCostInput): EmployeeCost {
   const baseSalaryCents = cents(input.baseSalaryCents);
   const commissionCents = cents(input.commissionCents);
   const overtimeCents = cents(input.overtimeCents);
-  const dsrCents = cents(input.dsrCents);
-  const remunerationCents = baseSalaryCents + commissionCents + overtimeCents + dsrCents;
+  // DSR saiu em 04/11/2026 (pedido do usuário).
+  const remunerationCents = baseSalaryCents + commissionCents + overtimeCents;
   const fgtsCents = Math.round(remunerationCents * FGTS_RATE);
   const vacationProvisionCents = Math.round((remunerationCents / 12) * (4 / 3));
   const thirteenthProvisionCents = Math.round(remunerationCents / 12);
@@ -52,7 +50,6 @@ export function computeEmployeeCost(input: EmployeeCostInput): EmployeeCost {
     baseSalaryCents,
     commissionCents,
     overtimeCents,
-    dsrCents,
     remunerationCents,
     fgtsCents,
     vacationProvisionCents,
@@ -75,7 +72,6 @@ const SUM_KEYS = [
   "baseSalaryCents",
   "commissionCents",
   "overtimeCents",
-  "dsrCents",
   "remunerationCents",
   "fgtsCents",
   "vacationProvisionCents",

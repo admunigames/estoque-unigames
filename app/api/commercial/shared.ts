@@ -663,6 +663,8 @@ type CommercialPayee = {
   commissionCents: number;
   premiumCents: number;
   totalCents: number;
+  /** Parte que é despesa da ASSISTÊNCIA na DRE (operacional: comissão do feito da assistência + premiação da assistência). */
+  assistCents: number;
 };
 
 /** Vendedores, líderes e operacionais do mês com o que vai para o RH. */
@@ -674,6 +676,7 @@ async function commercialPayees(database: Database, month: string): Promise<Comm
       commissionCents: seller.metrics.commission.payslipCents,
       premiumCents: seller.metrics.commission.premiumCents,
       totalCents: seller.metrics.commission.totalCents,
+      assistCents: 0,
     })),
     ...operationals.map((person) => ({
       ...person,
@@ -681,6 +684,7 @@ async function commercialPayees(database: Database, month: string): Promise<Comm
       commissionCents: person.commission.payslipCents,
       premiumCents: person.commission.premiumCents,
       totalCents: person.commission.totalCents,
+      assistCents: person.commission.commissionCents + person.commission.assistPremiumCents,
     })),
   ];
 }
@@ -732,21 +736,21 @@ export async function syncHrCommissions(database: Database, month: string, actor
       return id
         ? database
           .prepare(
-            `UPDATE hr_commissions SET commission_cents=?1, commercial_premium_cents=?6, updated_by=?2, updated_by_name=?3, updated_at=?4
+            `UPDATE hr_commissions SET commission_cents=?1, commercial_premium_cents=?6, assist_cents=?7, updated_by=?2, updated_by_name=?3, updated_at=?4
              WHERE id=?5`,
           )
-          .bind(seller.commissionCents, actor.id, who, now, id, seller.premiumCents)
+          .bind(seller.commissionCents, actor.id, who, now, id, seller.premiumCents, seller.assistCents)
         : database
           .prepare(
             `INSERT INTO hr_commissions
-              (id, employee_id, employee_name, company_id, company_name, month, commission_cents, commercial_premium_cents,
+              (id, employee_id, employee_name, company_id, company_name, month, commission_cents, commercial_premium_cents, assist_cents,
                bonuses_cents, premiums_cents, discounts_cents, adjustments_cents, notes,
                created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?11, 0, 0, 0, 0, '', ?8, ?9, ?10, ?8, ?9, ?10)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?11, ?12, 0, 0, 0, 0, '', ?8, ?9, ?10, ?8, ?9, ?10)`,
           )
           .bind(
             crypto.randomUUID(), seller.employeeId, seller.name, seller.companyId, seller.companyName, month,
-            seller.commissionCents, actor.id, who, now, seller.premiumCents,
+            seller.commissionCents, actor.id, who, now, seller.premiumCents, seller.assistCents,
           );
     });
     if (statements.length) await database.batch(statements);

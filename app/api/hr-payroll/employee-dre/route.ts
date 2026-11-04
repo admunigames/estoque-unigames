@@ -97,7 +97,7 @@ export async function GET(request: Request) {
     // TOTAL DA GUIA do CNPJ lançado (04/11/2026), ele substitui a soma. A base
     // (salário + comissão + HE + DSR, ou o salário do cadastro) segue informativa.
     const monthEnd = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
-    const [employees, allTerminations, assignments, payroll, commissions, dsr, inss, overtimePayouts, fgts] = await Promise.all([
+    const [employees, allTerminations, assignments, payroll, commissions, inss, overtimePayouts, fgts] = await Promise.all([
       database
         .prepare(
           `SELECT id, full_name AS fullName, admission_date AS admissionDate, status, company_id AS companyId,
@@ -131,7 +131,6 @@ export async function GET(request: Request) {
         )
         .bind(month)
         .all<{ employeeId: string; total: number }>(),
-      loadMonthValues(database, month, "dsr"),
       loadMonthValues(database, month, "inss"),
       loadOvertimePayouts(database, month),
       loadMonthValues(database, month, "fgts"),
@@ -143,8 +142,7 @@ export async function GET(request: Request) {
       (payroll.results ?? []).map((row) => [
         row.employeeId,
         (Number(row.baseSalaryCents) || 0) + (overtimePayouts.get(row.employeeId) ?? (Number(row.overtimeCents) || 0)) +
-          (commissionOf.get(row.employeeId) ?? 0) +
-          (dsr.get(row.employeeId) ?? 0),
+          (commissionOf.get(row.employeeId) ?? 0),
       ]),
     );
     const inMonth = (employees.results ?? []).filter((employee) => activeOn(employee, terms, monthEnd) ||

@@ -346,10 +346,15 @@ export async function loadMonthCommissions(database: Database, month: string) {
     )
     .bind(month)
     .all<CommissionTotalsRow & { employeeId: string }>();
-  const byEmployee = new Map<string, { netCents: number; grossCents: number }>();
+  const byEmployee = new Map<string, { netCents: number; grossCents: number; premiumCents: number }>();
   for (const row of results ?? []) {
     const netCents = commissionNetCents(row);
-    byEmployee.set(row.employeeId, { netCents, grossCents: netCents + Number(row.discountsCents || 0) });
+    byEmployee.set(row.employeeId, {
+      netCents,
+      grossCents: netCents + Number(row.discountsCents || 0),
+      // Só a PREMIAÇÃO (do Comercial + as lançadas no RH) — coluna da Folha.
+      premiumCents: Number(row.commercialPremiumCents || 0) + Number(row.premiumsCents || 0),
+    });
   }
   return byEmployee;
 }

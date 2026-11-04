@@ -9,8 +9,7 @@ import { loadPayrollRows } from "../entries/rows";
 // (mesmas linhas da tela) + a linha TOTAL. Fórmulas em app/lib/hr-cost-report.ts.
 //   salário base = o da folha lançada (sem folha, o do cadastro);
 //   comissão     = comissão bruta do Comissionamento (sem os descontos);
-//   HE           = horas extras em R$ da folha;
-//   DSR          = valor MANUAL do mês (hr_employee_month_values).
+//   HE           = horas extras em R$ da folha (DSR saiu em 04/11/2026).
 
 function canSeeCostReport(actor: Identity) {
   return canManagePayroll(actor) && (actor.role === "admin" || actor.permissions.some((permission) => permission.startsWith("finance:")));
@@ -39,7 +38,6 @@ export async function GET(request: Request) {
         baseSalaryCents: row.baseSalaryCents,
         commissionCents: row.commissionGrossCents,
         overtimeCents: row.overtimeCents,
-        dsrCents: row.dsrCents,
       }),
     }));
     return jsonResponse({ month, companyId, rows, total: sumEmployeeCosts(rows) });

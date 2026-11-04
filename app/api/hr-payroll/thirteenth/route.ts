@@ -91,6 +91,30 @@ export async function GET(request: Request) {
 }
 
 async function markPaid(database: Database, actor: Identity, body: JsonMap) {
+  // Lote (04/11/2026): ids[] de uma vez.
+  if (Array.isArray(body.ids)) {
+    const ids = [...new Set((body.ids as unknown[]).map((value) => safeText(value, 80)).filter(Boolean))];
+    if (!ids.length) return jsonResponse({ error: "SELECIONE OS LANÇAMENTOS." }, 400);
+    const paymentDone = body.paymentDone === false ? 0 : 1;
+    const paymentDate = safeText(body.paymentDate, 10);
+    if (paymentDone && !DATE_PATTERN.test(paymentDate)) return jsonResponse({ error: "INFORME A DATA DO PAGAMENTO." }, 400);
+    const found = await database
+      .prepare(`SELECT id FROM hr_thirteenth_salary WHERE id IN (${ids.map((_, index) => `?${index + 1}`).join(",")})`)
+      .bind(...ids)
+      .all<{ id: string }>();
+    if ((found.results ?? []).length !== ids.length) return jsonResponse({ error: "ALGUM LANÇAMENTO SELECIONADO NÃO FOI ENCONTRADO." }, 404);
+    await database.batch(
+      ids.map((rowId) =>
+        database
+          .prepare(
+            `UPDATE hr_thirteenth_salary SET payment_done=?1, payment_date=?2, updated_by=?3, updated_by_name=?4,
+                    updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
+          )
+          .bind(paymentDone, paymentDone ? paymentDate : "", actor.id, actorName(actor), rowId),
+      ),
+    );
+    return jsonResponse({ updated: ids.length, paymentDone });
+  }
   const id = safeText(body.id, 80);
   if (!id) return jsonResponse({ error: "LANÇAMENTO INVÁLIDO." }, 400);
   const paymentDone = body.paymentDone === false ? 0 : 1;
@@ -114,6 +138,63 @@ async function markPaid(database: Database, actor: Identity, body: JsonMap) {
   return jsonResponse({ updated: true, id, paymentDone });
 }
 
+/**
+ * LANÇAR EM LOTE (04/11/2026): { year, installment, rows:[{employeeId, grossCents, deductionsCents}] }.
+ * Cria ou atualiza a parcela de cada funcionário (observação e pagamento ficam);
+ * valida tudo antes — com qualquer erro nada é gravado.
+ */
+async function saveBatch(database: Database, actor: Identity, body: JsonMap) {
+  const year = safeText(body.year, 4);
+  const installment = safeText(body.installment, 20);
+  if (!YEAR_PATTERN.test(year)) return jsonResponse({ error: "INFORME UM ANO VÁLIDO (AAAA)." }, 400);
+  if (!isOneOf(INSTALLMENTS, installment)) return jsonResponse({ error: "SELECIONE A PARCELA (ADIANTAMENTO, FINAL OU ÚNICO)." }, 400);
+  const rows = Array.isArray(body.rows) ? (body.rows as JsonMap[]) : [];
+  if (!rows.length) return jsonResponse({ error: "NENHUM VALOR PARA GRAVAR." }, 400);
+  if (new Set(rows.map((row) => safeText(row.employeeId, 80))).size !== rows.length) {
+    return jsonResponse({ error: "O MESMO FUNCIONÁRIO ESTÁ DUAS VEZES NA LISTA." }, 400);
+  }
+  const statements = [];
+  for (const row of rows) {
+    const employeeId = safeText(row.employeeId, 80);
+    const grossCents = centsValue(row.grossCents);
+    const deductionsCents = centsValue(row.deductionsCents ?? 0);
+    const employee = employeeId ? await loadEmployee(database, employeeId) : null;
+    if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO NA LISTA." }, 404);
+    if (!Number.isFinite(grossCents) || grossCents <= 0) return jsonResponse({ error: `INFORME O BRUTO DE ${employee.fullName}.` }, 400);
+    if (!Number.isFinite(deductionsCents) || deductionsCents < 0 || deductionsCents > grossCents) {
+      return jsonResponse({ error: `DESCONTO INVÁLIDO PARA ${employee.fullName}.` }, 400);
+    }
+    const existing = await database
+      .prepare("SELECT id FROM hr_thirteenth_salary WHERE employee_id=?1 AND year=?2 AND installment=?3 LIMIT 1")
+      .bind(employeeId, year, installment)
+      .first<{ id: string }>();
+    statements.push(
+      existing
+        ? database
+            .prepare(
+              `UPDATE hr_thirteenth_salary SET gross_cents=?1, deductions_cents=?2, updated_by=?3, updated_by_name=?4,
+                      updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
+            )
+            .bind(grossCents, deductionsCents, actor.id, actorName(actor), existing.id)
+        : database
+            .prepare(
+              `INSERT INTO hr_thirteenth_salary
+                (id, employee_id, employee_name, company_id, company_name, year, installment,
+                 gross_cents, deductions_cents, payment_done, payment_date, notes, created_by,
+                 created_by_name, created_at, updated_by, updated_by_name, updated_at)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, '', '', ?10, ?11, CURRENT_TIMESTAMP,
+                       ?10, ?11, CURRENT_TIMESTAMP)`,
+            )
+            .bind(
+              crypto.randomUUID(), employeeId, employee.fullName, employee.companyId, employee.companyName, year, installment,
+              grossCents, deductionsCents, actor.id, actorName(actor),
+            ),
+    );
+  }
+  await database.batch(statements);
+  return jsonResponse({ saved: statements.length });
+}
+
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -129,6 +210,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as JsonMap;
     const database = await getD1();
     if (safeText(body.action, 20) === "mark_paid") return await markPaid(database, actor, body);
+    if (safeText(body.action, 20) === "batch") return await saveBatch(database, actor, body);
 
     const editId = safeText(body.id, 80);
     const employeeId = safeText(body.employeeId, 80);

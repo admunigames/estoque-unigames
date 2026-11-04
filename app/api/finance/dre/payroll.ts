@@ -89,7 +89,7 @@ export type PayrollDreMonth = Awaited<ReturnType<typeof loadPayrollDreMonth>>;
  * comparativo (payrollDreContributionFrom é só cálculo).
  */
 export async function loadPayrollDreMonth(database: Database, month: string) {
-  const [actingStores, chargesRow, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts, companies, overheadSettings] = await Promise.all([
+  const [actingStores, chargesRow, folhaRows, beneficiosRows, comissoesRows, overtimePayouts, companies, overheadSettings] = await Promise.all([
     actingStoresForMonth(database, month),
     database
       .prepare("SELECT employer_charges_bps AS bps FROM hr_payroll_settings WHERE company_id='' LIMIT 1")
@@ -114,19 +114,12 @@ export async function loadPayrollDreMonth(database: Database, month: string) {
     database
       .prepare(
         `SELECT employee_id AS employeeId, company_id AS companyId,
-                COALESCE(SUM(commission_cents + commercial_premium_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total
+                COALESCE(SUM(commission_cents + commercial_premium_cents + bonuses_cents + premiums_cents + adjustments_cents), 0) AS total,
+                COALESCE(SUM(assist_cents), 0) AS assistTotal
          FROM hr_commissions WHERE month = ?1 GROUP BY employee_id, company_id`,
       )
       .bind(month)
-      .all<{ employeeId: string; companyId: string; total: number }>(),
-    // DSR MANUAL do mês (migration 0109) — parte da remuneração da Folha.
-    database
-      .prepare(
-        `SELECT employee_id AS employeeId, '' AS companyId, COALESCE(SUM(amount_cents), 0) AS total
-         FROM hr_employee_month_values WHERE month = ?1 AND kind = 'dsr' GROUP BY employee_id`,
-      )
-      .bind(month)
-      .all<{ employeeId: string; companyId: string; total: number }>(),
+      .all<{ employeeId: string; companyId: string; total: number; assistTotal: number }>(),
     // HE A PAGAR do Controle de Horas substitui a HE digitada na Folha (e conta
     // mesmo para quem ainda não tem folha lançada no mês).
     loadOvertimePayouts(database, month),
@@ -134,6 +127,8 @@ export async function loadPayrollDreMonth(database: Database, month: string) {
     loadOverheadSettings(database),
   ]);
   const overheadOf = new Map<string, OverheadKind>();
+  // Unidade ASSISTÊNCIA: recebe a parte da comissão do operacional que é dela.
+  const assistanceId = companies.find((company) => companyRole(company.name) === "assistance")?.id ?? "";
   for (const company of companies) {
     const role = companyRole(company.name);
     if (role === "depot") overheadOf.set(company.id, "deposito");
@@ -146,6 +141,7 @@ export async function loadPayrollDreMonth(database: Database, month: string) {
     }
   }
   return {
+    assistanceId,
     overheadOf,
     overheadWeights,
     actingStores,
@@ -153,7 +149,6 @@ export async function loadPayrollDreMonth(database: Database, month: string) {
     folhaRows,
     beneficiosRows,
     comissoesRows,
-    dsrRows,
     overtimePayouts,
   };
 }
@@ -162,7 +157,7 @@ export function payrollDreContributionFrom(
   data: PayrollDreMonth,
   scope: { companyId: string } | "stores",
 ): PayrollDreContribution {
-  const { actingStores, employerChargesBps, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts, overheadOf, overheadWeights } = data;
+  const { actingStores, employerChargesBps, folhaRows, beneficiosRows, comissoesRows, overtimePayouts, overheadOf, overheadWeights, assistanceId } = data;
   const mapping = new Map<PayrollBlock, string>(
     (Object.keys(PAYROLL_DRE_ITEMS) as PayrollBlock[]).map((block) => [block, PAYROLL_DRE_ITEMS[block].id]),
   );
@@ -188,14 +183,20 @@ export function payrollDreContributionFrom(
         .reduce((sum, [, cents]) => sum + cents, 0);
     const sumOf = (rows: Array<{ employeeId: string; companyId: string; total: number }> | undefined) =>
       (rows ?? []).filter((row) => inScope(storeOf(row))).reduce((sum, row) => sum + Number(row.total || 0), 0);
+    // Comissão do operacional (04/11/2026): a parte da assistência (feito +
+    // premiação da assistência) é despesa da unidade ASSISTÊNCIA; o resto
+    // (premiação pela loja) fica na loja atuante.
+    const comissoes = (comissoesRows.results ?? []).reduce((sum, row) => {
+      const assist = assistanceId ? Number(row.assistTotal || 0) : 0;
+      return sum + (inScope(storeOf(row)) ? Number(row.total || 0) - assist : 0) + (inScope(assistanceId) ? assist : 0);
+    }, 0);
     return {
       folha:
         folha.reduce((sum, row) => sum + Number(row.salaryGross || 0), 0) +
         overtimeAdjust +
-        sumOf(dsrRows.results) +
         Math.round((folha.reduce((sum, row) => sum + Number(row.baseTotal || 0), 0) * employerChargesBps) / 10000),
       beneficios: sumOf(beneficiosRows.results),
-      comissoes: sumOf(comissoesRows.results),
+      comissoes,
     };
   };
 

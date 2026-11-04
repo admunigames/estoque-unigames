@@ -36,6 +36,8 @@ const MANUAL_FIELDS = [
   "additionsCents",
   "deductionsCents",
   "otherCents",
+  // CONTRACHEQUE digitado (04/11/2026): só para o pagamento da Folha.
+  "payslipCents",
 ] as const;
 
 type ManualValues = Record<(typeof MANUAL_FIELDS)[number], number>;
@@ -130,7 +132,7 @@ async function saveEntry(database: Database, actor: Identity, body: JsonMap) {
          SET employee_name=?1, company_id=?2, company_name=?3, month=?4, base_salary_cents=?5,
              bonus_cents=?6, overtime_cents=?7, additions_cents=?8, deductions_cents=?9,
              other_cents=?10, notes=?11, updated_by=?12, updated_by_name=?13,
-             updated_at=CURRENT_TIMESTAMP
+             updated_at=CURRENT_TIMESTAMP, payslip_cents=?15
          WHERE id=?14`,
       )
       .bind(
@@ -148,6 +150,7 @@ async function saveEntry(database: Database, actor: Identity, body: JsonMap) {
         actor.id,
         actorName(actor),
         targetId,
+        values.payslipCents,
       )
       .run();
     return jsonResponse({ updated: true, id: targetId });
@@ -161,9 +164,9 @@ async function saveEntry(database: Database, actor: Identity, body: JsonMap) {
          bonus_cents, overtime_cents, additions_cents, deductions_cents, other_cents, notes,
          payment_done, payment_date, attachment_file_name, attachment_r2_key,
          attachment_size_bytes, created_by, created_by_name, created_at, updated_by,
-         updated_by_name, updated_at)
+         updated_by_name, updated_at, payslip_cents)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 0, '', '', '', 0,
-               ?14, ?15, CURRENT_TIMESTAMP, ?14, ?15, CURRENT_TIMESTAMP)`,
+               ?14, ?15, CURRENT_TIMESTAMP, ?14, ?15, CURRENT_TIMESTAMP, ?16)`,
     )
     .bind(
       id,
@@ -181,6 +184,7 @@ async function saveEntry(database: Database, actor: Identity, body: JsonMap) {
       notes,
       actor.id,
       actorName(actor),
+      values.payslipCents,
     )
     .run();
   return jsonResponse({ created: true, id }, 201);
@@ -260,6 +264,30 @@ async function copyPreviousMonth(database: Database, actor: Identity, body: Json
 }
 
 async function markPaid(database: Database, actor: Identity, body: JsonMap) {
+  // Lote (04/11/2026): ids[] marca/desmarca várias folhas de uma vez.
+  if (Array.isArray(body.ids)) {
+    const ids = [...new Set((body.ids as unknown[]).map((value) => safeText(value, 80)).filter(Boolean))];
+    if (!ids.length) return jsonResponse({ error: "SELECIONE AS FOLHAS." }, 400);
+    const paymentDone = body.paymentDone === false ? 0 : 1;
+    const paymentDate = safeText(body.paymentDate, 10);
+    if (paymentDone && !DATE_PATTERN.test(paymentDate)) return jsonResponse({ error: "INFORME A DATA DO PAGAMENTO." }, 400);
+    const found = await database
+      .prepare(`SELECT id FROM hr_payroll_entries WHERE id IN (${ids.map((_, index) => `?${index + 1}`).join(",")})`)
+      .bind(...ids)
+      .all<{ id: string }>();
+    if ((found.results ?? []).length !== ids.length) return jsonResponse({ error: "ALGUMA FOLHA SELECIONADA NÃO FOI ENCONTRADA." }, 404);
+    await database.batch(
+      ids.map((entryId) =>
+        database
+          .prepare(
+            `UPDATE hr_payroll_entries SET payment_done=?1, payment_date=?2, updated_by=?3, updated_by_name=?4,
+                    updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
+          )
+          .bind(paymentDone, paymentDone ? paymentDate : "", actor.id, actorName(actor), entryId),
+      ),
+    );
+    return jsonResponse({ updated: ids.length, paymentDone });
+  }
   const id = safeText(body.id, 80);
   if (!id) return jsonResponse({ error: "FOLHA INVÁLIDA." }, 400);
   const paymentDone = body.paymentDone === false ? 0 : 1;
@@ -289,6 +317,52 @@ async function markPaid(database: Database, actor: Identity, body: JsonMap) {
   return jsonResponse({ updated: true, id, paymentDone });
 }
 
+/**
+ * CONTRACHEQUE em lote (leitura do PDF da folha): { month, values:[{employeeId, payslipCents}] }.
+ * Cria a folha do mês (salário do cadastro) para quem ainda não tem; só muda o contracheque.
+ */
+async function savePayslips(database: Database, actor: Identity, body: JsonMap) {
+  const month = safeText(body.month, 7);
+  if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
+  const values = Array.isArray(body.values) ? (body.values as JsonMap[]) : [];
+  if (!values.length) return jsonResponse({ error: "NENHUM CONTRACHEQUE PARA GRAVAR." }, 400);
+  const statements = [];
+  for (const item of values) {
+    const employeeId = safeText(item.employeeId, 80);
+    const payslipCents = centsValue(item.payslipCents);
+    if (!employeeId || !Number.isFinite(payslipCents) || payslipCents < 0) return jsonResponse({ error: "CONTRACHEQUE INVÁLIDO NA LISTA." }, 400);
+    const employee = await loadEmployeeForMonth(database, employeeId, month);
+    if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
+    const existing = await database
+      .prepare("SELECT id FROM hr_payroll_entries WHERE employee_id=?1 AND month=?2 LIMIT 1")
+      .bind(employeeId, month)
+      .first<{ id: string }>();
+    statements.push(
+      existing
+        ? database
+            .prepare("UPDATE hr_payroll_entries SET payslip_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4")
+            .bind(payslipCents, actor.id, actorName(actor), existing.id)
+        : database
+            .prepare(
+              `INSERT INTO hr_payroll_entries
+                (id, employee_id, employee_name, company_id, company_name, month, base_salary_cents,
+                 bonus_cents, overtime_cents, additions_cents, deductions_cents, other_cents, notes,
+                 payment_done, payment_date, attachment_file_name, attachment_r2_key,
+                 attachment_size_bytes, created_by, created_by_name, created_at, updated_by,
+                 updated_by_name, updated_at, payslip_cents)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, 0, 0, 0, 0, '', 0, '', '', '', 0,
+                       ?8, ?9, CURRENT_TIMESTAMP, ?8, ?9, CURRENT_TIMESTAMP, ?10)`,
+            )
+            .bind(
+              crypto.randomUUID(), employeeId, employee.fullName, employee.companyId, employee.companyName, month,
+              Number(employee.salaryCents || 0), actor.id, actorName(actor), payslipCents,
+            ),
+    );
+  }
+  await database.batch(statements);
+  return jsonResponse({ saved: statements.length });
+}
+
 export async function POST(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -306,6 +380,7 @@ export async function POST(request: Request) {
     const database = await getD1();
     if (action === "mark_paid") return await markPaid(database, actor, body);
     if (action === "copy_previous_month") return await copyPreviousMonth(database, actor, body);
+    if (action === "payslips") return await savePayslips(database, actor, body);
     if (action && action !== "save") return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
     return await saveEntry(database, actor, body);
   } catch (error) {
