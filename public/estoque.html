@@ -16499,6 +16499,7 @@
     }, speed || 30);
   }
 
+  const PRODUCT_CATALOG_PAGES = new Set(['saidas', 'entradas', 'alteracoesPdv', 'divergencias', 'comprasNovo', 'dados']);
   function showPage(name){
     if(!canAccessPage(name)) return false;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -16510,6 +16511,7 @@
     if(!page || !navItem) return false;
     page.classList.add('active');
     navItem.classList.add('active');
+    if(PRODUCT_CATALOG_PAGES.has(name)) ensureProductCatalog();
     const isHome = name === 'inicio';
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios' || name === 'auditoria' || name === 'infoGerais';
     const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario' || name === 'rhContabilidade';
@@ -19404,6 +19406,7 @@
 
   function attachProductCatalogSearch(input, config){
     if(!input) return;
+    input.addEventListener('focus', () => { ensureProductCatalog(); });
     const getEntries = config.getEntries;
     const maxResults = config.maxResults || 20;
     const field = input.closest('.product-search-field') || input.parentElement;
@@ -19529,6 +19532,13 @@
 
   async function loadProductCatalog(){
     await Promise.all([loadProductCatalogItems(), loadProductCatalogCount()]);
+  }
+  // O catálogo (~350 KB) só baixa na primeira vez que alguém abre uma tela
+  // que usa (PRODUCT_CATALOG_PAGES, em showPage) ou foca um campo de produto —
+  // antes baixava no início de qualquer página, até no RH/Financeiro.
+  let productCatalogLoading = null;
+  function ensureProductCatalog(){
+    return productCatalogLoading || (productCatalogLoading = loadProductCatalog());
   }
   async function handleProductCatalogUpload(file, source){
     if(productCatalogUploadInFlight) return;
@@ -42483,6 +42493,7 @@ function renderHomeTasks(){
     const quantity = Number(el('comprasQuickQty').value);
     if(!text){ status.textContent = 'BUSQUE OU DIGITE O PRODUTO.'; input.focus(); return; }
     if(!Number.isInteger(quantity) || quantity < 1){ status.textContent = 'INFORME A QUANTIDADE (1 OU MAIS).'; return; }
+    await ensureProductCatalog();
     // Escolhido na lista (código) ou digitado igual ao nome do catálogo.
     const byName = productCatalogItems.find(product => (product.name || '').toUpperCase() === text.toUpperCase());
     const code = comprasFindProductName(text) ? text : (byName ? (byName.codeUnigames || byName.codePa || '') : '');
@@ -42900,6 +42911,7 @@ function renderHomeTasks(){
     if(!comprasCurrentOrderId) return;
     const productText = el('comprasItemProductCode').value.trim();
     if(!productText){ status.textContent = 'INFORME O PRODUTO.'; return; }
+    await ensureProductCatalog();
     // Fora do catálogo = texto livre (sem código), igual à adição rápida.
     const catalogName = comprasFindProductName(productText);
     const productCode = catalogName ? productText : '';
@@ -58084,9 +58096,6 @@ function renderHomeTasks(){
     if(canAccess('outputs')) loaders.push(() => loadOutputs());
     if(canAccess('inputs')) loaders.push(() => loadInputs());
     if(canAccess('supplies')) loaders.push(() => loadHomeSupplies());
-    if(canAccess('database') || canAccess('purchases_draft') ||
-      canAccess('outputs:create') || canAccess('inputs:create') || canAccess('pdv_requests:create') ||
-      canAccess('divergencias:create') || canAccess('divergencias:edit')) loaders.push(() => loadProductCatalog());
     const HOME_LOADERS_BATCH_SIZE = 4;
     for(let start = 0; start < loaders.length; start += HOME_LOADERS_BATCH_SIZE){
       const batch = loaders.slice(start, start + HOME_LOADERS_BATCH_SIZE);
