@@ -892,6 +892,8 @@ export const financeAccounts = pgTable(
     accountDigit: text("account_digit").notNull().default(""),
     holderName: text("holder_name").notNull().default(""),
     holderDocument: text("holder_document").notNull().default(""),
+    // PF ou PJ (migration 0130): "pf" | "pj"; '' = conta antiga sem documento.
+    personType: text("person_type").notNull().default(""),
     // 'cpf' | 'cnpj' | 'email' | 'phone' | 'random' | ''
     pixKeyType: text("pix_key_type").notNull().default(""),
     pixKey: text("pix_key").notNull().default(""),

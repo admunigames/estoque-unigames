@@ -49,6 +49,7 @@ type AccountRow = {
   accountDigit: string;
   holderName: string;
   holderDocument: string;
+  personType: string;
   pixKeyType: string;
   pixKey: string;
   openingBalanceCents: number;
@@ -66,7 +67,7 @@ type AccountRow = {
 const SELECT_COLUMNS = `id, company_id AS companyId, company_name AS companyName, name, type,
   bank_name AS bankName, bank_code AS bankCode, agency, agency_digit AS agencyDigit,
   account_number AS accountNumber, account_digit AS accountDigit,
-  holder_name AS holderName, holder_document AS holderDocument,
+  holder_name AS holderName, holder_document AS holderDocument, person_type AS personType,
   pix_key_type AS pixKeyType, pix_key AS pixKey,
   opening_balance_cents AS openingBalanceCents, opening_balance_date AS openingBalanceDate,
   notes, active, created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
@@ -210,6 +211,11 @@ export async function POST(request: Request) {
       }
     }
 
+    // PF ou PJ (04/11/2026): obrigatório ao cadastrar; na edição vazio mantém o atual.
+    const personType = safeText(body.personType, 2);
+    if (personType && personType !== "pf" && personType !== "pj") return jsonResponse({ error: "INFORME SE A CONTA É PF OU PJ." }, 400);
+    if (!id && !personType) return jsonResponse({ error: "INFORME SE A CONTA É PF OU PJ." }, 400);
+
     const holderName = safeText(body.holderName, 160);
     const holderDocument = safeText(body.holderDocument, 20);
     if (holderDocument && !isValidCpfOrCnpj(holderDocument)) {
@@ -287,7 +293,8 @@ export async function POST(request: Request) {
                agency=?7, agency_digit=?8, account_number=?9, account_digit=?10,
                holder_name=?11, holder_document=?12, pix_key_type=?13, pix_key=?14,
                opening_balance_cents=?15, opening_balance_date=?16, notes=?17, active=?18,
-               updated_by=?19, updated_by_name=?20, updated_at=CURRENT_TIMESTAMP
+               updated_by=?19, updated_by_name=?20, updated_at=CURRENT_TIMESTAMP,
+               person_type=CASE WHEN ?22 = '' THEN person_type ELSE ?22 END
            WHERE id=?21`,
         )
         .bind(
@@ -312,6 +319,7 @@ export async function POST(request: Request) {
           actor.id,
           actorName,
           id,
+          personType,
         )
         .run();
       return jsonResponse({ updated: true, id });
@@ -324,9 +332,9 @@ export async function POST(request: Request) {
           (id, company_id, company_name, name, type, bank_name, bank_code, agency, agency_digit,
            account_number, account_digit, holder_name, holder_document, pix_key_type, pix_key,
            opening_balance_cents, opening_balance_date, notes, active,
-           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at)
+           created_by, created_by_name, created_at, updated_by, updated_by_name, updated_at, person_type)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,
-           ?20,?21,CURRENT_TIMESTAMP,?20,?21,CURRENT_TIMESTAMP)`,
+           ?20,?21,CURRENT_TIMESTAMP,?20,?21,CURRENT_TIMESTAMP,?22)`,
       )
       .bind(
         newId,
@@ -350,6 +358,7 @@ export async function POST(request: Request) {
         active,
         actor.id,
         actorName,
+        personType,
       )
       .run();
     return jsonResponse({ created: true, id: newId }, 201);

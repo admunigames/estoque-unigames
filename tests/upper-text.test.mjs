@@ -55,7 +55,7 @@ test("lista não tem colunas proibidas (login, senha, e-mail, PIX, ids, status, 
 
 test("rota grava texto livre em maiúsculas e preserva PIX, tipo e ids", async () => {
   const create = (body) =>
-    callRoute(accounts.POST, ADMIN, "POST", "/api/finance/accounts", { companyId: "criomar01", companyName: "Riomar", ...body });
+    callRoute(accounts.POST, ADMIN, "POST", "/api/finance/accounts", { companyId: "criomar01", companyName: "Riomar", personType: "pj", ...body });
   const response = await create({
     name: "conta caixa ção", type: "cash", holderName: "joão da silva", notes: "observação",
     pixKeyType: "email", pixKey: "Fin@Unigames.com.br",

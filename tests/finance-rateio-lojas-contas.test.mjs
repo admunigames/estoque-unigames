@@ -165,8 +165,24 @@ test("despesa rateada em 8 lojas = 1 linha agrupada com shares[]; filtro por loj
 // D. Contas Financeiras
 // ---------------------------------------------------------------------------
 
+test("conta PF/PJ (04/11/2026): obrigatório ao cadastrar, sem loja; editar sem informar mantém", async () => {
+  const create = (extra) => post(accounts.POST, "/api/finance/accounts", { name: "CONTA PF", type: "cash", ...extra });
+  const missing = await create({});
+  assert.equal(missing.status, 400);
+  assert.match((await json(missing)).error, /PF OU PJ/);
+  assert.equal((await create({ personType: "xx" })).status, 400);
+  const res = await create({ personType: "pf" });
+  assert.equal(res.status, 201);
+  const { id } = await json(res);
+  assert.deepEqual({ ...db.sqlite.prepare("SELECT person_type, company_id FROM finance_accounts WHERE id=?").get(id) }, { person_type: "pf", company_id: "" });
+  assert.equal((await post(accounts.POST, "/api/finance/accounts", { id, name: "CONTA PF", type: "cash", active: false })).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT person_type FROM finance_accounts WHERE id=?").get(id).person_type, "pf");
+  await post(accounts.POST, "/api/finance/accounts", { id, name: "CONTA PF", type: "cash", personType: "pj" });
+  assert.equal(db.sqlite.prepare("SELECT person_type FROM finance_accounts WHERE id=?").get(id).person_type, "pj");
+});
+
 test("contas financeiras: cada TIPO com o mínimo, PIX de cada tipo, duplicidades e conta sem número", async () => {
-  const base = { companyId: STORES[0], companyName: "RIOMAR01" };
+  const base = { companyId: STORES[0], companyName: "RIOMAR01", personType: "pj" };
   const create = (extra) => post(accounts.POST, "/api/finance/accounts", { ...base, ...extra });
   const minimum = {
     checking: { bankName: "ITAÚ", agency: "1234", accountNumber: "10001" },
