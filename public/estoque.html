@@ -9355,7 +9355,7 @@
               <button class="btn-outline btn-sm" id="btnCfWeekNext" type="button" aria-label="Próxima semana">▶</button>
             </div>
           </div>
-          <div class="dre-toolbar-actions"><button class="btn-accent" id="btnCfWeeklyInform" type="button">INFORMAR SALDOS DA SEGUNDA</button></div>
+          <div class="dre-toolbar-actions"><button class="btn-outline" id="btnCfWeeklyImage" type="button">GERAR IMAGEM</button><button class="btn-accent" id="btnCfWeeklyInform" type="button">INFORMAR SALDOS DA SEGUNDA</button></div>
         </div>
         <h3 class="supply-section-title">SEMANA A SEMANA</h3>
         <div class="table-panel responsive-table">
@@ -36520,6 +36520,123 @@ function renderHomeTasks(){
       await loadCashFlowWeekly();
       showPurchaseToast('Saldos da segunda salvos.');
     }catch(error){ el('cfWeeklyDialogStatus').textContent = error.message; }
+  });
+
+  // IMAGEM DO CAIXA SEMANAL (moldura comum das imagens — comDrawImageFrame):
+  // saldos da segunda escolhida em LOJAS (contas com loja real, somadas por
+  // loja) e OUTROS (demais contas, pelo nome), TOTAL GERAL = LOJAS + OUTROS e
+  // INVESTIDO à parte (contas tipo INVESTIMENTO, com a divisão por conta).
+  function cfWeeklyImageGroups(accounts, balances){
+    const storeIds = new Set(pullStoreCompanies().map(company => company.id));
+    const lojas = new Map(), outros = [], investido = [], missing = [];
+    accounts.forEach(account => {
+      const full = payableAccounts.find(item => item.id === account.accountId) || {};
+      const row = balances.get(account.accountId);
+      if(!row) missing.push(account.accountName);
+      const cents = row ? Number(row.balanceCents) || 0 : 0;
+      if(full.type === 'investment'){ if(row) investido.push({name: account.accountName, cents}); return; }
+      if(full.companyId && storeIds.has(full.companyId)){
+        const name = String((companies.find(c => c.id === full.companyId) || {}).name || full.companyName || account.accountName).toUpperCase();
+        const group = lojas.get(name) || {name, cents: 0, informed: false};
+        group.cents += cents;
+        group.informed = group.informed || Boolean(row);
+        lojas.set(name, group);
+        return;
+      }
+      outros.push({name: String(account.accountName).toUpperCase(), cents, informed: Boolean(row)});
+    });
+    const sum = list => list.reduce((total, item) => total + item.cents, 0);
+    const lojasList = [...lojas.values()];
+    return {lojas: lojasList, outros, investido, missing, lojasCents: sum(lojasList), outrosCents: sum(outros), investidoCents: sum(investido)};
+  }
+  async function cfWeeklyBuildImage(weekDate, g){
+    const pal = COM_IMAGE_PALETTE;
+    const green = '#1f8a55', red = '#c8402f', amber = '#b7791f', blue = '#1d487e';
+    const W = 1080, rowH = 46, rows = Math.max(g.lojas.length, g.outros.length, 1);
+    const colH = 70 + rows * rowH + 74;
+    const H = 178 + 32 + colH + 24 + 104 + 24 + 150 + (g.missing.length ? 40 : 0) + 30 + 58;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const [y0, m0, d0] = weekDate.split('-');
+    const {HEADER} = await comDrawImageFrame(ctx, W, H, {
+      title: 'CAIXA SEMANAL', subtitle: 'LOJAS + OUTROS · CONSOLIDADO',
+      pill: comMonthLong(y0+'-'+m0).split('/')[0]+' · SEMANA '+Math.ceil(Number(d0) / 7),
+      footer: 'UNIGAMES · CAIXA SEMANAL', footerRight: 'SALDOS DA SEGUNDA '+d0+'/'+m0+'/'+y0,
+    });
+    const card = (x, y, w, h, fill) => {
+      ctx.fillStyle = fill || '#ffffff';
+      comRoundRect(ctx, x, y, w, h, 22);
+      ctx.fill();
+      if(!fill){ ctx.lineWidth = 2; ctx.strokeStyle = pal.grid; ctx.stroke(); }
+    };
+    const text = (value, x, y, size, color, align, weight) => {
+      ctx.textAlign = align || 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.font = comFont(weight || 800, size);
+      ctx.fillText(value, x, y);
+    };
+    const moneyColor = cents => cents < 0 ? red : pal.ink;
+    const column = (x, y, w, title, list, subtotal) => {
+      card(x, y, w, colH);
+      ctx.save();
+      comRoundRect(ctx, x, y, w, colH, 22);
+      ctx.clip();
+      ctx.fillStyle = blue;
+      ctx.fillRect(x, y, w, 62);
+      ctx.restore();
+      text(title, x + 26, y + 32, 30, '#ffffff', 'left', 900);
+      text('VALOR', x + w - 26, y + 32, 20, '#cfe2f5', 'right', 800);
+      list.forEach((item, index) => {
+        const ry = y + 70 + index * rowH;
+        if(index) { ctx.fillStyle = pal.grid; ctx.fillRect(x + 22, ry, w - 44, 1); }
+        ctx.font = comFont(800, 23);
+        text(comFitText(ctx, item.name, w * 0.5), x + 26, ry + rowH / 2, 23, pal.ink, 'left', 800);
+        text(item.informed ? formatCentsBRL(item.cents) : 'NÃO INFORMADO', x + w - 26, ry + rowH / 2, item.informed ? 23 : 18, item.informed ? moneyColor(item.cents) : pal.faint, 'right', item.informed ? 800 : 700);
+      });
+      const sy = y + colH - 66;
+      ctx.fillStyle = '#e3f4ea';
+      comRoundRect(ctx, x + 14, sy, w - 28, 52, 14);
+      ctx.fill();
+      text('SUBTOTAL', x + 30, sy + 26, 24, green, 'left', 900);
+      text(formatCentsBRL(subtotal), x + w - 30, sy + 26, 26, subtotal < 0 ? red : green, 'right', 900);
+    };
+    let y = HEADER + 32;
+    const colW = (W - 80 - 20) / 2;
+    column(40, y, colW, 'LOJAS', g.lojas, g.lojasCents);
+    column(40 + colW + 20, y, colW, 'OUTROS', g.outros, g.outrosCents);
+    y += colH + 24;
+
+    const total = g.lojasCents + g.outrosCents;
+    card(40, y, W - 80, 104, blue);
+    text('TOTAL GERAL', 76, y + 52, 40, '#ffffff', 'left', 900);
+    text(formatCentsBRL(total), W - 76, y + 52, 46, total < 0 ? '#ffb3a8' : '#ffffff', 'right', 900);
+    y += 104 + 24;
+
+    card(40, y, W - 80, 150, '#fff4dc');
+    ctx.lineWidth = 3; ctx.strokeStyle = amber; comRoundRect(ctx, 40, y, W - 80, 150, 22); ctx.stroke();
+    text('INVESTIDO', 76, y + 50, 38, amber, 'left', 900);
+    text(formatCentsBRL(g.investidoCents), W - 76, y + 50, 42, pal.ink, 'right', 900);
+    ctx.font = comFont(700, 21);
+    const division = g.investido.length ? 'DIVISÃO: '+g.investido.map(item => formatCentsBRL(item.cents)+' · '+String(item.name).toUpperCase()).join('  •  ') : 'NENHUMA CONTA DE INVESTIMENTO INFORMADA NESTA SEGUNDA.';
+    text(comFitText(ctx, division, W - 152), 76, y + 110, 21, pal.soft, 'left', 700);
+    y += 150;
+    if(g.missing.length){
+      ctx.font = comFont(700, 18);
+      text(comFitText(ctx, 'SEM SALDO INFORMADO: '+g.missing.join(', ').toUpperCase(), W - 80), 40, y + 30, 18, red, 'left', 700);
+    }
+    return canvas;
+  }
+  el('btnCfWeeklyImage').addEventListener('click', async () => {
+    if(!cfWeeklyData) await loadCashFlowWeekly();
+    if(!cfWeeklyData || !(cfWeeklyData.accounts || []).length){ showPurchaseToast('Nenhuma conta ativa para gerar a imagem.', 'error'); return; }
+    const weekDate = cfMonday(el('cfWeekDate').value || cfWeeklyData.currentMonday);
+    try{
+      const groups = cfWeeklyImageGroups(cfWeeklyData.accounts, await cfWeekBalances(weekDate));
+      await shareCanvasImage(await cfWeeklyBuildImage(weekDate, groups), 'caixa-semanal-'+weekDate+'.png');
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
   // --- RECEBÍVEIS: recebimentos futuros por semana e adquirente ---
