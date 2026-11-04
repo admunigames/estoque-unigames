@@ -49,25 +49,22 @@ export async function loadPayrollDreContribution(
   scope: { companyId: string } | "stores",
   month: string,
 ): Promise<PayrollDreContribution> {
-  const mapping = new Map<PayrollBlock, string>(
-    (Object.keys(PAYROLL_DRE_ITEMS) as PayrollBlock[]).map((block) => [block, PAYROLL_DRE_ITEMS[block].id]),
-  );
+  return payrollDreContributionFrom(await loadPayrollDreMonth(database, month), scope);
+}
 
-  const isStore = scope !== "stores";
-  const companyId = isStore ? scope.companyId : "";
-  // Loja do custo = loja ATUANTE do funcionário no mês (RH > Funcionários),
-  // com a loja gravada no lançamento como reserva. "stores" = todas as lojas
-  // reais: exclui RH sem loja e o da Assistência.
-  const actingStores = await actingStoresForMonth(database, month);
-  const storeOf = (row: { employeeId: string; companyId: string }) => actingStores.get(row.employeeId)?.companyId || row.companyId || "";
-  const inScope = (store: string) => (isStore ? store === companyId : store !== "" && store !== "assistencia");
+export type PayrollDreMonth = Awaited<ReturnType<typeof loadPayrollDreMonth>>;
 
-  const chargesRow = await database
-    .prepare("SELECT employer_charges_bps AS bps FROM hr_payroll_settings WHERE company_id='' LIMIT 1")
-    .first<{ bps: number }>();
-  const employerChargesBps = Math.max(0, Number(chargesRow?.bps ?? 0));
-
-  const [folhaRows, beneficiosRows, comissoesRows, dsrRows] = await Promise.all([
+/**
+ * Tudo o que a contribuição do RH precisa no mês, numa leva só de consultas
+ * paralelas — carregado UMA vez e reaproveitado para cada loja do
+ * comparativo (payrollDreContributionFrom é só cálculo).
+ */
+export async function loadPayrollDreMonth(database: Database, month: string) {
+  const [actingStores, chargesRow, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts] = await Promise.all([
+    actingStoresForMonth(database, month),
+    database
+      .prepare("SELECT employer_charges_bps AS bps FROM hr_payroll_settings WHERE company_id='' LIMIT 1")
+      .first<{ bps: number }>(),
     database
       .prepare(
         `SELECT employee_id AS employeeId, company_id AS companyId,
@@ -101,10 +98,38 @@ export async function loadPayrollDreContribution(
       )
       .bind(month)
       .all<{ employeeId: string; companyId: string; total: number }>(),
+    // HE A PAGAR do Controle de Horas substitui a HE digitada na Folha (e conta
+    // mesmo para quem ainda não tem folha lançada no mês).
+    loadOvertimePayouts(database, month),
   ]);
-  // HE A PAGAR do Controle de Horas substitui a HE digitada na Folha (e conta
-  // mesmo para quem ainda não tem folha lançada no mês).
-  const overtimePayouts = await loadOvertimePayouts(database, month);
+  return {
+    actingStores,
+    employerChargesBps: Math.max(0, Number(chargesRow?.bps ?? 0)),
+    folhaRows,
+    beneficiosRows,
+    comissoesRows,
+    dsrRows,
+    overtimePayouts,
+  };
+}
+
+export function payrollDreContributionFrom(
+  data: PayrollDreMonth,
+  scope: { companyId: string } | "stores",
+): PayrollDreContribution {
+  const { actingStores, employerChargesBps, folhaRows, beneficiosRows, comissoesRows, dsrRows, overtimePayouts } = data;
+  const mapping = new Map<PayrollBlock, string>(
+    (Object.keys(PAYROLL_DRE_ITEMS) as PayrollBlock[]).map((block) => [block, PAYROLL_DRE_ITEMS[block].id]),
+  );
+
+  const isStore = scope !== "stores";
+  const companyId = isStore ? scope.companyId : "";
+  // Loja do custo = loja ATUANTE do funcionário no mês (RH > Funcionários),
+  // com a loja gravada no lançamento como reserva. "stores" = todas as lojas
+  // reais: exclui RH sem loja e o da Assistência.
+  const storeOf = (row: { employeeId: string; companyId: string }) => actingStores.get(row.employeeId)?.companyId || row.companyId || "";
+  const inScope = (store: string) => (isStore ? store === companyId : store !== "" && store !== "assistencia");
+
   const folha = (folhaRows.results ?? []).filter((row) => inScope(storeOf(row)));
   const withFolha = new Set((folhaRows.results ?? []).map((row) => row.employeeId));
   const overtimeAdjust =

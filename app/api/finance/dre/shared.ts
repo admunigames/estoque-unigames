@@ -1,7 +1,14 @@
 import { getD1 } from "../../../../db";
 import { loadCompanyList } from "../shared";
 import { loadCommercialRevenue, loadCommercialRevenueByStore } from "../revenue/commercial";
-import { loadPayrollDreContribution, PAYROLL_DRE_CATEGORY, PAYROLL_DRE_ITEMS } from "./payroll";
+import {
+  loadPayrollDreContribution,
+  loadPayrollDreMonth,
+  PAYROLL_DRE_CATEGORY,
+  PAYROLL_DRE_ITEMS,
+  payrollDreContributionFrom,
+  type PayrollDreContribution,
+} from "./payroll";
 
 // Lógica de cálculo da DRE (por loja, consolidada, gerencial, comparativo
 // entre unidades e série temporal) — extraída de route.ts pra poder ser
@@ -182,7 +189,7 @@ export async function buildStoreDre(
   storeId: string,
   month: string,
 ): Promise<StoreDreResult> {
-  const [{ allCategories, allItems }, entries, revenue, payroll] = await Promise.all([
+  const [catalog, entries, revenue, payroll] = await Promise.all([
     loadCatalog(database),
     database
       .prepare(
@@ -195,9 +202,18 @@ export async function buildStoreDre(
     loadCommercialRevenue(database, storeId, month),
     loadPayrollDreContribution(database, { companyId: storeId }, month),
   ]);
+  return storeDreFrom(catalog, entries.results ?? [], revenue.amountCents, payroll);
+}
 
+/** DRE de uma loja a partir dos dados já carregados (só cálculo). */
+function storeDreFrom(
+  { allCategories, allItems }: Awaited<ReturnType<typeof loadCatalog>>,
+  entries: EntryRow[],
+  revenueCents: number,
+  payroll: PayrollDreContribution,
+): StoreDreResult {
   const entryByItem = new Map<string, EntryRow>();
-  for (const entry of entries.results ?? []) entryByItem.set(entry.itemId, entry);
+  for (const entry of entries) entryByItem.set(entry.itemId, entry);
 
   // Total efetivo de um item na DRE: lançamento manual/despesa + contribuição
   // do RH mapeada para esse item (item 13).
@@ -234,7 +250,6 @@ export async function buildStoreDre(
     return { id: category.id, name: category.name, totalCents, items: directItems, subgroups };
   });
 
-  const revenueCents = revenue.amountCents;
   const expenseTotalCents = dreCategories.reduce((sum, category) => sum + category.totalCents, 0);
   const resultCents = revenueCents - expenseTotalCents;
   const marginBasisPoints = revenueCents > 0 ? Math.round((resultCents / revenueCents) * 10000) : 0;
@@ -354,10 +369,36 @@ export async function buildByStoreDre(
   database: Awaited<ReturnType<typeof getD1>>,
   month: string,
 ): Promise<ByStoreDreResult> {
-  const companies = await loadCompanyList(database);
-  const stores = await Promise.all(
-    companies.map(async (company) => {
-      const result = await buildStoreDre(database, company.id, month);
+  // O mês inteiro é carregado uma vez e dividido por loja em memória (antes
+  // cada loja refazia catálogo, lançamentos, receita e RH do mês).
+  const [companies, catalog, entries, revenueByStore, payrollMonth] = await Promise.all([
+    loadCompanyList(database),
+    loadCatalog(database),
+    database
+      .prepare(
+        `SELECT id, store_id AS storeId, item_id AS itemId, entry_type AS entryType,
+                amount_cents AS amountCents, percent_basis_points AS percentBasisPoints
+         FROM finance_store_entries WHERE month=?1`,
+      )
+      .bind(month)
+      .all<EntryRow & { storeId: string }>(),
+    loadCommercialRevenueByStore(database, month),
+    loadPayrollDreMonth(database, month),
+  ]);
+  const entriesByStore = new Map<string, EntryRow[]>();
+  for (const { storeId, ...entry } of entries.results ?? []) {
+    const list = entriesByStore.get(storeId) ?? [];
+    list.push(entry);
+    entriesByStore.set(storeId, list);
+  }
+  return {
+    stores: companies.map((company) => {
+      const result = storeDreFrom(
+        catalog,
+        entriesByStore.get(company.id) ?? [],
+        revenueByStore.get(company.id)?.amountCents ?? 0,
+        payrollDreContributionFrom(payrollMonth, { companyId: company.id }),
+      );
       return {
         storeId: company.id,
         storeName: company.name,
@@ -372,8 +413,7 @@ export async function buildByStoreDre(
         })),
       };
     }),
-  );
-  return { stores };
+  };
 }
 
 export function monthsBetween(monthFrom: string, monthTo: string): string[] {
