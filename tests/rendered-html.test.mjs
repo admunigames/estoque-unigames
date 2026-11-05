@@ -4583,6 +4583,14 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /if\(!data \|\| comZoneFilter \|\| comSellerFilter \|\| !comTypeMatch\('operacional'\)\) return \[\];/);
   assert.match(html, /\.filter\(item => comTypeMatch\(item\.role\) && \(!comZoneFilter/);
   assert.match(html, /const items = comEntries\.items\.filter\(item => comTypeMatch\(roleOf\(item\)\)\);/);
+  // RELATÓRIO DE COMISSIONAMENTO (05/11/2026): Excel (ExcelJS, aba por cargo + RESUMO, SALÁRIO a preencher) e PDF em paisagem.
+  assert.match(html, /id="btnComReportExcel">BAIXAR EXCEL<\/button>\s*<button class="btn-outline" type="button" id="btnComReportPdf">BAIXAR PDF<\/button>/);
+  assert.match(html, /const COM_REPORT_TITLES = \{vendedor:'VENDEDORES', lider:'LÍDERES', digital:'LOJA DIGITAL', operacional:'OPERACIONAIS'\};/);
+  assert.match(html, /cdnjs\.cloudflare\.com\/ajax\/libs\/exceljs\/4\.4\.0\/exceljs\.min\.js/);
+  assert.match(html, /concat\(\['Salário \(preencher\)', 'Total a receber'\]\)/);
+  const lastPrint = html.slice(html.lastIndexOf("@media print"));
+  assert.match(lastPrint, /body\.com-printing #pageComercialAcompanhamento > :not\(#comPrintBody\)\{display:none !important;\}/);
+  assert.match(lastPrint, /@page comreport\{size:A4 landscape;/);
   // Aba Indicação removida (16/10/2026); Meta Assistência ao lado das Regras.
   assert.doesNotMatch(html, /data-com-view="indicacao"|comercial:indications/);
   assert.match(html, /data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão<\/button>\s*<button[^>]*data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</);

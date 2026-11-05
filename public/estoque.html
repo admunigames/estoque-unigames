@@ -3505,6 +3505,8 @@
   .com-tier-add{align-self:flex-start;margin-top:4px}
   @media(max-width:560px){.com-tier-row{grid-template-columns:auto minmax(0,1fr);}.com-tier-row button{grid-column:1 / -1}}
   /* Comissão */
+  .com-report-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:12px}
+  .com-report-actions span{margin-right:auto;font:800 11px/1.3 var(--mono);letter-spacing:.04em;color:var(--ink-soft)}
   .com-rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px;margin-bottom:16px}
   /* Legendas da aba Comissão: compactas (título + valor); clicar abre a explicação. */
   #comRulesBox{display:flex;flex-direction:column;gap:10px}
@@ -4170,6 +4172,31 @@
       display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
     }
     body.gd-printing #gdPrintBody{display:block !important; width:100%; color:#111827;}
+    /* RELATÓRIO DE COMISSIONAMENTO (aba Comissão): paisagem, um bloco por cargo. */
+    @page comreport{size:A4 landscape; margin:9mm;}
+    body.com-printing > :not(.shell),
+    body.com-printing .shell > :not(.content),
+    body.com-printing .content > :not(#pageComercialAcompanhamento),
+    body.com-printing #pageComercialAcompanhamento > :not(#comPrintBody){display:none !important;}
+    body.com-printing .shell,body.com-printing .content,body.com-printing #pageComercialAcompanhamento{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.com-printing #comPrintBody{display:block !important; width:100%; color:#111827; page:comreport;}
+    .com-print-group{margin-top:12px;}
+    .com-print-group h2{margin:0 0 4px; padding:5px 8px; border:1px solid #111827; background:#1f3a5f !important; color:#fff !important; font:800 11px/1.3 var(--mono); break-after:avoid; page-break-after:avoid;}
+    .com-print-group h2 small{float:right; font-size:9px;}
+    .com-print-legend{margin:0 0 5px; padding:4px 8px; list-style:none; columns:2; column-gap:16px; border:1px solid #c9d3df; background:#eef3f9 !important; font-size:7.5px; line-height:1.45; break-after:avoid; page-break-after:avoid;}
+    .com-print-legend li{break-inside:avoid;}
+    .com-print-table{width:100%; border-collapse:collapse; font-size:8px;}
+    .com-print-table thead{display:table-header-group;}
+    .com-print-table th,.com-print-table td{padding:3px 4px; border:1px solid #9ca3af !important; background:#fff !important; color:#111827 !important; text-align:left; vertical-align:middle;}
+    .com-print-table th{font:800 7px/1.25 var(--mono); text-transform:uppercase; background:#e8eef6 !important;}
+    .com-print-table .num{text-align:right; white-space:nowrap;}
+    .com-print-table tr{break-inside:avoid; page-break-inside:avoid;}
+    .com-print-table tbody tr:nth-child(even) td{background:#f6f8fb !important;}
+    .com-print-table tr.sum td{font-weight:800; background:#e8eef6 !important; border-top:2px solid #1f3a5f !important;}
+    .com-print-table .neg{color:#b42318 !important;}
+    .com-print-resume{width:auto; min-width:50%; margin:6px 0 2px; font-size:9px;}
     .gd-print-header{display:flex !important; align-items:center; gap:12px;}
     .gd-print-logo{width:44px; height:auto;}
     .gd-print-opening{margin:4px 0 8px; font:800 10px/1.4 var(--mono);}
@@ -8075,7 +8102,14 @@
         <div class="com-seller-list com-operationals" id="comDashOperationals" hidden></div>
       </div>
 
+      <!-- RELATÓRIO DE COMISSIONAMENTO em PDF: só aparece na impressão (body.com-printing). -->
+      <div id="comPrintBody" class="com-print-body" hidden></div>
       <div class="com-view-panel" id="comViewComissao" hidden>
+        <div class="com-report-actions no-print">
+          <span>RELATÓRIO DE COMISSIONAMENTO DO MÊS (POR CARGO, SEGUE OS FILTROS)</span>
+          <button class="btn-outline" type="button" id="btnComReportExcel">BAIXAR EXCEL</button>
+          <button class="btn-outline" type="button" id="btnComReportPdf">BAIXAR PDF</button>
+        </div>
         <!-- Quadro montado pela regra vigente do mês (comRulesBoxHtml) —
              nenhum percentual fixo aqui. -->
         <div class="com-rules" id="comRulesBox" aria-label="Regras de comissão"></div>
@@ -55284,6 +55318,293 @@ function renderHomeTasks(){
       total.hidden = payees.length < 2;
     }
   }
+
+  // ---------- RELATÓRIO DE COMISSIONAMENTO (Excel e PDF) ----------
+  // Pedido de 05/11/2026: um bloco por cargo (VENDEDORES, LÍDERES, LOJA
+  // DIGITAL, OPERACIONAIS), cada um em ordem alfabética, com as legendas do
+  // mês e cada recebimento em uma coluna — os mesmos números dos cartões da
+  // aba Comissão (segue os filtros da tela). O Excel traz SALÁRIO em branco
+  // para preencher e TOTAL A RECEBER com fórmula; o PDF sai em paisagem.
+  const COM_REPORT_TITLES = {vendedor:'VENDEDORES', lider:'LÍDERES', digital:'LOJA DIGITAL', operacional:'OPERACIONAIS'};
+
+  function comReportGroups(){
+    const legends = comLegendItems();
+    const byName = (a, b) => a.name.localeCompare(b.name, 'pt-BR');
+    const col = (label, type, get) => ({label, type, get});
+    const name = col('Colaborador', 'text', p => p.name);
+    const store = col('Loja', 'text', p => p.companyName || 'SEM LOJA');
+    const c = p => p.metrics.commission;
+    const goal = [
+      col('Meta', 'money', p => p.goal.targetRevenueCents),
+      col('Faturado', 'money', p => p.realized.revenueCents),
+      col('% da meta', 'pct', p => p.metrics.revenue.percent),
+      col('Taxa', 'text', p => comFormatBps(c(p).revenueRateBps)),
+      col('Comissão por vendas', 'money', p => c(p).revenueCommissionCents)
+    ];
+    const extras = [
+      col('Garantia estendida', 'money', p => c(p).warrantyCommissionCents),
+      col('Crediário', 'money', p => c(p).creditCommissionCents),
+      col('Venda P.A / Unigames', 'money', p => c(p).partnerCommissionCents)
+    ];
+    const sums = get => [
+      col('Contracheque', 'money', p => get(p).payslipCents),
+      col('Premiação', 'money', p => get(p).premiumCents),
+      col('Total comissões', 'money', p => get(p).totalCents)
+    ];
+    const columns = {
+      vendedor: [name, store, ...goal.slice(0, 3), col('Critérios', 'text', p => c(p).newcomer ? 'NOVATO' : c(p).allCriteriaMet ? 'BATIDOS' : 'NÃO BATIDOS'),
+        ...goal.slice(3), col('Premiação por faturamento', 'money', p => c(p).revenuePremiumCents), ...extras, ...sums(c)],
+      lider: [name, store, ...goal, ...extras,
+        col('Prêmio · vendedores', 'money', p => c(p).leader ? c(p).leader.sellersPremiumCents : 0),
+        col('Prêmio · loja e assistência', 'money', p => c(p).leader ? c(p).leader.storePremiumCents : 0), ...sums(c)],
+      digital: [name, store, ...goal, ...sums(c)],
+      operacional: [name, col('Cargo', 'text', p => p.roleTitle || ''), store,
+        col('Meta assistência', 'money', p => p.commission.assistTargetCents),
+        col('Feito assistência', 'money', p => p.commission.assistRevenueCents),
+        col('% assistência', 'pct', p => p.commission.assistPercent),
+        col('Taxa', 'text', p => p.commission.rateBps > 0 ? comFormatBps(p.commission.rateBps) : 'SEM META'),
+        col('Comissão assistência', 'money', p => p.commission.commissionCents),
+        col('Prêmio · assistência', 'money', p => p.commission.assistPremiumCents),
+        col('Prêmio · loja', 'money', p => p.commission.storePremiumCents), ...sums(p => p.commission)]
+    };
+    const sellers = comFilteredSellers();
+    const people = {
+      vendedor: sellers.filter(s => !c(s).digital && s.role !== 'lider'),
+      lider: sellers.filter(s => !c(s).digital && s.role === 'lider'),
+      digital: sellers.filter(s => c(s).digital),
+      operacional: comRules().roles ? comFilteredOperationals() : []
+    };
+    return Object.keys(COM_REPORT_TITLES).filter(key => people[key].length).map(key => {
+      const rows = people[key].slice().sort(byName);
+      const total = rows.reduce((acc, p) => acc + (key === 'operacional' ? p.commission : c(p)).totalCents, 0);
+      return {key, title:COM_REPORT_TITLES[key], legends:legends.filter(item => item.group === key), columns:columns[key], rows, totalCents:total};
+    });
+  }
+
+  function comReportFileName(ext){
+    return 'COMISSIONAMENTO-'+comMonthLong(comMonth).replace('/', '-')+'.'+ext;
+  }
+
+  let excelJsLoader = null;
+  function ensureExcelJs(){
+    if(window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    if(excelJsLoader) return excelJsLoader;
+    excelJsLoader = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+      script.async = true;
+      script.onload = () => window.ExcelJS ? resolve(window.ExcelJS) : reject(new Error('GERADOR DE EXCEL INDISPONÍVEL.'));
+      script.onerror = () => { excelJsLoader = null; reject(new Error('NÃO FOI POSSÍVEL CARREGAR O GERADOR DE EXCEL.')); };
+      document.head.appendChild(script);
+    });
+    return excelJsLoader;
+  }
+
+  // Planilha: RESUMO (fórmulas apontando para os totais de cada aba) + uma aba por cargo.
+  async function comReportWorkbook(groups){
+    const ExcelJS = await ensureExcelJs();
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'UNIGAMES';
+    // Fórmulas levam o resultado já calculado (visualizadores sem cálculo, como o
+    // do celular, mostram os números) e o Excel recalcula ao abrir.
+    wb.calcProperties.fullCalcOnLoad = true;
+    const NAVY = 'FF1F3A5F', SOFT = 'FFE8EEF6', ZEBRA = 'FFF6F8FB', INPUT = 'FFFFF4CC', LINE = 'FFC9D3DF';
+    const MONEY = '"R$" #,##0.00;[Red]-"R$" #,##0.00';
+    const month = comMonthLong(comMonth);
+    const generated = 'GERADO EM '+(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+(currentSession.displayName || '');
+    const border = {top:{style:'thin', color:{argb:LINE}}, left:{style:'thin', color:{argb:LINE}}, bottom:{style:'thin', color:{argb:LINE}}, right:{style:'thin', color:{argb:LINE}}};
+    const fill = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
+    const letter = n => { let s = ''; for(; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
+    const titleRows = (ws, width, title) => {
+      ws.mergeCells(1, 1, 1, width);
+      ws.getCell(1, 1).value = title;
+      ws.getCell(1, 1).font = {bold:true, size:15, color:{argb:'FFFFFFFF'}};
+      ws.getCell(1, 1).fill = fill(NAVY);
+      ws.getCell(1, 1).alignment = {vertical:'middle', indent:1};
+      ws.getRow(1).height = 30;
+      ws.mergeCells(2, 1, 2, width);
+      ws.getCell(2, 1).value = 'COMERCIAL · ACOMPANHAMENTO METAS · '+month+' · '+generated;
+      ws.getCell(2, 1).font = {size:9, color:{argb:'FF475569'}};
+      ws.getCell(2, 1).alignment = {indent:1};
+    };
+    const headerRow = (ws, rowNumber, labels) => {
+      const row = ws.getRow(rowNumber);
+      labels.forEach((label, index) => {
+        const cell = row.getCell(index + 1);
+        cell.value = label.toLocaleUpperCase('pt-BR');
+        cell.font = {bold:true, size:9, color:{argb:'FFFFFFFF'}};
+        cell.fill = fill(NAVY);
+        cell.alignment = {vertical:'middle', horizontal:'center', wrapText:true};
+        cell.border = border;
+      });
+      row.height = 34;
+    };
+    const summary = wb.addWorksheet('RESUMO', {views:[{showGridLines:false}]});
+    const sheets = groups.map(group => {
+      const ws = wb.addWorksheet(group.title, {views:[{showGridLines:false}], pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, paperSize:9}});
+      const labels = group.columns.map(column => column.label).concat(['Salário (preencher)', 'Total a receber']);
+      const width = labels.length;
+      titleRows(ws, width, 'RELATÓRIO DE COMISSIONAMENTO · '+group.title+' · '+month);
+      const head = 4;
+      headerRow(ws, head, labels);
+      const first = head + 1;
+      const totalCol = group.columns.length;
+      group.rows.forEach((person, index) => {
+        const row = ws.getRow(first + index);
+        group.columns.forEach((column, i) => {
+          const raw = column.get(person);
+          const cell = row.getCell(i + 1);
+          cell.value = column.type === 'money' ? (Number(raw) || 0) / 100 : column.type === 'pct' ? (raw === null || raw === undefined ? null : raw / 100) : String(raw || '').toLocaleUpperCase('pt-BR');
+          if(column.type === 'money') cell.numFmt = MONEY;
+          if(column.type === 'pct') cell.numFmt = '0.0%';
+          cell.alignment = {vertical:'middle', horizontal:column.type === 'text' && i < 3 ? 'left' : 'center'};
+        });
+        const salary = row.getCell(totalCol + 1);
+        salary.numFmt = MONEY;
+        salary.fill = fill(INPUT);
+        const grand = row.getCell(totalCol + 2);
+        grand.value = {formula:letter(totalCol)+(first + index)+'+'+letter(totalCol + 1)+(first + index), result:(Number(group.columns[totalCol - 1].get(person)) || 0) / 100};
+        grand.numFmt = MONEY;
+        grand.font = {bold:true};
+        for(let i = 1; i <= width; i += 1){
+          const cell = row.getCell(i);
+          cell.border = border;
+          if(i !== totalCol + 1 && index % 2) cell.fill = fill(ZEBRA);
+        }
+        row.height = 20;
+      });
+      const last = first + group.rows.length - 1;
+      const sumRow = ws.getRow(last + 1);
+      sumRow.getCell(1).value = 'TOTAL · '+group.rows.length+(group.rows.length === 1 ? ' COLABORADOR' : ' COLABORADORES');
+      const columnSum = column => group.rows.reduce((acc, person) => acc + (Number(column.get(person)) || 0), 0) / 100;
+      const sumOf = i => i < totalCol ? columnSum(group.columns[i]) : i === totalCol ? 0 : columnSum(group.columns[totalCol - 1]);
+      group.columns.concat([{type:'money'}, {type:'money'}]).forEach((column, i) => {
+        const cell = sumRow.getCell(i + 1);
+        if(column.type === 'money') cell.value = {formula:'SUM('+letter(i + 1)+first+':'+letter(i + 1)+last+')', result:sumOf(i)};
+        cell.numFmt = MONEY;
+        cell.font = {bold:true, color:{argb:NAVY}};
+        cell.fill = fill(SOFT);
+        cell.border = {...border, top:{style:'medium', color:{argb:NAVY}}};
+        cell.alignment = {vertical:'middle', horizontal:i ? 'center' : 'left'};
+      });
+      sumRow.height = 22;
+      // Legenda do cargo embaixo da tabela (o cabeçalho fica fixo no alto).
+      let r = last + 3;
+      ws.mergeCells(r, 1, r, width);
+      ws.getCell(r, 1).value = 'LEGENDA · '+group.title;
+      ws.getCell(r, 1).font = {bold:true, size:10, color:{argb:NAVY}};
+      group.legends.forEach(item => {
+        r += 1;
+        ws.mergeCells(r, 1, r, width);
+        const cell = ws.getCell(r, 1);
+        cell.value = {richText:[{text:(item.title+': '+item.value).toLocaleUpperCase('pt-BR'), font:{bold:true, size:9}}, {text:' — '+item.note.toLocaleUpperCase('pt-BR'), font:{size:9, color:{argb:'FF334155'}}}]};
+        cell.fill = fill(SOFT);
+        cell.alignment = {wrapText:true, vertical:'middle', indent:1};
+        ws.getRow(r).height = 28;
+      });
+      group.columns.concat([{type:'money'}, {type:'money'}]).forEach((column, i) => {
+        ws.getColumn(i + 1).width = column.label === 'Colaborador' ? 30 : column.label === 'Loja' || column.label === 'Cargo' ? 22 : column.type === 'money' ? 16 : 12;
+      });
+      ws.views = [{state:'frozen', xSplit:1, ySplit:head, showGridLines:false}];
+      ws.autoFilter = {from:{row:head, column:1}, to:{row:last, column:width}};
+      ws.pageSetup.printTitlesRow = head+':'+head;
+      const ref = n => "'"+group.title+"'!"+letter(n)+(last + 1);
+      return {group, refs:[totalCol - 2, totalCol - 1, totalCol, totalCol + 1, totalCol + 2].map(n => ({formula:ref(n), result:sumOf(n - 1)}))};
+    });
+    const labels = ['Cargo', 'Colaboradores', 'Contracheque', 'Premiação', 'Total comissões', 'Salários', 'Total a receber'];
+    titleRows(summary, labels.length, 'RELATÓRIO DE COMISSIONAMENTO · RESUMO · '+month);
+    headerRow(summary, 4, labels);
+    sheets.forEach((sheet, index) => {
+      const row = summary.getRow(5 + index);
+      [sheet.group.title, sheet.group.rows.length].concat(sheet.refs).forEach((value, i) => {
+        const cell = row.getCell(i + 1);
+        cell.value = value;
+        cell.border = border;
+        cell.numFmt = i > 1 ? MONEY : 'General';
+        cell.alignment = {vertical:'middle', horizontal:i ? 'center' : 'left'};
+        if(index % 2) cell.fill = fill(ZEBRA);
+      });
+      row.height = 20;
+    });
+    const end = 4 + sheets.length;
+    const totalRow = summary.getRow(end + 1);
+    totalRow.getCell(1).value = 'TOTAL GERAL';
+    for(let i = 2; i <= labels.length; i += 1) totalRow.getCell(i).value = {formula:'SUM('+letter(i)+'5:'+letter(i)+end+')',
+      result:sheets.reduce((acc, sheet) => acc + (i === 2 ? sheet.group.rows.length : sheet.refs[i - 3].result), 0)};
+    for(let i = 1; i <= labels.length; i += 1){
+      const cell = totalRow.getCell(i);
+      cell.numFmt = i > 2 ? MONEY : 'General';
+      cell.font = {bold:true, color:{argb:'FFFFFFFF'}};
+      cell.fill = fill(NAVY);
+      cell.border = border;
+      cell.alignment = {vertical:'middle', horizontal:i > 1 ? 'center' : 'left'};
+    }
+    totalRow.height = 24;
+    summary.getRow(end + 3).getCell(1).value = 'PREENCHA O SALÁRIO (CÉLULAS AMARELAS) NA ABA DE CADA CARGO: O TOTAL A RECEBER E ESTE RESUMO SE ATUALIZAM SOZINHOS.';
+    summary.getRow(end + 3).getCell(1).font = {italic:true, size:9, color:{argb:'FF475569'}};
+    summary.columns = labels.map((label, i) => ({width:i ? 18 : 24}));
+    return wb;
+  }
+
+  function comReportPdfHtml(groups){
+    const money = cents => '<span class="'+(cents < 0 ? 'neg' : '')+'">'+escapeHtml(formatCentsBRL(cents))+'</span>';
+    const value = (column, person) => {
+      const raw = column.get(person);
+      if(column.type === 'money') return money(Number(raw) || 0);
+      if(column.type === 'pct') return escapeHtml(comFormatPct(raw));
+      return escapeHtml(String(raw || '—'));
+    };
+    const grand = groups.reduce((acc, group) => acc + group.totalCents, 0);
+    const resume = '<table class="com-print-table com-print-resume"><thead><tr><th>Cargo</th><th class="num">Colaboradores</th><th class="num">Total comissões</th></tr></thead><tbody>'+
+      groups.map(group => '<tr><td>'+escapeHtml(group.title)+'</td><td class="num">'+group.rows.length+'</td><td class="num">'+money(group.totalCents)+'</td></tr>').join('')+
+      '<tr class="sum"><td>TOTAL GERAL</td><td class="num">'+groups.reduce((acc, group) => acc + group.rows.length, 0)+'</td><td class="num">'+money(grand)+'</td></tr></tbody></table>';
+    return '<header class="print-report-header gd-print-header"><img class="gd-print-logo" src="'+LOGO_DATA_URI+'" alt="">'+
+        '<div><div class="print-report-kicker">COMERCIAL · ACOMPANHAMENTO METAS</div>'+
+        '<h1>RELATÓRIO DE COMISSIONAMENTO — '+escapeHtml(comMonthLong(comMonth))+'</h1>'+
+        '<div class="print-report-meta">GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+'</div></div></header>'+
+      resume+
+      groups.map(group => '<section class="com-print-group">'+
+        '<h2>'+escapeHtml(group.title)+' <small>'+group.rows.length+(group.rows.length === 1 ? ' COLABORADOR' : ' COLABORADORES')+' · '+escapeHtml(formatCentsBRL(group.totalCents))+'</small></h2>'+
+        '<ul class="com-print-legend">'+group.legends.map(item => '<li><b>'+escapeHtml(item.title+': '+item.value)+'</b> — '+escapeHtml(item.note)+'</li>').join('')+'</ul>'+
+        '<table class="com-print-table"><thead><tr>'+group.columns.map(column => '<th'+(column.type === 'text' ? '' : ' class="num"')+'>'+escapeHtml(column.label)+'</th>').join('')+'</tr></thead><tbody>'+
+        group.rows.map(person => '<tr>'+group.columns.map(column => '<td'+(column.type === 'text' ? '' : ' class="num"')+'>'+value(column, person)+'</td>').join('')+'</tr>').join('')+
+        '<tr class="sum">'+group.columns.map((column, i) => '<td'+(column.type === 'text' ? '' : ' class="num"')+'>'+
+          (i === 0 ? 'TOTAL' : column.type === 'money' ? money(group.rows.reduce((acc, person) => acc + (Number(column.get(person)) || 0), 0)) : '')+'</td>').join('')+'</tr>'+
+        '</tbody></table></section>').join('');
+  }
+
+  let comPrintTitleBefore = '';
+  async function comDownloadReport(kind){
+    const groups = comReportGroups();
+    if(!groups.length){ showPurchaseToast('Nenhum colaborador com comissão neste mês.', 'error'); return; }
+    if(kind === 'pdf'){
+      el('comPrintBody').innerHTML = comReportPdfHtml(groups);
+      if(!comPrintTitleBefore) comPrintTitleBefore = document.title;
+      document.title = comReportFileName('pdf').replace(/\.pdf$/, '');
+      document.body.classList.add('pdf-export', 'com-printing');
+      window.print();
+      return;
+    }
+    const button = el('btnComReportExcel');
+    button.disabled = true;
+    try{
+      const wb = await comReportWorkbook(groups);
+      const buffer = await wb.xlsx.writeBuffer();
+      downloadBlobFile(new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), comReportFileName('xlsx'));
+    }catch(error){
+      showPurchaseToast(error.message || 'NÃO FOI POSSÍVEL GERAR O EXCEL.', 'error');
+    }finally{
+      button.disabled = false;
+    }
+  }
+  window.addEventListener('afterprint', () => {
+    if(!comPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export', 'com-printing');
+    document.title = comPrintTitleBefore;
+    comPrintTitleBefore = '';
+  });
+  if(el('btnComReportExcel')) el('btnComReportExcel').addEventListener('click', () => comDownloadReport('excel'));
+  if(el('btnComReportPdf')) el('btnComReportPdf').addEventListener('click', () => comDownloadReport('pdf'));
 
   // ---------- Ranking em gráfico de colunas ("vela") ----------
   // Subabas: VENDEDORES (% da métrica escolhida em "Rankear por"), METAS
