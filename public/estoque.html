@@ -8201,7 +8201,7 @@
       <!-- METAS (comercial:metas): só leitura — meta × feito em R$ das lojas e dos vendedores. -->
       <div class="com-view-panel" id="comViewMetas" hidden>
         <div class="com-total" id="comMetasTotal" hidden></div>
-        <h3 class="com-section-title">METAS DAS LOJAS</h3>
+        <div class="com-chart-head"><h3 class="com-section-title">METAS DAS LOJAS</h3><button class="btn-accent" type="button" id="btnComMetasStoresImage">GERAR IMAGEM PARA WHATSAPP</button></div>
         <div class="table-panel responsive-table com-metas-table">
           <div class="table-scroll">
             <table>
@@ -8210,7 +8210,7 @@
             </table>
           </div>
         </div>
-        <h3 class="com-section-title">METAS DOS VENDEDORES</h3>
+        <div class="com-chart-head"><h3 class="com-section-title">METAS DOS VENDEDORES</h3><button class="btn-accent" type="button" id="btnComMetasSellersImage">GERAR IMAGEM PARA WHATSAPP</button></div>
         <div class="table-panel responsive-table com-metas-table">
           <div class="table-scroll">
             <table>
@@ -56075,6 +56075,106 @@ function renderHomeTasks(){
     comLoadTeam();
   });
   if(el('btnComRankImage')) el('btnComRankImage').addEventListener('click', comShareRankImage);
+  // Imagens da aba METAS (pedido de 05/11/2026): mesma moldura do Ranking
+  // (comDrawImageFrame), 1600 de largura e altura pelo nº de linhas. Cada
+  // linha: nome (e loja), feito de meta, barra e o % na cor da faixa. Mais de
+  // 10 linhas → duas colunas, para ficar compacta.
+  const COM_METAS_TIER_COLORS = {green:'#2f9e64', yellow:'#c98a12', red:'#d4483a', none:'#7d8fa1'};
+  async function comBuildMetasImage(kind){
+    const stores = kind === 'lojas';
+    const rows = stores ? comMetas.stores : comMetas.sellers;
+    const reais = cents => 'R$ '+Math.round((Number(cents) || 0) / 100).toLocaleString('pt-BR');
+    const W = 1600, ROW = 74, GAP = 12, cols = rows.length > 10 ? 2 : 1;
+    const perCol = Math.ceil(rows.length / cols);
+    const SUMMARY = 76;
+    const H = 172 + 6 + 26 + SUMMARY + 18 + perCol * (ROW + GAP) - GAP + 30 + 58;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const {HEADER} = await comDrawImageFrame(ctx, W, H, {
+      title: stores ? 'METAS DAS LOJAS' : 'METAS DOS VENDEDORES',
+      subtitle: stores ? 'META × FEITO DE CADA LOJA (VENDAS + ASSISTÊNCIA)' : 'META × FEITO DE CADA VENDEDOR',
+      month: comMetas.month, footer: 'UNIGAMES · ACOMPANHAMENTO DE METAS',
+    });
+    const P = COM_IMAGE_PALETTE;
+    // Resumo: total da rede (lojas) ou quantos bateram a meta (vendedores).
+    let y = HEADER + 6 + 26;
+    const hit = rows.filter(row => row.percent !== null && row.percent >= 100).length;
+    const summary = stores
+      ? (comMetas.allStores && rows.length > 1 ? 'TOTAL DAS LOJAS · '+reais(comMetas.total.revenueCents)+' DE '+reais(comMetas.total.targetCents) : rows.length+(rows.length === 1 ? ' LOJA' : ' LOJAS'))
+      : rows.length+(rows.length === 1 ? ' VENDEDOR' : ' VENDEDORES');
+    const summaryRight = stores && comMetas.allStores && rows.length > 1 ? comFormatPct(comMetas.total.percent) : hit+' BATERAM A META';
+    ctx.fillStyle = '#ffffff';
+    comRoundRect(ctx, 40, y, W - 80, SUMMARY, 18);
+    ctx.fill();
+    ctx.strokeStyle = P.grid;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = P.ink;
+    ctx.font = comFont(900, 28);
+    ctx.fillText(comFitText(ctx, summary, W - 520), 68, y + SUMMARY / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = stores && comMetas.allStores ? COM_METAS_TIER_COLORS[comTier(comMetas.total.percent)] : '#1d487e';
+    ctx.font = comFont(900, 34);
+    ctx.fillText(summaryRight, W - 68, y + SUMMARY / 2);
+    y += SUMMARY + 18;
+
+    const colW = (W - 80 - (cols - 1) * 20) / cols;
+    rows.forEach((row, index) => {
+      const col = Math.floor(index / perCol);
+      const x = 40 + col * (colW + 20);
+      const top = y + (index % perCol) * (ROW + GAP);
+      const color = COM_METAS_TIER_COLORS[comTier(row.percent)];
+      ctx.fillStyle = '#ffffff';
+      comRoundRect(ctx, x, top, colW, ROW, 14);
+      ctx.fill();
+      ctx.fillStyle = color;
+      comRoundRect(ctx, x, top, 8, ROW, 4);
+      ctx.fill();
+      // % à direita, nome e loja à esquerda, valores no meio, barra embaixo.
+      const pctW = 150;
+      ctx.textAlign = 'right';
+      ctx.fillStyle = color;
+      ctx.font = comFont(900, 32);
+      ctx.fillText(comFormatPct(row.percent), x + colW - 22, top + ROW / 2);
+      const nameW = cols === 2 ? colW * 0.42 : colW * 0.36;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = P.ink;
+      ctx.font = comFont(900, 24);
+      ctx.fillText(comFitText(ctx, row.name, nameW - 50), x + 26, stores ? top + ROW / 2 : top + 26);
+      if(!stores){
+        ctx.fillStyle = P.soft;
+        ctx.font = comFont(700, 17);
+        ctx.fillText(comFitText(ctx, (row.companyName || 'SEM LOJA')+(row.role === 'lider' ? ' · LÍDER' : ''), nameW - 50), x + 26, top + 52);
+      }
+      const midX = x + nameW;
+      const midW = colW - nameW - pctW - 20;
+      ctx.fillStyle = P.ink;
+      ctx.font = comFont(800, 20);
+      ctx.fillText(comFitText(ctx, reais(row.revenueCents)+' DE '+reais(row.targetCents), midW), midX, top + 26);
+      ctx.fillStyle = P.grid;
+      comRoundRect(ctx, midX, top + 46, midW, 12, 6);
+      ctx.fill();
+      const fill = Math.max(0, Math.min(1, (row.percent || 0) / 100));
+      if(fill > 0){
+        ctx.fillStyle = color;
+        comRoundRect(ctx, midX, top + 46, Math.max(12, midW * fill), 12, 6);
+        ctx.fill();
+      }
+    });
+    return canvas;
+  }
+
+  async function comShareMetasImage(kind){
+    if(!comMetas || !(kind === 'lojas' ? comMetas.stores : comMetas.sellers).length){ showPurchaseToast('NADA PARA GERAR NESTE MÊS.', 'error'); return; }
+    await shareCanvasImage(await comBuildMetasImage(kind), 'metas-'+(kind === 'lojas' ? 'lojas' : 'vendedores')+'-'+comMetas.month+'.png');
+  }
+  if(el('btnComMetasStoresImage')) el('btnComMetasStoresImage').addEventListener('click', () => comShareMetasImage('lojas'));
+  if(el('btnComMetasSellersImage')) el('btnComMetasSellersImage').addEventListener('click', () => comShareMetasImage('vendedores'));
+
   let comRankResizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(comRankResizeTimer);
