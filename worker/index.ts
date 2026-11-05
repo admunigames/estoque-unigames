@@ -75,7 +75,7 @@ type Permission =
   | "rh_desligamento:view" | "rh_desligamento:manage"
   | "rh_exames:view"
   | "rh_onboarding:videos" | "rh_onboarding:track"
-  | "comercial:dashboard" | "comercial:commission" | "comercial:ranking"
+  | "comercial:dashboard" | "comercial:commission" | "comercial:ranking" | "comercial:metas"
   | "comercial:goals_view" | "comercial:goals" | "comercial:credit_view" | "comercial:credit"
   | "comercial:stores_view" | "comercial:stores" | "comercial:weekend_view" | "comercial:weekend"
   | "comercial:assist_view" | "comercial:assist" | "comercial:rules_view" | "comercial:rules"
@@ -239,7 +239,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // edita também vê. Independente do Financeiro e do RH Financeiro (ver
   // MODULE_VIEW_PERMISSIONS.commercial e app/api/commercial/shared.ts). As
   // antigas comercial:view/manage ficam só em LEGACY_PERMISSION_MAP.
-  "comercial:dashboard", "comercial:commission", "comercial:ranking",
+  "comercial:dashboard", "comercial:commission", "comercial:ranking", "comercial:metas",
   "comercial:goals_view", "comercial:goals", "comercial:credit_view", "comercial:credit",
   "comercial:stores_view", "comercial:stores", "comercial:weekend_view", "comercial:weekend",
   "comercial:assist_view", "comercial:assist", "comercial:rules_view", "comercial:rules",
@@ -1414,7 +1414,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   dentalPlan: ["rh_odontologico:view", "rh_odontologico:manage"],
   schedules: ["rh_escalas:view", "rh_escalas:manage"],
   commercial: [
-    "comercial:dashboard", "comercial:commission", "comercial:ranking",
+    "comercial:dashboard", "comercial:commission", "comercial:ranking", "comercial:metas",
     "comercial:goals_view", "comercial:goals", "comercial:credit_view", "comercial:credit",
     "comercial:stores_view", "comercial:stores", "comercial:weekend_view", "comercial:weekend",
     "comercial:assist_view", "comercial:assist", "comercial:rules_view", "comercial:rules",

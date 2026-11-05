@@ -4469,8 +4469,8 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</);
   assert.match(html, /data-com-view="comissao" data-permission="comercial:commission">Comissão</);
   assert.match(html, /data-com-view="ranking" data-permission="comercial:ranking">Ranking</);
-  assert.match(html, /data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Vendedores</);
-  assert.match(html, /data-com-view="crediarios" data-any-permission="comercial:credit_view,comercial:credit">Crediários</);
+  assert.match(html, /data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Meta Vendedores</);
+  assert.match(html, /data-com-view="crediarios" data-any-permission="comercial:credit_view,comercial:credit">Crediário</);
   assert.match(html, /data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Meta Loja</);
   // Sem importação de arquivo/planilha em lugar nenhum do Comercial.
   assert.doesNotMatch(html, /comImportFile|comImportPreview|btnComImportConfirm|com-import-|\/import\?month/);
@@ -4591,11 +4591,14 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   const lastPrint = html.slice(html.lastIndexOf("@media print"));
   assert.match(lastPrint, /body\.com-printing #pageComercialAcompanhamento > :not\(#comPrintBody\)\{display:none !important;\}/);
   assert.match(lastPrint, /@page comreport\{size:A4 landscape;/);
-  // Aba Indicação removida (16/10/2026); Meta Assistência ao lado das Regras.
+  // Aba Indicação removida (16/10/2026).
   assert.doesNotMatch(html, /data-com-view="indicacao"|comercial:indications/);
-  assert.match(html, /data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão<\/button>\s*<button[^>]*data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</);
-  // Meta do Fim de Semana: ao lado da Meta Loja, mesma permissão (só controle).
-  assert.match(html, /data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Meta Loja<\/button>\s*<button[^>]*data-com-view="fimsemana" data-any-permission="comercial:weekend_view,comercial:weekend">Meta do Fim de Semana</);
+  // Ordem das abas (05/11/2026): Dashboard > Comissão > Ranking > Metas > Crediário > Meta Vendedores > Meta Loja >
+  // Meta Assistência > Meta do Fim de Semana > Regras de Comissão. METAS tem permissão própria (só leitura).
+  const tabs = [...html.matchAll(/data-com-view="([a-z]+)"[^>]*>([^<]+)<\/button>/g)].map((m) => m[2]);
+  assert.deepEqual(tabs, ["Dashboard", "Comissão", "Ranking", "Metas", "Crediário", "Meta Vendedores", "Meta Loja", "Meta Assistência", "Meta do Fim de Semana", "Regras de Comissão"]);
+  assert.match(html, /data-com-view="metas" data-permission="comercial:metas">Metas</);
+  assert.match(html, /value="comercial:metas"> VER METAS/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission", "comercial:ranking"\],/);
   assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);

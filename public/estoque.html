@@ -3579,6 +3579,12 @@
   .com-assist-dash .com-section-title{margin:10px 0 0}
   .com-kpis{margin-bottom:0}
   .com-kpi.tier-green strong{color:#54c48a}
+  .com-metas-table{margin-bottom:18px}
+  .com-metas-table td.num{text-align:right;white-space:nowrap}
+  .com-metas-pct{font-weight:800}
+  .com-metas-pct.tier-green{color:#54c48a}
+  .com-metas-pct.tier-yellow{color:#e1ad49}
+  .com-metas-pct.tier-red{color:#ef6a55}
   .com-kpi.tier-yellow strong{color:#e1ad49}
   .com-kpi.tier-red strong{color:#ef6a55}
   .com-rank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:10px}
@@ -8048,13 +8054,15 @@
       <div class="supply-tabs" role="tablist" aria-label="Acompanhamento de metas">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="comissao" data-permission="comercial:commission">Comissão</button>
+        <!-- Ordem pedida em 05/11/2026. -->
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="ranking" data-permission="comercial:ranking">Ranking</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Vendedores</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediarios" data-any-permission="comercial:credit_view,comercial:credit">Crediários</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="metas" data-permission="comercial:metas">Metas</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="crediarios" data-any-permission="comercial:credit_view,comercial:credit">Crediário</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Meta Vendedores</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Meta Loja</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="fimsemana" data-any-permission="comercial:weekend_view,comercial:weekend">Meta do Fim de Semana</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="regras" data-any-permission="comercial:rules_view,comercial:rules">Regras de Comissão</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-com-view="assistencia" data-any-permission="comercial:assist_view,comercial:assist">Meta Assistência</button>
       </div>
 
       <div class="dre-toolbar com-toolbar no-print">
@@ -8185,6 +8193,29 @@
             <table>
               <thead><tr><th>ID da venda</th><th>Vendedor / Operacional</th><th style="text-align:right">Total da venda</th><th>Lançado por</th><th></th></tr></thead>
               <tbody id="comEntriesBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- METAS (comercial:metas): só leitura — meta × feito em R$ das lojas e dos vendedores. -->
+      <div class="com-view-panel" id="comViewMetas" hidden>
+        <div class="com-total" id="comMetasTotal" hidden></div>
+        <h3 class="com-section-title">METAS DAS LOJAS</h3>
+        <div class="table-panel responsive-table com-metas-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Loja</th><th style="text-align:right">Meta (R$)</th><th style="text-align:right">Feito (R$)</th><th style="text-align:right">% da meta</th><th style="text-align:right">Falta (R$)</th></tr></thead>
+              <tbody id="comMetasStoresBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <h3 class="com-section-title">METAS DOS VENDEDORES</h3>
+        <div class="table-panel responsive-table com-metas-table">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Vendedor</th><th>Loja</th><th style="text-align:right">Meta (R$)</th><th style="text-align:right">Feito (R$)</th><th style="text-align:right">% da meta</th><th style="text-align:right">Falta (R$)</th></tr></thead>
+              <tbody id="comMetasSellersBody"><tr><td colspan="6" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -11037,6 +11068,7 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:dashboard"> VER DASHBOARD</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:commission"> VER COMISSÃO (VALORES EM R$)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:ranking"> VER RANKING</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:metas"> VER METAS (META E FEITO EM R$ DAS LOJAS E DOS VENDEDORES)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals_view"> VER VENDEDORES</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:goals"> EDITAR VENDEDORES (METAS, REALIZADO, TIPO E NOVATO)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="comercial:credit_view"> VER CREDIÁRIOS</label>
@@ -47429,7 +47461,7 @@ function renderHomeTasks(){
     'rh_fardamento:view':'RH - Fardamento: visualizar','rh_fardamento:manage':'RH - Fardamento: lançar/gerenciar',
     'rh_aniversariantes:view':'RH - Aniversariantes: visualizar','rh_aniversariantes:manage':'RH - Aniversariantes: marcar/gerenciar',
     'rh_odontologico:view':'RH - Plano Odontológico: visualizar','rh_odontologico:manage':'RH - Plano Odontológico: cadastrar/gerenciar',
-    'comercial:dashboard':'Comercial: ver Dashboard','comercial:commission':'Comercial: ver Comissão','comercial:ranking':'Comercial: ver Ranking','comercial:goals_view':'Comercial: ver Vendedores','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit_view':'Comercial: ver Crediários','comercial:credit':'Comercial: Lançar Crediários','comercial:stores_view':'Comercial: ver Meta Loja','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:weekend_view':'Comercial: ver Meta do Fim de Semana','comercial:weekend':'Comercial: Atualizar Meta do Fim de Semana','comercial:assist_view':'Comercial: ver Meta Assistência','comercial:assist':'Comercial: Atualizar Meta Assistência','comercial:rules_view':'Comercial: ver Regras de Comissão','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
+    'comercial:dashboard':'Comercial: ver Dashboard','comercial:commission':'Comercial: ver Comissão','comercial:ranking':'Comercial: ver Ranking','comercial:metas':'Comercial: ver Metas','comercial:goals_view':'Comercial: ver Vendedores','comercial:goals':'Comercial: Atualizar Vendedores','comercial:credit_view':'Comercial: ver Crediários','comercial:credit':'Comercial: Lançar Crediários','comercial:stores_view':'Comercial: ver Meta Loja','comercial:stores':'Comercial: Atualizar Meta Loja','comercial:weekend_view':'Comercial: ver Meta do Fim de Semana','comercial:weekend':'Comercial: Atualizar Meta do Fim de Semana','comercial:assist_view':'Comercial: ver Meta Assistência','comercial:assist':'Comercial: Atualizar Meta Assistência','comercial:rules_view':'Comercial: ver Regras de Comissão','comercial:rules':'Comercial: Cadastro de Regras de Comissão',
     'rh_escalas:view':'RH - Escalas e Folgas: visualizar','rh_escalas:manage':'RH - Escalas e Folgas: gerenciar',
     'rh_pdi:view':'RH - PDI de Líderes: visualizar','rh_pdi:manage':'RH - PDI de Líderes: lançar/editar/excluir',
     'rh_dashboard:view':'RH - Dashboard do RH: visualizar',
@@ -54932,7 +54964,7 @@ function renderHomeTasks(){
   }
 
   function comData(){
-    if(['regras', 'lojas', 'assistencia', 'fimsemana'].includes(comView)) return null;
+    if(['regras', 'lojas', 'assistencia', 'fimsemana', 'metas'].includes(comView)) return null;
     return comView === 'vendedores' || comView === 'crediarios' ? comManage : comOverview;
   }
 
@@ -57151,7 +57183,7 @@ function renderHomeTasks(){
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      ['Dashboard','Comissao','Ranking','Vendedores','Crediarios','Lojas','Fimsemana','Regras','Assistencia'].forEach(name => {
+      ['Dashboard','Comissao','Ranking','Metas','Vendedores','Crediarios','Lojas','Fimsemana','Regras','Assistencia'].forEach(name => {
         el('comView'+name).hidden = comView !== name.toLowerCase();
       });
       comStoreFilter = '';
@@ -57163,11 +57195,47 @@ function renderHomeTasks(){
       // Mostra na hora o que já veio do mês (abas de leitura) e SEMPRE busca de
       // novo: outra pessoa pode ter lançado enquanto esta aba estava fechada.
       const data = comView === 'ranking' ? comRanking : comData();
-      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras', 'assistencia', 'fimsemana'].includes(comView);
+      const cached = data && data.month === comMonth && !['vendedores', 'crediarios', 'lojas', 'regras', 'assistencia', 'fimsemana', 'metas'].includes(comView);
       if(cached) comRenderCurrent();
       loadComercialPage('comercialAcompanhamento', {silent: Boolean(cached)});
     });
   });
+
+  // ---------- METAS: meta × feito em R$ (lojas e vendedores), só leitura ----------
+  let comMetas = null;
+  async function comLoadMetas(){
+    try{
+      comMetas = await comApi('/metas?month='+encodeURIComponent(comMonth));
+    }catch(error){
+      comMetas = null;
+      ['comMetasStoresBody', 'comMetasSellersBody'].forEach(id => {
+        if(el(id)) el(id).innerHTML = '<tr><td colspan="6" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      });
+      return;
+    }
+    comRenderCurrent();
+  }
+
+  function comRenderMetas(){
+    if(!comMetas) return;
+    const cells = row => '<td data-label="Meta (R$)" class="num">'+escapeHtml(formatCentsBRL(row.targetCents))+'</td>'+
+      '<td data-label="Feito (R$)" class="num">'+escapeHtml(formatCentsBRL(row.revenueCents))+'</td>'+
+      '<td data-label="% da meta" class="num com-metas-pct tier-'+comTier(row.percent)+'">'+escapeHtml(comFormatPct(row.percent))+'</td>'+
+      '<td data-label="Falta (R$)" class="num">'+escapeHtml(row.revenueCents >= row.targetCents ? 'META BATIDA' : formatCentsBRL(row.targetCents - row.revenueCents))+'</td>';
+    el('comMetasStoresBody').innerHTML = comMetas.stores.length
+      ? comMetas.stores.map(row => '<tr><td data-label="Loja" class="nome"><strong>'+escapeHtml(row.name)+'</strong></td>'+cells(row)+'</tr>').join('')
+      : '<tr><td colspan="5" class="responsive-empty">Nenhuma meta de loja lançada neste mês.</td></tr>';
+    el('comMetasSellersBody').innerHTML = comMetas.sellers.length
+      ? comMetas.sellers.map(row => '<tr><td data-label="Vendedor" class="nome"><strong>'+escapeHtml(row.name)+'</strong>'+
+          (row.role === 'lider' ? ' <span class="com-inactive-tag">LÍDER</span>' : '')+(row.inactive ? ' <span class="com-inactive-tag">INATIVO</span>' : '')+'</td>'+
+          '<td data-label="Loja">'+escapeHtml(row.companyName || 'SEM LOJA')+'</td>'+cells(row)+'</tr>').join('')
+      : '<tr><td colspan="6" class="responsive-empty">Nenhuma meta de vendedor lançada neste mês.</td></tr>';
+    const total = el('comMetasTotal');
+    // Total da rede só para quem vê todas as lojas.
+    total.hidden = !comMetas.allStores || comMetas.stores.length < 2;
+    total.innerHTML = '<span>Total das lojas (vendas + assistência) · '+escapeHtml(formatCentsBRL(comMetas.total.revenueCents)+' de '+formatCentsBRL(comMetas.total.targetCents))+'</span>'+
+      '<strong>'+escapeHtml(comFormatPct(comMetas.total.percent))+'</strong>';
+  }
 
   function comRenderCurrent(){
     comRenderFilters();
@@ -57180,6 +57248,7 @@ function renderHomeTasks(){
     if(comView === 'lojas') comRenderStoreGoals();
     if(comView === 'fimsemana') comRenderWeekend();
     if(comView === 'assistencia') comRenderAssist();
+    if(comView === 'metas') comRenderMetas();
   }
 
   if(el('comShowInactive')) el('comShowInactive').addEventListener('change', () => comLoadOverview({silent:true}));
@@ -57273,6 +57342,10 @@ function renderHomeTasks(){
       await comLoadWeekend();
       return;
     }
+    if(comView === 'metas'){
+      await comLoadMetas();
+      return;
+    }
     await comLoadOverview(opts);
   }
 
@@ -57285,6 +57358,7 @@ function renderHomeTasks(){
       comRanking = null;
       comStores = null;
       comEntries = null;
+      comMetas = null;
       loadComercialPage(comCurrentPage);
     });
   });

@@ -575,3 +575,22 @@ test("migration 0099: só ADD COLUMN / CREATE TABLE/INDEX (e RLS na tabela nova)
   }
   assert.doesNotMatch(migration0099, /\b(DROP|DELETE|UPDATE|INSERT|TRUNCATE|RENAME)\b/i);
 });
+
+test("aba METAS: só com comercial:metas; lojas (vendas + assistência) e vendedores em R$; login com loja vê só a própria", async () => {
+  const metasRoute = await import("../app/api/commercial/metas/route.ts");
+  const MONTH = "2027-01";
+  await putSeller(sellerBody(MONTH, "emp-v1", 5_000_000, 6_000_000));
+  await putSeller(sellerBody(MONTH, "emp-v5", 4_000_000, 2_000_000));
+  await putStore(MONTH, STORE_A, { targetCents: 9_000_000, revenueCents: 9_500_000, assistTargetCents: 1_000_000, assistRevenueCents: 500_000 });
+  await putStore(MONTH, STORE_B, { targetCents: 5_000_000, revenueCents: 4_000_000 });
+  const get = (user) => callRoute(metasRoute.GET, user, "GET", `/api/commercial/metas?month=${MONTH}`);
+  assert.equal((await get(DASHBOARD)).status, 403);
+  const all = await (await get(ADMIN)).json();
+  assert.deepEqual(all.stores.map((row) => [row.name, row.targetCents, row.revenueCents]), [["LOJA ALFA", 10_000_000, 10_000_000], ["LOJA BETA", 5_000_000, 4_000_000]]);
+  assert.deepEqual([all.total.targetCents, all.total.revenueCents, all.allStores], [15_000_000, 14_000_000, true]);
+  // Por loja e nome (outro teste já lançou o VENDEDOR QUATRO neste mês).
+  assert.deepEqual(all.sellers.map((row) => row.name), ["VENDEDOR QUATRO", "VENDEDOR UM", "VENDEDOR BETA"]);
+  assert.deepEqual([all.sellers[1].targetCents, all.sellers[1].revenueCents, all.sellers[1].percent], [5_000_000, 6_000_000, 120]);
+  const own = await (await get({ id: "u-beta", companyId: STORE_B, permissions: ["comercial:metas"] })).json();
+  assert.deepEqual([own.allStores, own.stores.map((row) => row.name), own.sellers.map((row) => row.name)], [false, ["LOJA BETA"], ["VENDEDOR BETA"]]);
+});

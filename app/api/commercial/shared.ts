@@ -36,6 +36,7 @@ import { actingStoresForMonth } from "../../lib/acting-store";
 //   comercial:dashboard  → VER Dashboard (sem R$ de comissão)
 //   comercial:commission → VER Comissão (valores em R$ da comissão)
 //   comercial:ranking    → VER Ranking
+//   comercial:metas      → VER Metas (meta e feito em R$ das lojas e dos vendedores)
 //   comercial:goals_view / comercial:goals   → Vendedores (editar também
 //                          marca NOVATO e troca o TIPO)
 //   comercial:credit_view / comercial:credit → Crediários
@@ -100,7 +101,7 @@ export function identity(request: Request): Identity {
 }
 
 const COMMERCIAL_PERMISSIONS = [
-  "comercial:dashboard", "comercial:commission", "comercial:ranking",
+  "comercial:dashboard", "comercial:commission", "comercial:ranking", "comercial:metas",
   "comercial:goals_view", "comercial:goals", "comercial:credit_view", "comercial:credit",
   "comercial:stores_view", "comercial:stores", "comercial:weekend_view", "comercial:weekend",
   "comercial:assist_view", "comercial:assist", "comercial:rules_view", "comercial:rules",
@@ -120,6 +121,10 @@ export function canViewCommercialCommission(actor: Identity) {
 
 export function canViewCommercialRanking(actor: Identity) {
   return hasCommercialPermission(actor, "comercial:ranking");
+}
+
+export function canViewCommercialMetas(actor: Identity) {
+  return hasCommercialPermission(actor, "comercial:metas");
 }
 
 export function canViewCommercialGoals(actor: Identity) {
