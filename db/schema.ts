@@ -2031,6 +2031,29 @@ export const financeAccountWeeklyBalances = pgTable(
   ],
 );
 
+// INVESTIMENTOS de uma conta já cadastrada (migration 0131): aplicações e
+// resgates; saldo investido na data = aplicações − resgates até ela. Vai para o
+// INVESTIDO do Caixa Semanal (fora do TOTAL GERAL).
+export const financeAccountInvestments = pgTable(
+  "finance_account_investments",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    // 'aplicacao' | 'resgate'
+    kind: text("kind").notNull().default("aplicacao"),
+    entryDate: text("entry_date").notNull(),
+    amountCents: integer("amount_cents").notNull().default(0),
+    description: text("description").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("finance_account_investments_account_idx").on(table.accountId, table.entryDate)],
+);
+
 // Configurações de Recebíveis/Fluxo de Caixa, uma linha por loja. company_id
 // vazio ('') é a linha GLOBAL, usada como fallback quando a loja não tem
 // configuração própria — mesma convenção de sentinela vazio já usada em

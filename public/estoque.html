@@ -14337,6 +14337,33 @@
 </dialog>
 
 
+<dialog class="purchase-dialog" id="accountInvestDialog" aria-labelledby="accountInvestTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="accountInvestTitle">INVESTIMENTOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseAccountInvest" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="accountInvestForm" novalidate>
+    <input type="hidden" id="accountInvestAccountId">
+    <p class="purchase-field-help">APLICAÇÕES E RESGATES DESTA CONTA. SALDO INVESTIDO = APLICAÇÕES − RESGATES. NO CAIXA SEMANAL ENTRA NO QUADRO INVESTIDO (FORA DO TOTAL GERAL), COM O SALDO ATÉ A SEGUNDA ESCOLHIDA.</p>
+    <div class="table-panel" id="accountInvestResumo" style="padding:12px 14px;font-size:12px;margin-bottom:10px;"></div>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="accountInvestKind">TIPO *</label><select id="accountInvestKind"><option value="aplicacao">APLICAÇÃO</option><option value="resgate">RESGATE</option></select></div>
+      <div class="purchase-field"><label for="accountInvestDate">DATA *</label><input type="date" id="accountInvestDate"></div>
+      <div class="purchase-field"><label for="accountInvestAmount">VALOR (R$) *</label><input type="text" inputmode="decimal" id="accountInvestAmount" placeholder="R$ 0,00"></div>
+      <div class="purchase-field"><label for="accountInvestDesc">DESCRIÇÃO</label><input id="accountInvestDesc" maxlength="200" placeholder="EX.: CDB, POUPANÇA"></div>
+    </div>
+    <div class="user-form-status" id="accountInvestStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions"><button class="btn-accent" type="submit">ADICIONAR</button></div>
+    <div class="table-panel responsive-table" style="margin-top:10px;">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th class="num">Valor</th><th></th></tr></thead>
+          <tbody id="accountInvestBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </form>
+</dialog>
 <dialog class="purchase-dialog" id="payablesCatalogDialog" aria-labelledby="payablesCatalogDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="payablesCatalogDialogTitle">FORNECEDORES E CONTAS FINANCEIRAS</h3>
@@ -36466,7 +36493,7 @@ function renderHomeTasks(){
   // saldos da segunda escolhida em LOJAS (contas PJ; conta antiga sem PF/PJ:
   // pela loja vinculada) e OUTROS (contas PF e o resto), TOTAL GERAL = LOJAS + OUTROS e
   // INVESTIDO à parte (contas tipo INVESTIMENTO, com a divisão por conta).
-  function cfWeeklyImageGroups(accounts, balances){
+  function cfWeeklyImageGroups(accounts, balances, invested){
     const storeIds = new Set(pullStoreCompanies().map(company => company.id));
     const lojas = new Map(), lojasByName = [], outros = [], investido = [], missing = [];
     accounts.forEach(account => {
@@ -36489,6 +36516,12 @@ function renderHomeTasks(){
         return;
       }
       outros.push({name: String(account.accountName).toUpperCase(), cents, informed: Boolean(row)});
+    });
+    // Aplicações dentro das contas (saldo investido até a segunda).
+    (invested || []).forEach(item => {
+      if(!item.investedCents) return;
+      const account = payableAccounts.find(a => a.id === item.accountId) || accounts.find(a => a.accountId === item.accountId) || {};
+      investido.push({name: String(account.name || account.accountName || 'CONTA').toUpperCase(), cents: item.investedCents});
     });
     const sum = list => list.reduce((total, item) => total + item.cents, 0);
     const lojasList = [...lojas.values(), ...lojasByName];
@@ -36565,7 +36598,7 @@ function renderHomeTasks(){
     text('INVESTIDO', 76, y + 50, 38, amber, 'left', 900);
     text(formatCentsBRL(g.investidoCents), W - 76, y + 50, 42, pal.ink, 'right', 900);
     ctx.font = comFont(700, 21);
-    const division = g.investido.length ? 'DIVISÃO: '+g.investido.map(item => formatCentsBRL(item.cents)+' · '+String(item.name).toUpperCase()).join('  •  ') : 'NENHUMA CONTA DE INVESTIMENTO INFORMADA NESTA SEGUNDA.';
+    const division = g.investido.length ? 'DIVISÃO: '+g.investido.map(item => formatCentsBRL(item.cents)+' · '+String(item.name).toUpperCase()).join('  •  ') : 'NENHUM INVESTIMENTO ATÉ ESTA SEGUNDA.';
     text(comFitText(ctx, division, W - 152), 76, y + 110, 21, pal.soft, 'left', 700);
     y += 150;
     if(g.missing.length){
@@ -36579,7 +36612,8 @@ function renderHomeTasks(){
     if(!cfWeeklyData || !(cfWeeklyData.accounts || []).length){ showPurchaseToast('Nenhuma conta ativa para gerar a imagem.', 'error'); return; }
     const weekDate = cfMonday(el('cfWeekDate').value || cfWeeklyData.currentMonday);
     try{
-      const groups = cfWeeklyImageGroups(cfWeeklyData.accounts, await cfWeekBalances(weekDate));
+      const invested = (await financeApiRequest('/accounts/investments?until='+encodeURIComponent(weekDate))).balances;
+      const groups = cfWeeklyImageGroups(cfWeeklyData.accounts, await cfWeekBalances(weekDate), invested);
       await shareCanvasImage(await cfWeeklyBuildImage(weekDate, groups), 'caixa-semanal-'+weekDate+'.png');
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
@@ -45901,6 +45935,7 @@ function renderHomeTasks(){
         '<td style="display:flex;gap:6px;">'+
           '<button class="btn-outline" type="button" data-payable-edit-account="'+escapeHtml(a.id)+'">EDITAR</button>'+
           '<button class="btn-outline" type="button" data-payable-toggle-account="'+escapeHtml(a.id)+'">'+(a.active ? 'INATIVAR' : 'REATIVAR')+'</button>'+
+          '<button class="btn-outline" type="button" data-account-invest="'+escapeHtml(a.id)+'">INVESTIMENTOS</button>'+
         '</td>'+
       '</tr>';
     }).join('') : '<tr><td colspan="7" class="responsive-empty">Nenhuma conta financeira encontrada.</td></tr>';
@@ -46192,7 +46227,63 @@ function renderHomeTasks(){
   });
   el('payableAccountsSearch').addEventListener('input', renderPayableAccountsTable);
 
+  // INVESTIMENTOS da conta (aplicações e resgates, 04/11/2026).
+  async function loadAccountInvestments(){
+    const accountId = el('accountInvestAccountId').value;
+    el('accountInvestBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
+    try{
+      const data = await financeApiRequest('/accounts/investments?accountId='+encodeURIComponent(accountId));
+      el('accountInvestResumo').innerHTML = 'SALDO INVESTIDO: <strong>'+formatCentsBRL(data.investedCents)+'</strong>';
+      el('accountInvestBody').innerHTML = data.entries.length ? data.entries.map(row =>
+        '<tr><td>'+escapeHtml(formatDateBR(row.entryDate))+'</td>'+
+        '<td>'+(row.kind === 'resgate' ? '<span class="status-pill warn">RESGATE</span>' : '<span class="status-pill done">APLICAÇÃO</span>')+'</td>'+
+        '<td>'+escapeHtml(row.description || '—')+'</td>'+
+        '<td class="num">'+(row.kind === 'resgate' ? '−' : '')+formatCentsBRL(row.amountCents)+'</td>'+
+        '<td><button class="btn-outline btn-sm" type="button" data-account-invest-delete="'+escapeHtml(row.id)+'">EXCLUIR</button></td></tr>'
+      ).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhuma aplicação nesta conta.</td></tr>';
+    }catch(error){ el('accountInvestBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>'; }
+  }
+  attachCurrencyMask(el('accountInvestAmount'));
+  el('btnCloseAccountInvest').addEventListener('click', () => el('accountInvestDialog').close());
+  el('accountInvestForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('accountInvestStatus');
+    status.textContent = '';
+    const amountCents = parseBRLToCents(getCurrencyValue(el('accountInvestAmount')) || '0');
+    if(!el('accountInvestDate').value){ status.textContent = 'INFORME A DATA.'; return; }
+    if(!amountCents || amountCents <= 0){ status.textContent = 'INFORME O VALOR.'; return; }
+    try{
+      await financeApiRequest('/accounts/investments', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        accountId: el('accountInvestAccountId').value, kind: el('accountInvestKind').value,
+        entryDate: el('accountInvestDate').value, amountCents, description: el('accountInvestDesc').value.trim()})});
+      setCurrencyValue(el('accountInvestAmount'), '');
+      el('accountInvestDesc').value = '';
+      await loadAccountInvestments();
+      showPurchaseToast(el('accountInvestKind').value === 'resgate' ? 'Resgate registrado.' : 'Aplicação registrada.');
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('accountInvestBody').addEventListener('click', async event => {
+    const del = event.target.closest('[data-account-invest-delete]');
+    if(!del || !await askConfirm('Excluir este lançamento de investimento?')) return;
+    try{
+      await financeApiRequest('/accounts/investments?id='+encodeURIComponent(del.dataset.accountInvestDelete), {method:'DELETE'});
+      await loadAccountInvestments();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
   el('payableAccountsBody').addEventListener('click', async event => {
+    const investButton = event.target.closest('[data-account-invest]');
+    if(investButton){
+      const account = payableAccounts.find(a => a.id === investButton.dataset.accountInvest);
+      el('accountInvestForm').reset();
+      el('accountInvestAccountId').value = investButton.dataset.accountInvest;
+      el('accountInvestTitle').textContent = 'INVESTIMENTOS — '+(account ? account.name : '');
+      el('accountInvestDate').value = todayDateKeyRecife();
+      el('accountInvestStatus').textContent = '';
+      el('accountInvestDialog').showModal();
+      loadAccountInvestments();
+      return;
+    }
     const editButton = event.target.closest('[data-payable-edit-account]');
     const toggleButton = event.target.closest('[data-payable-toggle-account]');
     if(editButton){

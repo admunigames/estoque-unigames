@@ -79,6 +79,7 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   accounts_receivable: ["company_name", "operator_text", "notes", "created_by_name", "updated_by_name", "canceled_by_name"],
   finance_account_balances: ["notes", "updated_by_name"],
   finance_account_weekly_balances: ["notes", "created_by_name", "updated_by_name"],
+  finance_account_investments: ["description", "created_by_name", "updated_by_name"],
   finance_cash_flow_settings: ["updated_by_name"],
   finance_acquirers: ["name", "notes", "created_by_name", "updated_by_name"],
   finance_card_machines: ["acquirer_name", "model", "company_name", "notes", "created_by_name", "updated_by_name"],
