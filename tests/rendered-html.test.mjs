@@ -4469,9 +4469,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /data-com-view="dashboard" data-permission="comercial:dashboard">Dashboard</);
   assert.match(html, /data-com-view="comissao" data-permission="comercial:commission">Comissão</);
   assert.match(html, /data-com-view="ranking" data-permission="comercial:ranking">Ranking</);
-  assert.match(html, /data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Meta Vendedores</);
+  assert.match(html, /data-com-view="vendedores" data-any-permission="comercial:goals_view,comercial:goals">Metas Vendedores</);
   assert.match(html, /data-com-view="crediarios" data-any-permission="comercial:credit_view,comercial:credit">Crediário</);
-  assert.match(html, /data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Meta Loja</);
+  assert.match(html, /data-com-view="lojas" data-any-permission="comercial:stores_view,comercial:stores">Metas Loja</);
   // Sem importação de arquivo/planilha em lugar nenhum do Comercial.
   assert.doesNotMatch(html, /comImportFile|comImportPreview|btnComImportConfirm|com-import-|\/import\?month/);
   await assert.rejects(readFile(new URL("../app/api/commercial/import/route.ts", import.meta.url), "utf8"));
@@ -4596,7 +4596,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Ordem das abas (05/11/2026): Dashboard > Comissão > Ranking > Metas > Crediário > Meta Vendedores > Meta Loja >
   // Meta Assistência > Meta do Fim de Semana > Regras de Comissão. METAS tem permissão própria (só leitura).
   const tabs = [...html.matchAll(/data-com-view="([a-z]+)"[^>]*>([^<]+)<\/button>/g)].map((m) => m[2]);
-  assert.deepEqual(tabs, ["Dashboard", "Comissão", "Ranking", "Metas", "Crediário", "Meta Vendedores", "Meta Loja", "Meta Assistência", "Meta do Fim de Semana", "Regras de Comissão"]);
+  assert.deepEqual(tabs, ["Dashboard", "Comissão", "Ranking", "Metas", "Crediário", "Metas Vendedores", "Metas Loja", "Metas Assistência", "Metas do Fim de Semana", "Regras de Comissão"]);
   assert.match(html, /data-com-view="metas" data-permission="comercial:metas">Metas</);
   assert.match(html, /value="comercial:metas"> VER METAS/);
   // Imagens da aba METAS (lojas e vendedores) na moldura comum do Comercial.
