@@ -76,8 +76,20 @@ test("leitura do PDF do contador (modelo GEOVANA): líquido, INSS, bases e FGTS;
     "INF: 0 Base INSS: 1.832,00 Excedente INSS: 0,00 Base FGTS: 1.832,00 Valor FGTS: 146,56 Base IRRF: 1.224,80",
     "Empr.: 116 JOÃO TESTE Situação: Trabalhando",
     "ND: 0 Proventos: 1.000,00 Descontos: 0,00 Líquido: 1.000,00",
+    // Rescisão (PDF real de 10/2026): INSS nas rubricas 826 e 989, não na 998.
+    "Empr.: 118 JOSÉ RESCISÃO Situação: Demitido CPF: 000.000.000-00 Adm: 02/09/2026",
+    "Cargo: 16 PROMOTOR DE VENDAS C.B.O: 521115 Filial: 1 Salário: 1.680,00",
+    "8550 13 SALARIO INTEGRAL RESCISAO 1,00 140,00 P 826 INSS SOBRE RESCISAO 7,50 21,00 D",
+    "29 FERIAS PROPORCIONAIS 1,00 140,00 P 989 INSS 13 SAL.RESCISAO 7,50 10,50 D",
+    "ND: 0 Proventos: 734,73 Descontos: 734,73 Informativa: 33,60 Informativa Dedutora: 0 Líquido: 0,00",
+    // O resumo geral do fim do PDF não pode cair no último funcionário.
+    "Total Geral Proventos: 18.626,47 Total Geral Descontos: 5.487,93",
+    "8781 DIAS NORMAIS 210,00 13.415,41 P 998 I.N.S.S. 56,68 1.458,31 D",
+    "Base IRRF 13º Salário: 0,00 Base IRRF 13º Salário: 0,00",
   ];
-  const [geo, joao] = parse(lines);
+  const [geo, joao, jose, extra] = parse(lines);
+  assert.equal(extra, undefined);
+  assert.deepEqual([jose.salaryCents, jose.inssCents, jose.inssPctBps, jose.netCents], [168000, 3150, 750, 0]);
   assert.deepEqual(geo, {
     code: "115", name: "GEOVANA SOARES DA SILVA", salaryCents: 183200, netCents: 158152, inssCents: 14056, inssPctBps: 767,
     inssBaseCents: 183200, fgtsBaseCents: 183200, fgtsCents: 14656,

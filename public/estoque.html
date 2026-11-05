@@ -38382,7 +38382,7 @@ function renderHomeTasks(){
     });
     return pdfjsLoader;
   }
-  async function extractPdfLines(file){
+  async function extractPdfLines(file, options){
     const pdfjsLib = await ensurePdfJs();
     const buffer = await readAsArrayBuffer(file);
     const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
@@ -38390,6 +38390,23 @@ function renderHomeTasks(){
     for(let p = 1; p <= pdf.numPages; p++){
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
+      // {sorted:true}: monta cada linha pela POSIÇÃO (de cima para baixo e da
+      // esquerda para a direita) — PDFs de folha do contador trazem os pedaços
+      // da mesma linha fora de ordem.
+      if(options && options.sorted){
+        const rows = [];
+        for(const item of content.items){
+          if(!String(item.str || '').trim()) continue;
+          const y = item.transform[5], x = item.transform[4];
+          let row = rows.find(r => Math.abs(r.y - y) <= 2);
+          if(!row){ row = {y, items: []}; rows.push(row); }
+          row.items.push({x, str: item.str});
+        }
+        rows.sort((a, b) => b.y - a.y).forEach(row => {
+          lines.push(row.items.sort((a, b) => a.x - b.x).map(item => item.str).join(' ').replace(/\s+/g,' ').trim());
+        });
+        continue;
+      }
       let currentY = null; let parts = [];
       for(const item of content.items){
         const y = Math.round(item.transform[5]);
@@ -49003,15 +49020,21 @@ function renderHomeTasks(){
     let current = null;
     for(const raw of lines){
       const line = String(raw || '').replace(/\s+/g,' ').trim();
+      // Fim dos funcionários: o resumo geral da empresa não entra em ninguém.
+      if(/^(Total Geral|L[íi]quido Geral|Resumo por Rubrica)/i.test(line)){ current = null; continue; }
       const head = line.match(/Empr\.?:\s*(\d+)\s+(.+?)(?=\s+(?:Situa[çc][ãa]o|CPF|Adm)\b|$)/i);
       if(head){
         current = {code: head[1], name: head[2].trim(), salaryCents:0, netCents:0, inssCents:0, inssPctBps:0, inssBaseCents:0, fgtsBaseCents:0, fgtsCents:0};
         out.push(current);
       }
       if(!current) continue;
-      const salary = pick(line, /Sal[áa]rio:\s*([\d.]+,\d{2})/i); if(salary) current.salaryCents = money(salary);
-      const inss = line.match(/\b998\s+I\.?\s?N\.?\s?S\.?\s?S\.?\s+([\d.]+,\d{2})\s+([\d.]+,\d{2})/i);
-      if(inss){ current.inssPctBps = money(inss[1]); current.inssCents = money(inss[2]); }
+      const salary = pick(line, /(?:^|\s)Sal[áa]rio:\s*([\d.]+,\d{2})/i); if(salary && !current.salaryCents) current.salaryCents = money(salary);
+      // INSS = soma das rubricas de INSS do funcionário (998 I.N.S.S.; na
+      // rescisão, 826 INSS SOBRE RESCISAO + 989 INSS 13 SAL.RESCISAO).
+      for(const inss of line.matchAll(/\b\d{2,5}\s+I\.?\s?N\.?\s?S\.?\s?S\.?(?:\s.*?)?\s+(\d{1,3}(?:\.\d{3})*,\d{2})\s+(\d{1,3}(?:\.\d{3})*,\d{2})\s*D\b/gi)){
+        if(!current.inssPctBps) current.inssPctBps = money(inss[1]);
+        current.inssCents += money(inss[2]);
+      }
       const net = pick(line, /L[íi]quido:\s*([\d.]+,\d{2})/i); if(net) current.netCents = money(net);
       const inssBase = pick(line, /Base\s+INSS:\s*([\d.]+,\d{2})/i); if(inssBase) current.inssBaseCents = money(inssBase);
       const fgtsBase = pick(line, /Base\s+FGTS:\s*([\d.]+,\d{2})/i); if(fgtsBase) current.fgtsBaseCents = money(fgtsBase);
@@ -49064,7 +49087,7 @@ function renderHomeTasks(){
     if(!file) return;
     el('rhFolhaPdfStatus').textContent = 'Lendo o PDF…';
     try{
-      rhFolhaPdfRows = rhParsePayslipPdf(await extractPdfLines(file)).map(row => ({...row, employeeId: rhFolhaPdfMatch(row.name)}));
+      rhFolhaPdfRows = rhParsePayslipPdf(await extractPdfLines(file, {sorted:true})).map(row => ({...row, employeeId: rhFolhaPdfMatch(row.name)}));
       renderRhFolhaPdf();
     }catch(error){ el('rhFolhaPdfStatus').textContent = error.message; }
   });
