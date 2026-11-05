@@ -8201,7 +8201,7 @@
       <!-- METAS (comercial:metas): só leitura — meta × feito em R$ das lojas e dos vendedores. -->
       <div class="com-view-panel" id="comViewMetas" hidden>
         <div class="com-total" id="comMetasTotal" hidden></div>
-        <div class="com-chart-head"><h3 class="com-section-title">METAS DAS LOJAS</h3><button class="btn-accent" type="button" id="btnComMetasStoresImage">GERAR IMAGEM PARA WHATSAPP</button></div>
+        <div class="com-chart-head"><h3 class="com-section-title">METAS DAS LOJAS</h3><button class="btn-accent" type="button" id="btnComMetasStoresImage">GERAR IMAGEM</button></div>
         <div class="table-panel responsive-table com-metas-table">
           <div class="table-scroll">
             <table>
@@ -8210,7 +8210,7 @@
             </table>
           </div>
         </div>
-        <div class="com-chart-head"><h3 class="com-section-title">METAS DOS VENDEDORES</h3><button class="btn-accent" type="button" id="btnComMetasSellersImage">GERAR IMAGEM PARA WHATSAPP</button></div>
+        <div class="com-chart-head"><h3 class="com-section-title">METAS DOS VENDEDORES</h3><button class="btn-accent" type="button" id="btnComMetasSellersImage">GERAR IMAGEM</button></div>
         <div class="table-panel responsive-table com-metas-table">
           <div class="table-scroll">
             <table>
@@ -56001,6 +56001,10 @@ function renderHomeTasks(){
       ctx.fillStyle = '#cfe2f5';
       ctx.font = comFont(700, 22);
       ctx.fillText(comFitText(ctx, opts.subtitle, textMax), 196, 64 + titleSize * 2 + 22);
+    }else if(!opts.subtitle){
+      // Sem subtítulo: título centralizado na faixa.
+      ctx.textBaseline = 'middle';
+      ctx.fillText(comFitText(ctx, opts.title, textMax), 196, 87);
     }else{
       ctx.fillText(comFitText(ctx, opts.title, textMax), 196, 88);
       ctx.fillStyle = '#cfe2f5';
@@ -56094,7 +56098,7 @@ function renderHomeTasks(){
     const ctx = canvas.getContext('2d');
     const {HEADER} = await comDrawImageFrame(ctx, W, H, {
       title: stores ? 'METAS DAS LOJAS' : 'METAS DOS VENDEDORES',
-      subtitle: stores ? 'META × FEITO DE CADA LOJA (VENDAS + ASSISTÊNCIA)' : 'META × FEITO DE CADA VENDEDOR',
+      subtitle: '',
       month: comMetas.month, footer: 'UNIGAMES · ACOMPANHAMENTO DE METAS',
     });
     const P = COM_IMAGE_PALETTE;

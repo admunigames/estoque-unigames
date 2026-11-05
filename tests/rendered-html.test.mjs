@@ -4600,8 +4600,8 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /data-com-view="metas" data-permission="comercial:metas">Metas</);
   assert.match(html, /value="comercial:metas"> VER METAS/);
   // Imagens da aba METAS (lojas e vendedores) na moldura comum do Comercial.
-  assert.match(html, /id="btnComMetasStoresImage">GERAR IMAGEM PARA WHATSAPP<\/button>/);
-  assert.match(html, /id="btnComMetasSellersImage">GERAR IMAGEM PARA WHATSAPP<\/button>/);
+  assert.match(html, /id="btnComMetasStoresImage">GERAR IMAGEM<\/button>/);
+  assert.match(html, /id="btnComMetasSellersImage">GERAR IMAGEM<\/button>/);
   assert.match(html, /async function comBuildMetasImage\(kind\)\{[\s\S]*?await comDrawImageFrame\(ctx, W, H, \{/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission", "comercial:ranking"\],/);
