@@ -19,6 +19,7 @@ import {
 
 import { isSellerRole, roleFromTitle } from "../app/lib/commercial";
 import { isRoutineStore } from "../app/lib/selling-stores";
+import { sellerUsernameBase } from "../app/lib/seller-username";
 import { auditAction, auditModule, auditRecordId, auditSummary, shouldAudit } from "../app/lib/audit";
 import { documentsApiAllowed, isCommercialOnlyAccess } from "../app/lib/documents-access";
 import { upperText } from "../app/lib/upper-text";
@@ -1902,20 +1903,6 @@ type SellerCandidateRow = {
   inLastImport: number;
   linkedUserActive: number | null;
 };
-
-function sellerUsernameBase(fullName: string): string {
-  const base = fullName
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ".")
-    .replace(/^\.+|\.+$/g, "");
-  if (base.length > 36) {
-    const parts = base.split(".");
-    return `${parts[0]}.${parts[parts.length - 1]}`.slice(0, 36);
-  }
-  return base.length >= 3 ? base : `${base}.vendedor`;
-}
 
 async function sellerCandidates(database: D1Database) {
   await ensureAppUsersTable(database);
