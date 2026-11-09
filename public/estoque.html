@@ -12430,6 +12430,27 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="invMotivosDialog" aria-labelledby="invMotivosTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="invMotivosTitle">PDF MOTIVOS DAS DIVERGÊNCIAS</h3>
+    <button class="purchase-dialog-close" type="button" aria-label="Fechar" data-inv-motivos-close>×</button>
+  </div>
+  <form class="purchase-form" id="invMotivosForm">
+    <p class="purchase-field-help">MARQUE OS PRODUTOS QUE VÃO SAIR NO PDF. VERMELHO = DIVERGENTE NO FINAL · VERDE = RESOLVIDO.</p>
+    <div class="dre-toolbar" style="margin:6px 0;">
+      <button class="btn-outline small" type="button" id="btnInvMotivosAll">MARCAR TODOS</button>
+      <button class="btn-outline small" type="button" id="btnInvMotivosNone">DESMARCAR TODOS</button>
+      <span class="muted" id="invMotivosCount" style="font-size:12px;"></span>
+    </div>
+    <div id="invMotivosList" style="max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+    <div class="user-form-status" id="invMotivosStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" type="button" data-inv-motivos-close>CANCELAR</button>
+      <button class="btn-accent" type="submit">GERAR PDF</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="purchase-dialog" id="invBulkDialog" aria-labelledby="invBulkTitle">
   <div class="purchase-dialog-head">
     <h3 id="invBulkTitle">NOTAS SELECIONADAS</h3>
@@ -29950,7 +29971,7 @@ function renderHomeTasks(){
   }
 
   // PDFs (A4, folha limpa): diretor, recontagem de loja e Divergência Pontti.
-  function invPrint(kind){
+  function invPrint(kind, onlyIds){
     const inv = invData.inventory;
     const byName = (a, b) => a.product.localeCompare(b.product, 'pt-BR');
     // Diretor e Pontti: TODAS as divergências (retiradas também); final e
@@ -29958,7 +29979,8 @@ function renderHomeTasks(){
     const everything = invDivergent().slice().sort(byName);
     const open = everything.filter(item => !item.removed);
     const adjust = open.filter(item => invStoreDiff(item));
-    const rows = kind === 'diretor' || kind === 'pontti' ? everything : kind === 'recontagem' ? open.filter(item => item.recount)
+    const rows = kind === 'diretor' && onlyIds ? everything.filter(item => onlyIds.has(item.id))
+      : kind === 'diretor' || kind === 'pontti' ? everything : kind === 'recontagem' ? open.filter(item => item.recount)
       : kind === 'ajuste' ? adjust : open.filter(item => invFinalDiff(item));
     if(!rows.length && kind === 'ajuste'){ showPurchaseToast('NENHUM PRODUTO PRECISA DE AJUSTE APÓS A RECONTAGEM DA LOJA.', 'error'); return; }
     if(!rows.length && kind === 'recontagem'){ showPurchaseToast('MARQUE NA COLUNA RECONTAGEM OS PRODUTOS QUE VÃO PARA A RECONTAGEM DA LOJA.', 'error'); return; }
@@ -30302,7 +30324,45 @@ function renderHomeTasks(){
     try{ await invPatch('remove', {itemId: button.dataset.invRemove, removed: button.dataset.removed === '1'}); await loadInvPage(); }
     catch(error){ showPurchaseToast(error.message, 'error'); }
   });
-  document.querySelectorAll('[data-inv-pdf]').forEach(button => button.addEventListener('click', () => invPrint(button.dataset.invPdf)));
+  document.querySelectorAll('[data-inv-pdf]').forEach(button => button.addEventListener('click', () =>
+    button.dataset.invPdf === 'diretor' ? invOpenMotivos() : invPrint(button.dataset.invPdf)));
+
+  // PDF MOTIVOS DAS DIVERGÊNCIAS (09/11/2026): escolher os produtos que saem.
+  // A escolha fica lembrada por inventário neste navegador (só os desmarcados,
+  // para divergência nova já vir marcada).
+  const invMotivosKey = () => 'inv_motivos_off:'+(invData && invData.inventory ? invData.inventory.id : '');
+  function invMotivosUpdateCount(){
+    const boxes = Array.from(el('invMotivosList').querySelectorAll('input[type=checkbox]'));
+    el('invMotivosCount').textContent = boxes.filter(box => box.checked).length+' DE '+boxes.length+' SELECIONADOS';
+  }
+  function invOpenMotivos(){
+    const rows = invDivergent().slice().sort((a, b) => a.product.localeCompare(b.product, 'pt-BR'));
+    if(!rows.length){ showPurchaseToast('NENHUMA DIVERGÊNCIA NESTE INVENTÁRIO.', 'error'); return; }
+    let off = new Set();
+    try{ off = new Set(JSON.parse(localStorage.getItem(invMotivosKey()) || '[]')); }catch{ /* preferência opcional */ }
+    el('invMotivosList').innerHTML = rows.map(item => {
+      const open = !item.removed && invFinalDiff(item);
+      return '<label class="permission-option" style="color:'+(open ? 'var(--danger, #d9534f)' : 'var(--success, #2e9e6a)')+';"><input type="checkbox" style="min-height:0;" value="'+escapeHtml(item.id)+'"'+(off.has(item.id) ? '' : ' checked')+'> '+
+        escapeHtml(item.product)+(item.reason ? ' <small class="muted">· '+escapeHtml(item.reason)+'</small>' : '')+'</label>';
+    }).join('');
+    el('invMotivosStatus').textContent = '';
+    invMotivosUpdateCount();
+    el('invMotivosDialog').showModal();
+  }
+  el('invMotivosList').addEventListener('change', invMotivosUpdateCount);
+  const invMotivosSetAll = checked => { el('invMotivosList').querySelectorAll('input[type=checkbox]').forEach(box => { box.checked = checked; }); invMotivosUpdateCount(); };
+  el('btnInvMotivosAll').addEventListener('click', () => invMotivosSetAll(true));
+  el('btnInvMotivosNone').addEventListener('click', () => invMotivosSetAll(false));
+  document.querySelectorAll('[data-inv-motivos-close]').forEach(button => button.addEventListener('click', () => el('invMotivosDialog').close()));
+  el('invMotivosForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const boxes = Array.from(el('invMotivosList').querySelectorAll('input[type=checkbox]'));
+    const chosen = new Set(boxes.filter(box => box.checked).map(box => box.value));
+    if(!chosen.size){ el('invMotivosStatus').textContent = 'MARQUE AO MENOS UM PRODUTO.'; return; }
+    try{ localStorage.setItem(invMotivosKey(), JSON.stringify(boxes.filter(box => !box.checked).map(box => box.value))); }catch{ /* preferência opcional */ }
+    el('invMotivosDialog').close();
+    invPrint('diretor', chosen);
+  });
   el('btnInvFinalize') && el('btnInvFinalize').addEventListener('click', async () => {
     const finalizing = invOpen();
     if(finalizing && !await askConfirm('FINALIZAR O INVENTÁRIO? DEPOIS DISSO NADA PODE SER ALTERADO ATÉ REABRIR.', {okText:'FINALIZAR'})) return;

@@ -163,3 +163,11 @@ test("produto FORA DA LISTA: entra com estoque 0, custo à mão preservado pelo 
   detail = await (await call(GESTOR, "GET", undefined, `?id=${id}`)).json();
   assert.equal(detail.items.length, 1);
 });
+
+test("tela: PDF MOTIVOS abre a seleção de produtos antes de gerar", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="invMotivosDialog"/);
+  assert.match(html, /button\.dataset\.invPdf === 'diretor' \? invOpenMotivos\(\)/);
+  assert.match(html, /kind === 'diretor' && onlyIds \? everything\.filter\(item => onlyIds\.has\(item\.id\)\)/);
+});
