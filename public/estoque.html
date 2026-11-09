@@ -10069,8 +10069,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="crTable">
-              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Login</th><th>Financeira</th><th>ID venda</th><th>Proposta</th><th>Valor da venda</th><th>Taxa</th><th>Sem taxa</th><th>Situação</th><th>Recebido em</th></tr></thead>
-              <tbody id="crBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
+              <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Login</th><th>Financeira</th><th>ID venda</th><th>Proposta</th><th>Valor da venda</th><th>Taxa</th><th>Sem taxa</th><th>Situação</th><th>Recebido em</th><th></th></tr></thead>
+              <tbody id="crBody"><tr><td colspan="13" class="responsive-empty">Carregando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -39851,11 +39851,12 @@ function renderHomeTasks(){
         '<td data-label="Sem taxa"><strong>'+formatCentsBRL(r.netCents)+'</strong></td>'+
         '<td data-label="Situação"><span>'+crStatusPill(r)+'</span></td>'+
         '<td data-label="Recebido em"><span>'+(r.receivedDate ? escapeHtml(formatDateBR(r.receivedDate))+' <small>'+(r.bankEntryId ? 'EXTRATO' : 'MANUAL')+'</small>' : (r.expectedDate ? '<small>PREVISTO '+escapeHtml(formatDateBR(r.expectedDate))+'</small>' : '—'))+'</span></td>'+
-      '</tr>').join('') : '<tr><td colspan="12" class="responsive-empty">Nenhum crediário para os filtros.</td></tr>';
+        '<td><button class="btn-outline btn-sm" type="button" data-cr-edit="'+escapeHtml(r.id)+'">EDITAR</button></td>'+
+      '</tr>').join('') : '<tr><td colspan="13" class="responsive-empty">Nenhum crediário para os filtros.</td></tr>';
     crBulk.sync();
   }
   async function loadCrSales(opts){
-    if(!opts || !opts.silent) el('crBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
+    if(!opts || !opts.silent) el('crBody').innerHTML = '<tr><td colspan="13" class="responsive-empty">Carregando…</td></tr>';
     const params = new URLSearchParams();
     [['companyId','crCompany'],['loginCompanyId','crLogin'],['month','crMonth'],['providerId','crProvider'],['status','crStatus'],['q','crSearch']].forEach(([key, id]) => {
       if(el(id).value.trim()) params.set(key, el(id).value.trim());
@@ -39871,7 +39872,7 @@ function renderHomeTasks(){
       renderCrSales();
     }catch(error){
       crRows = [];
-      el('crBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('crBody').innerHTML = '<tr><td colspan="13" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   el('crEntryFilterNote').addEventListener('click', event => {
@@ -39942,6 +39943,8 @@ function renderHomeTasks(){
     if(!crProviders.length) await crLoadProviders();
     el('crSaleForm').reset();
     delete el('crSaleForm').dataset.crSource;
+    delete el('crSaleForm').dataset.crEditId;
+    el('crSaleTitle').textContent = 'NOVO CREDIÁRIO';
     el('crSalePonttie').textContent = '';
     el('crSaleStatus').textContent = '';
     fillSelect('crSaleCompany', '<option value="">SELECIONE</option>', crCompanyOptions());
@@ -39955,6 +39958,38 @@ function renderHomeTasks(){
     setCurrencyValue(el('crSaleNet'), '');
     el('crSaleFee').value = el('crSaleProvider').value ? crProviderFee(el('crSaleProvider').value) / 100 : '';
     el('crSaleDate').value = financeCurrentDateKey();
+    el('crSaleDialog').showModal();
+  });
+  // EDITAR (09/11/2026): o mesmo formulário, preenchido com o crediário.
+  el('crBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-cr-edit]');
+    if(!button) return;
+    const r = crRows.find(row => row.id === button.dataset.crEdit);
+    if(!r) return;
+    if(!crProviders.length) await crLoadProviders();
+    const form = el('crSaleForm');
+    form.reset();
+    form.dataset.crEditId = r.id;
+    el('crSaleTitle').textContent = 'EDITAR CREDIÁRIO';
+    el('crSalePonttie').textContent = r.receivedDate ? 'JÁ RECEBIDO: SÓ DÁ PARA MUDAR LOGIN, ID DA VENDA, PROPOSTA E OBSERVAÇÃO.' : '';
+    el('crSaleStatus').textContent = '';
+    fillSelect('crSaleCompany', '<option value="">SELECIONE</option>', crCompanyOptions());
+    el('crSaleCompany').value = r.companyId;
+    fillSelect('crSaleLogin', '<option value="">NÃO INFORMADO</option>', crCompanyOptions());
+    el('crSaleLogin').value = r.loginCompanyId || '';
+    crFillSaleProviders();
+    if(!Array.from(el('crSaleProvider').options).some(o => o.value === r.providerId)){
+      el('crSaleProvider').insertAdjacentHTML('beforeend', '<option value="'+escapeHtml(r.providerId)+'">'+escapeHtml(r.providerName || r.providerId)+'</option>');
+    }
+    el('crSaleProvider').value = r.providerId;
+    el('crSaleDate').value = r.saleDate;
+    el('crSaleRef').value = r.saleRef || '';
+    el('crSaleProposal').value = r.proposal || '';
+    el('crSaleExpected').value = r.expectedDate || '';
+    el('crSaleNotes').value = r.notes || '';
+    crBindAmounts(form);
+    setCurrencyValue(el('crSaleGross'), r.grossCents / 100);
+    crSetFee(form, r.feeBps);
     el('crSaleDialog').showModal();
   });
   el('crSaleCompany').addEventListener('change', () => { crFillSaleProviders(); crLookupPonttie(); });
@@ -39973,9 +40008,11 @@ function renderHomeTasks(){
     if(!payload.grossCents){ status.textContent = 'INFORME O VALOR DA VENDA.'; return; }
     status.textContent = 'Salvando…';
     try{
-      await financeApiRequest('/credit-sales', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      const editId = el('crSaleForm').dataset.crEditId;
+      await financeApiRequest(editId ? '/credit-sales/'+encodeURIComponent(editId) : '/credit-sales',
+        {method: editId ? 'PATCH' : 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       el('crSaleDialog').close();
-      showPurchaseToast('Crediário cadastrado.');
+      showPurchaseToast(editId ? 'Crediário alterado.' : 'Crediário cadastrado.');
       await loadCrSales({silent:true});
     }catch(error){ status.textContent = error.message; }
   });

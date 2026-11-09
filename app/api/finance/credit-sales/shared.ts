@@ -141,13 +141,15 @@ export type CreditSaleContext = {
 export function planCreditSale(
   ctx: CreditSaleContext,
   input: JsonMap,
+  /** EDITAR (09/11/2026): o crediário já gravado — vira UPDATE desta linha. */
+  existing?: CreditSaleRow,
 ): { statement: Statement; id: string } | { error: string; status: number } {
   const companyId = ctx.scope.allStores ? safeText(input.companyId, 80) : ctx.scope.companyId;
   const company = ctx.companies.find((item) => item.id === companyId);
   if (!hasCompany(companyId) || !company) return { error: "ESCOLHA A UNIDADE.", status: 400 };
   const provider = ctx.providers.get(safeText(input.providerId, 80));
   if (!provider) return { error: "ESCOLHA A FINANCEIRA.", status: 400 };
-  if (provider.status !== "active") return { error: "FINANCEIRA INATIVA.", status: 400 };
+  if (provider.status !== "active" && provider.id !== existing?.providerId) return { error: "FINANCEIRA INATIVA.", status: 400 };
   if (provider.companyId && provider.companyId !== companyId) return { error: "A FINANCEIRA NÃO ATENDE ESSA UNIDADE.", status: 400 };
   const saleDate = safeText(input.saleDate, 10);
   if (!DATE_RE.test(saleDate)) return { error: "INFORME A DATA DA VENDA.", status: 400 };
@@ -168,12 +170,32 @@ export function planCreditSale(
   if (!amounts) return { error: "CONFIRA O VALOR COM TAXA, A TAXA E O VALOR SEM TAXA.", status: 400 };
   if (proposal) {
     const key = proposalKey(provider.id, proposal);
-    if (ctx.taken.has(key)) return { error: "PROPOSTA JÁ CADASTRADA.", status: 409 };
+    const own = existing && existing.proposal && key === proposalKey(existing.providerId, existing.proposal);
+    if (ctx.taken.has(key) && !own) return { error: "PROPOSTA JÁ CADASTRADA.", status: 409 };
     ctx.taken.add(key);
   }
 
-  const id = crypto.randomUUID();
   const who = ctx.scope.actor.displayName || "Administrador";
+  if (existing) {
+    return {
+      id: existing.id,
+      statement: [
+        `UPDATE finance_credit_sales
+           SET company_id=?2, company_name=?3, provider_id=?4, provider_name=?5, sale_date=?6, sale_ref=?7, proposal=?8,
+               customer_name=?9, gross_cents=?10, fee_bps=?11, fee_cents=?12, net_cents=?13, expected_date=?14, notes=?15,
+               updated_by=?16, updated_by_name=?17, updated_at=CURRENT_TIMESTAMP, login_company_id=?18, login_company_name=?19
+         WHERE id=?1`,
+        [
+          existing.id, companyId, company.name, provider.id, provider.name, saleDate, safeText(input.saleRef, 60), proposal,
+          input.customerName === undefined ? existing.customerName : safeText(input.customerName, 80),
+          amounts.grossCents, amounts.feeBps, amounts.feeCents, amounts.netCents, expectedDate, safeText(input.notes, 500),
+          ctx.scope.actor.id, who, login ? login.id : "", login ? login.name : "",
+        ],
+      ],
+    };
+  }
+
+  const id = crypto.randomUUID();
   return {
     id,
     statement: [

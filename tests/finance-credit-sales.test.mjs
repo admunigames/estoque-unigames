@@ -17,6 +17,7 @@ const salesRoute = await import("../app/api/finance/credit-sales/route.ts");
 const batch = await import("../app/api/finance/credit-sales/batch/route.ts");
 const bulk = await import("../app/api/finance/credit-sales/bulk/route.ts");
 const link = await import("../app/api/finance/credit-sales/link/route.ts");
+const editRoute = await import("../app/api/finance/credit-sales/[id]/route.ts");
 const bankEntry = await import("../app/api/finance/bank-reconciliation/[id]/route.ts");
 
 // ---------------------------------------------------------------------------
@@ -159,6 +160,29 @@ test("NOVO CREDIÁRIO: taxa padrão da financeira, sem taxa digitado, proposta r
   const lookup = await json(await get(salesRoute.GET, ADMIN, `/api/finance/credit-sales?lookupSaleRef=V100&companyId=${RIOMAR}`));
   assert.deepEqual(lookup.ponttie, { saleDate: "2026-09-01", amountCents: 100000 });
   assert.equal((await json(await get(salesRoute.GET, ADMIN, `/api/finance/credit-sales?lookupSaleRef=NADA&companyId=${RIOMAR}`))).ponttie, null);
+});
+
+test("EDITAR crediário: muda valor/taxa/login, mantém a própria proposta, 409 de proposta alheia; recebido só muda o que não é dinheiro", async () => {
+  const patch = (user, id, body) => callRoute(editRoute.PATCH, user, "PATCH", `/api/finance/credit-sales/${id}`, body, { id });
+  const p1 = sale("P-1");
+  const base = { companyId: RIOMAR, providerId: credfacil, saleDate: "2026-09-01", grossCents: 100000, proposal: "P-1", saleRef: "V100" };
+  const ok = await patch(ADMIN, p1.id, { ...base, grossCents: 120000, loginCompanyId: TACARUNA, notes: "ajuste" });
+  assert.equal(ok.status, 200, JSON.stringify(await ok.clone().json()));
+  const edited = sale("P-1");
+  assert.deepEqual([edited.gross_cents, edited.net_cents, edited.login_company_name, edited.notes, edited.created_by], [120000, 108000, "TACARUNA", "AJUSTE", p1.created_by]);
+  assert.equal((await patch(ADMIN, p1.id, { ...base, proposal: "P-2" })).status, 409);
+  assert.equal((await patch(ADMIN, "nao-existe", base)).status, 404);
+  assert.equal((await patch(RIOMAR_LOGIN, sale("P-LOJA").id, { ...base, proposal: "P-LOJA", grossCents: 20000 })).status, 200);
+  db.sqlite.prepare("UPDATE finance_credit_sales SET received_date='2026-09-20', received_cents=net_cents WHERE proposal='P-1'").run();
+  const money = await patch(ADMIN, p1.id, { ...base, grossCents: 130000 });
+  assert.equal(money.status, 409);
+  assert.match((await json(money)).error, /JÁ RECEBIDO/);
+  assert.equal((await patch(ADMIN, p1.id, { ...base, grossCents: 120000, proposal: "P-1B", notes: "ok" })).status, 200);
+  assert.equal(db.sqlite.prepare("SELECT proposal FROM finance_credit_sales WHERE id=?").get(p1.id).proposal, "P-1B");
+  // Volta ao que era (os testes seguintes usam o P-1 original).
+  db.sqlite.prepare("UPDATE finance_credit_sales SET received_date='', received_cents=0 WHERE id=?").run(p1.id);
+  assert.equal((await patch(ADMIN, p1.id, { ...base, notes: p1.notes })).status, 200);
+  assert.deepEqual([sale("P-1").gross_cents, sale("P-1").net_cents, sale("P-1").login_company_id], [100000, 90000, ""]);
 });
 
 test("CADASTRAR EM LOTE: cria e pula (proposta repetida no banco e no próprio lote)", async () => {
