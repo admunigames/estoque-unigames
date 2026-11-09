@@ -55,6 +55,11 @@ function isPaidReceiptStatus(text: string) {
   return PAID_RE.test(text.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, ""));
 }
 
+// Cancelamento/estorno/chargeback (ou qualquer valor negativo do arquivo).
+function isCancelLine(row: { category: string; netCents: number }) {
+  return /CANCEL|ESTORN|CHARGEBACK/.test(row.category) || row.netCents < 0;
+}
+
 function guard(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return { error: unauthorized };
@@ -315,6 +320,8 @@ export async function POST(request: Request) {
       paidCents: plannedLines.filter((row) => row.paid).reduce((sum, row) => sum + row.netCents, 0),
       openCents: plannedLines.filter((row) => !row.paid).reduce((sum, row) => sum + row.netCents, 0),
       replacedEstimates: replaced.length,
+      cancelLines: plannedLines.filter(isCancelLine).length,
+      cancelCents: plannedLines.filter(isCancelLine).reduce((sum, row) => sum + row.netCents, 0),
     };
     if (dryRun) return jsonResponse({ dryRun: true, acquirerName: acquirer.name, summary, groups: groupList, rejected });
     if (!plannedLines.length) return jsonResponse({ error: "NENHUMA PARCELA VÁLIDA NO ARQUIVO." }, 400);

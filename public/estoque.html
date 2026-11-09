@@ -3866,6 +3866,9 @@
   .cf-group-line{display:flex; justify-content:space-between; gap:12px;}
   .cf-group-row.danger td.cf-group-head{background:color-mix(in srgb,var(--neg) 14%,var(--bg-card-2)) !important; color:var(--neg);}
   .cf-group-row.total td.cf-group-head{border-top:2px solid var(--border);}
+  .cf-file-toggle{cursor:pointer;}
+  .cf-file-toggle:hover td.cf-group-head{filter:brightness(1.06);}
+  .cf-file-toggle:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
   .cf-link{padding:0; min-height:0; border:0; background:none; color:var(--accent); font:inherit; text-align:left; text-decoration:underline; cursor:pointer;}
   .cf-week-picker{display:flex; align-items:center; gap:6px;}
   .cf-week-picker input{min-width:0;}
@@ -9473,8 +9476,8 @@
         <div class="dre-toolbar">
           <div class="field"><label for="cfFileListAccount">CONTA</label><select id="cfFileListAccount"><option value="">TODAS AS CONTAS</option></select></div>
           <div class="field"><label for="cfFileListMonth">MÊS (DATA DE PAGAMENTO)</label><input type="month" id="cfFileListMonth"></div>
-          <div class="field"><label for="cfFileListStatus">SITUAÇÃO</label><select id="cfFileListStatus"><option value="">TODAS</option><option value="open">A RECEBER</option><option value="paid">PAGAS</option></select></div>
-          <div class="dre-toolbar-actions"><button class="btn-accent" type="button" data-cf-file-open>IMPORTAR ARQUIVO DO BANCO (CSV/XLS)</button></div>
+          <div class="field"><label for="cfFileListStatus">SITUAÇÃO</label><select id="cfFileListStatus"><option value="">TODAS</option><option value="open">A RECEBER</option><option value="paid">PAGAS</option><option value="cancel">CANCELAMENTOS</option></select></div>
+          <div class="dre-toolbar-actions"><button class="btn-outline" type="button" id="btnCfFileExpandAll">EXPANDIR TODOS</button><button class="btn-outline" type="button" id="btnCfFileCollapseAll">RECOLHER TODOS</button><button class="btn-accent" type="button" data-cf-file-open>IMPORTAR ARQUIVO DO BANCO (CSV/XLS)</button></div>
         </div>
         <section class="summary" id="cfFileListTotals" aria-label="Totais das parcelas do arquivo"></section>
         <div class="table-panel responsive-table">
@@ -36263,6 +36266,24 @@ function renderHomeTasks(){
     return monday.slice(8,10)+'/'+monday.slice(5,7)+' A '+formatDateBR(end);
   }
   // Linha-título de grupo (dia/semana/vencidos) dentro da tabela.
+  // Linha de grupo que abre/fecha (clique ou Enter); `openSet` guarda as abertas.
+  function cfToggleRow(openSet, colspan, key, title, totalCents, kind){
+    const open = openSet.has(key);
+    return '<tr class="cf-group-row cf-file-toggle'+(kind ? ' '+kind : '')+'" data-cf-toggle="'+escapeHtml(key)+'" role="button" tabindex="0" aria-expanded="'+open+'">'+
+      '<td colspan="'+colspan+'" class="cf-group-head"><div class="cf-group-line"><strong>'+(open ? '▾ ' : '▸ ')+escapeHtml(title)+'</strong><span>'+formatCentsBRL(totalCents)+'</span></div></td></tr>';
+  }
+  function cfBindToggle(body, openSet, render){
+    body.addEventListener('click', event => {
+      const row = event.target.closest('[data-cf-toggle]');
+      if(!row) return;
+      const key = row.dataset.cfToggle;
+      if(openSet.has(key)) openSet.delete(key); else openSet.add(key);
+      render();
+    });
+    body.addEventListener('keydown', event => {
+      if((event.key === 'Enter' || event.key === ' ') && event.target.closest('[data-cf-toggle]')){ event.preventDefault(); event.target.click(); }
+    });
+  }
   function cfGroupRow(colspan, title, totalCents, kind){
     return '<tr class="cf-group-row'+(kind ? ' '+kind : '')+'"><td colspan="'+colspan+'" class="cf-group-head"><div class="cf-group-line"><strong>'+escapeHtml(title)+'</strong><span>'+formatCentsBRL(totalCents)+'</span></div></td></tr>';
   }
@@ -36746,6 +36767,9 @@ function renderHomeTasks(){
   });
 
   // --- RECEBÍVEIS: recebimentos futuros por semana e adquirente ---
+  const cfFutureOpen = new Set();
+  let cfFutureRender = () => {};
+  cfBindToggle(el('cfReceivablesFutureBody'), cfFutureOpen, () => cfFutureRender());
   async function loadCashFlowFutureReceivables(){
     const body = el('cfReceivablesFutureBody');
     body.innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
@@ -36765,17 +36789,21 @@ function renderHomeTasks(){
         '<td data-label="COMPETÊNCIA">'+escapeHtml(r.competenceMonth || '—')+'</td>'+
         '<td data-label="VALOR">'+formatCentsBRL(r.expectedAmountCents)+'</td>'+
       '</tr>';
+      // Semanas RECOLHIDAS (só a linha da semana com o total); clique abre.
       const weeks = new Map();
       upcoming.forEach(r => { const k = cfMonday(r.expectedDate); if(!weeks.has(k)) weeks.set(k, []); weeks.get(k).push(r); });
-      let html = overdue.length ? cfGroupRow(5, 'ATRASADOS (DATA PREVISTA ANTERIOR A HOJE)', sum(overdue), 'danger') + overdue.map(row).join('') : '';
-      weeks.forEach((list, monday) => {
-        list.sort((a, b) => (a.operatorText || '').localeCompare(b.operatorText || '') || a.expectedDate.localeCompare(b.expectedDate));
-        const byAcquirer = new Map();
-        list.forEach(r => byAcquirer.set(r.operatorText || '—', (byAcquirer.get(r.operatorText || '—') || 0) + r.expectedAmountCents));
-        html += cfGroupRow(5, 'SEMANA DE '+cfWeekLabel(monday)+' · '+[...byAcquirer].map(([name, cents]) => name+' '+formatCentsBRL(cents)).join(' · '), sum(list)) + list.map(row).join('');
-      });
-      if(upcoming.length) html += cfGroupRow(5, 'TOTAL GERAL (PRÓXIMOS 90 DIAS)', sum(upcoming), 'total');
-      body.innerHTML = html || '<tr><td colspan="5" class="responsive-empty">Nenhum recebimento futuro.</td></tr>';
+      cfFutureRender = () => {
+        let html = overdue.length ? cfToggleRow(cfFutureOpen, 5, 'overdue', 'ATRASADOS (DATA PREVISTA ANTERIOR A HOJE)', sum(overdue), 'danger') + (cfFutureOpen.has('overdue') ? overdue.map(row).join('') : '') : '';
+        weeks.forEach((list, monday) => {
+          list.sort((a, b) => (a.operatorText || '').localeCompare(b.operatorText || '') || a.expectedDate.localeCompare(b.expectedDate));
+          const byAcquirer = new Map();
+          list.forEach(r => byAcquirer.set(r.operatorText || '—', (byAcquirer.get(r.operatorText || '—') || 0) + r.expectedAmountCents));
+          html += cfToggleRow(cfFutureOpen, 5, monday, 'SEMANA DE '+cfWeekLabel(monday)+' · '+[...byAcquirer].map(([name, cents]) => name+' '+formatCentsBRL(cents)).join(' · '), sum(list)) + (cfFutureOpen.has(monday) ? list.map(row).join('') : '');
+        });
+        if(upcoming.length) html += cfGroupRow(5, 'TOTAL GERAL (PRÓXIMOS 90 DIAS)', sum(upcoming), 'total');
+        body.innerHTML = html || '<tr><td colspan="5" class="responsive-empty">Nenhum recebimento futuro.</td></tr>';
+      };
+      cfFutureRender();
     }catch(error){
       body.innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
@@ -37072,7 +37100,8 @@ function renderHomeTasks(){
         '<div class="card"><div class="lbl">PARCELAS</div><div class="num">'+t.lines+'</div><div class="sub">'+t.newLines+' nova(s) · '+t.updatedLines+' já importada(s)</div></div>'+
         '<div class="card"><div class="lbl">BRUTO</div><div class="num">'+formatCentsBRL(t.grossCents)+'</div><div class="sub">taxas '+formatCentsBRL(t.grossCents - t.netCents)+'</div></div>'+
         '<div class="card"><div class="lbl">A RECEBER</div><div class="num">'+formatCentsBRL(t.openCents)+'</div></div>'+
-        '<div class="card"><div class="lbl">JÁ PAGO</div><div class="num">'+formatCentsBRL(t.paidCents)+'</div></div>';
+        '<div class="card"><div class="lbl">JÁ PAGO</div><div class="num">'+formatCentsBRL(t.paidCents)+'</div></div>'+
+        '<div class="card'+(t.cancelLines ? ' neg' : '')+'"><div class="lbl">CANCELAMENTOS</div><div class="num">'+formatCentsBRL(t.cancelCents)+'</div><div class="sub">'+t.cancelLines+' parcela(s)</div></div>';
       body.innerHTML = data.groups.map(g => {
         const a = CF_FILE_ACTION[g.action] || ['', g.action];
         return '<tr>'+
@@ -37152,38 +37181,92 @@ function renderHomeTasks(){
     }
   });
 
-  // Lista compacta das parcelas importadas (aba RECEBÍVEIS).
+  // Lista compacta das parcelas importadas (aba RECEBÍVEIS). Os dias começam
+  // RECOLHIDOS (só a linha do dia com o total); clique abre. Cancelamentos
+  // ficam juntos num bloco no topo, uma linha por venda cancelada.
   let cfFileListRows = [];
+  const cfFileOpen = new Set();
+  const cfFileIsCancel = r => /CANCEL|ESTORN|CHARGEBACK/.test(r.category || '') || Number(r.netCents) < 0;
+  const cfFileToggleRow = (key, title, totalCents, kind) => cfToggleRow(cfFileOpen, 8, key, title, totalCents, kind);
+  function cfFileLineRow(r){
+    return '<tr>'+
+      '<td data-label="PAGAMENTO">'+escapeHtml(formatDateBR(r.dueDate))+'</td>'+
+      '<td data-label="VENDA">'+escapeHtml(r.saleDate ? formatDateBR(r.saleDate) : '—')+(cfFileIsCancel(r) ? ' <span class="status-pill alert">'+escapeHtml(r.category || 'CANCELAMENTO')+'</span>' : '')+'</td>'+
+      '<td data-label="BANDEIRA · PRODUTO">'+escapeHtml([r.brand, r.product].filter(Boolean).join(' · ') || '—')+'</td>'+
+      '<td data-label="PARCELA">'+escapeHtml(r.installmentNo+'/'+r.installments)+'</td>'+
+      '<td data-label="BRUTO">'+formatCentsBRL(r.grossCents)+'</td>'+
+      '<td data-label="TAXA">'+formatCentsBRL(r.feeCents)+'</td>'+
+      '<td data-label="LÍQUIDO">'+formatCentsBRL(r.netCents)+'</td>'+
+      '<td data-label="SITUAÇÃO"><span class="status-pill '+(Number(r.paid) ? 'ok' : 'waiting')+'">'+escapeHtml(r.statusText || (Number(r.paid) ? 'PAGO' : 'A RECEBER'))+'</span></td>'+
+    '</tr>';
+  }
+  // Uma linha por venda cancelada (soma das parcelas descontadas).
+  function cfFileCancelSales(rows){
+    const bySale = new Map();
+    rows.forEach((r, i) => {
+      const key = r.saleRef || 'linha-'+i;
+      const sale = bySale.get(key) || {saleRef: r.saleRef, saleDate: r.saleDate, brand: r.brand, product: r.product, category: r.category, installments: r.installments, parts: 0, dates: [], grossCents: 0, feeCents: 0, netCents: 0, paid: true, statusText: r.statusText};
+      sale.parts += 1;
+      sale.dates.push(r.dueDate);
+      sale.grossCents += Number(r.grossCents) || 0;
+      sale.feeCents += Number(r.feeCents) || 0;
+      sale.netCents += Number(r.netCents) || 0;
+      sale.paid = sale.paid && Boolean(Number(r.paid));
+      bySale.set(key, sale);
+    });
+    return [...bySale.values()].map(sale => {
+      const dates = [...new Set(sale.dates)].sort();
+      return '<tr>'+
+        '<td data-label="DESCONTADO EM">'+escapeHtml(dates.map(formatDateBR).join(', '))+'</td>'+
+        '<td data-label="VENDA">'+escapeHtml(sale.saleDate ? formatDateBR(sale.saleDate) : '—')+' <span class="status-pill alert">'+escapeHtml(sale.category || 'CANCELAMENTO')+'</span>'+(sale.saleRef ? '<div class="muted" style="font-size:11px">ID '+escapeHtml(sale.saleRef)+'</div>' : '')+'</td>'+
+        '<td data-label="BANDEIRA · PRODUTO">'+escapeHtml([sale.brand, sale.product].filter(Boolean).join(' · ') || '—')+'</td>'+
+        '<td data-label="PARCELAS">'+sale.parts+' DE '+escapeHtml(String(sale.installments))+'</td>'+
+        '<td data-label="BRUTO">'+formatCentsBRL(sale.grossCents)+'</td>'+
+        '<td data-label="TAXA">'+formatCentsBRL(sale.feeCents)+'</td>'+
+        '<td data-label="LÍQUIDO">'+formatCentsBRL(sale.netCents)+'</td>'+
+        '<td data-label="SITUAÇÃO"><span class="status-pill '+(sale.paid ? 'ok' : 'waiting')+'">'+escapeHtml(sale.paid ? 'DESCONTADO' : 'A DESCONTAR')+'</span></td>'+
+      '</tr>';
+    }).join('');
+  }
   function renderCfFileList(){
     const filter = el('cfFileListStatus').value;
-    const rows = cfFileListRows.filter(r => !filter || (filter === 'paid') === Boolean(Number(r.paid)));
+    const rows = cfFileListRows.filter(r => !filter || (filter === 'cancel' ? cfFileIsCancel(r) : (filter === 'paid') === Boolean(Number(r.paid))));
     const sum = (list, key) => list.reduce((total, r) => total + Number(r[key] || 0), 0);
     const open = rows.filter(r => !Number(r.paid));
+    const cancels = cfFileListRows.filter(cfFileIsCancel);
+    const cancelSales = new Set(cancels.map((r, i) => r.saleRef || 'linha-'+i)).size;
     el('cfFileListTotals').innerHTML =
       '<div class="card"><div class="lbl">BRUTO</div><div class="num">'+formatCentsBRL(sum(rows, 'grossCents'))+'</div><div class="sub">'+rows.length+' parcela(s)</div></div>'+
       '<div class="card"><div class="lbl">TAXAS</div><div class="num">'+formatCentsBRL(sum(rows, 'feeCents'))+'</div></div>'+
       '<div class="card"><div class="lbl">LÍQUIDO</div><div class="num">'+formatCentsBRL(sum(rows, 'netCents'))+'</div></div>'+
-      '<div class="card"><div class="lbl">A RECEBER</div><div class="num">'+formatCentsBRL(sum(open, 'netCents'))+'</div><div class="sub">'+open.length+' parcela(s)</div></div>';
-    let html = '', day = '';
-    rows.forEach(r => {
-      if(r.dueDate !== day){
-        day = r.dueDate;
-        const list = rows.filter(x => x.dueDate === day);
-        html += cfGroupRow(8, formatDateBR(day)+' · '+list.length+' PARCELA(S)'+(list.every(x => Number(x.paid)) ? ' · PAGO' : ''), sum(list, 'netCents'));
-      }
-      html += '<tr>'+
-        '<td data-label="PAGAMENTO">'+escapeHtml(formatDateBR(r.dueDate))+'</td>'+
-        '<td data-label="VENDA">'+escapeHtml(r.saleDate ? formatDateBR(r.saleDate) : '—')+(r.category && r.category !== 'VENDA' ? ' <span class="status-pill alert">'+escapeHtml(r.category)+'</span>' : '')+'</td>'+
-        '<td data-label="BANDEIRA · PRODUTO">'+escapeHtml([r.brand, r.product].filter(Boolean).join(' · ') || '—')+'</td>'+
-        '<td data-label="PARCELA">'+escapeHtml(r.installmentNo+'/'+r.installments)+'</td>'+
-        '<td data-label="BRUTO">'+formatCentsBRL(r.grossCents)+'</td>'+
-        '<td data-label="TAXA">'+formatCentsBRL(r.feeCents)+'</td>'+
-        '<td data-label="LÍQUIDO">'+formatCentsBRL(r.netCents)+'</td>'+
-        '<td data-label="SITUAÇÃO"><span class="status-pill '+(Number(r.paid) ? 'ok' : 'waiting')+'">'+escapeHtml(r.statusText || (Number(r.paid) ? 'PAGO' : 'A RECEBER'))+'</span></td>'+
-      '</tr>';
-    });
+      '<div class="card"><div class="lbl">A RECEBER</div><div class="num">'+formatCentsBRL(sum(open, 'netCents'))+'</div><div class="sub">'+open.length+' parcela(s)</div></div>'+
+      '<div class="card'+(cancels.length ? ' neg' : '')+'"><div class="lbl">CANCELAMENTOS</div><div class="num">'+formatCentsBRL(sum(cancels, 'netCents'))+'</div><div class="sub">'+cancelSales+' venda(s) · '+cancels.length+' parcela(s)</div></div>';
+    let html = '';
+    const rowCancels = rows.filter(cfFileIsCancel);
+    if(rowCancels.length){
+      html += cfFileToggleRow('cancel', 'CANCELAMENTOS · '+new Set(rowCancels.map((r, i) => r.saleRef || 'linha-'+i)).size+' VENDA(S)', sum(rowCancels, 'netCents'), 'danger');
+      if(cfFileOpen.has('cancel')) html += cfFileCancelSales(rowCancels);
+    }
+    if(filter !== 'cancel'){
+      const days = new Map();
+      rows.forEach(r => { if(!days.has(r.dueDate)) days.set(r.dueDate, []); days.get(r.dueDate).push(r); });
+      days.forEach((list, day) => {
+        const paid = list.filter(x => Number(x.paid)).length;
+        const state = paid === list.length ? 'PAGO' : paid ? paid+' PAGA(S) · '+(list.length - paid)+' A RECEBER' : 'A RECEBER';
+        const dayCancels = list.filter(cfFileIsCancel).length;
+        html += cfFileToggleRow(day, formatDateBR(day)+' · '+list.length+' PARCELA(S) · '+state+(dayCancels ? ' · '+dayCancels+' CANCELAMENTO(S)' : ''), sum(list, 'netCents'));
+        if(cfFileOpen.has(day)) html += list.map(cfFileLineRow).join('');
+      });
+    }
     el('cfFileListBody').innerHTML = html || '<tr><td colspan="8" class="responsive-empty">NENHUMA PARCELA IMPORTADA NO MÊS.</td></tr>';
   }
+  cfBindToggle(el('cfFileListBody'), cfFileOpen, renderCfFileList);
+  el('btnCfFileExpandAll').addEventListener('click', () => {
+    cfFileListRows.forEach(r => cfFileOpen.add(r.dueDate));
+    cfFileOpen.add('cancel');
+    renderCfFileList();
+  });
+  el('btnCfFileCollapseAll').addEventListener('click', () => { cfFileOpen.clear(); renderCfFileList(); });
   async function loadCfFileList(){
     if(!payableAccounts.length) await loadPayablesCatalogData();
     const select = el('cfFileListAccount');

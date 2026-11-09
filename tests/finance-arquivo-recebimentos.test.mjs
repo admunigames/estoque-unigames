@@ -83,6 +83,7 @@ test("arquivo da Stone: colunas pelo nome, prévia, gravação por dia, pago = r
     [[d(-2), 1, 27_404, "received", 0], [d(1), 3, 19_434 + 15_318 - 9_765, "new", 9_800]],
   );
   assert.equal((await many("SELECT id FROM finance_card_receipt_lines")).length, 0, "prévia não grava");
+  assert.deepEqual([preview.body.summary.cancelLines, preview.body.summary.cancelCents], [1, -9_765], "cancelamentos em destaque na prévia");
 
   const saved = await post(parsed.rows);
   assert.equal(saved.status, 200, JSON.stringify(saved.body));
