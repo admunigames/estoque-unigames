@@ -1774,6 +1774,16 @@
   .home-task-outcome{flex:1 1 100%; margin-left:30px;}
 }
   [data-access-hidden]{display:none!important}
+  [data-search-hidden]{display:none!important}
+  /* PESQUISAR MENU (09/11/2026): filtra módulos e submenus no próprio menu. */
+  .sidebar-search{position:relative; margin:4px 0 2px;}
+  .sidebar-search input{width:100%; min-height:0; padding:8px 10px; border-radius:9px; border:1px solid var(--border);
+    background:rgba(79,134,189,.06); color:var(--ink); font:700 12px var(--sans); letter-spacing:.2px;}
+  .sidebar-search input:focus{outline:none; border-color:var(--accent);}
+  .sidebar-search-empty{margin:8px 6px 0; color:var(--ink-faint); font:600 12px var(--sans);}
+  .sidebar.is-searching .nav-section-label,
+  .sidebar.is-searching .nav-submenu-label{display:none;}
+  body.sidebar-compact .sidebar-search{display:none;}
   .session-user{margin-top:auto;padding:14px 12px 4px;border-top:1px solid var(--line);display:grid;gap:3px}
   .session-user strong{font-size:12px;color:var(--ink)}
   .session-user span{font:700 10px/1.4 var(--mono);color:var(--ink-soft);text-transform:uppercase}
@@ -4273,6 +4283,10 @@
     <button class="sidebar-compact-toggle" id="btnSidebarCompact" type="button" aria-pressed="false" title="Alternar menu compacto">
       <span class="sidebar-compact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><line x1="9.5" y1="4.5" x2="9.5" y2="19.5"/><path d="m7 9.5-2.5 2.5L7 14.5"/></svg></span><span class="compact-label">MENU COMPACTO</span>
     </button>
+    <div class="sidebar-search" role="search">
+      <input id="sidebarSearch" type="search" placeholder="PESQUISAR MENU…" aria-label="Pesquisar módulo ou submenu" autocomplete="off">
+      <p class="sidebar-search-empty" id="sidebarSearchEmpty" hidden>NENHUM MÓDULO ENCONTRADO.</p>
+    </div>
     <span class="nav-section-label">Operação</span>
     <a class="nav-item active" id="navInicio" data-page="inicio" title="Início" href="/inicio"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg></span><span class="nav-label">Início</span></a>
     <a class="nav-item" id="navAparelhosEmprestimo" data-page="aparelhosEmprestimo" data-permission="loans" data-home-desc="Solicite aparelhos disponíveis ou acompanhe empréstimos em andamento." title="Aparelhos de Empréstimo" href="/aparelhos-emprestimo"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span><span class="nav-label">Aparelhos de Empréstimo</span></a>
@@ -16858,6 +16872,97 @@
       .replace(/[̀-ͯ]/g, '')
       .toLowerCase()
       .trim();
+  }
+
+  // MENU EM ORDEM ALFABÉTICA (09/11/2026): dentro de OPERAÇÃO e de GESTÃO
+  // (menus) e dentro de cada submenu (entre rótulos como "Certificados"),
+  // com o INÍCIO fixo no topo. Roda no boot: módulo novo entra no lugar certo
+  // sem mexer na ordem do HTML.
+  function sortSidebarMenu(){
+    const sidebar = el('sidebar');
+    if(!sidebar) return;
+    const labelOf = node => (node.querySelector('.nav-label')?.textContent || '').trim();
+    const sortRuns = (container, selector) => {
+      let run = [];
+      const flush = () => {
+        if(run.length > 1){
+          const before = run[0].previousElementSibling;
+          const sorted = [...run].sort((a, b) => labelOf(a).localeCompare(labelOf(b), 'pt-BR', {sensitivity:'base'}));
+          if(before) before.after(...sorted); else container.prepend(...sorted);
+        }
+        run = [];
+      };
+      Array.from(container.children).forEach(node => { if(node.matches(selector)) run.push(node); else flush(); });
+      flush();
+    };
+    sortRuns(sidebar, 'a.nav-item:not(#navInicio), .nav-group');
+    sidebar.querySelectorAll('.nav-submenu').forEach(submenu => sortRuns(submenu, 'a.nav-item'));
+  }
+
+  // PESQUISAR MENU: mostra só os módulos/submenus que batem (sem acento),
+  // abre os grupos com resultado e devolve o estado ao limpar.
+  function filterSidebarMenu(query){
+    const sidebar = el('sidebar');
+    const q = normalizeSearchText(query);
+    sidebar.classList.toggle('is-searching', Boolean(q));
+    sidebar.querySelectorAll('[data-search-hidden]').forEach(node => node.removeAttribute('data-search-hidden'));
+    sidebar.querySelectorAll('.nav-group-toggle[data-search-opened]').forEach(toggle => {
+      toggle.setAttribute('aria-expanded', toggle.dataset.searchOpened);
+      toggle.nextElementSibling?.setAttribute('aria-hidden', String(toggle.dataset.searchOpened !== 'true'));
+      delete toggle.dataset.searchOpened;
+    });
+    el('sidebarSearchEmpty').hidden = true;
+    if(!q) return;
+    const hit = node => normalizeSearchText(node.querySelector('.nav-label')?.textContent).includes(q);
+    const visible = node => !node.closest('[data-access-hidden]');
+    let found = 0;
+    sidebar.querySelectorAll(':scope > a.nav-item').forEach(item => {
+      const match = hit(item) && visible(item);
+      item.toggleAttribute('data-search-hidden', !match);
+      if(match) found++;
+    });
+    sidebar.querySelectorAll(':scope > .nav-group').forEach(group => {
+      const toggle = group.querySelector('.nav-group-toggle');
+      const groupHit = hit(toggle);
+      let any = false;
+      group.querySelectorAll('.nav-submenu a.nav-item').forEach(item => {
+        const match = (groupHit || hit(item)) && visible(item);
+        item.toggleAttribute('data-search-hidden', !match);
+        if(match) any = true;
+      });
+      any = any && visible(group);
+      group.toggleAttribute('data-search-hidden', !any);
+      if(!any) return;
+      found++;
+      toggle.dataset.searchOpened = toggle.getAttribute('aria-expanded') || 'false';
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.nextElementSibling?.setAttribute('aria-hidden', 'false');
+    });
+    el('sidebarSearchEmpty').hidden = found > 0;
+  }
+  const sidebarSearch = el('sidebarSearch');
+  if(sidebarSearch){
+    const clearSidebarSearch = () => { sidebarSearch.value = ''; filterSidebarMenu(''); };
+    sidebarSearch.addEventListener('input', () => filterSidebarMenu(sidebarSearch.value));
+    sidebarSearch.addEventListener('keydown', event => {
+      if(event.key === 'Escape' && sidebarSearch.value){ event.stopPropagation(); clearSidebarSearch(); }
+      if(event.key !== 'Enter' || !sidebarSearch.value.trim()) return;
+      event.preventDefault();
+      const first = Array.from(el('sidebar').querySelectorAll('a.nav-item'))
+        .find(item => !item.closest('[data-search-hidden],[data-access-hidden]'));
+      if(first) first.click();
+    });
+    // Abriu um módulo pela pesquisa: o menu volta ao normal.
+    el('sidebar').addEventListener('click', event => {
+      if(!sidebarSearch.value || !event.target.closest('a.nav-item')) return;
+      setTimeout(() => {
+        // O grupo do módulo aberto fica aberto, como na navegação normal.
+        el('sidebar').querySelectorAll('.nav-group-toggle[data-search-opened]').forEach(toggle => {
+          if(toggle.closest('.nav-group').querySelector('.nav-item.active')) toggle.dataset.searchOpened = 'true';
+        });
+        clearSidebarSearch();
+      }, 0);
+    });
   }
 
   function collectHomeSearchItems(){
@@ -58966,6 +59071,7 @@ function renderHomeTasks(){
   async function initializeApp(){
     setDropzonesDisabled(true);
     renderAll();
+    sortSidebarMenu();
     buildHomeAccessCards();
     appLoading.begin();
     try{
