@@ -13,12 +13,7 @@ import {
   resolveChargedFeeCents,
   type CardModality,
 } from "../../../lib/card-fees";
-import {
-  machineCompanyAt,
-  matchCardMachine,
-  type MachineForMatch,
-  type MachineTransfer,
-} from "../../../lib/card-machines";
+import { machineCompanyAt, matchCardMachine } from "../../../lib/card-machines";
 import {
   canManageFinance,
   identity,
@@ -29,7 +24,7 @@ import {
   sameOrigin,
   type JsonMap,
 } from "../shared";
-import { loadCardFees, scopeActorOf, type Database } from "../card-fees/shared";
+import { loadCardFees, loadMachinesWithTransfers, scopeActorOf, type Database } from "../card-fees/shared";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -226,38 +221,6 @@ export async function POST(request: Request) {
     console.error("Não foi possível importar as vendas de cartão.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL IMPORTAR AS VENDAS DE CARTÃO." }, 500);
   }
-}
-
-type MachineRow = MachineForMatch & {
-  acquirerId: string;
-  acquirerName: string;
-  companyName: string;
-  label: string;
-};
-
-async function loadMachinesWithTransfers(database: Database) {
-  const [machines, events] = await Promise.all([
-    database
-      .prepare(
-        `SELECT id, acquirer_id AS acquirerId, acquirer_name AS acquirerName, terminal, serial,
-                establishment_code AS establishmentCode, company_id AS companyId, company_name AS companyName,
-                acquirer_name || ' ' || model || ' ' || CASE WHEN terminal <> '' THEN terminal ELSE serial END AS label
-         FROM finance_card_machines`,
-      )
-      .all<MachineRow>(),
-    database
-      .prepare(
-        `SELECT machine_id AS machineId, event_date AS eventDate, from_company_id AS fromCompanyId,
-                from_company_name AS fromCompanyName
-         FROM finance_card_machine_events WHERE kind='transfer'`,
-      )
-      .all<MachineTransfer & { machineId: string }>(),
-  ]);
-  const transfers = new Map<string, MachineTransfer[]>();
-  for (const event of events.results ?? []) {
-    transfers.set(event.machineId, [...(transfers.get(event.machineId) ?? []), event]);
-  }
-  return { machines: machines.results ?? [], transfers };
 }
 
 function optionalNumber(value: unknown): number | null {

@@ -105,5 +105,5 @@ test("tela: seção de conciliação na aba RECEBÍVEIS", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
   assert.match(html, /CONCILIAÇÃO DE CONTAS A RECEBER \(PREVISTO × ENTROU NA CONTA\)/);
   for (const id of ["rrAccount", "rrMonth", "btnRrLinkSuggested", "rrBody", "rrCreditsBody"]) assert.match(html, new RegExp(`id="${id}"`));
-  assert.match(html, /loadReceivablesRecon\(\)\]\)/);
+  assert.match(html, /loadReceivablesRecon\(\), loadCfFileList\(\)\]\)/);
 });

@@ -2054,6 +2054,49 @@ export const financeAccountInvestments = pgTable(
   (table) => [index("finance_account_investments_account_idx").on(table.accountId, table.entryDate)],
 );
 
+// Parcelas do ARQUIVO DE RECEBIMENTOS do banco/adquirente (Fluxo de Caixa,
+// 09/11/2026 — migration 0133). line_key identifica a parcela (reimportar
+// atualiza); group_key = conta + loja + adquirente + data de pagamento = a
+// idempotency_key do recebível que soma as parcelas. Valores com sinal
+// (cancelamento negativo). paid = situação do arquivo é paga/liquidada.
+export const financeCardReceiptLines = pgTable(
+  "finance_card_receipt_lines",
+  {
+    id: text("id").primaryKey(),
+    lineKey: text("line_key").notNull(),
+    groupKey: text("group_key").notNull(),
+    financeAccountId: text("finance_account_id").notNull(),
+    companyId: text("company_id").notNull(),
+    companyName: text("company_name").notNull().default(""),
+    acquirerId: text("acquirer_id").notNull(),
+    acquirerName: text("acquirer_name").notNull().default(""),
+    category: text("category").notNull().default(""),
+    saleDate: text("sale_date").notNull().default(""),
+    dueDate: text("due_date").notNull(),
+    brand: text("brand").notNull().default(""),
+    product: text("product").notNull().default(""),
+    installments: integer("installments").notNull().default(1),
+    installmentNo: integer("installment_no").notNull().default(1),
+    grossCents: integer("gross_cents").notNull().default(0),
+    netCents: integer("net_cents").notNull().default(0),
+    feeCents: integer("fee_cents").notNull().default(0),
+    statusText: text("status_text").notNull().default(""),
+    paid: integer("paid").notNull().default(0),
+    saleRef: text("sale_ref").notNull().default(""),
+    establishment: text("establishment").notNull().default(""),
+    sourceName: text("source_name").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    uniqueIndex("finance_card_receipt_lines_key_idx").on(table.lineKey),
+    index("finance_card_receipt_lines_group_idx").on(table.groupKey),
+    index("finance_card_receipt_lines_account_due_idx").on(table.financeAccountId, table.dueDate),
+  ],
+);
+
 // Configurações de Recebíveis/Fluxo de Caixa, uma linha por loja. company_id
 // vazio ('') é a linha GLOBAL, usada como fallback quando a loja não tem
 // configuração própria — mesma convenção de sentinela vazio já usada em

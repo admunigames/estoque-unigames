@@ -9333,7 +9333,8 @@
           </select>
         </div>
         <div class="dre-toolbar-actions">
-          <button class="btn-accent" id="btnCashFlowImportReceivables" type="button">IMPORTAR RECEBIMENTOS PREVISTOS</button>
+          <button class="btn-accent" id="btnCashFlowImportFile" type="button" data-cf-file-open>IMPORTAR ARQUIVO DO BANCO (CSV/XLS)</button>
+          <button class="btn-outline" id="btnCashFlowImportReceivables" type="button">ESTIMAR PELAS VENDAS</button>
           <button class="btn-accent" id="btnCashFlowBalances" type="button">SALDOS DAS CONTAS</button>
           <button class="btn-accent" id="btnCashFlowSettings" type="button">CONFIGURAÇÕES</button>
           <button class="btn-accent" id="btnCashFlowShare" type="button">GERAR IMAGEM</button>
@@ -9468,6 +9469,23 @@
             </table>
           </div>
         </div>
+        <h3 class="supply-section-title">PARCELAS DO ARQUIVO DO BANCO</h3>
+        <div class="dre-toolbar">
+          <div class="field"><label for="cfFileListAccount">CONTA</label><select id="cfFileListAccount"><option value="">TODAS AS CONTAS</option></select></div>
+          <div class="field"><label for="cfFileListMonth">MÊS (DATA DE PAGAMENTO)</label><input type="month" id="cfFileListMonth"></div>
+          <div class="field"><label for="cfFileListStatus">SITUAÇÃO</label><select id="cfFileListStatus"><option value="">TODAS</option><option value="open">A RECEBER</option><option value="paid">PAGAS</option></select></div>
+          <div class="dre-toolbar-actions"><button class="btn-accent" type="button" data-cf-file-open>IMPORTAR ARQUIVO DO BANCO (CSV/XLS)</button></div>
+        </div>
+        <section class="summary" id="cfFileListTotals" aria-label="Totais das parcelas do arquivo"></section>
+        <div class="table-panel responsive-table">
+          <div class="table-scroll">
+            <table id="cfFileListTable">
+              <thead><tr><th>Pagamento</th><th>Venda</th><th>Bandeira · produto</th><th>Parcela</th><th>Bruto</th><th>Taxa</th><th>Líquido</th><th>Situação</th></tr></thead>
+              <tbody id="cfFileListBody"><tr><td colspan="8" class="responsive-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
         <h3 class="supply-section-title">CONCILIAÇÃO DE CONTAS A RECEBER (PREVISTO × ENTROU NA CONTA)</h3>
         <div class="dre-toolbar">
           <div class="field"><label for="rrAccount">CONTA</label><select id="rrAccount"><option value="">SELECIONE</option></select></div>
@@ -12685,11 +12703,11 @@
 
 <dialog class="purchase-dialog" id="cfImportReceivablesDialog" aria-labelledby="cfImportReceivablesTitle">
   <div class="purchase-dialog-head">
-    <h3 id="cfImportReceivablesTitle">IMPORTAR RECEBIMENTOS PREVISTOS</h3>
+    <h3 id="cfImportReceivablesTitle">ESTIMAR RECEBIMENTOS PELAS VENDAS</h3>
     <button class="purchase-dialog-close" id="btnCloseCfImportReceivables" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="cfImportReceivablesForm">
-    <p class="purchase-field-help">TRAZ AS PARCELAS DAS VENDAS NO CARTÃO (ARQUIVO DE VENDAS JÁ IMPORTADO NA CONCILIAÇÃO DE VENDAS) QUE CAEM NO BANCO NO PERÍODO, PELO PRAZO DE CADA ADQUIRENTE. VIRAM RECEBÍVEIS NA CONTA ESCOLHIDA E ENTRAM NA PROJEÇÃO JUNTO COM OS PAGAMENTOS CADASTRADOS. IMPORTAR DE NOVO ATUALIZA OS VALORES (NÃO DUPLICA). OUTROS RECEBIMENTOS: ABA RECEBÍVEIS → CADASTRAR EM LOTE.</p>
+    <p class="purchase-field-help">TRAZ AS PARCELAS DAS VENDAS NO CARTÃO (ARQUIVO DE VENDAS JÁ IMPORTADO NA CONCILIAÇÃO DE VENDAS) QUE CAEM NO BANCO NO PERÍODO, PELO PRAZO DE CADA ADQUIRENTE. VIRAM RECEBÍVEIS NA CONTA ESCOLHIDA E ENTRAM NA PROJEÇÃO JUNTO COM OS PAGAMENTOS CADASTRADOS. DIA QUE JÁ VEIO DO ARQUIVO DO BANCO NÃO É ESTIMADO. IMPORTAR DE NOVO ATUALIZA OS VALORES (NÃO DUPLICA). OUTROS RECEBIMENTOS: ABA RECEBÍVEIS → CADASTRAR EM LOTE.</p>
     <div class="purchase-form-grid">
       <div class="purchase-field full"><label for="cfImportAccount">CONTA ONDE OS RECEBIMENTOS CAEM *</label><select id="cfImportAccount" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="cfImportFrom">DE</label><input type="date" id="cfImportFrom"></div>
@@ -12708,6 +12726,37 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelCfImportReceivables" type="button">CANCELAR</button>
       <button class="btn-accent" id="btnConfirmCfImportReceivables" type="submit">IMPORTAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="cfFileDialog" aria-labelledby="cfFileTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="cfFileTitle">IMPORTAR ARQUIVO DO BANCO</h3>
+    <button class="purchase-dialog-close" id="btnCloseCfFile" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="cfFileForm">
+    <p class="purchase-field-help">ARQUIVO DE RECEBIMENTOS DA ADQUIRENTE (CSV, XLS OU XLSX). AS COLUNAS SÃO ACHADAS PELO NOME, ENTÃO CADA BANCO PODE TER O SEU MODELO: DATA DE PAGAMENTO (VENCIMENTO) E VALOR LÍQUIDO SÃO OBRIGATÓRIAS; DATA DA VENDA, PARCELAS, Nº DA PARCELA, VALOR BRUTO, BANDEIRA, PRODUTO E SITUAÇÃO ENTRAM QUANDO EXISTEM. AS PARCELAS DO MESMO DIA SOMAM UM RECEBÍVEL NA CONTA, QUE SUBSTITUI A ESTIMATIVA PELAS VENDAS. PARCELA PAGA ENTRA COMO RECEBIDA. IMPORTAR DE NOVO ATUALIZA (NÃO DUPLICA).</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="cfFileInput">ARQUIVO *</label><input type="file" id="cfFileInput" accept=".csv,.xls,.xlsx,.txt"></div>
+      <div class="purchase-field"><label for="cfFileAccount">CONTA ONDE OS RECEBIMENTOS CAEM *</label><select id="cfFileAccount"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field"><label for="cfFileAcquirer">ADQUIRENTE *</label><select id="cfFileAcquirer"><option value="">SELECIONE</option></select></div>
+      <div class="purchase-field full"><label for="cfFileCompany">LOJA</label><select id="cfFileCompany"><option value="">PELA MAQUINETA DO ARQUIVO (CÓDIGO DO ESTABELECIMENTO)</option></select></div>
+    </div>
+    <p class="purchase-field-help" id="cfFileColumns"></p>
+    <section class="summary" id="cfFileTotals" aria-label="Totais da prévia"></section>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table id="cfFileTable">
+          <thead><tr><th>Pagamento</th><th>Loja</th><th>Parcelas</th><th>Bruto</th><th>Líquido</th><th>Situação</th><th>Estimativa substituída</th></tr></thead>
+          <tbody id="cfFileBody"><tr><td colspan="7" class="responsive-empty">ESCOLHA O ARQUIVO.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="cfFileStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelCfFile" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnConfirmCfFile" type="submit" disabled>IMPORTAR</button>
     </div>
   </form>
 </dialog>
@@ -36151,7 +36200,7 @@ function renderHomeTasks(){
   }
   function loadCashFlowTab(){
     if(cashFlowTab === 'semanal') return loadCashFlowWeekly();
-    if(cashFlowTab === 'recebiveis') return Promise.all([loadRecebiveisPage(), loadCashFlowFutureReceivables(), loadReceivablesRecon()]);
+    if(cashFlowTab === 'recebiveis') return Promise.all([loadRecebiveisPage(), loadCashFlowFutureReceivables(), loadReceivablesRecon(), loadCfFileList()]);
     return Promise.all([loadCashFlowSeries(), loadCashFlowPayments()]);
   }
   document.querySelectorAll('[data-cf-tab]').forEach(btn => btn.addEventListener('click', () => setCashFlowTab(btn.dataset.cfTab)));
@@ -36875,7 +36924,7 @@ function renderHomeTasks(){
 
   // --- IMPORTAR RECEBIMENTOS PREVISTOS (vendas no cartão → recebíveis) ---
   let cfImportLines = [];
-  const CF_IMPORT_ACTION = {new:['','NOVO'], update:['warn','ATUALIZA'], locked:['ok','JÁ RECEBIDO/CANCELADO']};
+  const CF_IMPORT_ACTION = {new:['','NOVO'], update:['warn','ATUALIZA'], locked:['ok','JÁ RECEBIDO/CANCELADO'], file:['ok','ARQUIVO DO BANCO']};
   async function loadCfImportPreview(){
     const body = el('cfImportBody');
     body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
@@ -36889,7 +36938,7 @@ function renderHomeTasks(){
       el('cfImportFrom').value = data.from;
       el('cfImportTo').value = data.to;
       cfImportLines = Array.isArray(data.lines) ? data.lines : [];
-      const importable = cfImportLines.filter(l => l.action !== 'locked');
+      const importable = cfImportLines.filter(l => l.action !== 'locked' && l.action !== 'file');
       const total = importable.reduce((sum, l) => sum + l.amountCents, 0);
       el('cfImportTotals').innerHTML =
         '<div class="card"><div class="lbl">A IMPORTAR</div><div class="num">'+formatCentsBRL(total)+'</div><div class="sub">'+importable.length+' recebimento(s)</div></div>'+
@@ -36938,6 +36987,222 @@ function renderHomeTasks(){
       showPurchaseToast(res.created+' recebimento(s) novo(s), '+res.updated+' atualizado(s) — '+formatCentsBRL(res.totalCents)+' na projeção.');
     }catch(error){ el('cfImportStatus').textContent = error.message; }
   });
+
+  // --- ARQUIVO DO BANCO (CSV/XLS de recebimentos da adquirente) ----------
+  // Cada banco tem um modelo: as colunas são achadas pelo nome (findColumn).
+  // O front só lê e normaliza; a prévia (loja pela maquineta, dia a dia,
+  // estimativa substituída) e a gravação são do servidor (receipt-file).
+  const CF_FILE_COLUMNS = {
+    saleDate: ['datadavenda','datavenda','dtvenda','datadatransacao','datatransacao','dataoriginaldavenda'],
+    dueDate: ['datadevencimento','datadepagamento','datapagamento','datadorecebimento','datarecebimento','previsaodepagamento','datadecredito','datacredito','datadeliquidacao','vencimento','previsao','=data'],
+    category: ['categoria','tipodelancamento','tipodemovimento','lancamento','=tipo'],
+    brand: ['bandeira'],
+    product: ['produto','modalidade','formadepagamento','meiodepagamento'],
+    installments: ['qtddeparcelas','qtdparcelas','quantidadedeparcelas','totaldeparcelas','numerodeparcelas','=parcelas','=plano'],
+    installmentNo: ['ndaparcela','nodaparcela','numerodaparcela','parcelaatual','parcelavigente','=parcela'],
+    gross: ['valorbruto','vlrbruto','=bruto','valordavenda','valororiginal','valordaparcela'],
+    net: ['valorliquido','vlrliquido','=liquido','valorareceber','valorreceber','valorrecebido','valorpago','valorcreditado'],
+    status: ['ultimostatus','situacao','=status','statusdopagamento','status'],
+    saleRef: ['stoneid','=nsu','nsu','codigodavenda','iddavenda','idvenda','iddatransacao','codigodatransacao','=tid','autorizacao','=cv','=doc'],
+    establishment: ['stonecode','codigodoestabelecimento','codigoestabelecimento','estabelecimento','=ec','=pv'],
+    terminal: ['terminal','numerologico','=pos'],
+    serial: ['numerodeserie','serial']
+  };
+  function cfMapFileColumns(header){
+    const col = {}, used = [];
+    // "DATA DE VENCIMENTO ORIGINAL" (antes da antecipação) não é a data em que cai.
+    const original = header.map((h, i) => /original/.test(normHeader(h)) && /venc|pag/.test(normHeader(h)) ? i : -1).filter(i => i !== -1);
+    ['saleDate','dueDate','net','gross','installments','installmentNo','category','brand','product','status','saleRef','establishment','terminal','serial'].forEach(key => {
+      col[key] = findColumn(header, CF_FILE_COLUMNS[key], key === 'dueDate' ? used.concat(original) : used);
+      if(col[key] !== -1) used.push(col[key]);
+    });
+    return col;
+  }
+  function cfParseReceiptFile(rows){
+    let headerIndex = -1, col = null;
+    for(let i = 0; i < Math.min(rows.length, 15); i++){
+      const candidate = cfMapFileColumns(rows[i] || []);
+      if(candidate.dueDate !== -1 && candidate.net !== -1){ headerIndex = i; col = candidate; break; }
+    }
+    if(headerIndex === -1) throw new Error('NÃO ENCONTREI AS COLUNAS DE DATA DE PAGAMENTO (VENCIMENTO) E VALOR LÍQUIDO.');
+    const header = rows[headerIndex];
+    const cell = (r, key) => col[key] !== -1 ? String(r[col[key]] == null ? '' : r[col[key]]).trim() : '';
+    const parsed = [];
+    for(let i = headerIndex + 1; i < rows.length; i++){
+      const r = rows[i] || [];
+      const dueDate = parseDateISO(cell(r, 'dueDate'));
+      const netCents = parseMoneyToCents(cell(r, 'net'));
+      if(!dueDate || !netCents) continue;
+      // "3/10" ou "3 DE 10" numa coluna só.
+      const plan = cell(r, 'installmentNo').match(/(\d+)\s*(?:\/|de)\s*(\d+)/i);
+      parsed.push({
+        line: i + 1, dueDate, netCents,
+        saleDate: parseDateISO(cell(r, 'saleDate')),
+        grossCents: col.gross !== -1 ? parseMoneyToCents(cell(r, 'gross')) : netCents,
+        installments: plan ? Number(plan[2]) : (Number(cell(r, 'installments').replace(/\D/g, '')) || 1),
+        installmentNo: plan ? Number(plan[1]) : (Number(cell(r, 'installmentNo').replace(/\D/g, '')) || 1),
+        category: cell(r, 'category'), brand: cell(r, 'brand'), product: cell(r, 'product'), status: cell(r, 'status'),
+        saleRef: cell(r, 'saleRef'), establishment: cell(r, 'establishment'), terminal: cell(r, 'terminal'), serial: cell(r, 'serial')
+      });
+    }
+    if(!parsed.length) throw new Error('NENHUMA PARCELA VÁLIDA (CONFIRA DATA DE PAGAMENTO E VALOR LÍQUIDO).');
+    return {rows: parsed, columns: Object.keys(col).filter(k => col[k] !== -1).map(k => String(header[col[k]]).trim()), header};
+  }
+  let cfFileParsed = null;
+  const CF_FILE_ACTION = {new:['','NOVO'], update:['warn','ATUALIZA'], received:['ok','RECEBIDO'], locked:['ok','JÁ CONCILIADO/CANCELADO'], remove:['alert','SAI (SEM VALOR EM ABERTO)'], none:['','SEM VALOR']};
+  function cfFileBody(dryRun){
+    return JSON.stringify({dryRun, financeAccountId: el('cfFileAccount').value, acquirerId: el('cfFileAcquirer').value,
+      companyId: el('cfFileCompany').value, sourceName: el('cfFileInput').files[0] ? el('cfFileInput').files[0].name : '', rows: cfFileParsed.rows});
+  }
+  async function cfFilePreview(){
+    const body = el('cfFileBody'), status = el('cfFileStatus');
+    el('btnConfirmCfFile').disabled = true;
+    el('cfFileTotals').innerHTML = '';
+    if(!cfFileParsed){ body.innerHTML = '<tr><td colspan="7" class="responsive-empty">ESCOLHA O ARQUIVO.</td></tr>'; return; }
+    if(!el('cfFileAccount').value || !el('cfFileAcquirer').value){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">ESCOLHA A CONTA E A ADQUIRENTE.</td></tr>';
+      return;
+    }
+    body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Calculando a prévia…</td></tr>';
+    status.textContent = '';
+    try{
+      const data = await financeApiRequest('/cash-flow/receipt-file', {method:'POST', headers:{'Content-Type':'application/json'}, body: cfFileBody(true)});
+      const t = data.summary;
+      el('cfFileTotals').innerHTML =
+        '<div class="card"><div class="lbl">PARCELAS</div><div class="num">'+t.lines+'</div><div class="sub">'+t.newLines+' nova(s) · '+t.updatedLines+' já importada(s)</div></div>'+
+        '<div class="card"><div class="lbl">BRUTO</div><div class="num">'+formatCentsBRL(t.grossCents)+'</div><div class="sub">taxas '+formatCentsBRL(t.grossCents - t.netCents)+'</div></div>'+
+        '<div class="card"><div class="lbl">A RECEBER</div><div class="num">'+formatCentsBRL(t.openCents)+'</div></div>'+
+        '<div class="card"><div class="lbl">JÁ PAGO</div><div class="num">'+formatCentsBRL(t.paidCents)+'</div></div>';
+      body.innerHTML = data.groups.map(g => {
+        const a = CF_FILE_ACTION[g.action] || ['', g.action];
+        return '<tr>'+
+          '<td data-label="PAGAMENTO">'+escapeHtml(formatDateBR(g.date))+'</td>'+
+          '<td data-label="LOJA">'+escapeHtml(g.companyName || '—')+'</td>'+
+          '<td data-label="PARCELAS">'+g.count+'</td>'+
+          '<td data-label="BRUTO">'+formatCentsBRL(g.grossCents)+'</td>'+
+          '<td data-label="LÍQUIDO">'+formatCentsBRL(g.netCents)+'</td>'+
+          '<td data-label="SITUAÇÃO">'+(a[0] ? '<span class="status-pill '+a[0]+'">'+a[1]+'</span>' : a[1])+'</td>'+
+          '<td data-label="ESTIMATIVA SUBSTITUÍDA">'+(g.replacesCents ? formatCentsBRL(g.replacesCents) : '—')+'</td>'+
+        '</tr>';
+      }).join('') || '<tr><td colspan="7" class="responsive-empty">NENHUMA PARCELA VÁLIDA.</td></tr>';
+      if(data.rejected.length){
+        const reasons = new Map();
+        data.rejected.forEach(r => reasons.set(r.reason, (reasons.get(r.reason) || []).concat(r.line)));
+        status.textContent = 'LINHAS IGNORADAS: '+[...reasons].map(([reason, lines]) => reason+' (LINHA '+lines.slice(0, 8).join(', ')+(lines.length > 8 ? '… +'+(lines.length - 8) : '')+')').join(' · ');
+      }
+      el('btnConfirmCfFile').disabled = !data.groups.length;
+    }catch(error){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  document.querySelectorAll('[data-cf-file-open]').forEach(button => button.addEventListener('click', async () => {
+    await Promise.all([payableAccounts.length ? null : loadPayablesCatalogData(), loadFinanceAcquirers()]);
+    el('cfFileAccount').innerHTML = '<option value="">SELECIONE</option>'+financeAccountOptionsHtml(payableAccounts, cfAccountId());
+    renderAcquirerSelect('cfFileAcquirer');
+    el('cfFileCompany').innerHTML = '<option value="">PELA MAQUINETA DO ARQUIVO (CÓDIGO DO ESTABELECIMENTO)</option>'+
+      pullStoreCompanies().concat(companies.filter(isPullAssistance)).map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+    el('cfFileInput').value = '';
+    el('cfFileColumns').textContent = '';
+    el('cfFileStatus').textContent = '';
+    cfFileParsed = null;
+    cfFilePreview();
+    el('cfFileDialog').showModal();
+  }));
+  el('cfFileInput').addEventListener('change', async () => {
+    const file = el('cfFileInput').files[0];
+    cfFileParsed = null;
+    el('cfFileColumns').textContent = '';
+    if(!file) return cfFilePreview();
+    try{
+      cfFileParsed = cfParseReceiptFile(await extractRowsFromFile(file, {rawCsv: /\.(csv|txt)$/i.test(file.name)}));
+      el('cfFileColumns').textContent = 'COLUNAS ENCONTRADAS: '+cfFileParsed.columns.join(' · ').toUpperCase();
+      // Adquirente pelo nome do arquivo / cabeçalho (ex.: STONECODE → STONE).
+      if(!el('cfFileAcquirer').value){
+        const hay = normHeader(file.name+' '+cfFileParsed.header.join(' '));
+        const hit = financeAcquirersCache.find(a => a.status === 'active' && normHeader(a.name) && hay.indexOf(normHeader(a.name)) !== -1);
+        if(hit) el('cfFileAcquirer').value = hit.id;
+      }
+    }catch(error){
+      el('cfFileBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('btnConfirmCfFile').disabled = true;
+      return;
+    }
+    cfFilePreview();
+  });
+  ['cfFileAccount','cfFileAcquirer','cfFileCompany'].forEach(id => el(id).addEventListener('change', cfFilePreview));
+  el('btnCloseCfFile').addEventListener('click', () => el('cfFileDialog').close());
+  el('btnCancelCfFile').addEventListener('click', () => el('cfFileDialog').close());
+  el('cfFileForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!cfFileParsed) return;
+    const button = el('btnConfirmCfFile');
+    button.disabled = true;
+    el('cfFileStatus').textContent = 'IMPORTANDO…';
+    try{
+      const res = await financeApiRequest('/cash-flow/receipt-file', {method:'POST', headers:{'Content-Type':'application/json'}, body: cfFileBody(false)});
+      el('cfFileDialog').close();
+      if(cashFlowTab === 'recebiveis'){
+        el('cfFileListAccount').value = el('cfFileAccount').value;
+        await Promise.all([loadCfFileList(), loadCashFlowFutureReceivables(), loadRecebiveisPage({silent:true})]);
+      }else await loadCashFlowTab();
+      showPurchaseToast(res.summary.lines+' parcela(s) em '+res.groups+' dia(s) — '+formatCentsBRL(res.summary.openCents)+' a receber.'+(res.summary.replacedEstimates ? ' '+res.summary.replacedEstimates+' estimativa(s) substituída(s).' : ''));
+    }catch(error){
+      el('cfFileStatus').textContent = error.message;
+      button.disabled = false;
+    }
+  });
+
+  // Lista compacta das parcelas importadas (aba RECEBÍVEIS).
+  let cfFileListRows = [];
+  function renderCfFileList(){
+    const filter = el('cfFileListStatus').value;
+    const rows = cfFileListRows.filter(r => !filter || (filter === 'paid') === Boolean(Number(r.paid)));
+    const sum = (list, key) => list.reduce((total, r) => total + Number(r[key] || 0), 0);
+    const open = rows.filter(r => !Number(r.paid));
+    el('cfFileListTotals').innerHTML =
+      '<div class="card"><div class="lbl">BRUTO</div><div class="num">'+formatCentsBRL(sum(rows, 'grossCents'))+'</div><div class="sub">'+rows.length+' parcela(s)</div></div>'+
+      '<div class="card"><div class="lbl">TAXAS</div><div class="num">'+formatCentsBRL(sum(rows, 'feeCents'))+'</div></div>'+
+      '<div class="card"><div class="lbl">LÍQUIDO</div><div class="num">'+formatCentsBRL(sum(rows, 'netCents'))+'</div></div>'+
+      '<div class="card"><div class="lbl">A RECEBER</div><div class="num">'+formatCentsBRL(sum(open, 'netCents'))+'</div><div class="sub">'+open.length+' parcela(s)</div></div>';
+    let html = '', day = '';
+    rows.forEach(r => {
+      if(r.dueDate !== day){
+        day = r.dueDate;
+        const list = rows.filter(x => x.dueDate === day);
+        html += cfGroupRow(8, formatDateBR(day)+' · '+list.length+' PARCELA(S)'+(list.every(x => Number(x.paid)) ? ' · PAGO' : ''), sum(list, 'netCents'));
+      }
+      html += '<tr>'+
+        '<td data-label="PAGAMENTO">'+escapeHtml(formatDateBR(r.dueDate))+'</td>'+
+        '<td data-label="VENDA">'+escapeHtml(r.saleDate ? formatDateBR(r.saleDate) : '—')+(r.category && r.category !== 'VENDA' ? ' <span class="status-pill alert">'+escapeHtml(r.category)+'</span>' : '')+'</td>'+
+        '<td data-label="BANDEIRA · PRODUTO">'+escapeHtml([r.brand, r.product].filter(Boolean).join(' · ') || '—')+'</td>'+
+        '<td data-label="PARCELA">'+escapeHtml(r.installmentNo+'/'+r.installments)+'</td>'+
+        '<td data-label="BRUTO">'+formatCentsBRL(r.grossCents)+'</td>'+
+        '<td data-label="TAXA">'+formatCentsBRL(r.feeCents)+'</td>'+
+        '<td data-label="LÍQUIDO">'+formatCentsBRL(r.netCents)+'</td>'+
+        '<td data-label="SITUAÇÃO"><span class="status-pill '+(Number(r.paid) ? 'ok' : 'waiting')+'">'+escapeHtml(r.statusText || (Number(r.paid) ? 'PAGO' : 'A RECEBER'))+'</span></td>'+
+      '</tr>';
+    });
+    el('cfFileListBody').innerHTML = html || '<tr><td colspan="8" class="responsive-empty">NENHUMA PARCELA IMPORTADA NO MÊS.</td></tr>';
+  }
+  async function loadCfFileList(){
+    if(!payableAccounts.length) await loadPayablesCatalogData();
+    const select = el('cfFileListAccount');
+    const selected = select.value || cfAccountId();
+    select.innerHTML = '<option value="">TODAS AS CONTAS</option>'+financeAccountOptionsHtml(payableAccounts, selected);
+    if(!el('cfFileListMonth').value) el('cfFileListMonth').value = todayDateKeyRecife().slice(0, 7);
+    el('cfFileListBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    const params = new URLSearchParams({month: el('cfFileListMonth').value});
+    if(select.value) params.set('accountId', select.value);
+    try{
+      const data = await financeApiRequest('/cash-flow/receipt-file?'+params.toString());
+      cfFileListRows = data.lines || [];
+      renderCfFileList();
+    }catch(error){
+      el('cfFileListBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+    }
+  }
+  ['cfFileListAccount','cfFileListMonth'].forEach(id => el(id).addEventListener('change', loadCfFileList));
+  el('cfFileListStatus').addEventListener('change', renderCfFileList);
 
   // --- Saldos das contas (fonte do Caixa Atual) -------------------------
 

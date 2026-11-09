@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { normalizeBrand, refreshSaleFee, type CardFee } from "../../../lib/card-fees";
+import type { MachineForMatch, MachineTransfer } from "../../../lib/card-machines";
 import { safeText, type Identity } from "../shared";
 
 export type Database = Awaited<ReturnType<typeof getD1>>;
@@ -140,4 +141,38 @@ export function scopeActorOf(request: Request, actor: Identity) {
     companyId: safeText(request.headers.get("x-unigames-company-id"), 80),
     permissions: actor.permissions,
   };
+}
+
+type MachineRow = MachineForMatch & {
+  acquirerId: string;
+  acquirerName: string;
+  companyName: string;
+  label: string;
+};
+
+// Maquinetas + transferências (unidade da maquineta NA DATA). Usado pelo
+// arquivo de vendas e pelo arquivo de recebimentos do Fluxo de Caixa.
+export async function loadMachinesWithTransfers(database: Database) {
+  const [machines, events] = await Promise.all([
+    database
+      .prepare(
+        `SELECT id, acquirer_id AS acquirerId, acquirer_name AS acquirerName, terminal, serial,
+                establishment_code AS establishmentCode, company_id AS companyId, company_name AS companyName,
+                acquirer_name || ' ' || model || ' ' || CASE WHEN terminal <> '' THEN terminal ELSE serial END AS label
+         FROM finance_card_machines`,
+      )
+      .all<MachineRow>(),
+    database
+      .prepare(
+        `SELECT machine_id AS machineId, event_date AS eventDate, from_company_id AS fromCompanyId,
+                from_company_name AS fromCompanyName
+         FROM finance_card_machine_events WHERE kind='transfer'`,
+      )
+      .all<MachineTransfer & { machineId: string }>(),
+  ]);
+  const transfers = new Map<string, MachineTransfer[]>();
+  for (const event of events.results ?? []) {
+    transfers.set(event.machineId, [...(transfers.get(event.machineId) ?? []), event]);
+  }
+  return { machines: machines.results ?? [], transfers };
 }

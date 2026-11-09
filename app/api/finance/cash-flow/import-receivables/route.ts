@@ -33,8 +33,9 @@ type ForecastLine = {
   amountCents: number;
   sales: number;
   receivableId: string;
-  /** new = vai criar; update = atualiza o previsto; locked = já recebido/cancelado. */
-  action: "new" | "update" | "locked";
+  /** new = vai criar; update = atualiza o previsto; locked = já recebido/cancelado;
+   *  file = o dia já veio do ARQUIVO DO BANCO (receipt-file), que substitui a estimativa. */
+  action: "new" | "update" | "locked" | "file";
 };
 
 function windowOf(params: { from?: unknown; to?: unknown }, today: string) {
@@ -90,10 +91,22 @@ async function buildForecast(database: Database, input: { from: string; to: stri
       .bind(input.from, input.to)
       .all<{ id: string; idempotencyKey: string; canceled: number; receivedAmountCents: number | null }>();
     const byKey = new Map((existing.results ?? []).map((row) => [row.idempotencyKey, row]));
+    const fromFile = await database
+      .prepare(
+        `SELECT company_id AS companyId, acquirer_id AS acquirerId, expected_date AS date FROM accounts_receivable
+         WHERE idempotency_key LIKE 'card-file:%' AND canceled = 0 AND expected_date >= ?1 AND expected_date <= ?2`,
+      )
+      .bind(input.from, input.to)
+      .all<{ companyId: string; acquirerId: string; date: string }>();
+    const fileDays = new Set((fromFile.results ?? []).map((row) => `${row.companyId}:${row.acquirerId}:${row.date}`));
     for (const line of lines) {
       const row = byKey.get(line.key);
+      if (row) line.receivableId = row.id;
+      if (fileDays.has(`${line.companyId}:${line.acquirerId}:${line.date}`)) {
+        line.action = "file";
+        continue;
+      }
       if (!row) continue;
-      line.receivableId = row.id;
       line.action = Number(row.canceled) === 1 || (row.receivedAmountCents !== null && row.receivedAmountCents !== undefined) ? "locked" : "update";
     }
   }
@@ -152,7 +165,7 @@ export async function POST(request: Request) {
     let updated = 0;
     let locked = 0;
     for (const line of lines) {
-      if (line.action === "locked") {
+      if (line.action === "locked" || line.action === "file") {
         locked += 1;
         continue;
       }
@@ -198,7 +211,7 @@ export async function POST(request: Request) {
       );
     }
     if (statements.length) await database.batch(statements);
-    return jsonResponse({ from, to, created, updated, locked, totalCents: lines.reduce((sum, line) => sum + (line.action === "locked" ? 0 : line.amountCents), 0) });
+    return jsonResponse({ from, to, created, updated, locked, totalCents: lines.reduce((sum, line) => sum + (line.action === "locked" || line.action === "file" ? 0 : line.amountCents), 0) });
   } catch (error) {
     console.error("Não foi possível importar os recebimentos previstos.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL IMPORTAR OS RECEBIMENTOS PREVISTOS." }, 500);
