@@ -4,8 +4,8 @@ import { hasCompany } from "../../../lib/access-scope";
 import { identity as baseIdentity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
 
 // Assistência > Estoque (permissões estoque_assistencia:view/entrada/baixa/
-// manage/delete). Só a assistência acessa: login com loja vinculada não vê
-// nem mexe, mesmo com a permissão (decisão do usuário, 14/10/2026).
+// manage/delete). Login com loja só visualiza (estoque e histórico, 09/11/2026);
+// cadastrar, dar entrada/baixa e excluir é só da assistência, mesmo com a permissão.
 //   GET                    → itens ativos
 //   GET    ?movements=<id> → histórico do item
 //   POST   {category, name, quantity, salePriceCents|null}   (manage)
@@ -43,8 +43,8 @@ function guard(request: Request, actions: string[], message: string) {
   if (unauthorized) return { error: unauthorized };
   const actor = identity(request);
   if (!actions.some((action) => can(actor, action))) return { error: jsonResponse({ error: message }, 403) };
-  if (actor.role !== "admin" && hasCompany(actor.companyId)) {
-    return { error: jsonResponse({ error: "O ESTOQUE É SÓ DA ASSISTÊNCIA." }, 403) };
+  if (request.method !== "GET" && actor.role !== "admin" && hasCompany(actor.companyId)) {
+    return { error: jsonResponse({ error: "A LOJA SÓ VISUALIZA O ESTOQUE DA ASSISTÊNCIA." }, 403) };
   }
   if (request.method !== "GET" && !sameOrigin(request)) return { error: jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403) };
   return { actor };

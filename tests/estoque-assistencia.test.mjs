@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
-// Assistência > Estoque: só a assistência (login sem loja); entrada e baixa
+// Assistência > Estoque: loja só visualiza; só a assistência (login sem loja) mexe; entrada e baixa
 // com permissões próprias; baixa nunca deixa o saldo negativo; histórico.
 
 await setupRouteDb(["assist_stock_items", "assist_stock_movements"]);
@@ -13,11 +13,10 @@ const TECNICO = { id: "t", name: "TÉCNICO", permissions: ["estoque_assistencia:
 const LOJA = { id: "l", companyId: "clojaalfa1", permissions: ["estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage"] };
 const call = (actor, method, body, query = "") => callRoute(route[method], actor, method, `/api/assistencia/estoque${query}`, body);
 
-test("cadastra com saldo inicial; loja não acessa; entrada/baixa com permissão e sem saldo negativo", async () => {
+test("cadastra com saldo inicial; loja só visualiza; entrada/baixa com permissão e sem saldo negativo", async () => {
   assert.equal((await call(GESTOR, "POST", { category: "PLACA MÃE", name: "placa mãe h81", quantity: 53, salePriceCents: 27999 })).status, 201);
   assert.equal((await call(GESTOR, "POST", { category: "OUTRA", name: "x" })).status, 400);
   assert.equal((await call(TECNICO, "POST", { category: "SSD", name: "ssd 240gb", quantity: 1 })).status, 403);
-  assert.equal((await call(LOJA, "GET")).status, 403);
   assert.equal((await call(LOJA, "POST", { category: "SSD", name: "ssd", quantity: 1 })).status, 403);
 
   const { items } = await (await call(TECNICO, "GET")).json();
@@ -33,6 +32,11 @@ test("cadastra com saldo inicial; loja não acessa; entrada/baixa com permissão
   assert.equal((await call(TECNICO, "PUT", { id: h81.id, kind: "baixa", quantity: 51 })).status, 409);
   assert.equal((await (await call(GESTOR, "PUT", { id: h81.id, kind: "entrada", quantity: 10 })).json()).quantity, 60);
   assert.equal((await call(LOJA, "PUT", { id: h81.id, kind: "baixa", quantity: 1 })).status, 403);
+  assert.equal((await (await call(LOJA, "GET")).json()).items.find((item) => item.id === h81.id).quantity, 60);
+  assert.equal((await (await call(LOJA, "GET", undefined, `?movements=${h81.id}`)).json()).movements.length, 3);
+  assert.equal((await call(LOJA, "PATCH", { id: h81.id, category: "PLACA MÃE", name: "X", salePriceCents: null })).status, 403);
+  assert.equal((await call(LOJA, "DELETE", { id: h81.id })).status, 403);
+  assert.equal((await call({ id: "l2", companyId: "clojaalfa1", permissions: [] }, "GET")).status, 403);
 
   const { movements } = await (await call(GESTOR, "GET", undefined, `?movements=${h81.id}`)).json();
   assert.equal(movements.length, 3);

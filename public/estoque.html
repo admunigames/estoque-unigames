@@ -11018,11 +11018,11 @@
             <details class="permission-module">
               <summary>Assistência - Estoque Assistência</summary>
               <div class="permission-grid">
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:view"> Ver o estoque e o histórico (só login sem loja: assistência)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:entrada"> Dar entrada</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:baixa"> Dar baixa</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:manage"> Cadastrar e editar itens (nome, categoria, valor de venda)</label>
-                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:delete"> Excluir item</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:view"> Ver o estoque e o histórico (lojas só visualizam)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:entrada"> Dar entrada (só login sem loja: assistência)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:baixa"> Dar baixa (só login sem loja: assistência)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:manage"> Cadastrar e editar itens (nome, categoria, valor de venda) (só login sem loja: assistência)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="estoque_assistencia:delete"> Excluir item (só login sem loja: assistência)</label>
               </div>
             </details>
             <details class="permission-module">
@@ -16017,8 +16017,6 @@
     if(name === 'rhOnboarding') return true;
     // PDI de líderes também abre o Acompanhamento - Lojas (só a aba do PDI).
     if(name === 'rhAcompanhamentoLojas') return canAccess('rh_acompanhamento') || canAccess('rh_pdi');
-    // Estoque da Assistência: só login sem loja (o backend também bloqueia).
-    if(name === 'assistenciaEstoque') return canAccess('estoque_assistencia') && (currentSession.role === 'admin' || !currentSession.companyId);
     if(name === 'documentos' && isCommercialOnlySession()) return false;
     // NF/Duplicatas é acessível por finance:manage OU qualquer permissão
     // granular payables:* (fallback já aplicado no backend, ver
@@ -30444,7 +30442,7 @@ function renderHomeTasks(){
   // ---------- ASSISTÊNCIA · ESTOQUE ----------
   let astData = null;
   let astTab = '';
-  const astCan = action => canAccess('estoque_assistencia:'+action);
+  const astCan = action => (currentSession.role === 'admin' || !currentSession.companyId) && canAccess('estoque_assistencia:'+action);
   async function astApi(method, body, query){
     const response = await fetch('/api/assistencia/estoque'+(query || ''), {
       method: method || 'GET', cache:'no-store',
