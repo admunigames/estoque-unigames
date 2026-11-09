@@ -23,23 +23,27 @@ export function normalizeCode(value: string): string {
 /**
  * Custo de cada item: casa pelo CÓDIGO, depois pelo CÓDIGO DE BARRAS/GTIN do
  * relatório de custos e por último pelo NOME do produto (o código do relatório
- * de estoque nem sempre é o mesmo do relatório de produtos). Devolve
- * itemId → custo em centavos; quem não casar fica de fora.
+ * de estoque nem sempre é o mesmo do relatório de produtos). O CÓDIGO de um
+ * produto vale antes do código de barras de OUTRO (09/11/2026: a calculadora
+ * Casio tinha como cód. barras 78900002278 = código do MOUSE PAD C/APOIO e o
+ * mouse pad saía com R$ 65,00 em vez de R$ 7,00). Devolve itemId → custo em
+ * centavos; quem não casar fica de fora.
  */
 export function matchCosts(items: CountableItem[], costs: CostRow[]): Map<string, number> {
   const byCode = new Map<string, number>();
+  const byBarcode = new Map<string, number>();
   const byName = new Map<string, number>();
+  const put = (map: Map<string, number>, key: string, cost: number) => { if (key && !map.has(key)) map.set(key, cost); };
   for (const row of costs) {
-    for (const code of [row.code, row.barcode, row.gtin]) {
-      const key = normalizeCode(code);
-      if (key && !byCode.has(key)) byCode.set(key, row.costCents);
-    }
-    const name = normalizeName(row.name);
-    if (name && !byName.has(name)) byName.set(name, row.costCents);
+    put(byCode, normalizeCode(row.code), row.costCents);
+    put(byBarcode, normalizeCode(row.barcode), row.costCents);
+    put(byBarcode, normalizeCode(row.gtin), row.costCents);
+    put(byName, normalizeName(row.name), row.costCents);
   }
   const result = new Map<string, number>();
   for (const item of items) {
-    const cost = byCode.get(normalizeCode(item.code)) ?? byName.get(normalizeName(item.product));
+    const code = normalizeCode(item.code);
+    const cost = byCode.get(code) ?? byBarcode.get(code) ?? byName.get(normalizeName(item.product));
     if (cost !== undefined) result.set(item.id, cost);
   }
   return result;

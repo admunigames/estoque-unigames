@@ -26,6 +26,14 @@ const items = [
   { code: "7896637648547", product: "CONTROLE REMOTO INTELBRAS XTR 1000", systemQty: 0 },
 ];
 
+test("matchCosts: código do produto vale antes do cód. barras de outro (mouse pad × calculadora)", () => {
+  const matched = matchCosts([{ id: "mp", code: "078900002278", product: "MOUSE PAD C/APOIO" }], [
+    { code: "4549526607233", barcode: "78900002278", gtin: "", name: "CALCULADORA CIENTIFICA CASIO", costCents: 6500 },
+    { code: "078900002278", barcode: "78900002235", gtin: "", name: "MOUSE PAD C/APOIO", costCents: 700 },
+  ]);
+  assert.equal(matched.get("mp"), 700);
+});
+
 test("matchCosts: código, código de barras e nome; valor = custo × diferença", () => {
   const matched = matchCosts(
     [{ id: "1", code: "7898587276481", product: "ABAFADOR RUIDO OEX AZUL" }, { id: "2", code: "0012", product: "X" }, { id: "3", code: "999", product: "Controle Remoto  Intelbras XTR-1000" }],
