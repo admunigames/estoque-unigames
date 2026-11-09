@@ -93,6 +93,8 @@ export type ParsedLine = {
   unitCents: number;
   /** Desconto em R$ (centavos) no item inteiro (qtd × valor), digitado no orçamento. */
   discountCents: number;
+  /** COBRAR PREVENTIVA: sem o desconto automático da preventiva. */
+  chargePreventive: boolean;
 };
 
 export type ParsedEquipment = {
@@ -121,7 +123,7 @@ export type ParsedQuote = {
   totalCents: number;
 };
 
-type PricedLine = { defectName?: string; quantity: number; unitCents: number; discountCents?: number };
+type PricedLine = { defectName?: string; quantity: number; unitCents: number; discountCents?: number; chargePreventive?: boolean };
 
 /** Valor do item já com o desconto em R$ digitado no orçamento. */
 export function lineNetCents(line: PricedLine) {
@@ -136,11 +138,12 @@ export function isPreventive(line: { defectName?: string }) {
 /**
  * A preventiva entra como DESCONTO (sai de graça) quando o equipamento tem
  * outro serviço: aparece com o valor e uma linha "DESCONTO ..." igual, sem
- * somar no total. Preventiva sozinha no equipamento é cobrada normalmente.
+ * somar no total. Preventiva sozinha no equipamento é cobrada normalmente,
+ * e também quando marcada COBRAR PREVENTIVA no orçamento (09/11/2026).
  */
 export function preventiveDiscountCents(equipment: { lines: PricedLine[] }, line: PricedLine) {
   const hasOtherService = equipment.lines.some((other) => !isPreventive(other));
-  return hasOtherService && isPreventive(line) ? lineNetCents(line) : 0;
+  return hasOtherService && isPreventive(line) && !line.chargePreventive ? lineNetCents(line) : 0;
 }
 
 /** Total SEMPRE calculado aqui (qtd × valor − desconto do item − desconto da preventiva), nunca vindo do navegador. */
@@ -182,7 +185,8 @@ function parseLines(raw: unknown, label: string): { lines: ParsedLine[] } | { er
     const discountCents = rawDiscount === null || rawDiscount === undefined || rawDiscount === "" ? 0 : cents(rawDiscount);
     if (discountCents === null) return { error: `${lineLabel}: DESCONTO INVÁLIDO.` };
     if (discountCents > quantity * unitCents) return { error: `${lineLabel}: O DESCONTO NÃO PODE SER MAIOR QUE O VALOR DO ITEM.` };
-    lines.push({ defectName, defectNote, description, quantity, unitCents, discountCents });
+    const chargePreventive = isPreventive({ defectName }) && entry.chargePreventive === true;
+    lines.push({ defectName, defectNote, description, quantity, unitCents, discountCents, chargePreventive });
   }
   return { lines };
 }

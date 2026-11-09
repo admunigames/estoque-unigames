@@ -4450,6 +4450,8 @@ export const assistQuoteItems = pgTable(
     unitCents: integer("unit_cents").notNull().default(0),
     // Desconto em R$ no item inteiro, digitado no orçamento (migration 0081).
     discountCents: integer("discount_cents").notNull().default(0),
+    // 1 = preventiva cobrada mesmo com outro serviço (migration 0132).
+    chargePreventive: integer("charge_preventive").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
   },
   (table) => [index("assist_quote_items_quote_idx").on(table.quoteId)],

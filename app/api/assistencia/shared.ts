@@ -166,6 +166,7 @@ type ItemRow = {
   quantity: number;
   unitCents: number;
   discountCents: number;
+  chargePreventive: number;
 };
 
 export async function loadQuote(database: D1Database, id: string) {
@@ -178,7 +179,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
     .prepare(
       `SELECT equipment_index AS equipmentIndex, category, device, model, serial_number AS serialNumber, service,
               defect_name AS defectName, defect_note AS defectNote, description, quantity, unit_cents AS unitCents,
-              discount_cents AS discountCents
+              discount_cents AS discountCents, charge_preventive AS chargePreventive
        FROM assist_quote_items WHERE quote_id=?1 ORDER BY equipment_index, sort_order, id`,
     )
     .bind(row.id)
@@ -197,6 +198,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
       quantity: number;
       unitCents: number;
       discountCents: number;
+      chargePreventive: boolean;
       totalCents: number;
     }>;
   }> = [];
@@ -225,6 +227,7 @@ export async function loadQuoteDetail(database: D1Database, row: QuoteRow) {
       quantity,
       unitCents: Number(item.unitCents) || 0,
       discountCents: Number(item.discountCents) || 0,
+      chargePreventive: Number(item.chargePreventive) === 1,
       totalCents: 0,
     };
     line.totalCents = lineNetCents(line);
@@ -255,8 +258,8 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
           .prepare(
             `INSERT INTO assist_quote_items
               (id, quote_id, equipment_index, category, device, serial_number, service, defect_name,
-               description, quantity, unit_cents, discount_cents, sort_order, model, defect_note)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
+               description, quantity, unit_cents, discount_cents, sort_order, model, defect_note, charge_preventive)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`,
           )
           .bind(
             crypto.randomUUID(),
@@ -274,6 +277,7 @@ export function itemStatements(database: D1Database, quoteId: string, quote: Par
             linePosition,
             equipment.model,
             line.defectNote,
+            line.chargePreventive ? 1 : 0,
           ),
       );
     }

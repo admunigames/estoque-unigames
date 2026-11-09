@@ -34,6 +34,7 @@ const migration0080 = await readFile(new URL("../drizzle/0080_assistencia_mao_de
 const migration0081 = await readFile(new URL("../drizzle/0081_assistencia_pagamentos.sql", import.meta.url), "utf8");
 const migration0082 = await readFile(new URL("../drizzle/0082_assistencia_categorias.sql", import.meta.url), "utf8");
 const migration0116 = await readFile(new URL("../drizzle/0116_assistencia_observacao_defeito.sql", import.meta.url), "utf8");
+const migration0132 = await readFile(new URL("../drizzle/0132_assistencia_cobrar_preventiva.sql", import.meta.url), "utf8");
 const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
 
 function createFakeD1() {
@@ -87,8 +88,8 @@ function createFakeD1() {
   // 0080: MÃO DE OBRA (R$ 99,99) em todos os aparelhos.
   sqlite.exec(migration0080);
   // 0081: formas de pagamento + desconto por item (RLS/REVOKE são só do Postgres).
-  for (const statement of [migration0081, migration0082, migration0116].join("--> statement-breakpoint").split("--> statement-breakpoint")) {
-    if (!/ROW LEVEL SECURITY|REVOKE ALL/.test(statement)) sqlite.exec(statement.replace(" USING btree", ""));
+  for (const statement of [migration0081, migration0082, migration0116, migration0132].join("--> statement-breakpoint").split("--> statement-breakpoint")) {
+    if (!/ROW LEVEL SECURITY|REVOKE ALL/.test(statement)) sqlite.exec(statement.replace(" USING btree", "").replace("ADD COLUMN IF NOT EXISTS", "ADD COLUMN"));
   }
   sqlite
     .prepare("INSERT INTO shared_state (state_key, value_json) VALUES ('companies_list', ?)")
@@ -557,6 +558,26 @@ test("preventiva da tabela entra como DESCONTO quando há outro serviço no equi
     { lines: [{ defectName: "FORMATAÇÃO", quantity: 1, unitCents: 25000 }, { defectName: "MANUTENÇÃO PREVENTIVA", quantity: 1, unitCents: 25000 }] },
     { lines: [{ defectName: "PREVENTIVA", quantity: 1, unitCents: 15000 }] },
   ]), 40000);
+  // COBRAR PREVENTIVA: com outro serviço, mas cobrada (sem o desconto); volta marcada ao abrir.
+  const charged = await createQuote(NO_STORE_USER, { ...ps3([naoLiga, { ...preventiva, chargePreventive: true }]), osNumber: "PCOBRA" });
+  assert.equal(charged.status, 201, JSON.stringify(charged.body));
+  assert.equal(charged.body.totalCents, 60000);
+  const chargedDetail = (await getQuote(NO_STORE_USER, charged.body.id)).body.equipments[0];
+  assert.equal(chargedDetail.subtotalCents, 60000);
+  assert.deepEqual(chargedDetail.lines.map((line) => line.chargePreventive), [false, true]);
+  // A marca só vale na preventiva.
+  const ignored = await createQuote(NO_STORE_USER, { ...ps3([{ ...naoLiga, chargePreventive: true }, preventiva]), osNumber: "PIGNORA" });
+  assert.equal(ignored.body.totalCents, 45000);
+  assert.deepEqual((await getQuote(NO_STORE_USER, ignored.body.id)).body.equipments[0].lines.map((line) => line.chargePreventive), [false, false]);
+  // Tela: mesma regra no espelho do navegador.
+  const { runInNewContext } = await import("node:vm");
+  const fns = ["assistLineCents", "assistIsPreventive", "assistLineNet", "assistPreventiveDiscount", "assistEquipmentSubtotal"]
+    .map((name) => { const start = html.indexOf(`  function ${name}(`); return html.slice(start, html.indexOf("\n  }\n", start) + 4); }).join("\n");
+  const ctx = {};
+  runInNewContext(fns + "\nthis.sub = assistEquipmentSubtotal;", ctx);
+  assert.equal(ctx.sub({ lines: [naoLiga, preventiva] }), 45000);
+  assert.equal(ctx.sub({ lines: [naoLiga, { ...preventiva, chargePreventive: true }] }), 60000);
+  assert.match(html, /COBRAR PREVENTIVA \(SEM DESCONTO\)/);
 });
 
 test("aba PAGAMENTOS: 3 formas atuais, cadastrar/editar e cópia no orçamento (crédito escolhido + sempre)", async () => {

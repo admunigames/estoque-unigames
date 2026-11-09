@@ -3686,6 +3686,8 @@
   .assist-line-name small{display:block; margin-top:4px; color:var(--ink-faint); font:700 9px/1.35 var(--mono);}
   .assist-line-name small.quote-only{color:#e4b85f;}
   .assist-line-name small.assist-line-note{font:600 10px/1.4 var(--sans); white-space:pre-line; overflow-wrap:anywhere;}
+  .assist-line-name .assist-line-charge{display:flex; align-items:center; gap:6px; margin-top:6px; font:700 11px/1.3 var(--sans); cursor:pointer;}
+  .assist-line-name .assist-line-charge input{width:16px; height:16px; margin:0;}
   .assist-line-total{display:flex; flex-direction:column; gap:6px; min-width:0;}
   .assist-line-total span{color:var(--ink-soft); font:700 9.5px/1.3 var(--mono); letter-spacing:.45px;}
   .assist-line-total strong{display:flex; align-items:center; min-height:46px; color:var(--ink); font:800 13px/1 var(--mono); white-space:nowrap;}
@@ -23738,7 +23740,7 @@ function renderHomeTasks(){
 
   function assistPreventiveDiscount(equipment, line){
     const hasOtherService = equipment.lines.some(other => !assistIsPreventive(other));
-    return hasOtherService && assistIsPreventive(line) ? assistLineNet(line) : 0;
+    return hasOtherService && assistIsPreventive(line) && !line.chargePreventive ? assistLineNet(line) : 0;
   }
 
   function assistEquipmentSubtotal(equipment){
@@ -23759,7 +23761,10 @@ function renderHomeTasks(){
       : '<div class="assist-line-name"><strong>'+escapeHtml(line.defectName)+'</strong>'+
           '<small class="'+(defect && defect.quoteOnly ? 'quote-only' : '')+'">'+escapeHtml(assistRangeLabel(defect))+'</small>'+
           (line.defectNote ? '<small class="assist-line-note">OBS.: '+escapeHtml(line.defectNote)+'</small>' : '')+
-          (assistIsPreventive(line) ? '<small class="quote-only" data-line-discount>'+(equipment.lines.some(other => !assistIsPreventive(other)) ? 'ENTRA COMO DESCONTO (GRÁTIS COM OUTRO SERVIÇO)' : 'SOZINHA NO EQUIPAMENTO: COBRADA')+'</small>' : '')+
+          (assistIsPreventive(line) ? (equipment.lines.some(other => !assistIsPreventive(other))
+            ? '<small class="quote-only" data-line-discount>'+(line.chargePreventive ? 'COBRADA (DESCONTO RETIRADO)' : 'ENTRA COMO DESCONTO (GRÁTIS COM OUTRO SERVIÇO)')+'</small>'+
+              '<label class="assist-line-charge"><input type="checkbox" data-line-field="charge"'+(line.chargePreventive ? ' checked' : '')+'> COBRAR PREVENTIVA (SEM DESCONTO)</label>'
+            : '<small class="quote-only" data-line-discount>SOZINHA NO EQUIPAMENTO: COBRADA</small>') : '')+
           '</div>';
     return '<div class="assist-line" data-line="'+lineIndex+'">'+head+
       '<div class="purchase-field"><label for="'+id+'Qty">QTD</label>'+
@@ -23877,7 +23882,8 @@ function renderHomeTasks(){
           description:line.description.trim(),
           quantity:Number(line.quantity),
           unitCents:line.unitCents,
-          discountCents:Number(line.discountCents) || 0
+          discountCents:Number(line.discountCents) || 0,
+          chargePreventive:Boolean(line.chargePreventive)
         }))
       })),
       creditOptionId:el('assistCreditOption').value
@@ -24112,7 +24118,8 @@ function renderHomeTasks(){
         description:String(line.description || ''),
         quantity:Number(line.quantity) || 1,
         unitCents:line.unitCents === null || line.unitCents === undefined ? null : Number(line.unitCents) || 0,
-        discountCents:Number(line.discountCents) || 0
+        discountCents:Number(line.discountCents) || 0,
+        chargePreventive:Boolean(line.chargePreventive)
       }))
     }));
     if(!assistState.equipments.length) assistState.equipments = [assistNewEquipment()];
@@ -24852,6 +24859,11 @@ function renderHomeTasks(){
     if(target.dataset.lineField === 'unit') line.unitCents = assistCentsFromInput(target);
     if(target.dataset.lineField === 'discount') line.discountCents = assistCentsFromInput(target) || 0;
     if(target.dataset.lineField === 'description') line.description = target.value;
+    if(target.dataset.lineField === 'charge'){
+      line.chargePreventive = target.checked;
+      assistRenderEquipments();
+      return;
+    }
     assistUpdateTotals();
   });
   el('assistEquipments').addEventListener('change', event => {
