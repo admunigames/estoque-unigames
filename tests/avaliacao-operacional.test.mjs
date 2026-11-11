@@ -5,7 +5,16 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Avaliação Operacional: situações por unidade com peso 1–5; menor total do
 // mês (0 inclusive, empate = todas) é LOJA PREMIUM. Loja só vê/age na própria.
 
-await setupRouteDb(["ops_evaluations"]);
+const db = await setupRouteDb(["ops_evaluations", "hr_employees", "hr_schedule_assignments"]);
+const RIO = "cmrvhi891w5qk7", REC = "cmrvhi891wn6mr";
+const emp = (id, full_name, company_id, status = "active") => db.insert("hr_employees", { id, full_name, company_id, company_name: "", status, cpf: id });
+emp("e1", "Ana Riomar", RIO);
+emp("e2", "Bia Recife", REC);
+emp("e3", "Caio Desligado", RIO, "inactive");
+emp("e4", "Duda Assist", "assistencia");
+emp("e5", "Edu Escritório", "");
+emp("e6", "Fábio Trocou", RIO); // atua no RECIFE desde outubro/2026
+db.insert("hr_schedule_assignments", { id: "a1", employee_id: "e6", reference_month: "2026-10", company_id: REC, company_name: "RECIFE" });
 const route = await import("../app/api/avaliacao-operacional/route.ts");
 
 const ALL = ["view", "create", "edit", "delete"].map((action) => `avaliacao_operacional:${action}`);
@@ -52,7 +61,17 @@ test("lança, soma por unidade, PREMIUM no menor total e escopo da loja", async 
   assert.equal(month.ranking.find((row) => row.unit === "RECIFE").premium, true);
   assert.deepEqual(month.can, { view: true, create: false, edit: false, delete: false });
 
+  // Sugestões de QUEM COMETEU: ativos pela loja em que atuam no mês; COMERCIAL/ADMINISTRATIVO = todos.
+  const emps = (await (await call(GESTOR, "GET", undefined, "?month=2026-10")).json()).employees;
+  assert.deepEqual(emps.RIOMAR, ["ANA RIOMAR"]);
+  assert.deepEqual(emps.RECIFE, ["BIA RECIFE", "FÁBIO TROCOU"]);
+  assert.deepEqual(emps["ASSISTÊNCIA"], ["DUDA ASSIST"]);
+  assert.equal(emps.ADMINISTRATIVO.length, 5);
+  assert.deepEqual((await (await call(GESTOR, "GET", undefined, "?month=2026-09")).json()).employees.RIOMAR, ["ANA RIOMAR", "FÁBIO TROCOU"]);
+  assert.deepEqual(month.employees, {}); // quem só vê não recebe a lista
+
   const store = await (await call(RIOMAR, "GET", undefined, "?month=2026-10")).json();
+  assert.deepEqual(Object.keys(store.employees), ["RIOMAR"]);
   assert.deepEqual(store.units, ["RIOMAR"]);
   assert.equal(store.ranking.length, 1);
   assert.ok(store.items.every((row) => row.unit === "RIOMAR"));

@@ -8379,7 +8379,7 @@
           <div class="purchase-field"><label for="avopUnit">UNIDADE *</label><select id="avopUnit"></select></div>
           <div class="purchase-field"><label for="avopWeight">PESO *</label><select id="avopWeight"></select></div>
         </div>
-        <div class="purchase-field"><label for="avopResponsible">QUEM COMETEU *</label><input id="avopResponsible" maxlength="120" autocomplete="off"></div>
+        <div class="purchase-field"><label for="avopResponsible">QUEM COMETEU *</label><input id="avopResponsible" maxlength="120" autocomplete="off" list="avopEmployees" placeholder="ESCOLHA OU DIGITE O NOME"><datalist id="avopEmployees"></datalist></div>
         <div class="purchase-field"><label for="avopDescription">O QUE HOUVE *</label><textarea id="avopDescription" maxlength="1000" rows="3"></textarea></div>
         <button class="btn-accent" id="btnAvopSave" type="submit">ADICIONAR</button>
         <button class="btn-outline" id="btnAvopCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
@@ -30700,6 +30700,7 @@ function renderHomeTasks(){
       if(!el('avopDate').value) el('avopDate').value = avopData.today;
       if(avopEditId && !avopData.items.some(item => item.id === avopEditId)) avopResetForm();
       el('avopForm').hidden = !(avopData.can.create || avopEditId);
+      avopFillEmployees();
       renderAvop();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   }
@@ -30738,6 +30739,12 @@ function renderHomeTasks(){
     }).join('') : '<p class="responsive-empty">Nenhuma situação em '+escapeHtml(avopMonthLabel(avopData.month))+'.</p>';
   }
 
+  // QUEM COMETEU: sugere os funcionários ativos da unidade escolhida (loja em que atuam no mês).
+  function avopFillEmployees(){
+    const names = (avopData && avopData.employees && avopData.employees[el('avopUnit').value]) || [];
+    el('avopEmployees').innerHTML = names.map(name => '<option value="'+escapeHtml(name)+'"></option>').join('');
+  }
+
   function avopResetForm(){
     avopEditId = '';
     el('avopDescription').value = '';
@@ -30752,6 +30759,7 @@ function renderHomeTasks(){
   el('btnAvopReload') && el('btnAvopReload').addEventListener('click', loadAvopPage);
   el('avopMonth') && el('avopMonth').addEventListener('change', loadAvopPage);
   el('btnAvopCancel') && el('btnAvopCancel').addEventListener('click', avopResetForm);
+  el('avopUnit') && el('avopUnit').addEventListener('change', avopFillEmployees);
   el('avopForm') && el('avopForm').addEventListener('submit', async event => {
     event.preventDefault();
     const button = el('btnAvopSave');
@@ -30777,6 +30785,7 @@ function renderHomeTasks(){
         avopEditId = item.id;
         el('avopDate').value = item.eventDate;
         el('avopUnit').value = item.unit;
+        avopFillEmployees();
         el('avopWeight').value = String(item.weight);
         el('avopDescription').value = item.description;
         el('avopResponsible').value = item.responsible || '';

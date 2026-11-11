@@ -2,6 +2,7 @@ import { getD1 } from "../../../db";
 import { unauthorizedResponse } from "../../lib/notion";
 import { hasCompany } from "../../lib/access-scope";
 import { recifeDate } from "../../lib/ordens-servico";
+import { actingStoresForMonth } from "../../lib/acting-store";
 import { identity, jsonResponse, safeText, sameOrigin } from "../divergences/shared";
 
 // Avaliação Operacional (permissões avaliacao_operacional:view/create/edit/
@@ -10,7 +11,7 @@ import { identity, jsonResponse, safeText, sameOrigin } from "../divergences/sha
 // PREMIUM. Login sem loja (com a permissão) ou admin vê e age em todas as
 // unidades; login com loja só na própria (sem posição nem dados das outras).
 // O mês continua editável depois de acabar (decisão do usuário, 11/11/2026).
-//   GET ?month=AAAA-MM                       → {month, units, weights, ranking, items, can}
+//   GET ?month=AAAA-MM                       → {month, units, weights, ranking, items, employees, can}
 //   POST   {unit, eventDate, description, responsible, weight}      (create)
 //   PATCH  {id, unit, eventDate, description, responsible, weight}  (edit)
 //   DELETE {id}                                        (delete; deleted=1)
@@ -97,6 +98,28 @@ const nextMonth = (month: string) => {
   return mm === 12 ? `${year + 1}-01` : `${year}-${String(mm + 1).padStart(2, "0")}`;
 };
 
+// Funcionário da ASSISTÊNCIA com o id antigo do setor (antes do cadastro de loja).
+const LEGACY_ASSISTANCE_ID = "assistencia";
+
+/**
+ * Sugestões de QUEM COMETEU: funcionários ATIVOS pela loja em que atuam no mês
+ * (mesma regra da Folha/DRE/Comercial, app/lib/acting-store.ts). COMERCIAL e
+ * ADMINISTRATIVO não são loja → todos os ativos. O campo continua livre.
+ */
+async function employeesByUnit(database: D1Database, month: string, units: string[]) {
+  const acting = await actingStoresForMonth(database, month);
+  const { results } = await database
+    .prepare("SELECT id, full_name AS fullName FROM hr_employees WHERE status='active' ORDER BY full_name")
+    .all<{ id: string; fullName: string }>();
+  const names = (results ?? []).map((row) => ({ name: row.fullName.toLocaleUpperCase("pt-BR"), companyId: acting.get(row.id)?.companyId || "" }));
+  return Object.fromEntries(units.map((unit) => {
+    const companyId = UNITS.find((item) => item.name === unit)?.companyId || "";
+    const list = !companyId ? names
+      : names.filter((row) => row.companyId === companyId || (unit === "ASSISTÊNCIA" && row.companyId === LEGACY_ASSISTANCE_ID));
+    return [unit, [...new Set(list.map((row) => row.name))]];
+  }));
+}
+
 /** Total por unidade (todas as unidades, mesmo com 0), do menor para o maior; menor total = PREMIUM. */
 function buildRanking(rows: { unit: string; weight: number }[]) {
   const ranking = UNITS.map(({ name }) => {
@@ -121,7 +144,10 @@ export async function GET(request: Request) {
     .bind(`${month}-01`, `${nextMonth(month)}-01`)
     .all<Row>();
   const rows = results ?? [];
+  const canWrite = units.length > 0 && (can(actor, "create") || can(actor, "edit"));
   return jsonResponse({
+    // Só quem lança/edita recebe a lista de funcionários (evita 3 consultas a mais para quem só vê).
+    employees: canWrite ? await employeesByUnit(database, month, units) : {},
     month,
     today: recifeDate(),
     allUnits: units.length === UNITS.length,
