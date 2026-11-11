@@ -115,3 +115,30 @@ test("NF sem categoria com NÃO INCLUIR na DRE: cadastra as duplicatas sem pedir
   const payable = db.sqlite.prepare("SELECT finance_item_id AS i, dre_target AS t FROM accounts_payable WHERE invoice_number='nf-sem-item-none'").get();
   assert.deepEqual([payable.i, payable.t], ["", "none"]);
 });
+
+test("EDITAR NF após o lançamento: dados livres e contas a pagar acompanham; com duplicatas, loja/competência/categoria presas", async () => {
+  const patch = (id, body) => callRoute(detailRoute.PATCH, ADMIN, "PATCH", `/api/finance/invoices/${id}`, body, { id });
+  // Sem duplicatas: tudo muda, inclusive competência e valor.
+  invoice("nf-livre");
+  const free = await patch("nf-livre", { invoiceNumber: "999", series: "2", issueDate: "2026-10-05", competenceMonth: "2026-11", totalAmountCents: 12000 });
+  assert.equal(free.status, 200, JSON.stringify(await free.clone().json()));
+  const row = db.sqlite.prepare("SELECT invoice_number AS n, series AS s, issue_date AS i, competence_month AS m, total_amount_cents AS t FROM supplier_invoices WHERE id='nf-livre'").get();
+  assert.deepEqual([row.n, row.s, row.i, row.m, row.t], ["999", "2", "2026-10-05", "2026-11", 12000]);
+  assert.ok(db.sqlite.prepare("SELECT id FROM supplier_invoice_events WHERE invoice_id='nf-livre' AND event_type='edited'").get(), "fica no histórico");
+
+  // Com duplicatas (nf-plan): número/fornecedor vão para as contas a pagar; valor muda e recalcula o status.
+  db.insert("finance_suppliers", { id: "sup-x", name: "OEX", active: 1, created_by: "admin" });
+  const edited = await patch("nf-plan", { invoiceNumber: "777", supplierId: "sup-x", totalAmountCents: 20000 });
+  assert.equal(edited.status, 200, JSON.stringify(await edited.clone().json()));
+  const payables = db.sqlite.prepare("SELECT description AS d, supplier_id AS s FROM accounts_payable WHERE id IN (SELECT accounts_payable_id FROM supplier_invoice_installments WHERE invoice_id='nf-plan') ORDER BY description").all();
+  assert.deepEqual(payables.map((p) => [p.d, p.s]), [["NF 777 - PARCELA 1/3", "sup-x"], ["NF 777 - PARCELA 2/3", "sup-x"], ["NF 777 - PARCELA 3/3", "sup-x"]]);
+  assert.equal(db.sqlite.prepare("SELECT financial_status AS s FROM supplier_invoices WHERE id='nf-plan'").get().s, "com_divergencia");
+  for (const body of [{ competenceMonth: "2026-12" }, { financeItemId: "item-merc" }, { companyId: "outra", companyName: "OUTRA" }]) {
+    const locked = await patch("nf-plan", body);
+    assert.equal(locked.status, 409, JSON.stringify(body));
+    assert.match((await locked.json()).error, /EXCLUA AS DUPLICATAS/);
+  }
+  // Número repetido de outra NF do mesmo fornecedor/loja é recusado.
+  invoice("nf-outra", { supplier_id: "sup-x" });
+  assert.equal((await patch("nf-outra", { invoiceNumber: "777" })).status, 409);
+});

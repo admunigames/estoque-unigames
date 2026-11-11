@@ -14667,6 +14667,7 @@
       <div class="purchase-field full"><label for="invoiceItem">CATEGORIA</label><select id="invoiceItem" data-finance-item-picker><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="invoiceCostCenter">CENTRO DE CUSTO</label><select id="invoiceCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
       <div class="purchase-field full"><label for="invoiceNotes">OBSERVAÇÕES</label><textarea id="invoiceNotes" rows="2" maxlength="2000"></textarea></div>
+      <div class="purchase-field full" id="invoiceFormEditHelp" hidden><span class="purchase-field-help">NOTA COM DUPLICATAS: LOJA, COMPETÊNCIA E CATEGORIA SÓ MUDAM DEPOIS DE EXCLUIR AS DUPLICATAS EM ABERTO. NÚMERO, SÉRIE, FORNECEDOR E EMISSÃO VÃO JUNTO PARA AS CONTAS A PAGAR.</span></div>
     </div>
     <div class="user-form-status" id="invoiceFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -47278,16 +47279,11 @@ function renderHomeTasks(){
     const novoPedidoId = params.get('novoPedidoId');
     if(!novoPedidoId) return;
     invoicePendingPurchaseOrderId = novoPedidoId;
-    el('invoiceForm').reset();
-    setCurrencyValue(el('invoiceTotalAmount'), '');
-    renderInvoiceFormSelects();
-    el('invoiceFormStatus').textContent = '';
+    openInvoiceForm(null);
     const supplierId = params.get('supplierId');
     const companyId = params.get('companyId');
     if(supplierId && el('invoiceSupplier')) el('invoiceSupplier').value = supplierId;
     if(companyId && el('invoiceCompany')) el('invoiceCompany').value = companyId;
-    else if(!payablesCanActAcrossStores() && currentSession.companyId) el('invoiceCompany').value = currentSession.companyId;
-    el('invoiceFormDialog').showModal();
     history.replaceState({page:'financeiroInvoices'}, '', '/financeiro/notas-fiscais');
   }
 
@@ -47316,6 +47312,9 @@ function renderHomeTasks(){
 
   function invoiceDetailActionsHtml(invoice){
     const buttons = [];
+    if(invoice.financialStatus !== 'cancelado' && canAccess('payables:invoices_reconcile')){
+      buttons.push('<button class="btn-outline" type="button" id="btnEditInvoice">EDITAR NF</button>');
+    }
     if(invoice.financialStatus === 'aguardando_conferencia' && canAccess('payables:invoices_reconcile')){
       buttons.push('<button class="btn-accent" type="button" id="btnReviewInvoice">CONFERIR NF</button>');
     }
@@ -47352,6 +47351,8 @@ function renderHomeTasks(){
     el('invoiceDetailActions').innerHTML = invoiceDetailActionsHtml(invoice);
     const reviewButton = el('btnReviewInvoice');
     if(reviewButton) reviewButton.addEventListener('click', reviewInvoice);
+    const editButton = el('btnEditInvoice');
+    if(editButton) editButton.addEventListener('click', () => openInvoiceForm(invoice, (data.installments || []).some(row => !Number(row.canceled))));
     const cancelButton = el('btnCancelInvoice');
     if(cancelButton) cancelButton.addEventListener('click', cancelInvoiceAction);
 
@@ -47564,14 +47565,50 @@ function renderHomeTasks(){
     if(event.target === el('invoiceDetailDialog')) closeInvoiceDetailDialog();
   });
 
-  el('btnNewInvoice') && el('btnNewInvoice').addEventListener('click', async () => {
-    invoicePendingPurchaseOrderId = '';
+  // Mesmo formulário para NOVA NF e EDITAR NF (edição liberada após o lançamento).
+  let invoiceEditingId = '';
+  function openInvoiceForm(invoice, hasInstallments){
+    invoiceEditingId = invoice ? invoice.id : '';
     el('invoiceForm').reset();
     setCurrencyValue(el('invoiceTotalAmount'), '');
     renderInvoiceFormSelects();
     el('invoiceFormStatus').textContent = '';
-    if(!payablesCanActAcrossStores() && currentSession.companyId) el('invoiceCompany').value = currentSession.companyId;
+    el('invoiceFormDialogTitle').textContent = invoice ? 'EDITAR NF '+invoice.invoiceNumber : 'NOVA NF MANUAL';
+    el('btnSaveInvoice').textContent = invoice ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR NF';
+    el('invoiceFormEditHelp').hidden = !(invoice && hasInstallments);
+    if(invoice){
+      el('invoiceCompany').value = invoice.companyId || '';
+      el('invoicePayerName').value = invoice.payerName || '';
+      el('invoiceSupplier').value = invoice.supplierId || '';
+      syncInvoiceNewSupplierField();
+      el('invoiceSupplierDocument').value = invoice.supplierDocument || '';
+      el('invoiceNumberInput').value = invoice.invoiceNumber || '';
+      el('invoiceSeries').value = invoice.series || '';
+      el('invoiceAccessKey').value = invoice.accessKey || '';
+      el('invoiceIssueDate').value = invoice.issueDate || '';
+      el('invoiceEntryDate').value = invoice.entryDate || '';
+      el('invoiceCompetenceMonth').value = invoice.competenceMonth || '';
+      setCurrencyValue(el('invoiceTotalAmount'), invoice.totalAmountCents / 100);
+      // Depois do reset do seletor de categoria (que limpa num setTimeout 0).
+      setTimeout(() => setFinanceItemPickerValue('invoiceItem', invoice.financeItemId), 0);
+      el('invoiceCostCenter').value = invoice.costCenterId || '';
+      el('invoiceNotes').value = invoice.notes || '';
+    }else if(!payablesCanActAcrossStores() && currentSession.companyId){
+      el('invoiceCompany').value = currentSession.companyId;
+    }
     el('invoiceFormDialog').showModal();
+  }
+  // Fechou (salvou ou desistiu): volta ao modo NOVA NF — o "CRIAR NOTA FISCAL
+  // PARA ESTE PEDIDO" (Compras) abre este mesmo diálogo sem passar por aqui.
+  el('invoiceFormDialog').addEventListener('close', () => {
+    invoiceEditingId = '';
+    el('invoiceFormDialogTitle').textContent = 'NOVA NF MANUAL';
+    el('btnSaveInvoice').textContent = 'CADASTRAR NF';
+    el('invoiceFormEditHelp').hidden = true;
+  });
+  el('btnNewInvoice') && el('btnNewInvoice').addEventListener('click', () => {
+    invoicePendingPurchaseOrderId = '';
+    openInvoiceForm(null);
   });
   el('btnCloseInvoiceFormDialog') && el('btnCloseInvoiceFormDialog').addEventListener('click', () => el('invoiceFormDialog').close());
   // CADASTRAR EM LOTE de NFs manuais (as duplicatas seguem pelo detalhe da NF).
@@ -47617,7 +47654,7 @@ function renderHomeTasks(){
     event.preventDefault();
     const button = el('btnSaveInvoice');
     button.disabled = true;
-    el('invoiceFormStatus').textContent = 'CADASTRANDO…';
+    el('invoiceFormStatus').textContent = invoiceEditingId ? 'SALVANDO…' : 'CADASTRANDO…';
     try{
       const totalAmountCents = parseBRLToCents(getCurrencyValue(el('invoiceTotalAmount')));
       if(!totalAmountCents) throw new Error('INFORME UM VALOR TOTAL VÁLIDO.');
@@ -47631,8 +47668,9 @@ function renderHomeTasks(){
         el('invoiceSupplier').value = created.id;
         syncInvoiceNewSupplierField();
       }
-      await invoicesApiRequest('', {
-        method:'POST', headers:{'Content-Type':'application/json'},
+      const editingId = invoiceEditingId;
+      await invoicesApiRequest(editingId ? '/'+encodeURIComponent(editingId) : '', {
+        method: editingId ? 'PATCH' : 'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           companyId: el('invoiceCompany').value,
           companyName: (companies.find(c => c.id === el('invoiceCompany').value) || {}).name || '',
@@ -47650,10 +47688,16 @@ function renderHomeTasks(){
           financeItemId: el('invoiceItem').value,
           costCenterId: el('invoiceCostCenter').value,
           notes: el('invoiceNotes').value,
-          purchaseOrderId: invoicePendingPurchaseOrderId || undefined
+          purchaseOrderId: editingId ? undefined : invoicePendingPurchaseOrderId || undefined
         })
       });
       el('invoiceFormDialog').close();
+      if(editingId){
+        showPurchaseToast('Nota fiscal atualizada.');
+        if(invoiceCurrentDetailId === editingId) await openInvoiceDetailDialog(editingId);
+        await refreshAfterAction(() => loadInvoicesList({silent:true}));
+        return;
+      }
       const purchaseOrderId = invoicePendingPurchaseOrderId;
       invoicePendingPurchaseOrderId = '';
       showPurchaseToast('Nota fiscal cadastrada.');

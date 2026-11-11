@@ -3704,7 +3704,7 @@ test("Módulo Compras nativo (Fase C): anexos do pedido, vínculo com NF, alerta
   assert.match(html, /ATRASADO/);
   assert.match(html, /function handleInvoicesQueryParams\(\)/);
   assert.match(html, /novoPedidoId/);
-  assert.match(html, /purchaseOrderId: invoicePendingPurchaseOrderId \|\| undefined/);
+  assert.match(html, /purchaseOrderId: editingId \? undefined : invoicePendingPurchaseOrderId \|\| undefined/);
   // Reaproveita o mesmo helper de upload chunked já usado por NF/declarações
   // (uploadInvoiceFile), sem reimplementar o protocolo no client.
   assert.match(html, /uploadInvoiceFile\('\/api\/compras-novo\/orders\/'\+encodeURIComponent\(comprasCurrentOrderId\)\+'\/attachments'/);

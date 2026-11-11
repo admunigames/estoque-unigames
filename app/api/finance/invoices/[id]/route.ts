@@ -3,11 +3,12 @@ import { unauthorizedResponse } from "../../../../lib/notion";
 import { isValidCpfOrCnpj } from "../../../../lib/br-documents";
 import { todayInTimezone } from "../../../../lib/finance-status";
 import { computeInstallmentStatus, computeInstallmentTotals } from "../../../../lib/supplier-invoice-status";
-import { identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
+import { identity, jsonResponse, MONTH_PATTERN, safeText, sameOrigin, type JsonMap } from "../../shared";
 import { computeDreAnchorAssignments } from "../../../../lib/payables-recurrence";
-import { recalcPayableEntrySql } from "../../payables/shared";
+import { DATE_PATTERN, recalcPayableEntrySql } from "../../payables/shared";
 import {
   assertInvoiceAccess,
+  buildInvoiceStatusRecalcStatement,
   canReconcileInvoices,
   canViewInvoices,
   invoiceEventStatement,
@@ -161,11 +162,33 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return jsonResponse({ updated: true, canceled: true });
     }
 
-    // Edição de campos — bloqueia mudar o valor total depois que já existem
-    // duplicatas cadastradas (quebraria o invariante soma==total que o
-    // financial_status calculado depende, e mudaria retroativamente o que
-    // já foi lançado na DRE por uma soma que não corresponde mais a nada).
-    const hasInstallments = (await loadInstallments(database, id)).length > 0;
+    // Edição dos dados da NF (EDITAR NF, 11/11/2026) — liberada depois do
+    // lançamento. Com duplicatas ativas, LOJA, COMPETÊNCIA e CATEGORIA ficam
+    // presas (movem a DRE das contas a pagar já lançadas); o VALOR TOTAL muda
+    // e o status é recalculado (soma ≠ total = COM DIVERGÊNCIA). Número,
+    // série, fornecedor e emissão vão junto para as contas a pagar ligadas.
+    const activeInstallments = (await loadInstallments(database, id)).filter((row) => !row.canceled);
+    const hasInstallments = activeInstallments.length > 0;
+    const lockedMessage = "EXCLUA AS DUPLICATAS EM ABERTO ANTES DE TROCAR LOJA, COMPETÊNCIA OU CATEGORIA DA NOTA FISCAL.";
+
+    const invoiceNumber = body.invoiceNumber === undefined ? invoice.invoiceNumber : safeText(body.invoiceNumber, 60);
+    if (!invoiceNumber) return jsonResponse({ error: "INFORME O NÚMERO DA NOTA FISCAL." }, 400);
+    const series = body.series === undefined ? invoice.series : safeText(body.series, 20);
+    const issueDate = body.issueDate === undefined ? invoice.issueDate : safeText(body.issueDate, 10);
+    if (issueDate && !DATE_PATTERN.test(issueDate)) return jsonResponse({ error: "DATA DE EMISSÃO INVÁLIDA." }, 400);
+    const competenceMonth = body.competenceMonth === undefined ? invoice.competenceMonth : safeText(body.competenceMonth, 7);
+    if (!MONTH_PATTERN.test(competenceMonth)) return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
+    const companyId = body.companyId === undefined ? invoice.companyId : safeText(body.companyId, 80);
+    const companyName =
+      companyId === invoice.companyId ? invoice.companyName : companyId ? safeText(body.companyName, 160) : "";
+    const allStores = canSeeAllStores(scopeActor, "finance:manage");
+    if (!companyId && !allStores) return jsonResponse({ error: "SELECIONE A EMPRESA/LOJA." }, 400);
+    if (!allStores && companyId !== scopeActor.companyId) {
+      return jsonResponse({ error: "VOCÊ SÓ PODE CADASTRAR NOTAS PARA A PRÓPRIA LOJA." }, 403);
+    }
+    if (hasInstallments && (companyId !== invoice.companyId || competenceMonth !== invoice.competenceMonth)) {
+      return jsonResponse({ error: lockedMessage }, 409);
+    }
 
     const supplierId = body.supplierId === undefined ? invoice.supplierId : safeText(body.supplierId, 80);
     const supplierDocument =
@@ -177,10 +200,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       body.financeCategoryId === undefined ? invoice.financeCategoryId : safeText(body.financeCategoryId, 80);
     const financeItemId = body.financeItemId === undefined ? invoice.financeItemId : safeText(body.financeItemId, 80);
     if (hasInstallments && financeItemId !== invoice.financeItemId) {
-      return jsonResponse(
-        { error: "NÃO É POSSÍVEL TROCAR O ITEM FINANCEIRO DEPOIS DE CADASTRAR DUPLICATAS." },
-        409,
-      );
+      return jsonResponse({ error: lockedMessage }, 409);
     }
     let costCenter = invoice.costCenter;
     let costCenterId = invoice.costCenterId;
@@ -213,15 +233,31 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return jsonResponse({ error: "A CHAVE DE ACESSO DA NF-E DEVE TER 44 DÍGITOS." }, 400);
     }
     const entryDate = body.entryDate === undefined ? invoice.entryDate : safeText(body.entryDate, 10);
+    if (entryDate && !DATE_PATTERN.test(entryDate)) return jsonResponse({ error: "DATA DE ENTRADA INVÁLIDA." }, 400);
+
+    const duplicate = await database
+      .prepare(
+        `SELECT id FROM supplier_invoices
+         WHERE company_id=?1 AND supplier_id=?2 AND invoice_number=?3 AND series=?4 AND id<>?5`,
+      )
+      .bind(companyId, supplierId, invoiceNumber, series, id)
+      .first<{ id: string }>();
+    if (duplicate) {
+      return jsonResponse(
+        { error: "JÁ EXISTE UMA NOTA FISCAL CADASTRADA COM ESSE NÚMERO/SÉRIE PARA ESSE FORNECEDOR E LOJA." },
+        409,
+      );
+    }
+    if (accessKey && accessKey !== invoice.accessKey) {
+      const duplicateKey = await database
+        .prepare("SELECT id FROM supplier_invoices WHERE access_key=?1 AND id<>?2")
+        .bind(accessKey, id)
+        .first<{ id: string }>();
+      if (duplicateKey) return jsonResponse({ error: "JÁ EXISTE UMA NOTA FISCAL CADASTRADA COM ESSA CHAVE DE ACESSO." }, 409);
+    }
 
     let totalAmountCents = invoice.totalAmountCents;
     if (body.totalAmountCents !== undefined) {
-      if (hasInstallments) {
-        return jsonResponse(
-          { error: "NÃO É POSSÍVEL ALTERAR O VALOR TOTAL DEPOIS DE CADASTRAR DUPLICATAS." },
-          409,
-        );
-      }
       totalAmountCents = Number(body.totalAmountCents);
       if (!Number.isFinite(totalAmountCents) || !Number.isInteger(totalAmountCents) || totalAmountCents <= 0) {
         return jsonResponse({ error: "INFORME UM VALOR TOTAL VÁLIDO EM CENTAVOS." }, 400);
@@ -242,7 +278,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
          SET supplier_id=?1, supplier_document=?2, finance_category_id=?3, finance_item_id=?4, cost_center=?5,
              notes=?6, access_key=?7, entry_date=?8, total_amount_cents=?9,
              updated_by=?10, updated_by_name=?11, updated_at=CURRENT_TIMESTAMP, cost_center_id=?13, purchase_order_id=?14,
-             payer_name=?15
+             payer_name=?15, invoice_number=?16, series=?17, issue_date=?18, competence_month=?19,
+             company_id=?20, company_name=?21
          WHERE id=?12`,
         [
           supplierId,
@@ -260,9 +297,63 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           costCenterId,
           purchaseOrderId,
           body.payerName === undefined ? invoice.payerName : safeText(body.payerName, 160),
+          invoiceNumber,
+          series,
+          issueDate,
+          competenceMonth,
+          companyId,
+          companyName,
         ],
       ],
     ];
+
+    // Contas a pagar das duplicatas acompanham número/série, fornecedor e emissão.
+    for (const installment of activeInstallments) {
+      if (!installment.accountsPayableId) continue;
+      statements.push([
+        `UPDATE accounts_payable SET description=?1, invoice_number=?2, supplier_id=?3, issue_date=?4,
+           updated_by=?5, updated_by_name=?6, updated_at=CURRENT_TIMESTAMP WHERE id=?7`,
+        [
+          `NF ${invoiceNumber}${series ? "/" + series : ""} - PARCELA ${installment.installmentNumber}/${installment.installmentTotal}`,
+          invoiceNumber,
+          supplierId,
+          issueDate,
+          actor.id,
+          actorName,
+          installment.accountsPayableId,
+        ],
+      ]);
+    }
+    if (totalAmountCents !== invoice.totalAmountCents) {
+      const recalc = await buildInvoiceStatusRecalcStatement(database, { ...invoice, totalAmountCents }, actor.id, actorName);
+      statements.push([recalc.sql, recalc.values]);
+    }
+    const changed = (
+      [
+        ["NÚMERO", invoice.invoiceNumber, invoiceNumber],
+        ["SÉRIE", invoice.series, series],
+        ["FORNECEDOR", invoice.supplierId, supplierId],
+        ["LOJA", invoice.companyId, companyId],
+        ["EMISSÃO", invoice.issueDate, issueDate],
+        ["ENTRADA", invoice.entryDate, entryDate],
+        ["COMPETÊNCIA", invoice.competenceMonth, competenceMonth],
+        ["VALOR TOTAL", invoice.totalAmountCents, totalAmountCents],
+        ["CATEGORIA", invoice.financeItemId, financeItemId],
+      ] as const
+    )
+      .filter(([, before, after]) => before !== after)
+      .map(([label]) => label);
+    if (changed.length) {
+      statements.push(
+        invoiceEventStatement({
+          invoiceId: id,
+          eventType: "edited",
+          description: `NOTA FISCAL EDITADA (${changed.join(", ")}).`,
+          actorId: actor.id,
+          actorName,
+        }),
+      );
+    }
 
     statements.push(...attachmentCopyStatements);
     if (attachmentCopyStatements.length) {
