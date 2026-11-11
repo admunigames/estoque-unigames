@@ -15,8 +15,8 @@ const RIOMAR = { id: "riomar", name: "LOJA RIOMAR", companyId: "cmrvhi891w5qk7",
 const DEPOSITO = { id: "dep", name: "DEPÓSITO", companyId: "cmsgi8t999bnof", permissions: ALL };
 const SEM = { id: "sem", name: "SEM ACESSO", permissions: [] };
 const call = (actor, method, body, query = "") => callRoute(route[method], actor, method, `/api/avaliacao-operacional${query}`, body);
-const add = (actor, unit, eventDate, weight, description = "atraso na abertura") =>
-  call(actor, "POST", { unit, eventDate, weight, description });
+const add = (actor, unit, eventDate, weight, description = "atraso na abertura", responsible = "joão silva") =>
+  call(actor, "POST", { unit, eventDate, weight, description, responsible });
 
 test("lança, soma por unidade, PREMIUM no menor total e escopo da loja", async () => {
   assert.equal((await call(SEM, "GET")).status, 403);
@@ -25,6 +25,7 @@ test("lança, soma por unidade, PREMIUM no menor total e escopo da loja", async 
   assert.equal((await add(GESTOR, "RIOMAR", "2099-01-01", 3)).status, 400);
   assert.equal((await add(GESTOR, "RIOMAR", "2026-10-02", 6)).status, 400);
   assert.equal((await add(GESTOR, "RIOMAR", "2026-10-02", 3, " ")).status, 400);
+  assert.equal((await add(GESTOR, "RIOMAR", "2026-10-02", 3, "x", " ")).status, 400); // quem cometeu é obrigatório
 
   const created = await add(GESTOR, "RIOMAR", "2026-10-02", 3);
   assert.equal(created.status, 201);
@@ -42,6 +43,7 @@ test("lança, soma por unidade, PREMIUM no menor total e escopo da loja", async 
   assert.equal(month.items.length, 4);
   assert.equal(month.items[0].description, "ATRASO NA ABERTURA");
   assert.equal(month.items[0].createdByName, "ANA GESTORA");
+  assert.equal(month.items[0].responsible, "JOÃO SILVA");
   const riomar = month.ranking.find((row) => row.unit === "RIOMAR");
   assert.deepEqual([riomar.total, riomar.count, riomar.byWeight[5], riomar.premium], [9, 3, 1, false]);
   assert.equal(month.ranking.at(-1).unit, "RIOMAR");
@@ -59,14 +61,14 @@ test("lança, soma por unidade, PREMIUM no menor total e escopo da loja", async 
 
   // Edição registra quem editou; loja não edita/exclui de outra unidade (404).
   const admin = month.items.find((row) => row.unit === "ADMINISTRATIVO");
-  assert.equal((await call(RIOMAR, "PATCH", { id: admin.id, unit: "RIOMAR", eventDate: "2026-10-05", weight: 1, description: "x" })).status, 404);
+  assert.equal((await call(RIOMAR, "PATCH", { id: admin.id, unit: "RIOMAR", eventDate: "2026-10-05", weight: 1, description: "x", responsible: "y" })).status, 404);
   assert.equal((await call(RIOMAR, "DELETE", { id: admin.id })).status, 404);
-  assert.equal((await call(GESTOR, "PATCH", { id, unit: "RIOMAR", eventDate: "2026-10-02", weight: 1, description: "corrigido" })).status, 200);
+  assert.equal((await call(GESTOR, "PATCH", { id, unit: "RIOMAR", eventDate: "2026-10-02", weight: 1, description: "corrigido", responsible: "maria" })).status, 200);
   assert.equal((await call(GESTOR, "DELETE", { id: admin.id })).status, 200);
 
   month = await (await call(GESTOR, "GET", undefined, "?month=2026-10")).json();
   const edited = month.items.find((row) => row.id === id);
-  assert.deepEqual([edited.weight, edited.description, edited.updatedByName], [1, "CORRIGIDO", "ANA GESTORA"]);
+  assert.deepEqual([edited.weight, edited.description, edited.responsible, edited.updatedByName], [1, "CORRIGIDO", "MARIA", "ANA GESTORA"]);
   assert.equal(month.ranking.find((row) => row.unit === "RIOMAR").total, 7);
   assert.equal(month.ranking.filter((row) => row.premium).length, 9);
   assert.equal(month.items.length, 3);

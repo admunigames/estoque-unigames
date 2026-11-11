@@ -5230,6 +5230,7 @@ export const opsEvaluations = pgTable(
     unit: text("unit").notNull(),
     eventDate: text("event_date").notNull(),
     description: text("description").notNull(),
+    responsible: text("responsible").notNull().default(""),
     weight: integer("weight").notNull(),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),

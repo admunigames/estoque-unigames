@@ -11,12 +11,12 @@ import { identity, jsonResponse, safeText, sameOrigin } from "../divergences/sha
 // unidades; login com loja só na própria (sem posição nem dados das outras).
 // O mês continua editável depois de acabar (decisão do usuário, 11/11/2026).
 //   GET ?month=AAAA-MM                       → {month, units, weights, ranking, items, can}
-//   POST   {unit, eventDate, description, weight}      (create)
-//   PATCH  {id, unit, eventDate, description, weight}  (edit)
+//   POST   {unit, eventDate, description, responsible, weight}      (create)
+//   PATCH  {id, unit, eventDate, description, responsible, weight}  (edit)
 //   DELETE {id}                                        (delete; deleted=1)
 
 type Actor = ReturnType<typeof identity>;
-type Row = { id: string; unit: string; eventDate: string; description: string; weight: number };
+type Row = { id: string; unit: string; eventDate: string; description: string; responsible: string; weight: number };
 
 // Lista fixa (vigência mensal). companyId liga o login de loja à unidade;
 // PNWS = NORTH WAY no cadastro de lojas. COMERCIAL/ADMINISTRATIVO não têm loja.
@@ -45,7 +45,7 @@ const ACTIONS = ["view", "create", "edit", "delete"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const NOT_FOUND = "SITUAÇÃO NÃO ENCONTRADA.";
-const SELECT = `SELECT id, unit, event_date AS eventDate, description, weight, created_by_name AS createdByName,
+const SELECT = `SELECT id, unit, event_date AS eventDate, description, responsible, weight, created_by_name AS createdByName,
   created_at AS createdAt, updated_by_name AS updatedByName, updated_at AS updatedAt FROM ops_evaluations`;
 
 const can = (actor: Actor, action: string) =>
@@ -76,12 +76,14 @@ function fields(payload: Record<string, unknown>, units: string[]) {
   const unit = safeText(payload.unit, 40).toLocaleUpperCase("pt-BR");
   const eventDate = safeText(payload.eventDate, 10);
   const description = safeText(payload.description, 1000).toLocaleUpperCase("pt-BR");
+  const responsible = safeText(payload.responsible, 120).toLocaleUpperCase("pt-BR");
   const weight = Number(payload.weight);
   if (!units.includes(unit)) return { error: "SELECIONE A UNIDADE." };
   if (!DATE.test(eventDate) || eventDate > recifeDate()) return { error: "INFORME A DATA (NÃO PODE SER FUTURA)." };
   if (!description) return { error: "INFORME O QUE HOUVE." };
+  if (!responsible) return { error: "INFORME QUEM COMETEU." };
   if (!Number.isInteger(weight) || weight < 1 || weight > 5) return { error: "ESCOLHA O PESO (1 A 5)." };
-  return { unit, eventDate, description, weight };
+  return { unit, eventDate, description, responsible, weight };
 }
 
 /** Situação visível ao ator (fora do escopo responde o mesmo 404). */
@@ -139,9 +141,9 @@ export async function POST(request: Request) {
   if ("error" in parsed) return jsonResponse({ error: parsed.error }, 400);
   const id = crypto.randomUUID();
   await (await getD1())
-    .prepare(`INSERT INTO ops_evaluations (id, unit, event_date, description, weight, created_by, created_by_name, created_at)
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`)
-    .bind(id, parsed.unit, parsed.eventDate, parsed.description, parsed.weight, actor.id, actor.displayName || actor.id, new Date().toISOString())
+    .prepare(`INSERT INTO ops_evaluations (id, unit, event_date, description, responsible, weight, created_by, created_by_name, created_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`)
+    .bind(id, parsed.unit, parsed.eventDate, parsed.description, parsed.responsible, parsed.weight, actor.id, actor.displayName || actor.id, new Date().toISOString())
     .run();
   return jsonResponse({ id }, 201);
 }
@@ -157,9 +159,9 @@ export async function PATCH(request: Request) {
   const parsed = fields(payload, units);
   if ("error" in parsed) return jsonResponse({ error: parsed.error }, 400);
   await database
-    .prepare(`UPDATE ops_evaluations SET unit=?2, event_date=?3, description=?4, weight=?5, updated_by=?6, updated_by_name=?7, updated_at=?8
+    .prepare(`UPDATE ops_evaluations SET unit=?2, event_date=?3, description=?4, responsible=?5, weight=?6, updated_by=?7, updated_by_name=?8, updated_at=?9
       WHERE id=?1`)
-    .bind(row.id, parsed.unit, parsed.eventDate, parsed.description, parsed.weight, actor.id, actor.displayName || actor.id, new Date().toISOString())
+    .bind(row.id, parsed.unit, parsed.eventDate, parsed.description, parsed.responsible, parsed.weight, actor.id, actor.displayName || actor.id, new Date().toISOString())
     .run();
   return jsonResponse({ ok: true });
 }

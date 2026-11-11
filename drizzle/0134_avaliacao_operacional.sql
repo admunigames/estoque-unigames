@@ -1,5 +1,5 @@
 -- Avaliação Operacional (11/11/2026): situações (erros/ocorrências) por
--- unidade, com data, descrição e peso 1–5. O total do mês é a soma dos pesos;
+-- unidade, com data, descrição, quem cometeu e peso 1–5. O total do mês é a soma dos pesos;
 -- a menor pontuação é a LOJA PREMIUM. A lista de unidades fica no código
 -- (app/api/avaliacao-operacional/route.ts). Excluir = deleted=1.
 -- Só CREATE TABLE/INDEX: nada é apagado.
@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS "ops_evaluations" (
   "unit" text NOT NULL,
   "event_date" text NOT NULL,
   "description" text NOT NULL,
+  "responsible" text DEFAULT '' NOT NULL,
   "weight" integer NOT NULL,
   "created_by" text DEFAULT '' NOT NULL,
   "created_by_name" text DEFAULT '' NOT NULL,

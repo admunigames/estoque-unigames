@@ -8379,6 +8379,7 @@
           <div class="purchase-field"><label for="avopUnit">UNIDADE *</label><select id="avopUnit"></select></div>
           <div class="purchase-field"><label for="avopWeight">PESO *</label><select id="avopWeight"></select></div>
         </div>
+        <div class="purchase-field"><label for="avopResponsible">QUEM COMETEU *</label><input id="avopResponsible" maxlength="120" autocomplete="off"></div>
         <div class="purchase-field"><label for="avopDescription">O QUE HOUVE *</label><textarea id="avopDescription" maxlength="1000" rows="3"></textarea></div>
         <button class="btn-accent" id="btnAvopSave" type="submit">ADICIONAR</button>
         <button class="btn-outline" id="btnAvopCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
@@ -30721,12 +30722,13 @@ function renderHomeTasks(){
     el('avopItems').innerHTML = withItems.length ? withItems.map(row => {
       const items = avopData.items.filter(item => item.unit === row.unit);
       return '<h4 class="supply-section-title">'+escapeHtml(row.unit)+' · '+row.total+' PONTO'+(row.total === 1 ? '' : 'S')+'</h4>'+
-        '<div class="table-panel responsive-table"><div class="table-scroll"><table><thead><tr><th>Data</th><th>O que houve</th><th>Peso / tipo de erro</th><th>Lançado por</th><th></th></tr></thead><tbody>'+
+        '<div class="table-panel responsive-table"><div class="table-scroll"><table><thead><tr><th>Data</th><th>Quem cometeu</th><th>O que houve</th><th>Peso / tipo de erro</th><th>Lançado por</th><th></th></tr></thead><tbody>'+
         items.map(item => {
           const id = escapeHtml(item.id);
           const buttons = (avopData.can.edit ? '<button class="btn-outline btn-sm" type="button" data-avop-edit="'+id+'">EDITAR</button> ' : '')+
             (avopData.can.delete ? '<button class="btn-outline btn-sm" type="button" data-avop-del="'+id+'">EXCLUIR</button>' : '');
           return '<tr><td data-label="Data">'+escapeHtml(gdDateLabel(item.eventDate))+'</td>'+
+            '<td data-label="Quem cometeu">'+escapeHtml(item.responsible || '—')+'</td>'+
             '<td data-label="O que houve">'+escapeHtml(item.description)+'</td>'+
             '<td data-label="Peso / tipo de erro"><strong>'+escapeHtml(avopWeightLabel(item.weight))+'</strong></td>'+
             '<td data-label="Lançado por">'+escapeHtml(item.createdByName)+'<small class="os-update-meta">'+escapeHtml(formatDateTimeBR(item.createdAt) || '')+'</small>'+
@@ -30739,6 +30741,7 @@ function renderHomeTasks(){
   function avopResetForm(){
     avopEditId = '';
     el('avopDescription').value = '';
+    el('avopResponsible').value = '';
     el('avopWeight').value = '';
     el('avopFormTitle').textContent = 'NOVA SITUAÇÃO';
     el('btnAvopSave').textContent = 'ADICIONAR';
@@ -30754,7 +30757,7 @@ function renderHomeTasks(){
     const button = el('btnAvopSave');
     button.disabled = true;
     try{
-      const payload = {unit: el('avopUnit').value, eventDate: el('avopDate').value, weight: Number(el('avopWeight').value), description: el('avopDescription').value};
+      const payload = {unit: el('avopUnit').value, eventDate: el('avopDate').value, weight: Number(el('avopWeight').value), description: el('avopDescription').value, responsible: el('avopResponsible').value};
       if(avopEditId) await invApi('PATCH', {id: avopEditId, ...payload}, '', AVOP_API);
       else await invApi('POST', payload, '', AVOP_API);
       showPurchaseToast(avopEditId ? 'SITUAÇÃO ATUALIZADA.' : 'SITUAÇÃO LANÇADA.');
@@ -30776,6 +30779,7 @@ function renderHomeTasks(){
         el('avopUnit').value = item.unit;
         el('avopWeight').value = String(item.weight);
         el('avopDescription').value = item.description;
+        el('avopResponsible').value = item.responsible || '';
         el('avopFormTitle').textContent = 'EDITAR SITUAÇÃO';
         el('btnAvopSave').textContent = 'SALVAR';
         el('btnAvopCancel').hidden = false;
@@ -30810,9 +30814,9 @@ function renderHomeTasks(){
       '</tbody></table><p class="print-report-meta">'+weights.map(item => escapeHtml(item.weight+' = '+item.label)).join(' · ')+'</p></section>'+
       withItems.map(row =>
         '<section class="os-print-section"><h2>'+escapeHtml(row.unit)+' · '+row.total+' PONTOS</h2>'+
-        '<table class="os-print-table"><thead><tr><th style="width:12%">Data</th><th>O que houve</th><th style="width:22%">Peso / tipo</th><th style="width:16%">Lançado por</th></tr></thead><tbody>'+
+        '<table class="os-print-table"><thead><tr><th style="width:11%">Data</th><th style="width:16%">Quem cometeu</th><th>O que houve</th><th style="width:20%">Peso / tipo</th><th style="width:14%">Lançado por</th></tr></thead><tbody>'+
         avopData.items.filter(item => item.unit === row.unit).map(item =>
-          '<tr><td>'+escapeHtml(gdDateLabel(item.eventDate))+'</td><td>'+escapeHtml(item.description)+'</td><td>'+escapeHtml(avopWeightLabel(item.weight))+'</td><td>'+escapeHtml(item.createdByName)+'</td></tr>').join('')+
+          '<tr><td>'+escapeHtml(gdDateLabel(item.eventDate))+'</td><td>'+escapeHtml(item.responsible || '—')+'</td><td>'+escapeHtml(item.description)+'</td><td>'+escapeHtml(avopWeightLabel(item.weight))+'</td><td>'+escapeHtml(item.createdByName)+'</td></tr>').join('')+
         '</tbody></table></section>').join('');
     avopPrintTitleBefore = document.title;
     document.title = 'AVALIACAO-OPERACIONAL-'+avopData.month;
