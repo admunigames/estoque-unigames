@@ -131,7 +131,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const purchaseDate = body.purchaseDate === undefined ? debt.purchaseDate : safeText(body.purchaseDate, 10);
     if (purchaseDate && !DATE_PATTERN.test(purchaseDate)) return jsonResponse({ error: "DATA DA COMPRA INVÁLIDA." }, 400);
     const dueDate = body.dueDate === undefined ? debt.dueDate : safeText(body.dueDate, 10);
-    if (!DATE_PATTERN.test(dueDate)) return jsonResponse({ error: "DATA PREVISTA DE PAGAMENTO INVÁLIDA." }, 400);
+    // Vazio = SEM DATA (fora da projeção); a competência continua a gravada.
+    if (dueDate && !DATE_PATTERN.test(dueDate)) return jsonResponse({ error: "DATA PREVISTA DE PAGAMENTO INVÁLIDA." }, 400);
+    const competenceMonth = dueDate ? dueDate.slice(0, 7) : payable.competenceMonth;
 
     const originalAmountCents =
       body.originalAmountCents === undefined ? payable.originalAmountCents : Number(body.originalAmountCents);
@@ -156,7 +158,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           companyId: payable.companyId,
           companyName: payable.companyName,
           financeItemId: payable.financeItemId,
-          competenceMonth: dueDate.slice(0, 7),
+          competenceMonth,
           totalAmountCents: originalAmountCents,
           allStores: canSeeAllStores(scopeActor, "finance:manage"),
           actorCompanyId: scopeActor.companyId,
@@ -167,7 +169,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         destination = await loadPayableDestination(database, fullPayable);
       }
       for (const share of destination?.shares ?? []) {
-        const conflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, dueDate.slice(0, 7));
+        const conflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, competenceMonth);
         if (conflict) return jsonResponse({ error: conflict }, 409);
       }
     }
@@ -179,8 +181,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       canceled: false,
       hasPendingSchedule: payable.status === "scheduled",
     });
-    const competenceMonth = dueDate.slice(0, 7);
-
     const statements: [string, unknown[]][] = [
       [
         `UPDATE supplier_open_debts

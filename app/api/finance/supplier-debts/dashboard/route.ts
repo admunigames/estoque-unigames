@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         .prepare(
           `SELECT COALESCE(SUM(original_amount_cents - paid_amount_cents), 0) AS overdueCents
            FROM accounts_payable
-           WHERE ${baseCondition} AND supplier_id != '' AND status NOT IN ('canceled','paid') AND due_date < ?${baseParams.length + 1}`,
+           WHERE ${baseCondition} AND supplier_id != '' AND status NOT IN ('canceled','paid') AND due_date <> '' AND due_date < ?${baseParams.length + 1}`,
         )
         .bind(...baseParams, today)
         .first<{ overdueCents: number }>(),

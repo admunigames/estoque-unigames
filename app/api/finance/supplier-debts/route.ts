@@ -19,7 +19,7 @@ function debtDisplayStatusSql(todayParamIndex: number): string {
   return `CASE
     WHEN ap.status = 'canceled' THEN 'canceled'
     WHEN ap.status = 'paid' THEN 'paid'
-    WHEN ap.due_date < ${p} THEN 'overdue'
+    WHEN ap.due_date <> '' AND ap.due_date < ${p} THEN 'overdue'
     WHEN ap.due_date = ${p} THEN 'due_today'
     WHEN ap.status = 'partially_paid' THEN 'partially_paid'
     WHEN ap.status = 'scheduled' THEN 'scheduled'

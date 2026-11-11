@@ -190,7 +190,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const openPayables = payables.filter((row) => row.status !== "paid");
     const totalOpenCents = openPayables.reduce((sum, row) => sum + (row.originalAmountCents - row.paidAmountCents), 0);
     const overdueCents = openPayables
-      .filter((row) => row.dueDate < today)
+      .filter((row) => row.dueDate && row.dueDate < today)
       .reduce((sum, row) => sum + (row.originalAmountCents - row.paidAmountCents), 0);
     const upcomingPayments = openPayables
       .filter((row) => row.dueDate >= today)

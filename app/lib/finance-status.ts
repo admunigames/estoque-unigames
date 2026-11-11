@@ -67,7 +67,8 @@ export function computeDisplayStatus(params: {
 
   const hasOpenBalance = storedStatus === "open" || storedStatus === "partially_paid" || storedStatus === "scheduled";
   if (hasOpenBalance) {
-    if (dueDate < today) return "overdue";
+    // Sem data (due_date '') nunca vence.
+    if (dueDate && dueDate < today) return "overdue";
     if (dueDate === today) return "due_today";
   }
   if (storedStatus === "partially_paid") return "partially_paid";

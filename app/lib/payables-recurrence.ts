@@ -275,7 +275,7 @@ export function displayStatusCaseSql(todayParamIndex: number): string {
   return `CASE
     WHEN status = 'canceled' THEN 'canceled'
     WHEN status = 'paid' THEN 'paid'
-    WHEN due_date < ${p} THEN 'overdue'
+    WHEN due_date <> '' AND due_date < ${p} THEN 'overdue'
     WHEN due_date = ${p} THEN 'due_today'
     WHEN status = 'partially_paid' THEN 'partially_paid'
     WHEN status = 'scheduled' THEN 'scheduled'

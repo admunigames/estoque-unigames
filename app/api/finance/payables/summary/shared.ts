@@ -38,7 +38,7 @@ export async function buildPayablesQuickViews(
       whereSql = `${baseCondition} AND status = 'paid'`;
     } else if (view === "overdue") {
       values.push(today);
-      whereSql = `${baseCondition} AND status != 'canceled' AND due_date < ?${values.length} AND status != 'paid'`;
+      whereSql = `${baseCondition} AND status != 'canceled' AND due_date <> '' AND due_date < ?${values.length} AND status != 'paid'`;
     } else {
       const range = quickViewDueRange(view, today);
       if (range) {

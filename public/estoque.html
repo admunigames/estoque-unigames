@@ -14333,11 +14333,11 @@
       <div class="purchase-field"><label for="supplierDebtCompany">EMPRESA/LOJA</label><select id="supplierDebtCompany"><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="supplierDebtPayerName">TITULAR / PAGADOR</label><input id="supplierDebtPayerName" maxlength="160" placeholder="EX.: NOME DA PESSOA FÍSICA"></div>
       <div class="purchase-field"><label for="supplierDebtSupplier">FORNECEDOR *</label><select id="supplierDebtSupplier" required><option value="">SELECIONE</option></select></div>
-      <div class="purchase-field full"><label for="supplierDebtDescription">DESCRIÇÃO *</label><input id="supplierDebtDescription" maxlength="200" required></div>
+      <div class="purchase-field full"><label for="supplierDebtDescription">DESCRIÇÃO (OPCIONAL)</label><input id="supplierDebtDescription" maxlength="200" placeholder="EM BRANCO = Nº DA NOTA OU NOME DO FORNECEDOR"></div>
       <div class="purchase-field"><label for="supplierDebtInvoiceNumber">NOTA FISCAL (OPCIONAL)</label><input id="supplierDebtInvoiceNumber" maxlength="60"></div>
       <div class="purchase-field"><label for="supplierDebtOrderReference">PEDIDO (OPCIONAL)</label><input id="supplierDebtOrderReference" maxlength="60"></div>
       <div class="purchase-field"><label for="supplierDebtPurchaseDate">DATA DA COMPRA</label><input type="date" id="supplierDebtPurchaseDate"></div>
-      <div class="purchase-field"><label for="supplierDebtDueDate">DATA PREVISTA DE PAGAMENTO *</label><input type="date" id="supplierDebtDueDate" required></div>
+      <div class="purchase-field"><label for="supplierDebtDueDate">DATA PREVISTA DE PAGAMENTO (OPCIONAL)</label><input type="date" id="supplierDebtDueDate"><span class="purchase-field-help">EM BRANCO = SEM DATA, FORA DO FLUXO DE CAIXA ATÉ INFORMAR.</span></div>
       <div class="purchase-field"><label for="supplierDebtOriginalAmount">VALOR ORIGINAL (R$) *</label><input type="text" inputmode="decimal" id="supplierDebtOriginalAmount" placeholder="R$ 0,00" required></div>
       <div class="purchase-field"><label for="supplierDebtFinanceItem">CATEGORIA (OPCIONAL)</label><select id="supplierDebtFinanceItem" data-finance-item-picker data-placeholder="FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)"><option value="">FORNECEDORES (PADRÃO, A CATEGORIZAR DEPOIS)</option></select></div>
       <div class="purchase-field"><label for="supplierDebtAccount">CONTA FINANCEIRA</label><select id="supplierDebtAccount"><option value="">SEM CONTA</option></select></div>
@@ -34504,7 +34504,7 @@ function renderHomeTasks(){
         '<td data-label="Empresa/Loja">'+payableCompanyCell(row)+'</td>'+
         '<td data-label="Fornecedor">'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
         '<td data-label="Categoria">'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
-        '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
+        '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate) || 'SEM DATA')+'</td>'+
         '<td data-label="Valor original">'+formatCentsBRL(row.originalAmountCents)+'</td>'+
         '<td data-label="Valor pago">'+formatCentsBRL(row.paidAmountCents)+'</td>'+
         '<td data-label="Saldo">'+formatCentsBRL(balance)+'</td>'+
@@ -34537,7 +34537,7 @@ function renderHomeTasks(){
       '<td data-label="Empresa/Loja">'+escapeHtml(row.companyName || row.companyId)+'</td>'+
       '<td data-label="Fornecedor">'+escapeHtml((payableSuppliers.find(s => s.id === row.supplierId) || {}).name || '—')+'</td>'+
       '<td data-label="Categoria">'+escapeHtml(payableFinanceItemLabel(row.financeItemId))+'</td>'+
-      '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
+      '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate) || 'SEM DATA')+'</td>'+
       '<td data-label="Valor original">'+formatCentsBRL(row.originalAmountCents)+'</td>'+
       '<td data-label="Valor pago">'+formatCentsBRL(row.paidAmountCents)+'</td>'+
       '<td data-label="Saldo">'+formatCentsBRL(balance)+'</td>'+
@@ -34916,7 +34916,7 @@ function renderHomeTasks(){
       '<div><span>VALOR PAGO</span><span>'+formatCentsBRL(payable.paidAmountCents)+'</span></div>'+
       '<div><span>SALDO EM ABERTO</span><span>'+formatCentsBRL(balance)+'</span></div>'+
       '<div><span>COMPETÊNCIA</span><span>'+escapeHtml(payable.competenceMonth)+'</span></div>'+
-      '<div><span>VENCIMENTO</span><span>'+escapeHtml(formatDateBR(payable.dueDate))+'</span></div>'+
+      '<div><span>VENCIMENTO</span><span>'+escapeHtml(formatDateBR(payable.dueDate) || 'SEM DATA')+'</span></div>'+
       '<div><span>EMISSÃO</span><span>'+escapeHtml(formatDateBR(payable.issueDate) || '—')+'</span></div>'+
       '<div><span>NOTA FISCAL</span><span>'+escapeHtml(payable.invoiceNumber || '—')+'</span></div>'+
       '<div><span>PEDIDO</span><span>'+escapeHtml(payable.orderReference || '—')+'</span></div>'+
@@ -35260,7 +35260,7 @@ function renderHomeTasks(){
         '<td data-label="Empresa/Loja">'+payableCompanyCell(row)+'</td>'+
         '<td data-label="Descrição">'+escapeHtml(row.description)+'</td>'+
         '<td data-label="NF/Pedido">'+escapeHtml(row.invoiceNumber || row.orderReference || '—')+'</td>'+
-        '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate))+'</td>'+
+        '<td data-label="Vencimento">'+escapeHtml(formatDateBR(row.dueDate) || 'SEM DATA')+'</td>'+
         '<td data-label="Valor original">'+formatCentsBRL(row.originalAmountCents)+'</td>'+
         '<td data-label="Saldo">'+formatCentsBRL(balance)+'</td>'+
         '<td data-label="Status">'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
@@ -35405,9 +35405,9 @@ function renderHomeTasks(){
       columns: [
         {key:'companyId', label:'LOJA', type:'select', options: () => financeBatchCompanyOptions(true), placeholder: payablesCanActAcrossStores() ? 'SEM LOJA' : 'SELECIONE'},
         {key:'supplierId', label:'FORNECEDOR', type:'select', required:true, options: () => payableSuppliers.filter(x => x.active).map(x => ({value:x.id, label:x.name}))},
-        {key:'description', label:'DESCRIÇÃO', type:'text', required:true},
+        {key:'description', label:'DESCRIÇÃO', type:'text'},
         {key:'originalAmountCents', label:'VALOR', type:'money', required:true},
-        {key:'dueDate', label:'DATA PREVISTA', type:'date', required:true},
+        {key:'dueDate', label:'DATA PREVISTA', type:'date'},
         {key:'purchaseDate', label:'DATA DA COMPRA', type:'date'},
         {key:'invoiceNumber', label:'NOTA FISCAL', type:'text', maxLength:60},
         {key:'orderReference', label:'PEDIDO', type:'text', maxLength:60},
@@ -35432,9 +35432,7 @@ function renderHomeTasks(){
     const originalAmountCents = parseBRLToCents(getCurrencyValue(el('supplierDebtOriginalAmount')) || '0');
     if(originalAmountCents === null || originalAmountCents <= 0){ statusEl.textContent = 'INFORME UM VALOR VÁLIDO E POSITIVO.'; return; }
     const dueDate = el('supplierDebtDueDate').value;
-    if(!dueDate){ statusEl.textContent = 'INFORME A DATA PREVISTA DE PAGAMENTO.'; return; }
     const description = el('supplierDebtDescription').value.trim();
-    if(description.length < 2){ statusEl.textContent = 'INFORME A DESCRIÇÃO DA DÍVIDA.'; return; }
 
     const destination = readDreDestination('supplierDebt');
     if(destination.error){ statusEl.textContent = destination.error; return; }

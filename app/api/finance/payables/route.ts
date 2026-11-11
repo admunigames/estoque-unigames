@@ -172,7 +172,7 @@ export async function GET(request: Request) {
   const dueFrom = safeText(params.get("dueFrom"), 10);
   const dueTo = safeText(params.get("dueTo"), 10);
   if (DATE_PATTERN.test(dueFrom)) addCondition("due_date >= ?", dueFrom);
-  if (DATE_PATTERN.test(dueTo)) addCondition("due_date <= ?", dueTo);
+  if (DATE_PATTERN.test(dueTo)) addCondition("due_date <> '' AND due_date <= ?", dueTo);
 
   const paymentFrom = safeText(params.get("paymentFrom"), 10);
   const paymentTo = safeText(params.get("paymentTo"), 10);

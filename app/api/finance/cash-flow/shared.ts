@@ -159,7 +159,7 @@ export async function loadCashFlowOutflows(
            ${payableJoins}
            WHERE a.status NOT IN ('canceled', 'paid')
              AND a.original_amount_cents > a.paid_amount_cents
-             AND a.due_date <= ${dateLimit} ${company}`,
+             AND a.due_date <> '' AND a.due_date <= ${dateLimit} ${company}`,
         )
         .bind(...q.values)
         .all<PayableRow>();

@@ -3,6 +3,7 @@ import { assertFinanceAccountBelongsToCompany, assertSlotAvailableForPayable, DA
 import { parseDreDestination, planDreDestination, recalcSlotsSql } from "../payables/dre-destination";
 import { safeText, type JsonMap } from "../shared";
 import { DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID } from "./shared";
+import { todayInTimezone } from "../../../lib/finance-status";
 
 // Valida o corpo de UMA dívida avulsa e monta os SQL (dívida, conta a pagar
 // gêmea, destino na DRE e recálculo) sem executar — usada pelo POST e pelo
@@ -30,16 +31,17 @@ export async function planSupplierDebtCreate(
   const supplierId = safeText(body.supplierId, 80);
   if (!supplierId) return reply({ error: "SELECIONE O FORNECEDOR." }, 400);
 
-  const description = safeText(body.description, 200);
-  if (description.length < 2) return reply({ error: "INFORME A DESCRIÇÃO DA DÍVIDA." }, 400);
-
+  // DESCRIÇÃO e DATA PREVISTA são opcionais (11/11/2026). Sem data, a conta
+  // fica SEM DATA (due_date '') e fora da projeção até alguém informar; a
+  // competência vem da data da compra (ou do mês atual).
   const dueDate = safeText(body.dueDate, 10);
-  if (!DATE_PATTERN.test(dueDate)) return reply({ error: "INFORME A DATA PREVISTA DE PAGAMENTO." }, 400);
+  if (dueDate && !DATE_PATTERN.test(dueDate)) return reply({ error: "DATA PREVISTA DE PAGAMENTO INVÁLIDA." }, 400);
 
   const purchaseDate = safeText(body.purchaseDate, 10);
   if (purchaseDate && !DATE_PATTERN.test(purchaseDate)) {
     return reply({ error: "DATA DA COMPRA INVÁLIDA." }, 400);
   }
+  const competenceMonth = (dueDate || purchaseDate || todayInTimezone()).slice(0, 7);
 
   const originalAmountCents = Number(body.originalAmountCents);
   if (!Number.isFinite(originalAmountCents) || !Number.isInteger(originalAmountCents) || originalAmountCents <= 0) {
@@ -50,7 +52,8 @@ export async function planSupplierDebtCreate(
   const supplierInvoiceId = safeText(body.supplierInvoiceId, 80);
   const orderReference = safeText(body.orderReference, 60);
   const notes = safeText(body.notes, 2000);
-  const financeItemId = safeText(body.financeItemId, 80) || DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID;
+  const explicitItemId = safeText(body.financeItemId, 80);
+  const financeItemId = explicitItemId || DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID;
   const financeAccountId = safeText(body.financeAccountId, 80);
 
 
@@ -59,7 +62,8 @@ export async function planSupplierDebtCreate(
     database.prepare("SELECT id FROM finance_items WHERE id=?1").bind(financeItemId).first<{ id: string }>(),
   ]);
   if (!supplier) return reply({ error: "FORNECEDOR NÃO ENCONTRADO NO CADASTRO." }, 400);
-  if (!item) return reply({ error: "ITEM FINANCEIRO NÃO ENCONTRADO NO CATÁLOGO." }, 400);
+  if (!item && explicitItemId) return reply({ error: "CATEGORIA NÃO ENCONTRADA NO CATÁLOGO FINANCEIRO." }, 400);
+  const description = safeText(body.description, 200) || (invoiceNumber ? `NF ${invoiceNumber}` : supplier.name);
 
   const accountError = await assertFinanceAccountBelongsToCompany(database, financeAccountId, companyId);
   if (accountError) return reply({ error: accountError }, 409);
@@ -68,7 +72,7 @@ export async function planSupplierDebtCreate(
     companyId,
     companyName,
     financeItemId,
-    competenceMonth: dueDate.slice(0, 7),
+    competenceMonth,
     totalAmountCents: originalAmountCents,
     allStores,
     actorCompanyId: scopeActor.companyId,
@@ -76,7 +80,7 @@ export async function planSupplierDebtCreate(
   if ("error" in parsedDestination) return reply({ error: parsedDestination.error }, parsedDestination.status);
   const destination = parsedDestination.destination;
   for (const share of destination?.shares ?? []) {
-    const conflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, dueDate.slice(0, 7));
+    const conflict = await assertSlotAvailableForPayable(database, share.companyId, destination!.itemId, competenceMonth);
     if (conflict) return reply({ error: conflict }, 409);
   }
 
@@ -103,9 +107,19 @@ export async function planSupplierDebtCreate(
   const debtId = crypto.randomUUID();
   const payableId = crypto.randomUUID();
   const actorName = actor.displayName || "Administrador";
-  const competenceMonth = dueDate.slice(0, 7);
 
-  const statements: [string, unknown[]][] = [
+  const statements: [string, unknown[]][] = [];
+  // Item padrão "Fornecedores em Aberto (a categorizar)" excluído do catálogo:
+  // recria (mesmo id da migration 0034) em vez de recusar o cadastro.
+  if (!item) {
+    statements.push(
+      [`INSERT INTO finance_categories (id, name, parent_id, position, created_by, created_by_name)
+        VALUES ('seed-supplier-open-debt-category', 'FORNECEDORES', NULL, 0, 'system', 'Sistema') ON CONFLICT (id) DO NOTHING`, []],
+      [`INSERT INTO finance_items (id, category_id, name, position, created_by, created_by_name)
+        VALUES (?1, 'seed-supplier-open-debt-category', 'FORNECEDORES EM ABERTO (A CATEGORIZAR)', 0, 'system', 'Sistema') ON CONFLICT (id) DO NOTHING`, [DEFAULT_SUPPLIER_DEBT_FINANCE_ITEM_ID]],
+    );
+  }
+  statements.push(
     [
       `INSERT INTO accounts_payable
         (id, company_id, company_name, description, supplier_id, finance_item_id, finance_account_id,
@@ -163,7 +177,7 @@ export async function planSupplierDebtCreate(
         payerName,
       ],
     ],
-  ];
+  );
 
   if (destination) {
     const destinationPlan = await planDreDestination(database, destination, [
