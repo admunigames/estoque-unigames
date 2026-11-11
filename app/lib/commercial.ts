@@ -83,9 +83,18 @@ export type LeaderRules = {
   creditRateBps: number;
   sellerPercent: number;
   perSellerCents: number;
+  // Loja com UM único vendedor (além do líder): o prêmio por ele vale este
+  // valor no lugar de perSellerCents (pedido de 2026-11-11). Vigência gravada
+  // antes disso: igual a perSellerCents.
+  soloSellerCents: number;
   storePercent: number;
   storeCents: number;
 };
+
+// VENDEDOR DE LOJA (pedido de 2026-11-11): abaixo de minPercent da própria
+// meta não ganha a % sobre vendas (garantia, crediário e venda P.A seguem
+// pagos). Não vale para líder nem loja digital. 0 = sem mínimo.
+export type SellerRoleRules = { minPercent: number };
 
 // OPERACIONAL (por loja): % sobre o FEITO DA ASSISTÊNCIA — baixa abaixo de
 // 100% da meta da assistência (inclusive < 80%), alta a partir de 100%
@@ -111,17 +120,18 @@ export type DigitalRules = {
 };
 
 // digital é opcional: vigência gravada antes dela fica sem regra da loja digital.
-export type RoleRules = { leader: LeaderRules; operational: OperationalRules; digital?: DigitalRules };
+export type RoleRules = { leader: LeaderRules; operational: OperationalRules; digital?: DigitalRules; seller?: SellerRoleRules };
 
 // Valores do pedido de 2026-10-16 (vigência 10/2026) — ponto de partida do
 // formulário de vigência; só valem quando gravados numa vigência.
 export const DEFAULT_ROLE_RULES: RoleRules = {
   leader: {
     rateLowBps: 40, rateHighBps: 60, warrantyRateBps: 600, creditRateBps: 200,
-    sellerPercent: 110, perSellerCents: 50_000, storePercent: 120, storeCents: 150_000,
+    sellerPercent: 110, perSellerCents: 50_000, soloSellerCents: 100_000, storePercent: 120, storeCents: 150_000,
   },
   operational: { rateLowBps: 50, rateHighBps: 100, premiumPercent: 120, assistPremiumCents: 20_000, storePremiumCents: 40_000 },
   digital: { rateLowBps: 80, rateHighBps: 100, highPercent: 120 },
+  seller: { minPercent: 80 },
 };
 
 export const DEFAULT_COMMERCIAL_RULES: CommercialRules = {
@@ -228,14 +238,24 @@ export function parseRoleRules(input: unknown): { roles: RoleRules | null; error
   const raw = (typeof input === "object" ? input : {}) as Record<string, unknown>;
   const leader = parseFields<LeaderRules>(raw.leader, LEADER_FIELDS);
   if (!leader.value) return { roles: null, error: leader.error };
+  // Opcional (vigências antigas não têm): sem ele, o mesmo prêmio por vendedor.
+  const solo = ((raw.leader ?? {}) as Record<string, unknown>).soloSellerCents;
+  const soloSellerCents = solo === undefined || solo === null ? leader.value.perSellerCents : intIn(solo, 0, 100_000_000);
+  if (soloSellerCents === null) return { roles: null, error: "INFORME O VALOR: PRÊMIO DO LÍDER COM UM ÚNICO VENDEDOR." };
   const operational = parseFields<OperationalRules>(raw.operational, OPERATIONAL_FIELDS);
   if (!operational.value) return { roles: null, error: operational.error };
-  if (raw.digital === undefined || raw.digital === null) {
-    return { roles: { leader: leader.value, operational: operational.value }, error: "" };
+  const roles: RoleRules = { leader: { ...leader.value, soloSellerCents }, operational: operational.value };
+  if (raw.digital !== undefined && raw.digital !== null) {
+    const digital = parseFields<DigitalRules>(raw.digital, DIGITAL_FIELDS);
+    if (!digital.value) return { roles: null, error: digital.error };
+    roles.digital = digital.value;
   }
-  const digital = parseFields<DigitalRules>(raw.digital, DIGITAL_FIELDS);
-  if (!digital.value) return { roles: null, error: digital.error };
-  return { roles: { leader: leader.value, operational: operational.value, digital: digital.value }, error: "" };
+  if (raw.seller !== undefined && raw.seller !== null) {
+    const minPercent = intIn((raw.seller as Record<string, unknown>).minPercent, 0, 100);
+    if (minPercent === null) return { roles: null, error: "% MÍNIMA DA META DO VENDEDOR PRECISA ESTAR ENTRE 0% E 100%." };
+    roles.seller = { minPercent };
+  }
+  return { roles, error: "" };
 }
 
 /**
@@ -468,6 +488,8 @@ export type WarrantyBlock = {
 
 export type CommissionBreakdown = {
   allCriteriaMet: boolean;
+  // Vendedor abaixo da % mínima da meta: a % sobre vendas foi zerada.
+  belowMinPercent?: number;
   // Novato no mês: só a % do faturamento (premiação, garantia e crediário = 0).
   newcomer: boolean;
   revenueRateBps: number;
@@ -653,6 +675,26 @@ export function leaderQualifiedSellers(leader: { employeeId: string; companyId: 
     .map((member) => member.name);
 }
 
+/** Vendedores ativos da loja do líder (sem ele e sem outros líderes) — 1 = loja com um único vendedor. */
+export function leaderTeamSize(leader: { employeeId: string; companyId: string }, team: TeamMember[]): number {
+  return team.filter((member) =>
+    member.employeeId !== leader.employeeId && member.companyId === leader.companyId &&
+    member.role === "vendedor" && !member.inactive).length;
+}
+
+/** Vendedor de loja abaixo de minPercent da meta: zera só a % sobre vendas. */
+export function applySellerMinimum(commission: CommissionBreakdown, revenue: MetricBlock, minPercent: number): CommissionBreakdown {
+  if (minPercent <= 0 || revenue.target <= 0 || reached(revenue.realized, revenue.target, minPercent)) return commission;
+  const payslipCents = commission.payslipCents - commission.revenueCommissionCents;
+  return {
+    ...commission,
+    belowMinPercent: minPercent,
+    revenueRateBps: 0,
+    revenueCommissionCents: 0,
+    ...totals(payslipCents, commission.premiumCents),
+  };
+}
+
 /**
  * Comissão do LÍDER: troca a % do faturamento, a garantia, o crediário e a
  * premiação do vendedor pelas regras do líder (venda P.A/Unigames continua
@@ -665,6 +707,7 @@ export function leaderCommission(
   rules: LeaderRules,
   qualified: string[],
   store: StoreGoal | null,
+  soloSeller = false,
 ): CommissionBreakdown {
   const revenueRateBps = metrics.revenue.target > 0 && metrics.revenue.realized >= metrics.revenue.target
     ? rules.rateHighBps
@@ -675,7 +718,8 @@ export function leaderCommission(
   const revenueCommissionCents = applyBps(revenueBaseCents, revenueRateBps);
   const warrantyCommissionCents = applyBps(realized.warrantyCents, rules.warrantyRateBps);
   const creditCommissionCents = applyBps(realized.creditSalesCents, rules.creditRateBps);
-  const sellersPremiumCents = qualified.length * rules.perSellerCents;
+  const perSellerCents = soloSeller ? rules.soloSellerCents : rules.perSellerCents;
+  const sellersPremiumCents = qualified.length * perSellerCents;
   const storeMet = Boolean(store) &&
     reached(store!.revenueCents, store!.targetCents, rules.storePercent) &&
     reached(store!.assistRevenueCents, store!.assistTargetCents, rules.storePercent);
@@ -693,7 +737,7 @@ export function leaderCommission(
     ...totals(revenueCommissionCents + warrantyCommissionCents + creditCommissionCents + partnerCommissionCents, sellersPremiumCents + storePremiumCents),
     leader: {
       sellerPercent: rules.sellerPercent,
-      perSellerCents: rules.perSellerCents,
+      perSellerCents,
       qualified,
       sellersPremiumCents,
       storePercent: rules.storePercent,

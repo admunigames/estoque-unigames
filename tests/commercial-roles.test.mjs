@@ -594,3 +594,46 @@ test("aba METAS: só com comercial:metas; lojas (vendas + assistência) e vended
   const own = await (await get({ id: "u-beta", companyId: STORE_B, permissions: ["comercial:metas"] })).json();
   assert.deepEqual([own.allStores, own.stores.map((row) => row.name), own.sellers.map((row) => row.name)], [false, ["LOJA BETA"], ["VENDEDOR BETA"]]);
 });
+
+test("lib (11/2026): vendedor abaixo de 80% sem % sobre vendas (garantia/crediário seguem); líder com vendedor único ganha R$ 1.000", () => {
+  const clock = lib.monthClock("2026-11", "2026-11-11");
+  const goal = { targetRevenueCents: 10_000_000, targetItems: 0, targetSuperItems: 0, targetWarrantyCents: 0, targetRealme: 0 };
+  const realized = (revenueCents) => ({
+    revenueCents, items: 0, warrantyCents: 100_000, realme: 0, warrantyQty: 0, notebookQty: 0, salesQty: 0,
+    creditSalesCents: 1_000_000, partnerSalesCents: 0,
+  });
+  const NOV_RULES = { ...lib.DEFAULT_COMMERCIAL_RULES, warrantyRateBps: 600, creditRateBps: 200 };
+  const run = (revenueCents, minPercent) => {
+    const metrics = lib.computeSellerMetrics(goal, realized(revenueCents), clock, NOV_RULES);
+    return lib.applySellerMinimum(metrics.commission, metrics.revenue, minPercent);
+  };
+  const below = run(7_999_999, 80);
+  assert.deepEqual([below.revenueRateBps, below.revenueCommissionCents, below.belowMinPercent], [0, 0, 80]);
+  assert.equal(below.warrantyCommissionCents, 6_000);
+  assert.equal(below.creditCommissionCents, 20_000);
+  assert.equal(below.payslipCents, 26_000);
+  assert.equal(below.totalCents, below.payslipCents + below.premiumCents);
+  // Em 80% e sem mínimo (vigência antiga), a % de sempre.
+  assert.equal(run(8_000_000, 80).revenueCommissionCents, 28_000);
+  assert.equal(run(5_000_000, 0).revenueCommissionCents, 16_000);
+  // Regras: vigência antiga (sem os campos) → sem mínimo e prêmio igual ao por vendedor.
+  const old = lib.parseRoleRules({ leader: { ...lib.DEFAULT_ROLE_RULES.leader, soloSellerCents: undefined }, operational: lib.DEFAULT_ROLE_RULES.operational });
+  assert.deepEqual([old.roles.leader.soloSellerCents, old.roles.seller], [50_000, undefined]);
+  const novo = lib.parseRoleRules(lib.DEFAULT_ROLE_RULES);
+  assert.deepEqual([novo.roles.leader.soloSellerCents, novo.roles.seller.minPercent], [100_000, 80]);
+  // Líder: loja com 1 vendedor → R$ 1.000 por ele; com 2+, R$ 500 por vendedor.
+  const team = [
+    { employeeId: "l", name: "LIDER", companyId: "A", inactive: false, role: "lider", targetRevenueCents: 1, revenueCents: 1 },
+    { employeeId: "v1", name: "V1", companyId: "A", inactive: false, role: "vendedor", targetRevenueCents: 100, revenueCents: 120 },
+    { employeeId: "v9", name: "V9", companyId: "A", inactive: true, role: "vendedor", targetRevenueCents: 100, revenueCents: 120 },
+    { employeeId: "b1", name: "B1", companyId: "B", inactive: false, role: "vendedor", targetRevenueCents: 100, revenueCents: 120 },
+  ];
+  const me = { employeeId: "l", companyId: "A" };
+  assert.equal(lib.leaderTeamSize(me, team), 1);
+  const metrics = lib.computeSellerMetrics(goal, realized(10_000_000), clock);
+  const leader = novo.roles.leader;
+  const solo = lib.leaderCommission(metrics, realized(10_000_000), 0, leader, ["V1"], null, true);
+  assert.deepEqual([solo.leader.sellersPremiumCents, solo.leader.perSellerCents], [100_000, 100_000]);
+  const many = lib.leaderCommission(metrics, realized(10_000_000), 0, leader, ["V1", "V2"], null, false);
+  assert.deepEqual([many.leader.sellersPremiumCents, many.leader.perSellerCents], [100_000, 50_000]);
+});

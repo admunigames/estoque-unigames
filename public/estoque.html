@@ -10528,6 +10528,8 @@
       </div>
       <div class="purchase-field full com-rule-roles" id="comRuleRoles" hidden>
         <div class="purchase-form-grid">
+          <div class="purchase-field full"><strong>VENDEDOR DE LOJA</strong> — abaixo desta % da própria meta não ganha a % sobre vendas (garantia, crediário e venda P.A continuam); 0 = sem mínimo</div>
+          <div class="purchase-field"><label for="comRuleSellerMin">% MÍNIMA DA META PARA A % SOBRE VENDAS</label><input type="number" id="comRuleSellerMin" min="0" max="100" step="1" inputmode="numeric" data-com-role-field="seller.minPercent" data-kind="minpercent"></div>
           <div class="purchase-field full"><strong>LÍDER COMERCIAL</strong> — no lugar da premiação de vendedor</div>
           <div class="purchase-field"><label for="comRuleLeaderLow">% VENDAS ABAIXO DE 100% DA META</label><input type="number" id="comRuleLeaderLow" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="leader.rateLowBps" data-kind="bps"></div>
           <div class="purchase-field"><label for="comRuleLeaderHigh">% VENDAS A PARTIR DE 100%</label><input type="number" id="comRuleLeaderHigh" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="leader.rateHighBps" data-kind="bps"></div>
@@ -10535,6 +10537,7 @@
           <div class="purchase-field"><label for="comRuleLeaderCredit">% CREDIÁRIO DO LÍDER</label><input type="number" id="comRuleLeaderCredit" min="0" max="100" step="0.01" inputmode="decimal" data-com-role-field="leader.creditRateBps" data-kind="bps"></div>
           <div class="purchase-field"><label for="comRuleLeaderSellerPct">VENDEDOR COM ≥ (% DA META)</label><input type="number" id="comRuleLeaderSellerPct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="leader.sellerPercent" data-kind="percent"></div>
           <div class="purchase-field"><label for="comRuleLeaderPerSeller">PRÊMIO POR VENDEDOR (R$)</label><input type="number" id="comRuleLeaderPerSeller" min="0" step="0.01" inputmode="decimal" data-com-role-field="leader.perSellerCents" data-kind="cents"></div>
+          <div class="purchase-field"><label for="comRuleLeaderSolo">PRÊMIO COM UM ÚNICO VENDEDOR NA LOJA (R$)</label><input type="number" id="comRuleLeaderSolo" min="0" step="0.01" inputmode="decimal" data-com-role-field="leader.soloSellerCents" data-kind="cents"></div>
           <div class="purchase-field"><label for="comRuleLeaderStorePct">LOJA E ASSISTÊNCIA COM ≥ (% DA META)</label><input type="number" id="comRuleLeaderStorePct" min="1" max="1000" step="1" inputmode="numeric" data-com-role-field="leader.storePercent" data-kind="percent"></div>
           <div class="purchase-field"><label for="comRuleLeaderStore">PRÊMIO LOJA E ASSISTÊNCIA (R$)</label><input type="number" id="comRuleLeaderStore" min="0" step="0.01" inputmode="decimal" data-com-role-field="leader.storeCents" data-kind="cents"></div>
           <div class="purchase-field full"><strong>OPERACIONAL</strong> — por loja, valor cheio para cada um</div>
@@ -55508,7 +55511,7 @@ function renderHomeTasks(){
   // mesmo para todos (sem a permissão o servidor manda só os critérios, a
   // taxa e o novato, sem os valores em R$).
   function comCriteriaHtml(metrics, role){
-    const rate = comFormatBps(metrics.commission.revenueRateBps);
+    const rate = metrics.commission.belowMinPercent ? 'SEM % (ABAIXO DE '+metrics.commission.belowMinPercent+'%)' : comFormatBps(metrics.commission.revenueRateBps);
     // LÍDER: a taxa vem só da própria meta (os critérios não mudam a %).
     if(role === 'lider') return '<span class="com-criteria leader">LÍDER · '+escapeHtml(rate)+'</span>';
     // LOJA DIGITAL: a partir de 100% da meta a % é a da loja digital (os
@@ -55762,7 +55765,8 @@ function renderHomeTasks(){
     const item = (group, title, value, note) => ({group, title, value, note});
     const items = [
       item('vendedor', 'Critérios para '+high, 'Itens · Celular · Garantia', 'Itens 100% da meta, Celular 100% da meta e garantia em '+rules.warrantyAttachTarget+'% dos notebooks/PC vendidos'+comAttachExemptText(rules)),
-      item('vendedor', 'Comissão por vendas', high+' / '+low, high+' batendo os 3 critérios; '+low+' sem eles'+(rules.creditRateBps > 0 ? ' — sobre o faturado sem o crediário' : '')),
+      item('vendedor', 'Comissão por vendas', high+' / '+low, high+' batendo os 3 critérios; '+low+' sem eles'+(rules.creditRateBps > 0 ? ' — sobre o faturado sem o crediário' : '')+
+        (rules.roles && rules.roles.seller && rules.roles.seller.minPercent > 0 ? '; abaixo de '+rules.roles.seller.minPercent+'% da meta, sem % sobre vendas' : '')),
       item('vendedor', 'Premiação por faturamento', tiers.length ? tiers.map(tier => comMoneyShort(tier.cents)).join(' / ') : 'Sem premiação',
         tiers.length ? tiers.map(tier => tier.percent+'%').join(' / ')+' da meta de faturamento, só batendo os 3 critérios (não cumulativa)' : 'Nenhuma faixa nesta regra'),
       item('vendedor', 'Garantia estendida', comFormatBps(rules.warrantyRateBps), 'Sobre o valor vendido em garantia, sempre')
@@ -55782,7 +55786,9 @@ function renderHomeTasks(){
         item('lider', 'Garantia e crediário', comFormatBps(leader.warrantyRateBps)+' / '+comFormatBps(leader.creditRateBps),
           comFormatBps(leader.warrantyRateBps)+' sobre o valor vendido em garantia e '+comFormatBps(leader.creditRateBps)+' sobre o crediário feito'),
         item('lider', 'Premiação do líder', comMoneyShort(leader.perSellerCents)+' / '+comMoneyShort(leader.storeCents),
-          comMoneyShort(leader.perSellerCents)+' por vendedor ativo da loja com '+leader.sellerPercent+'%+ da meta; '+comMoneyShort(leader.storeCents)+' com loja E assistência em '+leader.storePercent+'%+'),
+          comMoneyShort(leader.perSellerCents)+' por vendedor ativo da loja com '+leader.sellerPercent+'%+ da meta'+
+          (leader.soloSellerCents !== undefined && leader.soloSellerCents !== leader.perSellerCents ? ' ('+comMoneyShort(leader.soloSellerCents)+' quando a loja tem um único vendedor)' : '')+
+          '; '+comMoneyShort(leader.storeCents)+' com loja E assistência em '+leader.storePercent+'%+'),
         ...(rules.partnerSaleRateBps > 0 ? [item('lider', 'Venda P.A / Unigames', comFormatBps(rules.partnerSaleRateBps), 'Sobre as vendas lançadas em VENDA P.A e VENDA UNIGAMES')] : []),
         item('operacional', 'Comissão da assistência', comFormatBps(op.rateHighBps)+' / '+comFormatBps(op.rateLowBps),
           'Sobre o feito da assistência da loja: '+comFormatBps(op.rateHighBps)+' a partir de 100% da meta, '+comFormatBps(op.rateLowBps)+' abaixo de 100% — natureza salarial (integra DSR, 13º, férias e FGTS)'),
@@ -55855,7 +55861,7 @@ function renderHomeTasks(){
 
     return '<article class="com-commission'+(seller.inactive ? ' inactive' : '')+'">'+comSellerHeadHtml(seller, false, true)+
       '<ul class="com-commission-rows">'+
-        row('Comissão por vendas ('+comFormatBps(commission.revenueRateBps)+(commission.revenueBaseCents < seller.realized.revenueCents ? ' · sem o crediário' : '')+')', commission.revenueCommissionCents)+
+        row('Comissão por vendas ('+(commission.belowMinPercent ? 'abaixo de '+commission.belowMinPercent+'% da meta' : comFormatBps(commission.revenueRateBps)+(commission.revenueBaseCents < seller.realized.revenueCents ? ' · sem o crediário' : ''))+')', commission.revenueCommissionCents)+
         row('Premiação por faturamento', commission.revenuePremiumCents, commission.newcomer)+
         row('Garantia estendida ('+comFormatBps(rules.warrantyRateBps)+')', commission.warrantyCommissionCents, commission.newcomer)+
         (showCredit ? row('Crediário ('+comFormatBps(rules.creditRateBps)+' de '+formatCentsBRL(seller.realized.creditSalesCents)+')', commission.creditCommissionCents, commission.newcomer) : '')+
@@ -55953,7 +55959,7 @@ function renderHomeTasks(){
       col('Meta', 'money', p => p.goal.targetRevenueCents),
       col('Faturado', 'money', p => p.realized.revenueCents),
       col('% da meta', 'pct', p => p.metrics.revenue.percent),
-      col('Taxa', 'text', p => comFormatBps(c(p).revenueRateBps)),
+      col('Taxa', 'text', p => c(p).belowMinPercent ? 'ABAIXO DE '+c(p).belowMinPercent+'%' : comFormatBps(c(p).revenueRateBps)),
       col('Comissão por vendas', 'money', p => c(p).revenueCommissionCents)
     ];
     const extras = [
@@ -57720,9 +57726,11 @@ function renderHomeTasks(){
     document.querySelectorAll('[data-com-role-field]').forEach(input => {
       const [group, key] = input.dataset.comRoleField.split('.');
       // Vigência gravada antes da loja digital: começa com os valores padrão.
-      const source = (roles && roles[group]) || (comRulesData && comRulesData.roleDefaults && comRulesData.roleDefaults[group]);
+      // Campo novo que a vigência não tem: o valor padrão (ex.: mínimo do vendedor, prêmio com vendedor único).
+      const defaults = comRulesData && comRulesData.roleDefaults && comRulesData.roleDefaults[group];
+      const source = roles && roles[group] && roles[group][key] !== undefined ? roles[group] : defaults;
       const value = source ? Number(source[key]) : 0;
-      input.value = input.dataset.kind === 'percent' ? value : value / 100;
+      input.value = input.dataset.kind === 'percent' || input.dataset.kind === 'minpercent' ? value : value / 100;
     });
     el('comRuleWarning').textContent = comRuleWarningText();
     el('comRuleStatus').textContent = '';
@@ -57753,7 +57761,7 @@ function renderHomeTasks(){
     });
     let roles = null;
     if(el('comRuleRolesOn').checked){
-      roles = {leader:{}, operational:{}, digital:{}};
+      roles = {leader:{}, operational:{}, digital:{}, seller:{}};
       document.querySelectorAll('[data-com-role-field]').forEach(input => {
         const [group, key] = input.dataset.comRoleField.split('.');
         const label = input.closest('.purchase-field').querySelector('label').textContent;
@@ -57761,7 +57769,8 @@ function renderHomeTasks(){
         if(input.value === '' || !Number.isFinite(value) || value < 0) throw new Error('INFORME '+label+'.');
         if(input.dataset.kind === 'bps' && value > 100) throw new Error(label+' PRECISA ESTAR ENTRE 0% E 100%.');
         if(input.dataset.kind === 'percent' && (!Number.isInteger(value) || value < 1 || value > 1000)) throw new Error(label+' PRECISA SER UM NÚMERO INTEIRO ENTRE 1 E 1000.');
-        roles[group][key] = input.dataset.kind === 'percent' ? value : Math.round(value * 100);
+        if(input.dataset.kind === 'minpercent' && (!Number.isInteger(value) || value > 100)) throw new Error(label+' PRECISA SER UM NÚMERO INTEIRO ENTRE 0 E 100.');
+        roles[group][key] = input.dataset.kind === 'percent' || input.dataset.kind === 'minpercent' ? value : Math.round(value * 100);
       });
     }
     return {

@@ -36,7 +36,7 @@ STORES.forEach((companyId, index) =>
 );
 const expenseBody = (extra) => ({
   idempotencyKey: crypto.randomUUID(), kind: "single", companyId: STORES[0], companyName: "RIOMAR01",
-  description: "CAMPANHA", financeItemId: "item-1", originalAmountCents: 100_000, dueDate: "2026-11-10",
+  description: "CAMPANHA", financeItemId: "item-1", originalAmountCents: 100_000, dueDate: "2099-11-10",
   rateioType: "rateio", rateioModel: "padrao", ...extra,
 });
 

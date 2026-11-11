@@ -5,6 +5,7 @@ import { nextMonth } from "../../lib/hr-accounting-report";
 import {
   DEFAULT_COMMERCIAL_RULES,
   ENTRY_KINDS,
+  applySellerMinimum,
   computeSellerMetrics,
   digitalCommission,
   isCommercialRole,
@@ -13,6 +14,7 @@ import {
   isEntryKind,
   leaderCommission,
   leaderQualifiedSellers,
+  leaderTeamSize,
   monthClock,
   operationalCommission,
   parseRoleRules,
@@ -508,6 +510,12 @@ export async function loadSellers(
         seller.metrics = { ...seller.metrics, commission: digitalCommission(seller.metrics, digitalRules) };
       }
     }
+    // VENDEDOR DE LOJA abaixo da % mínima da meta: sem % sobre vendas.
+    const minPercent = roleRules.seller?.minPercent ?? 0;
+    for (const seller of sellers) {
+      if (seller.role !== "vendedor" || isDigitalStore(seller.companyName)) continue;
+      seller.metrics = { ...seller.metrics, commission: applySellerMinimum(seller.metrics.commission, seller.metrics.revenue, minPercent) };
+    }
     for (const seller of sellers) {
       if (seller.role !== "lider") continue;
       seller.metrics = {
@@ -515,6 +523,7 @@ export async function loadSellers(
         commission: leaderCommission(
           seller.metrics, seller.realized, seller.metrics.commission.partnerCommissionCents, roleRules.leader,
           leaderQualifiedSellers(seller, team, roleRules.leader.sellerPercent), storeGoals.get(seller.companyId) ?? null,
+          leaderTeamSize(seller, team) === 1,
         ),
       };
     }
