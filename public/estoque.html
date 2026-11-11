@@ -457,7 +457,7 @@
   .home-search{position:relative; flex:0 0 auto; margin-left:auto;}
   .home-search.is-open{flex:1 1 auto; min-width:0;}
   .home-search-icon-btn{display:grid; border:0; padding:0; background:transparent; cursor:pointer;}
-  .home-search-icon-btn:hover .nav-icon,.home-search-icon-btn:focus-visible .nav-icon{background:rgba(79,134,189,.14); color:var(--accent);}
+  .home-search-icon-btn:hover .nav-icon,.home-search-icon-btn:focus-visible .nav-icon{background:rgba(79,134,189,.14); color:var(--ink);}
   .home-search-icon-btn[hidden],.home-search-box[hidden]{display:none;}
   .home-search-box{
     width:100%; box-sizing:border-box;
@@ -468,7 +468,7 @@
   .home-search-box input::placeholder{color:var(--ink-faint);}
   .home-search-box:focus-within{border-color:rgba(79,134,189,.45);}
   .home-search-close{display:grid; flex:none; border:0; padding:0; background:transparent; cursor:pointer;}
-  .home-search-close:hover .nav-icon{background:rgba(79,134,189,.14); color:var(--accent);}
+  .home-search-close:hover .nav-icon{background:rgba(79,134,189,.14); color:var(--ink);}
   .home-search-results{position:absolute; left:0; right:0; top:calc(100% + 8px); z-index:40; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:6px; box-shadow:0 18px 40px rgba(0,0,0,.28); max-height:320px; overflow-y:auto;}
   .home-search-result{display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:0; border-radius:9px; background:transparent; color:var(--ink); font:600 13.5px/1.3 var(--sans); text-align:left; cursor:pointer;}
   .home-search-result:hover,.home-search-result.active{background:rgba(79,134,189,.1);}
@@ -2510,7 +2510,7 @@
   }
   .supply-summary-card{padding:16px 17px;}
   .supply-summary-card span{display:block;color:var(--ink-soft);font:800 8px/1.35 var(--mono);letter-spacing:.45px;}
-  .supply-summary-card strong{display:block;margin-top:10px;color:var(--accent);font:900 25px/1 var(--sans);}
+  .supply-summary-card strong{display:block;margin-top:10px;color:var(--ink);font:900 25px/1 var(--sans);}
   .supply-summary-card.awaiting strong{color:#e1ad49;}
   .supply-summary-card.received strong{color:#66d49e;}
   .supply-register-panel,.supply-board{padding:20px;margin-bottom:16px;}
@@ -2699,7 +2699,10 @@
     border:1px solid var(--inset-border);border-radius:var(--radius-inset);background:var(--bg-card-2);padding:16px;
   }
   .supply-dashboard-card span{display:block;color:var(--ink-soft);font:800 8px/1.4 var(--mono);letter-spacing:.4px;}
-  .supply-dashboard-card strong{display:block;margin-top:8px;color:var(--accent);font:900 26px/1 var(--sans);}
+  /* Número de cartão sem destaque usa a cor do texto, não a COR PRINCIPAL do usuário (cor escura/clara some no fundo). */
+  .supply-dashboard-card strong{display:block;margin-top:8px;color:var(--ink);font:900 26px/1 var(--sans);}
+  #invSummary .supply-dashboard-card{min-width:0;container-type:inline-size;}
+  #invSummary .supply-dashboard-card strong{font-size:min(26px,14cqi);overflow-wrap:break-word;}
   .supply-dashboard-card.alert strong{color:#e1ad49;}
   .supply-dashboard-card.danger strong{color:#ef817b;}
   .supply-dashboard-card.warning strong{color:#e1ad49;}
@@ -2869,7 +2872,7 @@
     #pageInventario .page-header .dre-toolbar-actions button{min-height:38px; padding:8px 12px; font-size:11px;}
     #invSummary{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
     #invSummary .supply-dashboard-card{padding:10px 12px;}
-    #invSummary .supply-dashboard-card strong{margin-top:4px; font-size:18px;}
+    #invSummary .supply-dashboard-card strong{margin-top:4px; font-size:min(18px,14cqi);}
     #invSummary .supply-dashboard-card small{font-size:8px;}
     .inv-detail-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
     .inv-detail-actions button{min-height:38px; padding:8px; font-size:10px; white-space:normal;}
