@@ -4184,6 +4184,14 @@
       display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
     }
     body.aop-printing #aopPrintBody{display:block !important; width:100%; color:#111827;}
+    body.avop-printing > :not(.shell),
+    body.avop-printing .shell > :not(.content),
+    body.avop-printing .content > :not(#pageAvaliacaoOperacional),
+    body.avop-printing #pageAvaliacaoOperacional > :not(#avopPrintBody){display:none !important;}
+    body.avop-printing .shell,body.avop-printing .content,body.avop-printing #pageAvaliacaoOperacional{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.avop-printing #avopPrintBody{display:block !important; width:100%; color:#111827;}
     .os-print-section{margin-top:12px;}
     .os-print-section h2{margin:0 0 6px; padding:5px 8px; border:1px solid #111827; font:800 11px/1.3 var(--mono); break-after:avoid; page-break-after:avoid;}
     .os-print-table{width:100%; border-collapse:collapse; font-size:9px;}
@@ -4302,6 +4310,7 @@
     <a class="nav-item" id="navInsumos" data-page="insumos" data-permission="supplies" data-home-desc="Anote faltas, solicite na segunda e confirme o recebimento." title="Insumos" href="/insumos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3 20 7.6v8.8L12 20.7 4 16.4V7.6z"/><path d="M4 7.6 12 11.9l8-4.3"/><path d="M12 11.9v8.8"/></svg></span><span class="nav-label">Insumos</span></a>
     <a class="nav-item" id="navMissoes" data-page="missoes" data-permission="missions" data-home-desc="Atividades diárias e semanais que precisam ser realizadas pela loja." title="Missões" href="/missoes"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Missões</span></a>
     <a class="nav-item" id="navAuditoriaOperacional" data-page="auditoriaOperacional" data-permission="auditoria_operacional" data-home-desc="Checklist da auditora na loja (feito / não feito com observação) e resumo do que precisa melhorar." title="Auditoria Operacional" href="/auditoria-operacional"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="M8.5 11l1.5 1.5 3-3"/><line x1="8.5" y1="16" x2="15.5" y2="16"/></svg></span><span class="nav-label">Auditoria Operacional</span></a>
+    <a class="nav-item" id="navAvaliacaoOperacional" data-page="avaliacaoOperacional" data-permission="avaliacao_operacional" data-home-desc="Situações (erros/ocorrências) por unidade com peso de 1 a 5; a menor pontuação do mês é a LOJA PREMIUM." title="Avaliação Operacional" href="/avaliacao-operacional"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.5 6 .9-4.4 4.3 1 6L12 16.8 6.7 19.7l1-6L3.3 9.4l6-.9z"/></svg></span><span class="nav-label">Avaliação Operacional</span></a>
     <a class="nav-item" id="navTarefas" data-page="tarefas" data-permission="tasks" title="Tarefas" href="/tarefas"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.2"/><path d="m8.3 12.5 2.4 2.4L16 9.7"/></svg></span><span class="nav-label">Tarefas</span></a>
     <span class="nav-section-label">Gestão</span>
     <div class="nav-group">
@@ -8349,6 +8358,40 @@
 
 
     <!-- ================= AUDITORIA OPERACIONAL ================= -->
+    <section id="pageAvaliacaoOperacional" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">Avaliação Operacional</h2>
+        </div>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnAvopReload" type="button">ATUALIZAR</button>
+          <button class="btn-outline" id="btnAvopPdf" type="button">BAIXAR PDF</button>
+        </div>
+      </header>
+      <div class="dre-toolbar">
+        <div class="field"><label for="avopMonth">MÊS</label><input id="avopMonth" type="month"></div>
+      </div>
+      <form class="table-panel" id="avopForm" novalidate hidden style="padding:14px;margin-bottom:14px;">
+        <h3 class="supply-section-title" style="margin-top:0" id="avopFormTitle">NOVA SITUAÇÃO</h3>
+        <div class="purchase-form-grid assist-grid-3">
+          <div class="purchase-field"><label for="avopDate">DATA *</label><input id="avopDate" type="date"></div>
+          <div class="purchase-field"><label for="avopUnit">UNIDADE *</label><select id="avopUnit"></select></div>
+          <div class="purchase-field"><label for="avopWeight">PESO *</label><select id="avopWeight"></select></div>
+        </div>
+        <div class="purchase-field"><label for="avopDescription">O QUE HOUVE *</label><textarea id="avopDescription" maxlength="1000" rows="3"></textarea></div>
+        <button class="btn-accent" id="btnAvopSave" type="submit">ADICIONAR</button>
+        <button class="btn-outline" id="btnAvopCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
+      </form>
+      <h3 class="supply-section-title">PONTUAÇÃO DO MÊS <small id="avopRankingHint">(MENOR PONTUAÇÃO = LOJA PREMIUM)</small></h3>
+      <div class="table-panel responsive-table"><div class="table-scroll">
+        <table><thead id="avopRankingHead"></thead><tbody id="avopRankingBody"><tr><td class="responsive-empty">Carregando…</td></tr></tbody></table>
+      </div></div>
+      <h3 class="supply-section-title">SITUAÇÕES DO MÊS</h3>
+      <div id="avopItems"></div>
+      <div class="print-only" id="avopPrintBody"></div>
+    </section>
+
     <section id="pageAuditoriaOperacional" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -11072,6 +11115,15 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="auditoria_operacional:audit"> Fazer e finalizar auditoria (auditora; só login sem loja)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="auditoria_operacional:manage"> Editar os itens do checklist (adicionar, editar, desativar, reordenar)</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="auditoria_operacional:delete"> Excluir auditoria</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Avaliação Operacional</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="avaliacao_operacional:view"> Ver o ranking e as situações (login com loja só vê a própria unidade)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="avaliacao_operacional:create"> Cadastrar situação (login com loja só na própria unidade)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="avaliacao_operacional:edit"> Editar situação</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="avaliacao_operacional:delete"> Excluir situação</label>
               </div>
             </details>
             <details class="permission-module">
@@ -15805,6 +15857,7 @@
     tarefas:'/tarefas',
     missoes:'/missoes',
     auditoriaOperacional:'/auditoria-operacional',
+    avaliacaoOperacional:'/avaliacao-operacional',
     captacao:'/captacao',
     saidas:'/saidas',
     divergencias:'/divergencias',
@@ -15879,6 +15932,7 @@
     tarefas:'TAREFAS',
     missoes:'MISSÕES',
     auditoriaOperacional:'AUDITORIA OPERACIONAL',
+    avaliacaoOperacional:'AVALIAÇÃO OPERACIONAL',
     captacao:'CAPTAÇÃO',
     saidas:'SAÍDAS',
     divergencias:'DIVERGÊNCIAS',
@@ -15949,6 +16003,7 @@
     tarefas:'tasks',
     missoes:'missions',
     auditoriaOperacional:'auditoria_operacional',
+    avaliacaoOperacional:'avaliacao_operacional',
     captacao:'captures',
     saidas:'outputs',
     divergencias:'divergencias',
@@ -16774,6 +16829,7 @@
     if(name === 'assistenciaEstoque') loadAstPage();
     if(name === 'assistenciaRma') loadRmaPage();
     if(name === 'auditoriaOperacional') loadAopPage();
+    if(name === 'avaliacaoOperacional') loadAvopPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -16851,6 +16907,7 @@
     if(name === 'assistenciaEstoque') loadAstPage();
     if(name === 'assistenciaRma') loadRmaPage();
     if(name === 'auditoriaOperacional') loadAopPage();
+    if(name === 'avaliacaoOperacional') loadAvopPage();
     if(name === 'rhControleHoras') loadRhControleHoras();
     if(name === 'rhEscalas') loadRhEscalas();
     if(name === 'rhFolgas') loadRhFolgas();
@@ -30607,6 +30664,166 @@ function renderHomeTasks(){
       }else return;
       await loadRfisPage();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // ---------- AVALIAÇÃO OPERACIONAL ----------
+  // Situações por unidade com peso 1–5; menor total do mês = LOJA PREMIUM
+  // (empate: todas). Login com loja só vê/age na própria unidade (a rota
+  // app/api/avaliacao-operacional confere tudo; aqui só reflete).
+  const AVOP_API = '/api/avaliacao-operacional';
+  let avopData = null;
+  let avopEditId = '';
+
+  // Empate divide a posição (1º, 1º, 3º…).
+  const avopPosition = row => 1 + avopData.ranking.filter(other => other.total < row.total).length;
+  const avopMonthLabel = month => month ? month.slice(5, 7)+'/'+month.slice(0, 4) : '';
+  const avopWeightLabel = weight => {
+    const found = (avopData ? avopData.weights : []).find(item => item.weight === Number(weight));
+    return weight+' · '+(found ? found.label : '');
+  };
+
+  async function loadAvopPage(){
+    try{
+      const month = el('avopMonth').value;
+      avopData = await invApi('GET', null, month ? '?month='+encodeURIComponent(month) : '', AVOP_API);
+      el('avopMonth').value = avopData.month;
+      const unitSelect = el('avopUnit'), currentUnit = unitSelect.value;
+      unitSelect.innerHTML = (avopData.units.length > 1 ? '<option value="">SELECIONE A UNIDADE</option>' : '')+
+        avopData.units.map(unit => '<option value="'+escapeHtml(unit)+'">'+escapeHtml(unit)+'</option>').join('');
+      if(avopData.units.includes(currentUnit)) unitSelect.value = currentUnit;
+      const weightSelect = el('avopWeight'), currentWeight = weightSelect.value;
+      weightSelect.innerHTML = '<option value="">ESCOLHA O PESO</option>'+
+        avopData.weights.map(item => '<option value="'+item.weight+'">'+escapeHtml(item.weight+' · '+item.label)+'</option>').join('');
+      weightSelect.value = currentWeight;
+      el('avopDate').max = avopData.today;
+      if(!el('avopDate').value) el('avopDate').value = avopData.today;
+      if(avopEditId && !avopData.items.some(item => item.id === avopEditId)) avopResetForm();
+      el('avopForm').hidden = !(avopData.can.create || avopEditId);
+      renderAvop();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  function renderAvop(){
+    if(!avopData) return;
+    const all = avopData.allUnits;
+    const weights = avopData.weights;
+    el('avopRankingHint').hidden = !all;
+    el('avopRankingHead').innerHTML = '<tr>'+(all ? '<th>Posição</th>' : '')+'<th>Unidade</th><th>Pontos</th><th>Situações</th>'+
+      weights.map(item => '<th title="'+escapeHtml(item.label)+'">Peso '+item.weight+'</th>').join('')+'</tr>';
+    el('avopRankingBody').innerHTML = avopData.ranking.length ? avopData.ranking.map(row =>
+      '<tr>'+(all ? '<td data-label="Posição">'+avopPosition(row)+'º</td>' : '')+
+      '<td data-label="Unidade"><strong>'+escapeHtml(row.unit)+'</strong>'+(row.premium ? ' <span class="status-pill done">LOJA PREMIUM</span>' : '')+'</td>'+
+      '<td data-label="Pontos"><strong>'+row.total+'</strong></td><td data-label="Situações">'+row.count+'</td>'+
+      weights.map(item => '<td data-label="Peso '+item.weight+'">'+(row.byWeight[item.weight] || 0)+'</td>').join('')+'</tr>'
+    ).join('') : '<tr><td colspan="'+(8 + (all ? 1 : 0))+'" class="responsive-empty">Nenhuma unidade liberada para este login.</td></tr>';
+
+    const withItems = avopData.ranking.filter(row => row.count);
+    el('avopItems').innerHTML = withItems.length ? withItems.map(row => {
+      const items = avopData.items.filter(item => item.unit === row.unit);
+      return '<h4 class="supply-section-title">'+escapeHtml(row.unit)+' · '+row.total+' PONTO'+(row.total === 1 ? '' : 'S')+'</h4>'+
+        '<div class="table-panel responsive-table"><div class="table-scroll"><table><thead><tr><th>Data</th><th>O que houve</th><th>Peso / tipo de erro</th><th>Lançado por</th><th></th></tr></thead><tbody>'+
+        items.map(item => {
+          const id = escapeHtml(item.id);
+          const buttons = (avopData.can.edit ? '<button class="btn-outline btn-sm" type="button" data-avop-edit="'+id+'">EDITAR</button> ' : '')+
+            (avopData.can.delete ? '<button class="btn-outline btn-sm" type="button" data-avop-del="'+id+'">EXCLUIR</button>' : '');
+          return '<tr><td data-label="Data">'+escapeHtml(gdDateLabel(item.eventDate))+'</td>'+
+            '<td data-label="O que houve">'+escapeHtml(item.description)+'</td>'+
+            '<td data-label="Peso / tipo de erro"><strong>'+escapeHtml(avopWeightLabel(item.weight))+'</strong></td>'+
+            '<td data-label="Lançado por">'+escapeHtml(item.createdByName)+'<small class="os-update-meta">'+escapeHtml(formatDateTimeBR(item.createdAt) || '')+'</small>'+
+              (item.updatedByName ? '<small class="os-update-meta">EDITADO POR '+escapeHtml(item.updatedByName+' · '+(formatDateTimeBR(item.updatedAt) || ''))+'</small>' : '')+'</td>'+
+            '<td style="white-space:nowrap">'+buttons+'</td></tr>';
+        }).join('')+'</tbody></table></div></div>';
+    }).join('') : '<p class="responsive-empty">Nenhuma situação em '+escapeHtml(avopMonthLabel(avopData.month))+'.</p>';
+  }
+
+  function avopResetForm(){
+    avopEditId = '';
+    el('avopDescription').value = '';
+    el('avopWeight').value = '';
+    el('avopFormTitle').textContent = 'NOVA SITUAÇÃO';
+    el('btnAvopSave').textContent = 'ADICIONAR';
+    el('btnAvopCancel').hidden = true;
+    el('avopForm').hidden = !(avopData && avopData.can.create);
+  }
+
+  el('btnAvopReload') && el('btnAvopReload').addEventListener('click', loadAvopPage);
+  el('avopMonth') && el('avopMonth').addEventListener('change', loadAvopPage);
+  el('btnAvopCancel') && el('btnAvopCancel').addEventListener('click', avopResetForm);
+  el('avopForm') && el('avopForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnAvopSave');
+    button.disabled = true;
+    try{
+      const payload = {unit: el('avopUnit').value, eventDate: el('avopDate').value, weight: Number(el('avopWeight').value), description: el('avopDescription').value};
+      if(avopEditId) await invApi('PATCH', {id: avopEditId, ...payload}, '', AVOP_API);
+      else await invApi('POST', payload, '', AVOP_API);
+      showPurchaseToast(avopEditId ? 'SITUAÇÃO ATUALIZADA.' : 'SITUAÇÃO LANÇADA.');
+      avopResetForm();
+      // Lançou em outro mês: mostra o mês do lançamento.
+      if(payload.eventDate.slice(0, 7) !== el('avopMonth').value) el('avopMonth').value = payload.eventDate.slice(0, 7);
+      await loadAvopPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; }
+  });
+  el('avopItems') && el('avopItems').addEventListener('click', async event => {
+    const edit = event.target.closest('[data-avop-edit]'), del = event.target.closest('[data-avop-del]');
+    try{
+      if(edit){
+        const item = avopData.items.find(row => row.id === edit.dataset.avopEdit);
+        if(!item) return;
+        avopEditId = item.id;
+        el('avopDate').value = item.eventDate;
+        el('avopUnit').value = item.unit;
+        el('avopWeight').value = String(item.weight);
+        el('avopDescription').value = item.description;
+        el('avopFormTitle').textContent = 'EDITAR SITUAÇÃO';
+        el('btnAvopSave').textContent = 'SALVAR';
+        el('btnAvopCancel').hidden = false;
+        el('avopForm').hidden = false;
+        el('avopForm').scrollIntoView({behavior:'smooth', block:'start'});
+        el('avopDescription').focus();
+      }else if(del){
+        if(!await askConfirm('EXCLUIR ESTA SITUAÇÃO?', {okText:'EXCLUIR', danger:true})) return;
+        await invApi('DELETE', {id: del.dataset.avopDel}, '', AVOP_API);
+        if(avopEditId === del.dataset.avopDel) avopResetForm();
+        showPurchaseToast('SITUAÇÃO EXCLUÍDA.');
+        await loadAvopPage();
+      }
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // PDF do mês (A4, folha branca): ranking + situações por unidade.
+  let avopPrintTitleBefore = '';
+  el('btnAvopPdf') && el('btnAvopPdf').addEventListener('click', () => {
+    if(!avopData) return;
+    const all = avopData.allUnits, weights = avopData.weights;
+    const premium = avopData.ranking.filter(row => row.premium).map(row => row.unit);
+    const withItems = avopData.ranking.filter(row => row.count);
+    el('avopPrintBody').innerHTML =
+      '<header class="print-report-header"><div class="print-report-kicker">AVALIAÇÃO OPERACIONAL</div>'+
+      '<h1>MÊS '+escapeHtml(avopMonthLabel(avopData.month))+'</h1>'+
+      '<div class="print-report-meta">'+(premium.length ? 'LOJA PREMIUM: '+escapeHtml(premium.join(', '))+' · ' : '')+'GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+'</div></header>'+
+      '<section class="os-print-section"><h2>PONTUAÇÃO (MENOR = MELHOR)</h2><table class="os-print-table"><thead><tr>'+(all ? '<th>Posição</th>' : '')+'<th>Unidade</th><th>Pontos</th><th>Situações</th>'+
+        weights.map(item => '<th>Peso '+item.weight+'</th>').join('')+'</tr></thead><tbody>'+
+        avopData.ranking.map(row => '<tr>'+(all ? '<td>'+avopPosition(row)+'º</td>' : '')+'<td>'+escapeHtml(row.unit)+(row.premium ? ' · LOJA PREMIUM' : '')+'</td><td>'+row.total+'</td><td>'+row.count+'</td>'+
+          weights.map(item => '<td>'+(row.byWeight[item.weight] || 0)+'</td>').join('')+'</tr>').join('')+
+      '</tbody></table><p class="print-report-meta">'+weights.map(item => escapeHtml(item.weight+' = '+item.label)).join(' · ')+'</p></section>'+
+      withItems.map(row =>
+        '<section class="os-print-section"><h2>'+escapeHtml(row.unit)+' · '+row.total+' PONTOS</h2>'+
+        '<table class="os-print-table"><thead><tr><th style="width:12%">Data</th><th>O que houve</th><th style="width:22%">Peso / tipo</th><th style="width:16%">Lançado por</th></tr></thead><tbody>'+
+        avopData.items.filter(item => item.unit === row.unit).map(item =>
+          '<tr><td>'+escapeHtml(gdDateLabel(item.eventDate))+'</td><td>'+escapeHtml(item.description)+'</td><td>'+escapeHtml(avopWeightLabel(item.weight))+'</td><td>'+escapeHtml(item.createdByName)+'</td></tr>').join('')+
+        '</tbody></table></section>').join('');
+    avopPrintTitleBefore = document.title;
+    document.title = 'AVALIACAO-OPERACIONAL-'+avopData.month;
+    document.body.classList.add('pdf-export', 'avop-printing');
+    window.print();
+  });
+  window.addEventListener('afterprint', () => {
+    if(!avopPrintTitleBefore) return;
+    document.body.classList.remove('pdf-export', 'avop-printing');
+    document.title = avopPrintTitleBefore;
+    avopPrintTitleBefore = '';
   });
 
   // ---------- ASSISTÊNCIA · ESTOQUE ----------

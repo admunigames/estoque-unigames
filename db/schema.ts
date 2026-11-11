@@ -5220,3 +5220,24 @@ export const fiscalReintegrations = pgTable(
   },
   (table) => [index("fiscal_reintegrations_status_idx").on(table.status, table.requestedDate)],
 );
+
+// Avaliação Operacional (0134): situações por unidade com peso 1–5; total do
+// mês = soma dos pesos, menor total = LOJA PREMIUM. Unidades fixas na rota.
+export const opsEvaluations = pgTable(
+  "ops_evaluations",
+  {
+    id: text("id").primaryKey(),
+    unit: text("unit").notNull(),
+    eventDate: text("event_date").notNull(),
+    description: text("description").notNull(),
+    weight: integer("weight").notNull(),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedBy: text("updated_by").notNull().default(""),
+    updatedByName: text("updated_by_name").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(""),
+    deleted: integer("deleted").notNull().default(0),
+  },
+  (table) => [index("ops_evaluations_month_idx").on(table.deleted, table.eventDate)],
+);

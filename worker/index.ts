@@ -94,6 +94,7 @@ type Permission =
   | "relatorios_logistica:view" | "relatorios_logistica:send"
   | "reintegracao_fiscal:view" | "reintegracao_fiscal:create" | "reintegracao_fiscal:emit" | "reintegracao_fiscal:delete"
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
+  | "avaliacao_operacional:view" | "avaliacao_operacional:create" | "avaliacao_operacional:edit" | "avaliacao_operacional:delete"
   | "treinamento:view" | "treinamento:team"
   | "audit:view"
   | "rh_funcionarios:view" | "rh_funcionarios:create" | "rh_funcionarios:edit" | "rh_funcionarios:delete"
@@ -276,6 +277,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "reintegracao_fiscal:view", "reintegracao_fiscal:create", "reintegracao_fiscal:emit", "reintegracao_fiscal:delete",
   // Auditoria Operacional (checklist de loja) — loja só lê as finalizadas da própria loja (a rota confere).
   "auditoria_operacional:view", "auditoria_operacional:audit", "auditoria_operacional:manage", "auditoria_operacional:delete",
+  // Avaliação Operacional — loja só vê/age na própria unidade (a rota confere).
+  "avaliacao_operacional:view", "avaliacao_operacional:create", "avaliacao_operacional:edit", "avaliacao_operacional:delete",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
   // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
   "treinamento:view", "treinamento:team",
@@ -395,6 +398,7 @@ const APP_ROUTE_PATHS = new Set([
   "/relatorios-logistica",
   "/reintegracao-fiscal",
   "/auditoria-operacional",
+  "/avaliacao-operacional",
   "/entradas",
   "/insumos",
   "/aparelhos-emprestimo",
@@ -1436,6 +1440,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   auditoriaOperacional: [
     "auditoria_operacional:view", "auditoria_operacional:audit", "auditoria_operacional:manage", "auditoria_operacional:delete",
   ],
+  avaliacaoOperacional: ["avaliacao_operacional:view", "avaliacao_operacional:create", "avaliacao_operacional:edit", "avaliacao_operacional:delete"],
   precosAssistencia: ["precos_assistencia:view", "precos_assistencia:create", "precos_assistencia:edit", "precos_assistencia:delete"],
   ordensServico: [
     "ordens_servico:view", "ordens_servico:create", "ordens_servico:edit", "ordens_servico:delete", "ordens_servico:store_test",
@@ -1538,6 +1543,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path.startsWith("/api/checklists"), "missions"],
     // Auditoria Operacional — permissão própria (auditoria_operacional:*).
     [path === "/auditoria-operacional" || path.startsWith("/api/auditoria-operacional"), "auditoriaOperacional"],
+    // Avaliação Operacional — permissão própria (avaliacao_operacional:*).
+    [path === "/avaliacao-operacional" || path.startsWith("/api/avaliacao-operacional"), "avaliacaoOperacional"],
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],
     [path === "/divergencias" || path.startsWith("/api/divergences"), "divergences"],
