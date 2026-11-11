@@ -15746,8 +15746,10 @@
     return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
+  // Data/hora de atualização só aparece na Base de Dados, não no painel do Estoque Fiscal.
   function setCompanyMeta(text){
-    ['companyMeta','companyMetaView'].forEach(id => { if(el(id)) el(id).textContent = text; });
+    setDataCompanyMeta(text);
+    setDashboardCompanyMeta(/^Atualizado em /.test(text) ? '' : text);
   }
 
   function setDashboardCompanyMeta(text){
@@ -19339,7 +19341,6 @@
 
     let storesWithData = 0;
     let failedStores = 0;
-    let latestUpdatedAt = null;
     for(const result of results){
       if(result.status !== 'fulfilled'){
         failedStores++;
@@ -19351,12 +19352,6 @@
       addFiscalQuantities(entradaMap, data.entrada);
       addFiscalQuantities(saidaMap, data.saida);
       storesWithData++;
-      if(data.updatedAt){
-        const updatedAt = new Date(data.updatedAt);
-        if(!Number.isNaN(updatedAt.getTime()) && (!latestUpdatedAt || updatedAt > latestUpdatedAt)){
-          latestUpdatedAt = updatedAt;
-        }
-      }
     }
 
     merged = (entradaMap.size > 0 || saidaMap.size > 0 || catalogMap.size > 0) ? mergeMaps() : [];
@@ -19364,7 +19359,6 @@
       fiscalOption.label,
       storesWithData + ' de ' + groupCompanies.length + ' lojas com dados'
     ];
-    if(latestUpdatedAt) parts.push('atualizado em ' + formatDateTimeBR(latestUpdatedAt));
     if(failedStores > 0) parts.push(failedStores + ' loja(s) indisponível(is)');
     setDashboardCompanyMeta(parts.join(' · '));
     renderAll();
