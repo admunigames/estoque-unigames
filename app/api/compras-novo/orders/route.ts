@@ -200,6 +200,31 @@ export async function GET(request: Request) {
       }
     }
 
+    // Anexos de cada pedido (arquivo do pedido / nota fiscal) e NF do
+    // Financeiro vinculada — mostrados no cartão e no painel da aba PEDIDOS.
+    const attachmentsByOrderId = new Map<string, Array<{ id: string; attachmentType: string; fileName: string }>>();
+    const linkedInvoiceOrderIds = new Set<string>();
+    if (orderIds.length) {
+      const placeholders = orderIds.map((_, index) => `?${index + 1}`).join(",");
+      const attachmentsResult = await database
+        .prepare(
+          `SELECT id, order_id AS orderId, attachment_type AS attachmentType, file_name AS fileName
+           FROM purchase_order_attachments WHERE order_id IN (${placeholders}) ORDER BY created_at ASC`,
+        )
+        .bind(...orderIds)
+        .all<{ id: string; orderId: string; attachmentType: string; fileName: string }>();
+      for (const row of attachmentsResult.results ?? []) {
+        const list = attachmentsByOrderId.get(row.orderId) || [];
+        list.push({ id: row.id, attachmentType: row.attachmentType, fileName: row.fileName });
+        attachmentsByOrderId.set(row.orderId, list);
+      }
+      const invoicesResult = await database
+        .prepare(`SELECT DISTINCT purchase_order_id AS orderId FROM supplier_invoices WHERE purchase_order_id IN (${placeholders})`)
+        .bind(...orderIds)
+        .all<{ orderId: string }>();
+      for (const row of invoicesResult.results ?? []) linkedInvoiceOrderIds.add(row.orderId);
+    }
+
     const enriched = orders.map((order) => ({
       ...order,
       supplierName: order.origin === "native" ? supplierNameById.get(order.supplierId) || "" : order.supplierNameRaw,
@@ -207,6 +232,8 @@ export async function GET(request: Request) {
       productsText: (productsByOrderId.get(order.id) || []).join(" · "),
       orderedQty: unitsByOrderId.get(order.id)?.orderedQty || 0,
       receivedQty: unitsByOrderId.get(order.id)?.receivedQty || 0,
+      attachments: attachmentsByOrderId.get(order.id) || [],
+      hasLinkedInvoice: linkedInvoiceOrderIds.has(order.id),
       // Nativo: a loja que fatura (escolhida no fechamento) manda; pedidos
       // antigos sem ela continuam mostrando as "lojas destino" dos itens.
       targetStoreNames:

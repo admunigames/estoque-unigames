@@ -1195,6 +1195,18 @@
     padding-top:13px; border-top:1px solid rgba(39,69,97,.72);
   }
   .purchase-card-actions{display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;}
+  /* Anexos no rodapé do cartão (aba PEDIDOS): arquivo do pedido e NF separados. */
+  .compras-card-files{margin-right:auto; min-width:0; display:flex; flex-direction:column; gap:4px; font:700 9px/1.4 var(--mono);}
+  .compras-card-files span{color:var(--ink-faint); letter-spacing:.4px;}
+  .compras-card-files a{color:var(--ink); text-decoration:underline; text-underline-offset:2px; overflow-wrap:anywhere;}
+  .compras-card-files em{font-style:normal; color:var(--ink-faint);}
+  /* Painel da aba PEDIDOS: 5 contadores clicáveis. */
+  #comprasOrdersDash{grid-template-columns:repeat(5,minmax(0,1fr)); margin:12px 0 4px;}
+  #comprasOrdersDash .purchase-metric{padding:12px 14px;}
+  #comprasOrdersDash .purchase-metric.selected{outline:2px solid var(--ink-soft); outline-offset:-2px;}
+  #comprasOrdersDash .purchase-metric.ok strong{color:var(--pos, #66d49e);}
+  #comprasOrdersDash .purchase-metric.warn strong{color:#e1ad49;}
+  @media (max-width:760px){#comprasOrdersDash{grid-template-columns:repeat(2,minmax(0,1fr));}}
   .purchase-card-actions button,.purchase-card-actions a{
     min-height:36px; padding:8px 11px; font-size:9px; text-decoration:none;
   }
@@ -6690,6 +6702,14 @@
       </div>
 
       <section id="comprasSectionPedidos" hidden>
+        <!-- Painel da aba PEDIDOS (12/11/2026): clique filtra a lista abaixo. -->
+        <section class="purchase-metrics" id="comprasOrdersDash" aria-label="Situação dos pedidos">
+          <div class="purchase-metric alert clickable" role="button" tabindex="0" data-compras-dash="atrasados"><small>EM ATRASO</small><strong data-compras-dash-count="atrasados">—</strong></div>
+          <div class="purchase-metric ok clickable" role="button" tabindex="0" data-compras-dash="prazo"><small>DENTRO DO PRAZO</small><strong data-compras-dash-count="prazo">—</strong></div>
+          <div class="purchase-metric warn clickable" role="button" tabindex="0" data-compras-dash="semNf"><small>FALTA VINCULAR NF</small><strong data-compras-dash-count="semNf">—</strong></div>
+          <div class="purchase-metric warn clickable" role="button" tabindex="0" data-compras-dash="incompletos"><small>CHEGARAM INCOMPLETOS</small><strong data-compras-dash-count="incompletos">—</strong></div>
+          <div class="purchase-metric clickable" role="button" tabindex="0" data-compras-dash="cancelados"><small>CANCELADOS</small><strong data-compras-dash-count="cancelados">—</strong></div>
+        </section>
         <div class="page-header-actions" style="justify-content:space-between;margin:12px 0;flex-wrap:wrap;gap:10px;">
           <button class="btn-accent" id="btnNewComprasDraft" type="button">+ NOVO PEDIDO DE COMPRA</button>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
@@ -43068,6 +43088,17 @@ function renderHomeTasks(){
     ].join(' '));
     return words.every(word => haystack.includes(word));
   }
+  // Anexos do pedido no rodapé do cartão: PEDIDO e NF separados (abrem em nova aba).
+  function comprasOrderFilesHtml(order){
+    const files = Array.isArray(order.attachments) ? order.attachments : [];
+    const group = (type, label) => {
+      const list = files.filter(file => file.attachmentType === type);
+      return '<div><span>'+label+': </span>'+(list.length
+        ? list.map(file => '<a href="/api/compras-novo/orders/'+encodeURIComponent(order.id)+'/attachments/file?attachmentId='+encodeURIComponent(file.id)+'" target="_blank" rel="noopener">'+escapeHtml(file.fileName)+'</a>').join(' · ')
+        : '<em>—</em>')+'</div>';
+    };
+    return '<div class="compras-card-files">'+group('pedido', 'PEDIDO')+group('nota_fiscal', 'NF')+'</div>';
+  }
   function renderComprasOrdersTable(){
     const grid = el('comprasOrdersCardGrid');
     if(!grid) return;
@@ -43103,7 +43134,7 @@ function renderHomeTasks(){
           '<div class="purchase-card-detail"><span>STATUS DA DIVISÃO</span>'+(divisionBadge || '—')+'</div>'+
         '</div>'+
         (order.outsideFilter ? '<p class="page-desc" style="margin:0;font-size:12px;">PEDIDO AGORA EM '+comprasOrderStatusLabel(order)+'</p>' : '')+
-        '<footer class="purchase-card-footer"><div class="purchase-card-actions">'+
+        '<footer class="purchase-card-footer">'+comprasOrderFilesHtml(order)+'<div class="purchase-card-actions">'+
           '<button class="btn-outline" type="button" data-compras-order-open="'+escapeHtml(order.id)+'">'+(order.id === comprasOrderDetailOpenId ? 'FECHAR' : 'ABRIR')+'</button>'+
         '</div></footer>'+
       '</article>';
@@ -43131,6 +43162,18 @@ function renderHomeTasks(){
   // nome, mesma resolução Unigames/P.A Loja do histórico), ver
   // comprasOpenPedidosFiltered abaixo. '' = sem filtro por produto.
   let comprasOrdersProdutoFilter = '';
+  // FALTA VINCULAR NF só vale pra pedido nativo criado a partir de
+  // COMPRAS_NF_LINK_SINCE (UTC) — pedido do usuário, os antigos ficam fora.
+  const COMPRAS_NF_LINK_SINCE = '2026-11-12 14:00:00';
+  const comprasInTransit = o => ['aguardando_chegada','pendente','em_andamento'].includes(o.status);
+  const COMPRAS_DASH = {
+    atrasados: {label:'EM ATRASO', test: o => !Number(o.canceled) && comprasOrderIsLate(o)},
+    prazo: {label:'DENTRO DO PRAZO', test: o => !Number(o.canceled) && comprasInTransit(o) && !comprasOrderIsLate(o)},
+    semNf: {label:'FALTA VINCULAR NF', test: o => !Number(o.canceled) && o.origin === 'native' && o.status !== 'aberto' && !o.hasLinkedInvoice && String(o.createdAt || '') >= COMPRAS_NF_LINK_SINCE},
+    incompletos: {label:'CHEGARAM INCOMPLETOS', test: o => !Number(o.canceled) && o.status !== 'aberto' && Number(o.receivedQty || 0) > 0 && Number(o.receivedQty || 0) < Number(o.orderedQty || 0)},
+    cancelados: {label:'CANCELADOS', test: o => Boolean(Number(o.canceled))},
+  };
+  let comprasOrdersDashFilter = '';
   async function loadComprasOrdersPage(opts){
     if(!canAccess('purchases_draft')) return;
     const status = el('comprasOrdersStatusFilter').value;
@@ -43148,6 +43191,7 @@ function renderHomeTasks(){
       const data = await comprasNovoApiRequest('/orders'+(qs ? '?'+qs : ''));
       let fresh = Array.isArray(data.orders) ? data.orders : [];
       if(comprasOrdersLateOnlyFilter) fresh = fresh.filter(comprasOrderIsLate);
+      if(comprasOrdersDashFilter) fresh = fresh.filter(COMPRAS_DASH[comprasOrdersDashFilter].test);
       // Status da divisão: filtro só no cliente (a lista já traz divisionStatus).
       const divisionFilter = el('comprasOrdersDivisionFilter') ? el('comprasOrdersDivisionFilter').value : '';
       if(divisionFilter) fresh = fresh.filter(o => (o.divisionStatus || '') === (divisionFilter === '__sem' ? '' : divisionFilter));
@@ -43165,8 +43209,11 @@ function renderHomeTasks(){
       }
       comprasOrders = fresh;
       renderComprasOrdersTable();
-      el('comprasOrdersLateOnlyNotice').hidden = !(comprasOrdersLateOnlyFilter || comprasOrdersProdutoFilter);
-      el('comprasOrdersLateOnlyNoticeText').textContent = comprasOrdersProdutoFilter
+      loadComprasOrdersDash();
+      el('comprasOrdersLateOnlyNotice').hidden = !(comprasOrdersLateOnlyFilter || comprasOrdersProdutoFilter || comprasOrdersDashFilter);
+      el('comprasOrdersLateOnlyNoticeText').textContent = comprasOrdersDashFilter
+        ? 'MOSTRANDO SÓ: '+COMPRAS_DASH[comprasOrdersDashFilter].label
+        : comprasOrdersProdutoFilter
         ? 'MOSTRANDO SÓ PEDIDOS COM O PRODUTO "'+comprasOrdersProdutoFilter.toUpperCase()+'"'+(comprasOrdersLateOnlyFilter ? ' (ATRASADOS)' : '')
         : 'MOSTRANDO SÓ ATRASADOS';
       if(comprasCurrentOrderId && !comprasOrders.some(o => o.id === comprasCurrentOrderId)){
@@ -43183,13 +43230,48 @@ function renderHomeTasks(){
     comprasOrders = []; // filtro novo: o pedido aberto só continua se entrar nele
     comprasOrdersLateOnlyFilter = false;
     comprasOrdersProdutoFilter = '';
+    comprasOrdersDashFilter = '';
     loadComprasOrdersPage();
   }
+
+  // Painel da aba PEDIDOS: contagens sobre TODOS os pedidos (cancelados
+  // inclusive); clicar num contador filtra a lista (aviso + LIMPAR FILTRO).
+  async function loadComprasOrdersDash(){
+    try{
+      const data = await comprasNovoApiRequest('/orders?includeCanceled=1');
+      const orders = Array.isArray(data.orders) ? data.orders : [];
+      for(const [key, def] of Object.entries(COMPRAS_DASH)){
+        const node = document.querySelector('[data-compras-dash-count="'+key+'"]');
+        if(node) node.textContent = orders.filter(def.test).length;
+      }
+    }catch{ /* painel é só resumo: a lista continua funcionando */ }
+    document.querySelectorAll('[data-compras-dash]').forEach(card => card.classList.toggle('selected', card.dataset.comprasDash === comprasOrdersDashFilter));
+  }
+  function comprasOpenDash(key){
+    comprasOrders = [];
+    comprasOrdersLateOnlyFilter = false;
+    comprasOrdersProdutoFilter = '';
+    comprasOrdersDashFilter = comprasOrdersDashFilter === key ? '' : key;
+    el('comprasOrdersStatusFilter').value = '';
+    el('comprasOrdersOriginFilter').value = '';
+    if(el('comprasOrdersDivisionFilter')) el('comprasOrdersDivisionFilter').value = '';
+    if(el('comprasOrdersSearch')) el('comprasOrdersSearch').value = '';
+    if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').checked = comprasOrdersDashFilter === 'cancelados';
+    loadComprasOrdersPage();
+  }
+  document.querySelectorAll('[data-compras-dash]').forEach(card => {
+    card.addEventListener('click', () => comprasOpenDash(card.dataset.comprasDash));
+    card.addEventListener('keydown', event => { if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); comprasOpenDash(card.dataset.comprasDash); } });
+  });
   if(el('comprasOrdersStatusFilter')) el('comprasOrdersStatusFilter').addEventListener('change', handleComprasOrdersFilterChange);
   if(el('comprasOrdersOriginFilter')) el('comprasOrdersOriginFilter').addEventListener('change', handleComprasOrdersFilterChange);
   if(el('comprasOrdersDivisionFilter')) el('comprasOrdersDivisionFilter').addEventListener('change', handleComprasOrdersFilterChange);
   if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').addEventListener('change', handleComprasOrdersFilterChange);
-  if(el('btnClearComprasLateFilter')) el('btnClearComprasLateFilter').addEventListener('click', handleComprasOrdersFilterChange);
+  if(el('btnClearComprasLateFilter')) el('btnClearComprasLateFilter').addEventListener('click', () => {
+    // CANCELADOS do painel liga "Mostrar cancelados"; limpar volta ao padrão.
+    if(comprasOrdersDashFilter === 'cancelados' && el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').checked = false;
+    handleComprasOrdersFilterChange();
+  });
 
   // Cards clicáveis da tela inicial (Por Produto) — cada um abre a aba
   // Pedidos já filtrada pro status correspondente.
@@ -43206,6 +43288,7 @@ function renderHomeTasks(){
     el('comprasOrdersOriginFilter').value = 'native';
     comprasOrdersLateOnlyFilter = Boolean(lateOnly);
     comprasOrdersProdutoFilter = produto || '';
+    comprasOrdersDashFilter = '';
     setComprasSectionTab('pedidos');
   }
   if(el('comprasStatAbertosCard')) el('comprasStatAbertosCard').addEventListener('click', () => comprasOpenPedidosFiltered('aberto', false));
@@ -44521,6 +44604,7 @@ function renderHomeTasks(){
       el('comprasOrdersOriginFilter').value = 'native';
       comprasOrdersLateOnlyFilter = false;
       comprasOrdersProdutoFilter = '';
+      comprasOrdersDashFilter = '';
       // Seta o id ANTES de recarregar a lista — a própria criação do clone
       // dispara uma invalidação ao vivo (Fase E) que pode chegar por
       // WebSocket enquanto este await ainda está em andamento; se ela
