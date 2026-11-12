@@ -17875,6 +17875,7 @@
     const map = new Map();
     let idxCodigo = -1;
     let idxNome = -1;
+    let idxPreco = -1;
     let encontrouCabecalho = false;
 
     for(const row of rows){
@@ -17884,6 +17885,8 @@
       if(codigoHeader !== -1 && nomeHeader !== -1){
         idxCodigo = codigoHeader;
         idxNome = nomeHeader;
+        // "Preço" (venda) do Relatório de Produto — vai pro texto da divisão no Compras.
+        idxPreco = normalized.findIndex(h => ['preco','preco de venda','preco venda'].includes(h));
         encontrouCabecalho = true;
         continue;
       }
@@ -17895,7 +17898,8 @@
       const nome = String(row[idxNome] || '').trim();
       if(!codigo || !nome || isFooterRow(codigo)) continue;
 
-      map.set(codigo, { nome });
+      const precoTexto = idxPreco !== -1 ? String(row[idxPreco] || '').trim() : '';
+      map.set(codigo, precoTexto ? { nome, precoCents: Math.round(parseNumeroBR(precoTexto) * 100) } : { nome });
     }
 
     if(!encontrouCabecalho){
@@ -19651,7 +19655,7 @@
   }
 
   function mapCatalogItemsFromParsedMap(parsedMap){
-    return Array.from(parsedMap.entries()).map(([code, value]) => ({ code, name: value.nome || '' }));
+    return Array.from(parsedMap.entries()).map(([code, value]) => ({ code, name: value.nome || '', salePriceCents: Number.isInteger(value.precoCents) ? value.precoCents : null }));
   }
 
   async function reconcileProductCatalog(source, parsedMap){
@@ -43913,8 +43917,10 @@ function renderHomeTasks(){
   //   *ENTRADA* FORNECEDOR <VENCEDOR>, ORIGEM <LOJA QUE FATURA>
   //
   //   30 - PRODUTO 1
-  //   CUSTO: R$ 12,50 - VENDA: R$ -
-  // CUSTO = preço unitário do vencedor (sem preço: R$ -); VENDA em branco.
+  //   CUSTO: R$ 12,50 - VENDA: R$ 29,90
+  // CUSTO = preço unitário do vencedor (sem preço: R$ -); VENDA = "Preço" da
+  // Unigames no Cadastro de Produtos (12/11/2026; P.A é digitado à mão), casado
+  // pelo código Unigames, depois pelo nome; sem preço: R$ -.
   // <LOJA(S)>: order.companyName se preenchido, senão a união dos nomes de
   // loja distintos encontrados nos targetStores dos itens.
   function comprasDivisionSuggestion(order){
@@ -43932,9 +43938,16 @@ function renderHomeTasks(){
     const header = '*ENTRADA* FORNECEDOR '+supplierName+', ORIGEM '+(lojas || 'NÃO DEFINIDA');
     const money = cents => Number(cents || 0) > 0 ? formatCentsBRL(cents).replace(/\s/g, ' ') : 'R$ -';
     const linhas = comprasCurrentOrderItems
-      .map(item => Number(item.quantity || 0)+' - '+(item.productName || item.productCode)+'\nCUSTO: '+money(item.unitPriceCents)+' - VENDA: R$ -')
+      .map(item => Number(item.quantity || 0)+' - '+(item.productName || item.productCode)+'\nCUSTO: '+money(item.unitPriceCents)+' - VENDA: '+money(comprasSalePriceCents(item)))
       .join('\n\n');
     return header+'\n\n'+linhas;
+  }
+  function comprasSalePriceCents(item){
+    const code = String(item.productCode || '').trim();
+    const name = normalizeHeader(String(item.productName || ''));
+    const found = (code && productCatalogItems.find(p => p.codeUnigames === code))
+      || (name && productCatalogItems.find(p => p.codeUnigames && normalizeHeader(p.name || '') === name));
+    return found ? found.salePriceCents : null;
   }
   function comprasFillDivisionSection(order){
     const panel = el('comprasOrderDivisionPanel');
@@ -44007,6 +44020,8 @@ function renderHomeTasks(){
       // (o clone nasce com o mesmo fornecedor — um pedido 'aberto' sem
       // vencedor ainda não tem o que copiar como "já definido").
       el('btnCloneComprasOrder').hidden = order.origin !== 'native' || Boolean(order.canceled) || !order.supplierId;
+      // VENDA do texto sugerido vem do catálogo geral: garante que ele já baixou.
+      if(!order.division) await ensureProductCatalog();
       comprasFillDivisionSection(order);
       if(!comprasCurrentOrderLinkedInvoice) await loadComprasOrderInvoiceCandidates();
       renderComprasOrderInvoiceLink();

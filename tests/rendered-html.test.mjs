@@ -3965,7 +3965,7 @@ test("Cadastro de Produtos: catálogo geral único, com reconciliação e integr
   // a tela dedicada sempre pode cadastrar produto novo (createIfMissing=true).
   assert.match(catalogShared, /export function normalizeProductKey\(name: string\): string \{/);
   assert.match(catalogShared, /\.replace\(\/\\b\(da\|de\|do\|das\|dos\)\\b\/g, " "\)/);
-  assert.match(uploadRoute, /upsertProductCatalogEntries\(database, source, items, actor, true\)/);
+  assert.match(uploadRoute, /upsertProductCatalogEntries\(database, source, items, actor, true, salePrices\)/);
   assert.match(reconcileRoute, /upsertProductCatalogEntries\(database, source, items, actor, false\)/);
   assert.match(catalogRoute, /canManageProductCatalog/);
 

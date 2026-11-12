@@ -35,8 +35,18 @@ export async function POST(request: Request) {
       return { code: String(record.code ?? ""), name: String(record.name ?? "") };
     });
 
+    const salePrices = new Map<string, number | null>();
+    if (source === "unigames") {
+      for (const item of rawItems.slice(0, MAX_ITEMS)) {
+        const record = item as JsonMap;
+        const code = String(record.code ?? "").trim().slice(0, 80);
+        const cents = Number(record.salePriceCents);
+        if (code) salePrices.set(code, Number.isInteger(cents) && cents >= 0 && cents < 1e10 ? cents : null);
+      }
+    }
+
     const database = await getD1();
-    const result = await upsertProductCatalogEntries(database, source, items, actor, true);
+    const result = await upsertProductCatalogEntries(database, source, items, actor, true, salePrices);
     return jsonResponse({ ...result });
   } catch (error) {
     console.error("Não foi possível processar o upload do catálogo de produtos.", error);

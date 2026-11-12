@@ -3172,6 +3172,8 @@ export const productCatalog = pgTable(
     // índice pra converter a corrida em UPDATE em vez de linha duplicada.
     codeUnigames: text("code_unigames").notNull().default(""),
     codePa: text("code_pa").notNull().default(""),
+    // Preço de venda da Unigames (coluna "Preço" do relatório); NULL = sem preço.
+    salePriceCents: integer("sale_price_cents"),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),

@@ -41,6 +41,7 @@ export type ProductCatalogRow = {
   name: string;
   codeUnigames: string;
   codePa: string;
+  salePriceCents?: number | null;
   createdAt: string;
   updatedBy: string;
   updatedByName: string;
@@ -97,6 +98,8 @@ export async function upsertProductCatalogEntries(
   items: Array<{ code: string; name: string }>,
   actor: { id: string; displayName: string },
   createIfMissing: boolean,
+  // Só no upload da aba Unigames: código → preço de venda em centavos (null = sem preço).
+  salePrices?: Map<string, number | null>,
 ): Promise<ProductCatalogUpsertResult> {
   const result: ProductCatalogUpsertResult = { created: 0, updated: 0, unchanged: 0, skipped: 0 };
   const cleanedItems = items
@@ -235,6 +238,20 @@ export async function upsertProductCatalogEntries(
           inserts.map(() => actor.id),
           inserts.map(() => actor.displayName),
         ),
+    );
+  }
+
+  // Depois dos INSERTs (mesmo batch): produto novo também recebe o preço.
+  if (source === "unigames" && salePrices?.size) {
+    const codes = [...salePrices.keys()];
+    operations.push(
+      database
+        .prepare(
+          `UPDATE product_catalog AS pc SET sale_price_cents=NULLIF(v.price, -1)
+           FROM (SELECT * FROM unnest(?1::text[], ?2::int[]) AS t(code, price)) AS v
+           WHERE pc.code_unigames = v.code AND pc.sale_price_cents IS DISTINCT FROM NULLIF(v.price, -1)`,
+        )
+        .bind(codes, codes.map((code) => salePrices.get(code) ?? -1)),
     );
   }
 

@@ -12,7 +12,7 @@ import {
 } from "./shared";
 
 const PRODUCT_CATALOG_SELECT =
-  `SELECT id, name, code_unigames AS codeUnigames, code_pa AS codePa,
+  `SELECT id, name, code_unigames AS codeUnigames, code_pa AS codePa, sale_price_cents AS salePriceCents,
           created_at AS createdAt, updated_by AS updatedBy,
           updated_by_name AS updatedByName, updated_at AS updatedAt
    FROM product_catalog`;
