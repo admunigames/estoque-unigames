@@ -43163,13 +43163,14 @@ function renderHomeTasks(){
   // comprasOpenPedidosFiltered abaixo. '' = sem filtro por produto.
   let comprasOrdersProdutoFilter = '';
   // FALTA VINCULAR NF só vale pra pedido nativo criado a partir de
-  // COMPRAS_NF_LINK_SINCE (UTC) — pedido do usuário, os antigos ficam fora.
+  // COMPRAS_NF_LINK_SINCE (UTC) e já CONCLUÍDO sem NF vinculada — pedido do
+  // usuário, os antigos ficam fora.
   const COMPRAS_NF_LINK_SINCE = '2026-11-12 14:00:00';
   const comprasInTransit = o => ['aguardando_chegada','pendente','em_andamento'].includes(o.status);
   const COMPRAS_DASH = {
     atrasados: {label:'EM ATRASO', test: o => !Number(o.canceled) && comprasOrderIsLate(o)},
     prazo: {label:'DENTRO DO PRAZO', test: o => !Number(o.canceled) && comprasInTransit(o) && !comprasOrderIsLate(o)},
-    semNf: {label:'FALTA VINCULAR NF', test: o => !Number(o.canceled) && o.origin === 'native' && o.status !== 'aberto' && !o.hasLinkedInvoice && String(o.createdAt || '') >= COMPRAS_NF_LINK_SINCE},
+    semNf: {label:'FALTA VINCULAR NF', test: o => !Number(o.canceled) && o.origin === 'native' && o.status === 'concluido' && !o.hasLinkedInvoice && String(o.createdAt || '') >= COMPRAS_NF_LINK_SINCE},
     incompletos: {label:'CHEGARAM INCOMPLETOS', test: o => !Number(o.canceled) && o.status !== 'aberto' && Number(o.receivedQty || 0) > 0 && Number(o.receivedQty || 0) < Number(o.orderedQty || 0)},
     cancelados: {label:'CANCELADOS', test: o => Boolean(Number(o.canceled))},
   };
