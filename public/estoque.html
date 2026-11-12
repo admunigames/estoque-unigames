@@ -884,6 +884,9 @@
      continua abrindo normalmente. Texto à esquerda, como nos selects. */
   .field input[type="month"],.field input[type="date"]{-webkit-appearance:none; appearance:none; min-width:0; display:flex; align-items:center;}
   .field input[type="month"]::-webkit-date-and-time-value,.field input[type="date"]::-webkit-date-and-time-value{text-align:left; margin:0; line-height:normal;}
+  /* Fora do iPhone o flex cortava o mês no Chrome ("NOVEMBRO DE 202" com o
+     ícone por cima, 12/11/2026); o flex fica só onde nasceu (Safari iOS). */
+  @supports not (-webkit-touch-callout:none){ .field input[type="month"]{display:block;} }
   /* Busca com sugestões no catálogo geral de produtos (Saídas/Entrada/
      Alterações PDV/Compras) — dropdown JS anexado como irmão do <input>,
      por isso o campo pai precisa de position:relative. */
@@ -4102,6 +4105,8 @@
     .div-print-items th:nth-child(5),.div-print-items th:nth-child(6){width:12%;}
     .div-print-items th:nth-child(7),.div-print-items th:nth-child(8){width:15.5%;}
   }
+  /* Avaliação Operacional: campos do formulário na mesma altura dos selects. */
+  #avopForm input{min-height:40px;}
   /* IMPRESSÃO EM FOLHA LIMPA (todos os PDFs com pdf-export) — fica no FIM da
      folha de estilos de propósito: as cores de cada tema (html[data-theme=…])
      e o fundo do Vidro (body::before com degradê fixo) ganhavam das regras de
@@ -8370,7 +8375,7 @@
         </div>
       </header>
       <div class="dre-toolbar">
-        <div class="field"><label for="avopMonth">MÊS</label><input id="avopMonth" type="month"></div>
+        <div class="field" style="min-width:200px"><label for="avopMonth">MÊS</label><input id="avopMonth" type="month"></div>
       </div>
       <form class="table-panel" id="avopForm" novalidate hidden style="padding:14px;margin-bottom:14px;">
         <h3 class="supply-section-title" style="margin-top:0" id="avopFormTitle">NOVA SITUAÇÃO</h3>
@@ -8379,10 +8384,14 @@
           <div class="purchase-field"><label for="avopUnit">UNIDADE *</label><select id="avopUnit"></select></div>
           <div class="purchase-field"><label for="avopWeight">PESO *</label><select id="avopWeight"></select></div>
         </div>
-        <div class="purchase-field"><label for="avopResponsible">QUEM COMETEU *</label><input id="avopResponsible" maxlength="120" autocomplete="off" list="avopEmployees" placeholder="ESCOLHA OU DIGITE O NOME"><datalist id="avopEmployees"></datalist></div>
+        <div style="display:grid;gap:13px;margin-top:13px">
+        <div class="purchase-field"><label for="avopResponsible">QUEM COMETEU *</label><input id="avopResponsible" type="text" maxlength="120" autocomplete="off" list="avopEmployees" placeholder="ESCOLHA OU DIGITE O NOME"><datalist id="avopEmployees"></datalist></div>
         <div class="purchase-field"><label for="avopDescription">O QUE HOUVE *</label><textarea id="avopDescription" maxlength="1000" rows="3"></textarea></div>
-        <button class="btn-accent" id="btnAvopSave" type="submit">ADICIONAR</button>
-        <button class="btn-outline" id="btnAvopCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:13px">
+          <button class="btn-accent" id="btnAvopSave" type="submit">ADICIONAR</button>
+          <button class="btn-outline" id="btnAvopCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
+        </div>
       </form>
       <h3 class="supply-section-title">PONTUAÇÃO DO MÊS <small id="avopRankingHint">(MENOR PONTUAÇÃO = LOJA PREMIUM)</small></h3>
       <div class="table-panel responsive-table"><div class="table-scroll">
@@ -30723,7 +30732,7 @@ function renderHomeTasks(){
     el('avopItems').innerHTML = withItems.length ? withItems.map(row => {
       const items = avopData.items.filter(item => item.unit === row.unit);
       return '<h4 class="supply-section-title">'+escapeHtml(row.unit)+' · '+row.total+' PONTO'+(row.total === 1 ? '' : 'S')+'</h4>'+
-        '<div class="table-panel responsive-table"><div class="table-scroll"><table><thead><tr><th>Data</th><th>Quem cometeu</th><th>O que houve</th><th>Peso / tipo de erro</th><th>Lançado por</th><th></th></tr></thead><tbody>'+
+        '<div class="table-panel responsive-table"><div class="table-scroll"><table style="table-layout:fixed"><colgroup><col style="width:110px"><col style="width:15%"><col><col style="width:17%"><col style="width:16%"><col style="width:170px"></colgroup><thead><tr><th>Data</th><th>Quem cometeu</th><th>O que houve</th><th>Peso / tipo de erro</th><th>Lançado por</th><th></th></tr></thead><tbody>'+
         items.map(item => {
           const id = escapeHtml(item.id);
           const buttons = (avopData.can.edit ? '<button class="btn-outline btn-sm" type="button" data-avop-edit="'+id+'">EDITAR</button> ' : '')+
