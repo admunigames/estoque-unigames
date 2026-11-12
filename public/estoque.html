@@ -6705,6 +6705,18 @@
                 <option value="concluido">CONCLUÍDO</option>
               </select>
             </div>
+            <div class="field" style="min-width:220px;">
+              <label for="comprasOrdersDivisionFilter">STATUS DA DIVISÃO</label>
+              <select id="comprasOrdersDivisionFilter">
+                <option value="">TODOS</option>
+                <option value="__sem">SEM STATUS</option>
+                <option value="FALTA DIVISÃO">FALTA DIVISÃO</option>
+                <option value="AGUARDANDO APROVAÇÃO">AGUARDANDO APROVAÇÃO</option>
+                <option value="ENVIAR DIVISÃO A LOJA">ENVIAR DIVISÃO A LOJA</option>
+                <option value="FALTANDO ENVIO COMPLETO DA DIVISÃO">FALTANDO ENVIO COMPLETO DA DIVISÃO</option>
+                <option value="CONCLUÍDO">CONCLUÍDO</option>
+              </select>
+            </div>
             <div class="field" style="min-width:180px;">
               <label for="comprasOrdersOriginFilter">ORIGEM</label>
               <select id="comprasOrdersOriginFilter">
@@ -43136,6 +43148,9 @@ function renderHomeTasks(){
       const data = await comprasNovoApiRequest('/orders'+(qs ? '?'+qs : ''));
       let fresh = Array.isArray(data.orders) ? data.orders : [];
       if(comprasOrdersLateOnlyFilter) fresh = fresh.filter(comprasOrderIsLate);
+      // Status da divisão: filtro só no cliente (a lista já traz divisionStatus).
+      const divisionFilter = el('comprasOrdersDivisionFilter') ? el('comprasOrdersDivisionFilter').value : '';
+      if(divisionFilter) fresh = fresh.filter(o => (o.divisionStatus || '') === (divisionFilter === '__sem' ? '' : divisionFilter));
       // Pedido aberto fica no MESMO cartão/posição depois de salvar (ou de
       // outra pessoa salvar, via canal "compras"), mesmo que o novo status
       // mude a ordenação ou saia do filtro — nesse caso fica marcado como
@@ -43172,6 +43187,7 @@ function renderHomeTasks(){
   }
   if(el('comprasOrdersStatusFilter')) el('comprasOrdersStatusFilter').addEventListener('change', handleComprasOrdersFilterChange);
   if(el('comprasOrdersOriginFilter')) el('comprasOrdersOriginFilter').addEventListener('change', handleComprasOrdersFilterChange);
+  if(el('comprasOrdersDivisionFilter')) el('comprasOrdersDivisionFilter').addEventListener('change', handleComprasOrdersFilterChange);
   if(el('comprasOrdersShowCanceled')) el('comprasOrdersShowCanceled').addEventListener('change', handleComprasOrdersFilterChange);
   if(el('btnClearComprasLateFilter')) el('btnClearComprasLateFilter').addEventListener('click', handleComprasOrdersFilterChange);
 
@@ -43186,6 +43202,7 @@ function renderHomeTasks(){
     // mostrando o valor certo.
     comprasOrders = [];
     el('comprasOrdersStatusFilter').value = status || '';
+    if(el('comprasOrdersDivisionFilter')) el('comprasOrdersDivisionFilter').value = '';
     el('comprasOrdersOriginFilter').value = 'native';
     comprasOrdersLateOnlyFilter = Boolean(lateOnly);
     comprasOrdersProdutoFilter = produto || '';
@@ -44500,6 +44517,7 @@ function renderHomeTasks(){
       el('comprasCloneOrderDialog').close();
       showPurchaseToast('Pedido clonado — abrindo o novo pedido…');
       el('comprasOrdersStatusFilter').value = '';
+      if(el('comprasOrdersDivisionFilter')) el('comprasOrdersDivisionFilter').value = '';
       el('comprasOrdersOriginFilter').value = 'native';
       comprasOrdersLateOnlyFilter = false;
       comprasOrdersProdutoFilter = '';

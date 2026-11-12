@@ -77,3 +77,9 @@ test("custo médio: estoque geral × custo do cadastro + compra, 2 casas e (MÉD
   // média igual ao custo da compra: sem aviso
   assert.match(text, /2 - PRODUTO 4\nCUSTO: R\$ 8,00 - VENDA: R\$ -/);
 });
+
+test("pedidos: filtro STATUS DA DIVISÃO com as mesmas opções do pedido", () => {
+  assert.match(html, /<select id="comprasOrdersDivisionFilter">[\s\S]*?value="__sem">SEM STATUS[\s\S]*?value="CONCLUÍDO">CONCLUÍDO<\/option>/);
+  assert.match(html, /fresh = fresh\.filter\(o => \(o\.divisionStatus \|\| ''\) === \(divisionFilter === '__sem' \? '' : divisionFilter\)\)/);
+  assert.match(html, /el\('comprasOrdersDivisionFilter'\)\.addEventListener\('change', handleComprasOrdersFilterChange\)/);
+});
