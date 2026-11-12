@@ -17876,6 +17876,7 @@
     let idxCodigo = -1;
     let idxNome = -1;
     let idxPreco = -1;
+    let idxCusto = -1;
     let encontrouCabecalho = false;
 
     for(const row of rows){
@@ -17887,6 +17888,8 @@
         idxNome = nomeHeader;
         // "Preço" (venda) do Relatório de Produto — vai pro texto da divisão no Compras.
         idxPreco = normalized.findIndex(h => ['preco','preco de venda','preco venda'].includes(h));
+        // "Custo" atual — custo médio do texto da divisão (com o estoque geral do Relatório 41).
+        idxCusto = normalized.indexOf('custo');
         encontrouCabecalho = true;
         continue;
       }
@@ -17899,7 +17902,11 @@
       if(!codigo || !nome || isFooterRow(codigo)) continue;
 
       const precoTexto = idxPreco !== -1 ? String(row[idxPreco] || '').trim() : '';
-      map.set(codigo, precoTexto ? { nome, precoCents: Math.round(parseNumeroBR(precoTexto) * 100) } : { nome });
+      const custoTexto = idxCusto !== -1 ? String(row[idxCusto] || '').trim() : '';
+      const entry = { nome };
+      if(precoTexto) entry.precoCents = Math.round(parseNumeroBR(precoTexto) * 100);
+      if(custoTexto) entry.custoCents = Math.round(parseNumeroBR(custoTexto) * 100);
+      map.set(codigo, entry);
     }
 
     if(!encontrouCabecalho){
@@ -19655,7 +19662,7 @@
   }
 
   function mapCatalogItemsFromParsedMap(parsedMap){
-    return Array.from(parsedMap.entries()).map(([code, value]) => ({ code, name: value.nome || '', salePriceCents: Number.isInteger(value.precoCents) ? value.precoCents : null }));
+    return Array.from(parsedMap.entries()).map(([code, value]) => ({ code, name: value.nome || '', salePriceCents: Number.isInteger(value.precoCents) ? value.precoCents : null, costCents: Number.isInteger(value.custoCents) ? value.custoCents : null }));
   }
 
   async function reconcileProductCatalog(source, parsedMap){
@@ -43918,7 +43925,11 @@ function renderHomeTasks(){
   //
   //   30 - PRODUTO 1
   //   CUSTO: R$ 12,50 - VENDA: R$ 29,90
-  // CUSTO = preço unitário do vencedor (sem preço: R$ -); VENDA = "Preço" da
+  // CUSTO = preço unitário do vencedor (sem preço: R$ -). Com estoque geral do
+  // produto (Relatório 41) e custo no Cadastro de Produtos, vira o custo MÉDIO
+  // (estoque × custo atual + comprado × custo da compra) ÷ total, em centavos,
+  // com "(MÉDIA ALTERAR)" — só quando difere do custo da compra (12/11/2026).
+  // VENDA = "Preço" da
   // Unigames no Cadastro de Produtos (12/11/2026; P.A é digitado à mão), casado
   // pelo código Unigames, depois pelo nome; sem preço: R$ -.
   // <LOJA(S)>: order.companyName se preenchido, senão a união dos nomes de
@@ -43938,16 +43949,41 @@ function renderHomeTasks(){
     const header = '*ENTRADA* FORNECEDOR '+supplierName+', ORIGEM '+(lojas || 'NÃO DEFINIDA');
     const money = cents => Number(cents || 0) > 0 ? formatCentsBRL(cents).replace(/\s/g, ' ') : 'R$ -';
     const linhas = comprasCurrentOrderItems
-      .map(item => Number(item.quantity || 0)+' - '+(item.productName || item.productCode)+'\nCUSTO: '+money(item.unitPriceCents)+' - VENDA: '+money(comprasSalePriceCents(item)))
+      .map(item => {
+        const found = comprasCatalogEntry(item);
+        const cost = comprasAverageCost(item, found);
+        return Number(item.quantity || 0)+' - '+(item.productName || item.productCode)+
+          '\nCUSTO: '+money(cost.cents)+(cost.average ? ' (MÉDIA ALTERAR)' : '')+' - VENDA: '+money(found ? found.salePriceCents : null);
+      })
       .join('\n\n');
     return header+'\n\n'+linhas;
   }
-  function comprasSalePriceCents(item){
+  // Produto do catálogo geral com código Unigames (venda, custo e estoque são da Unigames).
+  function comprasCatalogEntry(item){
     const code = String(item.productCode || '').trim();
     const name = normalizeHeader(String(item.productName || ''));
-    const found = (code && productCatalogItems.find(p => p.codeUnigames === code))
-      || (name && productCatalogItems.find(p => p.codeUnigames && normalizeHeader(p.name || '') === name));
-    return found ? found.salePriceCents : null;
+    return (code && productCatalogItems.find(p => p.codeUnigames && (p.codeUnigames === code || p.codePa === code)))
+      || (name && productCatalogItems.find(p => p.codeUnigames && normalizeHeader(p.name || '') === name))
+      || null;
+  }
+  function comprasAverageCost(item, found){
+    const buyCents = Number(item.unitPriceCents || 0);
+    const buyQty = Number(item.quantity || 0);
+    const stock = found && comprasCompanyStock.get(found.codeUnigames);
+    const stockQty = stock ? Number(stock.qtd) || 0 : 0;
+    const stockCents = found ? found.costCents : null;
+    if(buyCents <= 0 || buyQty <= 0 || stockQty <= 0 || !Number.isInteger(stockCents)) return {cents: buyCents, average: false};
+    const cents = Math.round((stockQty * stockCents + buyQty * buyCents) / (stockQty + buyQty));
+    return {cents, average: cents !== buyCents};
+  }
+  // Estoque geral da empresa (Relatório 41): código Unigames → {nome, qtd}.
+  let comprasCompanyStock = new Map();
+  async function comprasLoadCompanyStock(){
+    try{
+      const result = await storage.get('report41:company-stock');
+      const saved = result && result.value ? JSON.parse(result.value) : null;
+      comprasCompanyStock = saved ? report41ArrayToMap(saved.products) : new Map();
+    }catch{ comprasCompanyStock = new Map(); }
   }
   function comprasFillDivisionSection(order){
     const panel = el('comprasOrderDivisionPanel');
@@ -44021,7 +44057,7 @@ function renderHomeTasks(){
       // vencedor ainda não tem o que copiar como "já definido").
       el('btnCloneComprasOrder').hidden = order.origin !== 'native' || Boolean(order.canceled) || !order.supplierId;
       // VENDA do texto sugerido vem do catálogo geral: garante que ele já baixou.
-      if(!order.division) await ensureProductCatalog();
+      if(!order.division) await Promise.all([ensureProductCatalog(), comprasLoadCompanyStock()]);
       comprasFillDivisionSection(order);
       if(!comprasCurrentOrderLinkedInvoice) await loadComprasOrderInvoiceCandidates();
       renderComprasOrderInvoiceLink();

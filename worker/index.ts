@@ -1364,7 +1364,8 @@ function sharedStatePermission(key: string, scope: string, write: boolean): Perm
   // usuários.
   if (key === "commercial_academy_links") return "users:manage";
   if (key === "report41:company-stock") {
-    return write ? "database:manage" : ["database:view", "report41:view"];
+    // Compras lê a quantidade em estoque pro custo médio do texto do pedido.
+    return write ? "database:manage" : ["database:view", "report41:view", "purchases_draft:manage"];
   }
   if (/^report41:store:c[a-z0-9]{6,40}$/i.test(key)) return "report41:view";
   return write

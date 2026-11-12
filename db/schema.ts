@@ -3174,6 +3174,8 @@ export const productCatalog = pgTable(
     codePa: text("code_pa").notNull().default(""),
     // Preço de venda da Unigames (coluna "Preço" do relatório); NULL = sem preço.
     salePriceCents: integer("sale_price_cents"),
+    // Custo atual da Unigames (coluna "Custo" do relatório); NULL = sem custo.
+    costCents: integer("cost_cents"),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
     updatedBy: text("updated_by").notNull().default(""),
     updatedByName: text("updated_by_name").notNull().default(""),

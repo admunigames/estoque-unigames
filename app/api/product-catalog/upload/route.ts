@@ -35,13 +35,16 @@ export async function POST(request: Request) {
       return { code: String(record.code ?? ""), name: String(record.name ?? "") };
     });
 
-    const salePrices = new Map<string, number | null>();
+    const cents = (value: unknown) => {
+      const n = Number(value);
+      return value !== null && value !== undefined && value !== "" && Number.isInteger(n) && n >= 0 && n < 1e9 ? n : null;
+    };
+    const salePrices = new Map<string, { price: number | null; cost: number | null }>();
     if (source === "unigames") {
       for (const item of rawItems.slice(0, MAX_ITEMS)) {
         const record = item as JsonMap;
         const code = String(record.code ?? "").trim().slice(0, 80);
-        const cents = Number(record.salePriceCents);
-        if (code) salePrices.set(code, Number.isInteger(cents) && cents >= 0 && cents < 1e10 ? cents : null);
+        if (code) salePrices.set(code, { price: cents(record.salePriceCents), cost: cents(record.costCents) });
       }
     }
 
