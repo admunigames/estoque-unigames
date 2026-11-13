@@ -22,6 +22,8 @@ import {
   type Database,
   type JsonMap,
 } from "../shared";
+import { actingStoresForMonth } from "../../../lib/acting-store";
+import { loadCompanyList } from "../../finance/shared";
 import { COMMISSION_SYNC_FROM, commercialCommissionFor, commercialEmployeeRoles } from "../../commercial/shared";
 
 // Comissionamento — um cabeçalho por funcionário/mês, com as linhas
@@ -294,19 +296,47 @@ export async function GET(request: Request) {
       }
     }
 
-    const commercialRoles = await commercialEmployeeRoles(database, month);
-    const rows = commissions.map((row) => ({
-      ...row,
-      // PREMIAÇÕES = premiação do Comercial + premiações lançadas no RH
-      // (rhPremiumsCents = só as do RH, os itens desta tela).
-      premiumsCents: Number(row.premiumsCents || 0) + Number(row.commercialPremiumCents || 0),
-      rhPremiumsCents: Number(row.premiumsCents || 0),
-      netCents: commissionNetCents(row),
-      items: itemsByCommission.get(row.id) ?? [],
-      fromCommercial: commercialRoles.has(row.employeeId),
-      // 'vendedor' | 'lider' | 'operacional' (recibo do operacional: natureza salarial).
-      commercialRole: commercialRoles.get(row.employeeId) ?? "",
-    }));
+    const [commercialRoles, actingStores, employeesResult, companies] = await Promise.all([
+      commercialEmployeeRoles(database, month),
+      actingStoresForMonth(database, month),
+      database
+        .prepare(
+          `SELECT id, role_title AS roleTitle, company_id AS companyId, company_name AS companyName,
+                  admission_company_id AS admissionCompanyId, admission_company_name AS admissionCompanyName
+           FROM hr_employees`,
+        )
+        .all<{ id: string; roleTitle: string; companyId: string; companyName: string; admissionCompanyId: string; admissionCompanyName: string }>(),
+      loadCompanyList(database) as Promise<Array<{ id: string; name: string; cnpj?: string; legalName?: string }>>,
+    ]);
+    const employees = new Map((employeesResult.results ?? []).map((employee) => [employee.id, employee]));
+    const companyOf = (id: string) => companies.find((company) => company.id === id);
+    const rows = commissions.map((row) => {
+      const employee = employees.get(row.employeeId);
+      // EMPRESA DE ADMISSÃO (sem ela, a loja do cadastro) e o CNPJ dela no
+      // cadastro de lojas — mesma regra do Relatório Contabilidade.
+      const admissionId = employee?.admissionCompanyId || employee?.companyId || "";
+      const admissionName = employee?.admissionCompanyId ? employee.admissionCompanyName : employee?.companyName || "";
+      const acting = actingStores.get(row.employeeId);
+      return {
+        ...row,
+        roleTitle: employee?.roleTitle ?? "",
+        actingCompanyId: acting?.companyId ?? row.companyId,
+        actingCompanyName: (acting && (companyOf(acting.companyId)?.name ?? acting.companyName)) || row.companyName,
+        admissionCompanyId: admissionId,
+        admissionCompanyName: companyOf(admissionId)?.name ?? admissionName,
+        admissionCnpj: String(companyOf(admissionId)?.cnpj || "").replace(/\D+/g, ""),
+        admissionLegalName: companyOf(admissionId)?.legalName ?? "",
+        // PREMIAÇÕES = premiação do Comercial + premiações lançadas no RH
+        // (rhPremiumsCents = só as do RH, os itens desta tela).
+        premiumsCents: Number(row.premiumsCents || 0) + Number(row.commercialPremiumCents || 0),
+        rhPremiumsCents: Number(row.premiumsCents || 0),
+        netCents: commissionNetCents(row),
+        items: itemsByCommission.get(row.id) ?? [],
+        fromCommercial: commercialRoles.has(row.employeeId),
+        // 'vendedor' | 'lider' | 'operacional' (recibo do operacional: natureza salarial).
+        commercialRole: commercialRoles.get(row.employeeId) ?? "",
+      };
+    });
     const commissionRuleText = await loadCommissionRuleText(database);
     return jsonResponse({
       month,

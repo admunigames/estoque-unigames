@@ -1629,6 +1629,20 @@
   #rhComissaoRecibo{color:var(--ink);}
   .rh-recibo-meta{font-size:11px;color:var(--ink-soft);line-height:1.6;margin:8px 0 4px;}
   .rh-recibo-total{margin-top:10px;font:800 13px var(--mono);}
+  .rh-recibo{border:1px solid #94a3b8;border-radius:4px;padding:8px 10px;margin:0 0 5mm;break-inside:avoid;page-break-inside:avoid;}
+  .rh-recibo + .rh-recibo{position:relative;}
+  .rh-recibo + .rh-recibo::before{content:'';position:absolute;left:0;right:0;top:-2.8mm;border-top:1px dashed #94a3b8;}
+  .rh-recibo-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:2px solid #244f83;padding-bottom:4px;margin-bottom:6px;}
+  .rh-recibo-head h2{margin:2px 0 0;font:800 13px var(--sans);}
+  .rh-recibo-comp{text-align:right;font-size:9px;}
+  .rh-recibo-comp span,.rh-recibo-grid span{display:block;font:700 7px var(--mono);letter-spacing:.06em;color:var(--ink-soft);}
+  .rh-recibo-comp strong{font-size:11px;}
+  .rh-recibo-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:6px;font-size:10px;}
+  .rh-recibo .rh-print-table{margin-top:4px;}
+  .rh-recibo .rh-recibo-meta{margin:4px 0 0;font-size:9px;line-height:1.4;}
+  .rh-recibo .rh-recibo-rule{font-size:7.5px;white-space:pre-wrap;}
+  .rh-recibo-sign{display:grid;grid-template-columns:3fr 2fr;gap:24px;align-items:end;margin-top:24px;font:700 8px var(--mono);letter-spacing:.06em;text-align:center;}
+  .rh-recibo-sign-line{border-top:1px solid #111827;padding-top:3px;}
 
   /* IMPRESSAO / PDF */
   @media print{
@@ -7569,10 +7583,14 @@
 
         <div id="rhComissaoTabLancamentos">
           <div class="dre-toolbar no-print">
-            <div class="field"><label for="rhComissaoLoja">LOJA</label><select id="rhComissaoLoja"><option value="">TODAS AS LOJAS</option></select></div>
             <div class="field"><label for="rhComissaoMes">COMPETÊNCIA</label><input type="month" id="rhComissaoMes"></div>
+            <div class="field"><label for="rhComissaoBusca">BUSCAR POR NOME</label><input type="search" id="rhComissaoBusca" placeholder="NOME DO FUNCIONÁRIO…" autocomplete="off"></div>
+            <div class="field"><label for="rhComissaoCargo">CARGO</label><select id="rhComissaoCargo"><option value="">TODOS OS CARGOS</option></select></div>
+            <div class="field"><label for="rhComissaoLoja">LOJA ATUANTE</label><select id="rhComissaoLoja"><option value="">TODAS AS LOJAS</option></select></div>
+            <div class="field"><label for="rhComissaoAdmissao">EMPRESA DE ADMISSÃO</label><select id="rhComissaoAdmissao"><option value="">TODAS AS EMPRESAS</option></select></div>
             <div class="dre-toolbar-actions">
               <button class="btn-accent" id="btnNewRhComissao" type="button">NOVA COMISSÃO</button>
+              <button class="btn-outline" id="btnRhComissaoRecibos" type="button">RECIBOS EM LOTE</button>
               <button class="btn-outline" id="btnRhComissaoPrint" type="button">RELATÓRIO / PDF</button>
             </div>
           </div>
@@ -7582,8 +7600,8 @@
           <div class="table-panel responsive-table">
             <div class="table-scroll">
               <table id="rhComissaoTable">
-                <thead><tr><th>Funcionário</th><th>Loja</th><th>Comissão</th><th>Bônus</th><th>Premiações</th><th>Descontos</th><th>Ajustes</th><th>Valor final</th><th class="no-print"></th></tr></thead>
-                <tbody id="rhComissaoTableBody"><tr><td colspan="9" class="responsive-empty">Selecione a competência para ver o comissionamento.</td></tr></tbody>
+                <thead><tr><th>Funcionário</th><th>Cargo</th><th>Loja atuante</th><th>Loja de admissão</th><th>Comissão</th><th>Bônus</th><th>Premiações</th><th>Descontos</th><th>Ajustes</th><th>Valor final</th><th class="no-print"></th></tr></thead>
+                <tbody id="rhComissaoTableBody"><tr><td colspan="11" class="responsive-empty">Selecione a competência para ver o comissionamento.</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -49037,6 +49055,7 @@ function renderHomeTasks(){
     rhFillSelect('rhFolgasCompany','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhBeneficioFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhComissaoLoja','TODAS AS LOJAS',rhCompanyOptions());
+    rhFillSelect('rhComissaoAdmissao','TODAS AS EMPRESAS',rhCompanyOptions());
     rhFillSelect('rhDreFuncLoja','TODAS AS LOJAS',rhCompanyOptions());
   }
 
@@ -51968,18 +51987,43 @@ function renderHomeTasks(){
       - Number(row.discountsCents || 0) + Number(row.adjustmentsCents || 0);
   }
 
+  // Filtros da tela (nome, cargo, loja atuante, empresa de admissão): valem
+  // para a tabela, o RELATÓRIO / PDF e os RECIBOS EM LOTE.
+  function rhComissaoFiltered(){
+    const search = normalizeSearchText(el('rhComissaoBusca').value);
+    const cargo = el('rhComissaoCargo').value;
+    const loja = el('rhComissaoLoja').value;
+    const admissao = el('rhComissaoAdmissao').value;
+    return rhComissoes.filter(row =>
+      (!search || normalizeSearchText(row.employeeName).includes(search)) &&
+      (!cargo || (cargo === '__none__' ? !row.roleTitle : row.roleTitle === cargo)) &&
+      (!loja || row.actingCompanyId === loja) &&
+      (!admissao || row.admissionCompanyId === admissao));
+  }
+
+  function renderRhComissaoCargoOptions(){
+    const roles = [...new Set(rhComissoes.map(row => row.roleTitle).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const options = roles.map(role => ({value:role, label:role}));
+    if(rhComissoes.some(row => !row.roleTitle)) options.push({value:'__none__', label:'SEM CARGO CADASTRADO'});
+    rhFillSelect('rhComissaoCargo', 'TODOS OS CARGOS', options);
+  }
+
   function renderRhComissaoTable(){
     const body = el('rhComissaoTableBody');
     if(!body) return;
-    if(!rhComissoes.length){
-      body.innerHTML = '<tr><td colspan="9" class="responsive-empty">Nenhuma comissão lançada nesta competência.</td></tr>';
+    const rows = rhComissaoFiltered();
+    el('btnRhComissaoRecibos').textContent = 'RECIBOS EM LOTE ('+rows.length+')';
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+(rhComissoes.length ? 'Nenhum funcionário com esses filtros.' : 'Nenhuma comissão lançada nesta competência.')+'</td></tr>';
       el('rhComissaoResumo').textContent = '';
       el('rhComissaoPrintPorLoja').innerHTML = '';
       return;
     }
-    body.innerHTML = rhComissoes.map(row => '<tr>'+
+    body.innerHTML = rows.map(row => '<tr>'+
       '<td>'+escapeHtml(row.employeeName)+'</td>'+
-      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.roleTitle || '—')+'</td>'+
+      '<td>'+escapeHtml(row.actingCompanyName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.admissionCompanyName || '—')+'</td>'+
       '<td>'+formatCentsBRL(row.commissionCents)+'</td>'+
       '<td>'+formatCentsBRL(row.bonusesCents)+'</td>'+
       '<td>'+formatCentsBRL(row.premiumsCents)+'</td>'+
@@ -51993,13 +52037,13 @@ function renderHomeTasks(){
       '</span></td>'+
     '</tr>').join('');
 
-    const total = rhComissoes.reduce((sum, row) => sum + Number(row.netCents || 0), 0);
-    el('rhComissaoResumo').innerHTML = '<strong>'+rhComissoes.length+'</strong> funcionário(s) · Total final: <strong>'+formatCentsBRL(total)+'</strong>';
+    const total = rows.reduce((sum, row) => sum + Number(row.netCents || 0), 0);
+    el('rhComissaoResumo').innerHTML = '<strong>'+rows.length+'</strong>'+(rows.length !== rhComissoes.length ? ' de '+rhComissoes.length : '')+' funcionário(s) · Total final: <strong>'+formatCentsBRL(total)+'</strong>';
     el('rhComissaoPrintPorLoja').innerHTML = rhPrintByStoreHtml(
-      'Comissionamento por loja',
-      rhComissoes,
+      'Comissionamento por loja atuante',
+      rows,
       row => row.netCents,
-      row => row.companyName
+      row => row.actingCompanyName
     );
   }
 
@@ -52046,25 +52090,33 @@ function renderHomeTasks(){
     }
     if(!el('rhComissaoMes').value) el('rhComissaoMes').value = financeCurrentMonthKey();
     const month = el('rhComissaoMes').value;
-    const companyId = el('rhComissaoLoja').value;
-    el('rhComissaoTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    el('rhComissaoTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     try{
       const params = new URLSearchParams({month});
-      if(companyId) params.set('companyId', companyId);
       const data = await rhApiRequest('/commissions?'+params.toString());
       rhComissoes = Array.isArray(data.commissions) ? data.commissions : [];
       rhComissaoRuleText = data.commissionRuleText || '';
-      el('rhComissaoPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+
-        ' · '+(companyId ? (companies.find(company => company.id === companyId) || {name:'—'}).name : 'Todas as lojas');
+      renderRhComissaoCargoOptions();
       renderRhComissaoTable();
     }catch(error){
       rhComissoes = [];
-      el('rhComissaoTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rhComissaoTableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
   if(el('rhComissaoMes')) el('rhComissaoMes').addEventListener('change', loadRhComissionamento);
-  if(el('rhComissaoLoja')) el('rhComissaoLoja').addEventListener('change', loadRhComissionamento);
+  ['rhComissaoLoja','rhComissaoAdmissao','rhComissaoCargo'].forEach(id => el(id).addEventListener('change', renderRhComissaoTable));
+  el('rhComissaoBusca').addEventListener('input', renderRhComissaoTable);
+  // Cabeçalho do PDF: competência + filtros em uso.
+  function rhComissaoFilterText(){
+    const parts = ['Competência '+rhFormatMonth(el('rhComissaoMes').value)];
+    const label = id => el(id).value ? el(id).selectedOptions[0].textContent : '';
+    if(label('rhComissaoCargo')) parts.push('Cargo '+label('rhComissaoCargo'));
+    if(label('rhComissaoLoja')) parts.push('Loja atuante '+label('rhComissaoLoja'));
+    if(label('rhComissaoAdmissao')) parts.push('Admissão '+label('rhComissaoAdmissao'));
+    if(el('rhComissaoBusca').value.trim()) parts.push('Nome "'+el('rhComissaoBusca').value.trim()+'"');
+    return parts.join(' · ');
+  }
 
   document.querySelectorAll('[data-rh-comissao-tab]').forEach(button => {
     button.addEventListener('click', () => {
@@ -52277,52 +52329,59 @@ function renderHomeTasks(){
     }
   });
 
-  // Recibo individual: monta o detalhamento do funcionário e imprime só ele
-  // (body.rh-recibo-only esconde o restante da página).
-  function printRhComissaoRecibo(row){
-    const container = el('rhComissaoRecibo');
-    if(!container) return;
+  // RECIBO DE COMISSIONAMENTO (13/11/2026): compacto, com a EMPRESA DE
+  // ADMISSÃO e o CNPJ dela, assinatura e data de recebimento à caneta. Vários
+  // por folha (cada recibo não quebra entre páginas); individual ou em lote
+  // (os funcionários dos filtros da tela).
+  function rhComissaoReciboHtml(row){
     const items = row.items || [];
     const itemsHtml = items.length
-      ? items.map(item => {
+      ? '<table class="rh-print-table rh-recibo-items"><thead><tr><th>Lançamento</th><th>Tipo</th><th class="num">Valor</th></tr></thead><tbody>'+
+        items.map(item => {
           const parcela = Number(item.installmentTotal || 0) >= 2
-            ? ' (parcela '+Number(item.installmentNumber || 0)+'/'+Number(item.installmentTotal)+')' : '';
-          return '<tr>'+
-            '<td>'+escapeHtml(item.label)+escapeHtml(parcela)+'</td>'+
+            ? ' (PARCELA '+Number(item.installmentNumber || 0)+'/'+Number(item.installmentTotal)+')' : '';
+          return '<tr><td>'+escapeHtml(item.label)+escapeHtml(parcela)+'</td>'+
             '<td>'+escapeHtml(RH_COMMISSION_KIND_LABELS[item.kind] || item.kind)+'</td>'+
-            '<td class="num">'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td>'+
-          '</tr>';
-        }).join('')
-      : '<tr><td colspan="3">Nenhum lançamento adicional.</td></tr>';
-    const ruleHtml = rhComissaoRuleText
-      ? '<div class="rh-recibo-meta" style="white-space:pre-wrap;">Como a comissão é apurada: '+escapeHtml(rhComissaoRuleText)+'</div>'
+            '<td class="num">'+(item.kind === 'desconto' ? '-' : '')+formatCentsBRL(item.amountCents)+'</td></tr>';
+        }).join('')+'</tbody></table>'
       : '';
-    container.innerHTML =
-      '<div class="print-report-header" style="display:block;">'+
-        '<div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>'+
-        '<h1>Recibo de Comissionamento</h1>'+
-        '<div class="print-report-meta">'+escapeHtml(row.employeeName)+' · '+escapeHtml(row.companyName || 'Sem loja definida')+' · Competência '+escapeHtml(rhFormatMonth(row.month))+'</div>'+
+    const admission = row.admissionLegalName
+      ? row.admissionLegalName+(row.admissionCompanyName ? ' ('+row.admissionCompanyName+')' : '')
+      : (row.admissionCompanyName || '—');
+    const field = (label, value) => '<div><span>'+label+'</span><strong>'+escapeHtml(value || '—')+'</strong></div>';
+    return '<div class="rh-recibo">'+
+      '<div class="rh-recibo-head"><div><div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div><h2>RECIBO DE COMISSIONAMENTO</h2></div>'+
+        '<div class="rh-recibo-comp"><span>COMPETÊNCIA</span><strong>'+escapeHtml(rhFormatMonth(row.month))+'</strong></div></div>'+
+      '<div class="rh-recibo-grid">'+
+        field('COLABORADOR', row.employeeName)+field('CARGO', row.roleTitle)+
+        field('EMPRESA DE ADMISSÃO', admission)+field('CNPJ', row.admissionCnpj ? rhFormatCnpj(row.admissionCnpj) : 'NÃO CADASTRADO')+
+        field('LOJA ATUANTE', row.actingCompanyName)+
       '</div>'+
-      '<div class="rh-recibo-meta">Comissão base: <strong>'+formatCentsBRL(row.commissionCents)+'</strong></div>'+
-      // OPERACIONAL do Comercial: a comissão sobre o feito da assistência é
-      // de natureza salarial (pedido de 2026-10-16).
-      (row.commercialRole === 'operacional'
-        ? '<div class="rh-recibo-meta"><strong>Comissão de natureza salarial (operacional — feito da assistência da loja): integra DSR, 13º salário, férias e FGTS.</strong></div>'
-        : '')+
-      ruleHtml+
-      '<table class="rh-print-table"><thead><tr><th>Descrição</th><th>Tipo</th><th class="num">Valor</th></tr></thead>'+
-      '<tbody>'+itemsHtml+'</tbody></table>'+
-      '<table class="rh-print-table" style="margin-top:10px;"><tbody>'+
-        '<tr><td>Bônus</td><td class="num">'+formatCentsBRL(row.bonusesCents)+'</td></tr>'+
-        '<tr><td>Premiações</td><td class="num">'+formatCentsBRL(row.premiumsCents)+'</td></tr>'+
-        '<tr><td>Descontos</td><td class="num">-'+formatCentsBRL(row.discountsCents)+'</td></tr>'+
-        '<tr><td>Ajustes</td><td class="num">'+formatCentsBRL(row.adjustmentsCents)+'</td></tr>'+
-      '</tbody></table>'+
-      '<div class="rh-recibo-total">VALOR FINAL: '+formatCentsBRL(row.netCents)+'</div>'+
-      (row.notes ? '<div class="rh-recibo-meta">Observações: '+escapeHtml(row.notes)+'</div>' : '');
-    container.hidden = false;
-    rhStartPrint('recibo-comissao-'+(row.employeeName || '').toLowerCase().replace(/\s+/g,'-')+'-'+row.month, 'rh-recibo-only');
+      itemsHtml+
+      '<table class="rh-print-table rh-recibo-totals"><thead><tr><th class="num">Comissão</th><th class="num">Bônus</th><th class="num">Premiações</th><th class="num">Descontos</th><th class="num">Ajustes</th><th class="num">Valor final</th></tr></thead>'+
+        '<tbody><tr><td class="num">'+formatCentsBRL(row.commissionCents)+'</td><td class="num">'+formatCentsBRL(row.bonusesCents)+'</td>'+
+        '<td class="num">'+formatCentsBRL(row.premiumsCents)+'</td><td class="num">'+(Number(row.discountsCents) ? '-' : '')+formatCentsBRL(row.discountsCents)+'</td>'+
+        '<td class="num">'+formatCentsBRL(row.adjustmentsCents)+'</td><td class="num"><strong>'+formatCentsBRL(row.netCents)+'</strong></td></tr></tbody></table>'+
+      (row.notes ? '<div class="rh-recibo-meta">OBSERVAÇÕES: '+escapeHtml(row.notes)+'</div>' : '')+
+      (rhComissaoRuleText ? '<div class="rh-recibo-meta rh-recibo-rule">COMO A COMISSÃO É APURADA: '+escapeHtml(rhComissaoRuleText)+'</div>' : '')+
+      '<div class="rh-recibo-meta">DECLARO TER RECEBIDO O VALOR FINAL DE <strong>'+formatCentsBRL(row.netCents)+'</strong> REFERENTE AO COMISSIONAMENTO DA COMPETÊNCIA ACIMA.</div>'+
+      '<div class="rh-recibo-sign"><div class="rh-recibo-sign-line">ASSINATURA DO COLABORADOR</div><div>DATA DE RECEBIMENTO: ____/____/________</div></div>'+
+    '</div>';
   }
+
+  function printRhComissaoRecibos(rows, fileName){
+    const container = el('rhComissaoRecibo');
+    if(!container || !rows.length) return;
+    container.innerHTML = rows.map(rhComissaoReciboHtml).join('');
+    container.hidden = false;
+    rhStartPrint(fileName, 'rh-recibo-only');
+  }
+
+  if(el('btnRhComissaoRecibos')) el('btnRhComissaoRecibos').addEventListener('click', () => {
+    const rows = rhComissaoFiltered();
+    if(!rows.length){ showPurchaseToast('Nenhum funcionário para gerar recibo.','error'); return; }
+    printRhComissaoRecibos(rows, 'recibos-comissao-'+(el('rhComissaoMes').value || ''));
+  });
 
   if(el('rhComissaoTableBody')) el('rhComissaoTableBody').addEventListener('click', async event => {
     const editButton = event.target.closest('[data-rh-comissao-edit]');
@@ -52334,7 +52393,7 @@ function renderHomeTasks(){
     const reciboButton = event.target.closest('[data-rh-comissao-recibo]');
     if(reciboButton){
       const row = rhComissoes.find(item => item.id === reciboButton.dataset.rhComissaoRecibo);
-      if(row) printRhComissaoRecibo(row);
+      if(row) printRhComissaoRecibos([row], 'recibo-comissao-'+(row.employeeName || '').toLowerCase().replace(/\s+/g,'-')+'-'+row.month);
       return;
     }
     const deleteButton = event.target.closest('[data-rh-comissao-delete]');
@@ -52351,10 +52410,11 @@ function renderHomeTasks(){
   });
 
   if(el('btnRhComissaoPrint')) el('btnRhComissaoPrint').addEventListener('click', () => {
-    if(!rhComissoes.length){
+    if(!rhComissaoFiltered().length){
       showPurchaseToast('Nada para imprimir nesta competência.','error');
       return;
     }
+    el('rhComissaoPrintMeta').textContent = rhComissaoFilterText();
     rhStartPrint('comissionamento-'+(el('rhComissaoMes').value || ''));
   });
 
