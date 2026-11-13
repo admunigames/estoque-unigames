@@ -4130,12 +4130,16 @@
     .div-print-comp tr{break-inside:avoid; page-break-inside:avoid;}
     .div-print-comp th:nth-child(1){width:34%;}
     .div-print-comp th:nth-child(4){width:16%;}
-    .div-print-items{table-layout:fixed;}
-    .div-print-items td,.div-print-items th{vertical-align:top; overflow-wrap:anywhere;}
-    .div-print-items thead{display:table-header-group;}
-    .div-print-items tr{break-inside:avoid; page-break-inside:avoid;}
-    .div-print-items thead th{position:static; background:#eef2f6 !important; color:#1e293b !important; border-color:#cfd8e3 !important;}
-    .div-print-items tbody td{color:#111827 !important;}
+    .div-print-items,.div-print-resolved{table-layout:fixed;}
+    :is(.div-print-items,.div-print-resolved) :is(td,th){vertical-align:top; overflow-wrap:anywhere;}
+    :is(.div-print-items,.div-print-resolved) thead{display:table-header-group;}
+    :is(.div-print-items,.div-print-resolved) tr{break-inside:avoid; page-break-inside:avoid;}
+    :is(.div-print-items,.div-print-resolved) thead th{position:static; background:#eef2f6 !important; color:#1e293b !important; border-color:#cfd8e3 !important;}
+    :is(.div-print-items,.div-print-resolved) tbody td{color:#111827 !important;}
+    .div-print-resolved th:nth-child(1){width:20%;}
+    .div-print-resolved th:nth-child(2){width:14%;}
+    .div-print-resolved th:nth-child(3),.div-print-resolved th:nth-child(4),.div-print-resolved th:nth-child(5){width:10%;}
+    .div-print-resolved th:nth-child(6),.div-print-resolved th:nth-child(7){width:18%;}
     .div-print-items th:nth-child(1){width:19%;}
     .div-print-items th:nth-child(2),.div-print-items th:nth-child(3){width:7%;}
     .div-print-items th:nth-child(4){width:12%;}
@@ -5447,6 +5451,7 @@
           <div class="field"><label for="divResolvedTo">CONCLUÍDO ATÉ</label><input id="divResolvedTo" type="date"></div>
           <div class="field assist-search"><label for="divResolvedSearch">PRODUTO OU CÓDIGO</label><input id="divResolvedSearch" type="search" maxlength="80" autocomplete="off" placeholder="Buscar produto ou código"></div>
           <button class="btn-outline" id="btnDivResolvedRefresh" type="button">ATUALIZAR</button>
+          <button class="btn-outline" id="btnDivResolvedPdf" type="button">PDF DE CONCLUÍDAS</button>
         </div>
         <div id="divResolvedList" aria-live="polite"><div class="empty-state"><h4>Carregando resolvidos…</h4></div></div>
       </section>
@@ -10981,6 +10986,25 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelDivRespondDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">SALVAR RESPOSTA</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog div-small-dialog" id="divResolvedPdfDialog" aria-labelledby="divResolvedPdfDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="divResolvedPdfDialogTitle">PDF DE CONCLUÍDAS</h3>
+    <button class="purchase-dialog-close" id="btnCloseDivResolvedPdfDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="divResolvedPdfForm" novalidate>
+    <div class="purchase-form-grid div-dialog-fields">
+      <div class="purchase-field"><label for="divResolvedPdfFrom">DATA INICIAL</label><input id="divResolvedPdfFrom" type="date" required></div>
+      <div class="purchase-field"><label for="divResolvedPdfTo">DATA FINAL</label><input id="divResolvedPdfTo" type="date" required></div>
+      <div class="purchase-field full"><label for="divResolvedPdfCompany">LOJA</label><select id="divResolvedPdfCompany"></select></div>
+    </div>
+    <div class="user-form-status" id="divResolvedPdfStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelDivResolvedPdfDialog" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnDivResolvedPdfGenerate" type="submit">GERAR PDF</button>
     </div>
   </form>
 </dialog>
@@ -26426,6 +26450,107 @@ function renderHomeTasks(){
     }
   });
 
+  // ---------- PDF DE CONCLUÍDAS (em lote, por período) ----------
+  // Itens resolvidos no período pela data da ÚLTIMA resolução (GET
+  // /api/divergences/resolved). Sem dados de abertura do pedido.
+  const DIV_RESOLVED_STATUS = Object.freeze({concluido:'CONCLUÍDO', inventario:'INVENTARIADO'});
+
+  function openDivResolvedPdfDialog(){
+    const today = todayDateKeyRecife();
+    const [year, month] = today.split('-').map(Number);
+    el('divResolvedPdfFrom').value = today.slice(0,8)+'01';
+    el('divResolvedPdfTo').value = new Date(Date.UTC(year, month, 0)).toISOString().slice(0,10);
+    const select = el('divResolvedPdfCompany');
+    const allStores = divAllStoresRead();
+    if(allStores) divFillCompanySelect(select, 'TODAS AS LOJAS');
+    else select.innerHTML = '<option value="">'+escapeHtml(divCompanyName(currentSession.companyId) || 'SUA LOJA')+'</option>';
+    select.value = '';
+    select.disabled = !allStores;
+    setDivFormStatus('divResolvedPdfStatus', '');
+    el('divResolvedPdfDialog').showModal();
+  }
+
+  function divResolvedTotals(items){
+    return items.reduce((totals, item) => {
+      const diff = divDiff(item);
+      totals.count += 1;
+      if(diff > 0) totals.surplus += diff;
+      if(diff < 0) totals.missing -= diff;
+      return totals;
+    }, {count:0, surplus:0, missing:0});
+  }
+
+  function divResolvedTotalsText(items){
+    const totals = divResolvedTotals(items);
+    return totals.count+' ITEM(NS) · '+totals.surplus+' UN. A MAIS · '+totals.missing+' UN. A MENOS';
+  }
+
+  function divPrintResolved(items, from, to, storeLabel){
+    const groups = new Map();
+    items.forEach(item => {
+      const store = item.companyName || '—';
+      if(!groups.has(store)) groups.set(store, []);
+      groups.get(store).push(item);
+    });
+    const when = value => escapeHtml((formatDateTimeBR(value) || '—').replace(' às ', ' '));
+    el('divPrintTitle').textContent = 'DIVERGÊNCIAS CONCLUÍDAS — '+formatDateBR(from)+' A '+formatDateBR(to);
+    el('divPrintMeta').textContent = storeLabel+' · EMITIDO EM '+formatDateTimeBR(new Date());
+    el('divPrintBody').innerHTML = [...groups].map(([store, rows]) =>
+      '<div class="rh-print-block"><h3>'+escapeHtml(store)+'</h3>'+
+      '<table class="rh-print-table div-print-resolved"><thead><tr>'+
+        '<th>PRODUTO</th><th>DIFERENÇA</th><th>STATUS FINAL</th><th>RESOLVIDO EM</th><th>POR</th><th>RESPOSTA DO ADM</th><th>RETORNO DA LOJA</th>'+
+      '</tr></thead><tbody>'+
+      rows.map(item => '<tr>'+
+        '<td>'+escapeHtml(item.productName)+(item.productCode ? '<br>CÓD. '+escapeHtml(item.productCode) : '')+'</td>'+
+        '<td>'+escapeHtml(divDiffLabel(item))+'<br>SISTEMA '+(Number(item.systemQty) || 0)+' × FÍSICO '+(Number(item.physicalQty) || 0)+'</td>'+
+        '<td>'+escapeHtml(DIV_RESOLVED_STATUS[item.status] || item.status)+'</td>'+
+        '<td>'+when(item.resolvedAt)+'</td>'+
+        '<td>'+escapeHtml(item.resolvedByName || '—')+'</td>'+
+        '<td>'+escapeHtml(item.stockResponse || '—')+divPrintAttachments(item, 'adm')+'</td>'+
+        '<td>'+escapeHtml(item.storeReply || '—')+divPrintAttachments(item, 'loja')+'</td>'+
+      '</tr>').join('')+
+      '<tr><td colspan="7"><strong>SUBTOTAL '+escapeHtml(store)+': '+divResolvedTotalsText(rows)+'</strong></td></tr>'+
+      '</tbody></table></div>'
+    ).join('')+
+    '<p><strong>TOTAL GERAL: '+divResolvedTotalsText(items)+'</strong></p>';
+    divPrintTitleBefore = document.title;
+    document.title = 'divergencias-concluidas-'+from+'-a-'+to;
+    document.body.classList.add('pdf-export');
+    window.print();
+  }
+
+  async function generateDivResolvedPdf(event){
+    event.preventDefault();
+    const from = el('divResolvedPdfFrom').value;
+    const to = el('divResolvedPdfTo').value;
+    if(!from || !to || from > to){
+      setDivFormStatus('divResolvedPdfStatus', 'INFORME UM PERÍODO VÁLIDO (DATA INICIAL ATÉ DATA FINAL).', 'error');
+      return;
+    }
+    const select = el('divResolvedPdfCompany');
+    const params = new URLSearchParams({from, to});
+    if(select.value && divAllStoresRead()) params.set('companyId', select.value);
+    const storeLabel = select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : 'TODAS AS LOJAS';
+    const button = el('btnDivResolvedPdfGenerate');
+    button.disabled = true;
+    setDivFormStatus('divResolvedPdfStatus', 'CARREGANDO…');
+    try{
+      const data = await divApi('/resolved?'+params.toString());
+      const items = Array.isArray(data.items) ? data.items : [];
+      if(!items.length){
+        setDivFormStatus('divResolvedPdfStatus', 'NENHUMA DIVERGÊNCIA CONCLUÍDA NO PERÍODO.', 'error');
+        return;
+      }
+      // Fecha antes de imprimir: diálogo aberto (top layer) entraria no PDF.
+      el('divResolvedPdfDialog').close();
+      divPrintResolved(items, from, to, storeLabel);
+    }catch(error){
+      setDivFormStatus('divResolvedPdfStatus', error.message, 'error');
+    }finally{
+      button.disabled = false;
+    }
+  }
+
   // ---------- INVENTÁRIO ----------
   async function loadDivInventory(){
     if(!canAccess('divergencias:inventory')) return;
@@ -26605,6 +26730,8 @@ function renderHomeTasks(){
   el('btnDivDelete').addEventListener('click', deleteDivRequest);
   el('btnDivCloseDetail').addEventListener('click', divCloseDetail);
   el('btnDivResolvedRefresh').addEventListener('click', loadDivResolved);
+  el('btnDivResolvedPdf').addEventListener('click', openDivResolvedPdfDialog);
+  el('divResolvedPdfForm').addEventListener('submit', generateDivResolvedPdf);
   ['divResolvedFrom','divResolvedTo','divResolvedCompany','divResolvedSearch'].forEach(id => el(id).addEventListener('change', loadDivResolved));
   el('divResolvedList').addEventListener('click', event => {
     const row = event.target.closest('[data-div-resolved]');
@@ -26644,7 +26771,8 @@ function renderHomeTasks(){
   [
     ['btnCloseDivRequestDialog','divRequestDialog'],['btnCancelDivRequestDialog','divRequestDialog'],
     ['btnCloseDivRespondDialog','divRespondDialog'],['btnCancelDivRespondDialog','divRespondDialog'],
-    ['btnCloseDivReplyDialog','divReplyDialog'],['btnCancelDivReplyDialog','divReplyDialog']
+    ['btnCloseDivReplyDialog','divReplyDialog'],['btnCancelDivReplyDialog','divReplyDialog'],
+    ['btnCloseDivResolvedPdfDialog','divResolvedPdfDialog'],['btnCancelDivResolvedPdfDialog','divResolvedPdfDialog']
   ].forEach(([buttonId, dialogId]) => {
     el(buttonId).addEventListener('click', () => { if(el(dialogId).open) el(dialogId).close(); });
   });
