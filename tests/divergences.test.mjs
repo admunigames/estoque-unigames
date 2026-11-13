@@ -53,6 +53,11 @@ function createFakeD1() {
       from_status text DEFAULT '' NOT NULL, to_status text DEFAULT '' NOT NULL, text text DEFAULT '' NOT NULL,
       actor_id text DEFAULT '' NOT NULL, actor_name text DEFAULT '' NOT NULL, created_at text NOT NULL
     );
+    CREATE TABLE divergence_item_attachments (
+      id text PRIMARY KEY, item_id text NOT NULL, request_id text NOT NULL, side text NOT NULL, r2_key text NOT NULL,
+      file_name text NOT NULL, content_type text DEFAULT '' NOT NULL, size integer DEFAULT 0 NOT NULL,
+      uploaded_by text DEFAULT '' NOT NULL, uploaded_by_name text DEFAULT '' NOT NULL, created_at text NOT NULL
+    );
   `);
   sqlite
     .prepare("INSERT INTO shared_state (state_key, value_json) VALUES ('companies_list', ?)")

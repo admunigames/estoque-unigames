@@ -3,14 +3,16 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { hasCompany } from "../../../lib/access-scope";
 import {
   allStoresFor,
-  allStoresForAny,
   can,
   canAny,
+  canSeeRequest,
   companyName,
+  dropAttachmentsStatements,
   eventStatement,
   identity,
   inScope,
   jsonResponse,
+  loadAttachments,
   loadItems,
   loadRequest,
   parseItems,
@@ -48,11 +50,8 @@ export async function GET(request: Request, context: Context) {
     const id = routeParam((await context.params).id);
     const database = await getD1();
     const row = await loadRequest(database, id);
-    const visible =
-      row && (allStoresForAny(actor, READ_PERMISSIONS) ||
-        (hasCompany(actor.companyId) && actor.companyId === row.companyId));
-    if (!row || !visible) return jsonResponse({ error: NOT_FOUND }, 404);
-    const [items, events] = await Promise.all([
+    if (!row || !canSeeRequest(actor, row.companyId)) return jsonResponse({ error: NOT_FOUND }, 404);
+    const [items, events, attachments] = await Promise.all([
       loadItems(database, id),
       database
         .prepare(
@@ -62,6 +61,7 @@ export async function GET(request: Request, context: Context) {
         )
         .bind(id)
         .all<EventRow>(),
+      loadAttachments(database, id),
     ]);
     const byItem = new Map<string, EventRow[]>();
     for (const event of events.results ?? []) {
@@ -71,7 +71,11 @@ export async function GET(request: Request, context: Context) {
     }
     return jsonResponse({
       request: row,
-      items: items.map((item) => ({ ...item, events: byItem.get(item.id) || [] })),
+      items: items.map((item) => ({
+        ...item,
+        events: byItem.get(item.id) || [],
+        attachments: attachments.filter((attachment) => attachment.itemId === item.id),
+      })),
     });
   } catch (error) {
     console.error("Não foi possível carregar o pedido de divergência.", error);
@@ -201,6 +205,8 @@ export async function PATCH(request: Request, context: Context) {
         );
       }
     }
+    const removed = [...existing.keys()].filter((itemId) => !keep.has(itemId));
+    statements.push(...(await dropAttachmentsStatements(database, "item_id", removed)));
     for (const current of existing.values()) {
       if (keep.has(current.id)) continue;
       statements.push(
@@ -218,7 +224,7 @@ export async function PATCH(request: Request, context: Context) {
 }
 
 // Excluir o pedido remove também os itens (inclusive pendências de
-// inventário que vieram dele) e o histórico.
+// inventário que vieram dele), o histórico e os anexos (R2 + registro).
 export async function DELETE(request: Request, context: Context) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return unauthorized;
@@ -237,6 +243,7 @@ export async function DELETE(request: Request, context: Context) {
       return jsonResponse({ error: NOT_FOUND }, 404);
     }
     await database.batch([
+      ...(await dropAttachmentsStatements(database, "request_id", [id])),
       database.prepare("DELETE FROM divergence_item_events WHERE request_id=?1").bind(id),
       database.prepare("DELETE FROM divergence_items WHERE request_id=?1").bind(id),
       database.prepare("DELETE FROM divergence_requests WHERE id=?1").bind(id),

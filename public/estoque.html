@@ -4045,6 +4045,17 @@
   .div-cell-sub{display:block; margin-top:4px; color:var(--ink-faint); font:700 8.5px/1.35 var(--mono);}
   .div-row-actions{display:flex; flex-direction:column; gap:6px; align-items:stretch;}
   .div-row-actions button{min-height:34px; padding:7px 10px; font-size:9px;}
+  .div-attachments{display:grid; gap:5px; margin-top:8px;}
+  .div-attachments-title{color:var(--ink-faint); font:800 8.5px/1.3 var(--mono);}
+  .div-attach{display:flex; align-items:center; gap:7px; min-width:0;}
+  .div-attach > div{min-width:0; overflow-wrap:anywhere;}
+  .div-attach a{color:var(--accent); font:700 11px/1.3 var(--sans);}
+  .div-attach-thumb{display:block; width:42px; height:42px; flex:none; object-fit:cover; border:1px solid var(--surface-border); border-radius:6px; background:var(--bg-card);}
+  .div-attach-pdf{display:grid; place-items:center; width:42px; height:42px; flex:none; border:1px solid var(--surface-border); border-radius:6px; color:var(--accent); font:800 10px/1 var(--mono);}
+  .div-attach button{margin-left:auto; flex:none; min-height:28px; padding:4px 9px;}
+  .div-pending-files{list-style:none; margin:8px 0 0; padding:0; display:grid; gap:6px;}
+  .div-pending-files li{display:flex; align-items:center; justify-content:space-between; gap:8px; overflow-wrap:anywhere; font:600 11px/1.3 var(--sans);}
+  .div-pending-files button{flex:none; min-height:28px; padding:4px 9px;}
   .div-history{margin-top:2px; text-align:left;}
   .div-history > summary{cursor:pointer; color:var(--accent); font:800 9px/1.3 var(--mono);}
   .div-history ol{margin:8px 0 0; padding:0 0 0 16px; display:grid; gap:6px;}
@@ -10964,6 +10975,7 @@
         </select>
       </div>
       <div class="purchase-field full"><label for="divRespondText">RESPOSTA PARA A LOJA</label><textarea id="divRespondText" rows="4" maxlength="2000" placeholder="O que foi conferido no PDV / o que a loja precisa verificar."></textarea></div>
+      <div class="purchase-field full"><label for="divRespondFiles">ANEXOS (IMAGEM OU PDF)</label><input id="divRespondFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf"><ul class="div-pending-files" id="divRespondFileList"></ul></div>
     </div>
     <div class="user-form-status" id="divRespondFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -10984,6 +10996,7 @@
       <div class="purchase-field full"><label for="divReplyText">OBSERVAÇÃO DE RETORNO</label><textarea id="divReplyText" rows="4" maxlength="2000" placeholder="O que a loja encontrou na verificação."></textarea></div>
       <div class="purchase-field"><label for="divReplyPhysical">QTD FÍSICA (CORRIGIR, SE PRECISAR)</label><input id="divReplyPhysical" type="number" min="0" max="999999" step="1" inputmode="numeric"></div>
       <div class="purchase-field"><label for="divReplySystem">QTD EM SISTEMA (CORRIGIR, SE PRECISAR)</label><input id="divReplySystem" type="number" min="-999999" max="999999" step="1" inputmode="numeric"></div>
+      <div class="purchase-field full"><label for="divReplyFiles">ANEXOS (IMAGEM OU PDF)</label><input id="divReplyFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf"><ul class="div-pending-files" id="divReplyFileList"></ul></div>
     </div>
     <p class="purchase-field-help">AO ENVIAR, O ITEM VOLTA PARA EM VERIFICAÇÃO.</p>
     <div class="user-form-status" id="divReplyFormStatus" role="status" aria-live="polite"></div>
@@ -25305,7 +25318,9 @@ function renderHomeTasks(){
     respond:'RESPOSTA DO ESTOQUE',
     store_reply:'RETORNO DA LOJA',
     store_edit:'ALTERADO PELA LOJA',
-    inventoried:'INVENTARIADO'
+    inventoried:'INVENTARIADO',
+    attachment:'ANEXO ENVIADO',
+    attachment_delete:'ANEXO EXCLUÍDO'
   });
   const DIV_READ_PERMISSIONS = ['divergencias:view','divergencias:respond','divergencias:edit','divergencias:delete'];
   const divState = {
@@ -25925,9 +25940,11 @@ function renderHomeTasks(){
       '<td data-label="Obs. da loja"><div><span class="div-cell-text">'+escapeHtml(item.storeNotes || '—')+'</span></div></td>'+
       '<td data-label="Status"><div>'+divItemPill(item.status)+'</div></td>'+
       '<td data-label="Resposta do estoque"><div><span class="div-cell-text">'+escapeHtml(item.stockResponse || '—')+'</span>'+
-        (item.respondedAt ? '<span class="div-cell-sub">'+escapeHtml(item.respondedByName || '—')+' · '+escapeHtml(divDateTime(item.respondedAt))+'</span>' : '')+'</div></td>'+
+        (item.respondedAt ? '<span class="div-cell-sub">'+escapeHtml(item.respondedByName || '—')+' · '+escapeHtml(divDateTime(item.respondedAt))+'</span>' : '')+
+        divAttachmentsHtml(item, 'adm', !readonly)+'</div></td>'+
       '<td data-label="Retorno da loja"><div><span class="div-cell-text">'+escapeHtml(item.storeReply || '—')+'</span>'+
-        (item.storeReplyAt ? '<span class="div-cell-sub">'+escapeHtml(item.storeReplyByName || '—')+' · '+escapeHtml(divDateTime(item.storeReplyAt))+'</span>' : '')+'</div></td>'+
+        (item.storeReplyAt ? '<span class="div-cell-sub">'+escapeHtml(item.storeReplyByName || '—')+' · '+escapeHtml(divDateTime(item.storeReplyAt))+'</span>' : '')+
+        divAttachmentsHtml(item, 'loja', !readonly)+'</div></td>'+
       '<td data-label="Ações"><div><div class="div-row-actions">'+actions.join('')+
         '<details class="div-history"><summary>HISTÓRICO ('+events.length+')</summary><ol>'+events.map(divEventHtml).join('')+'</ol></details>'+
       '</div></div></td>'+
@@ -26155,7 +26172,120 @@ function renderHomeTasks(){
       '<div class="purchase-card-detail"><span>STATUS ATUAL</span><strong>'+escapeHtml(DIV_ITEM_STATUS[item.status] || item.status)+'</strong></div>'+
       '<div class="purchase-card-detail"><span>OBS. DA LOJA</span><strong>'+escapeHtml(item.storeNotes || '—')+'</strong></div>'+
       (item.stockResponse ? '<div class="purchase-card-detail wide"><span>RESPOSTA DO ESTOQUE</span><strong>'+escapeHtml(item.stockResponse)+'</strong></div>' : '')+
-      (item.storeReply ? '<div class="purchase-card-detail wide"><span>RETORNO DA LOJA</span><strong>'+escapeHtml(item.storeReply)+'</strong></div>' : '');
+      (item.storeReply ? '<div class="purchase-card-detail wide"><span>RETORNO DA LOJA</span><strong>'+escapeHtml(item.storeReply)+'</strong></div>' : '')+
+      ((item.attachments || []).length ? '<div class="purchase-card-detail wide"><span>ANEXOS</span>'+divAttachmentsHtml(item, 'adm', false)+divAttachmentsHtml(item, 'loja', false)+'</div>' : '');
+  }
+
+  // ---------- ANEXOS (IMAGEM OU PDF) ----------
+  // Resposta do ADM (side 'adm') e retorno da loja (side 'loja'). Mesmo envio
+  // em partes de 512 KB dos outros anexos; a rota checa quem pode anexar.
+  const DIV_ATTACH_TYPES = ['image/jpeg','image/png','image/webp','application/pdf'];
+  const divPendingFiles = {divRespond:[], divReply:[]};
+
+  function divAttachmentBase(itemId){
+    const request = divState.detail && divState.detail.request;
+    return '/'+encodeURIComponent(request ? request.id : '')+'/items/'+encodeURIComponent(itemId)+'/attachments';
+  }
+
+  function divAttachmentsHtml(item, side, manage){
+    const list = (item.attachments || []).filter(attachment => attachment.side === side);
+    if(!list.length) return '';
+    const adm = canAccess('divergencias:respond');
+    return '<div class="div-attachments"><span class="div-attachments-title">ANEXOS '+(side === 'adm' ? 'ADM' : 'LOJA')+'</span>'+
+      list.map(attachment => {
+        const url = '/api/divergences'+divAttachmentBase(item.id)+'/file?attachmentId='+encodeURIComponent(attachment.id);
+        const image = /^image\//.test(attachment.contentType || '');
+        const canDelete = manage && (adm || attachment.uploadedBy === currentSession.id);
+        return '<div class="div-attach">'+
+          '<a href="'+escapeHtml(url)+'" target="_blank" rel="noopener" aria-label="Abrir anexo">'+
+            (image ? '<img class="div-attach-thumb" src="'+escapeHtml(url)+'" alt="" loading="lazy">' : '<span class="div-attach-pdf">PDF</span>')+'</a>'+
+          '<div><a href="'+escapeHtml(url)+'" target="_blank" rel="noopener">'+escapeHtml(attachment.fileName)+'</a>'+
+            '<span class="div-cell-sub">'+escapeHtml(attachment.uploadedByName || '—')+' · '+escapeHtml(divDateTime(attachment.createdAt))+'</span></div>'+
+          (canDelete ? '<button class="btn-outline btn-sm" type="button" data-div-attach-delete="'+escapeHtml(attachment.id)+'" data-div-attach-item="'+escapeHtml(item.id)+'" aria-label="Excluir anexo">×</button>' : '')+
+        '</div>';
+      }).join('')+'</div>';
+  }
+
+  function divPrintAttachments(item, side){
+    const names = (item.attachments || []).filter(attachment => attachment.side === side).map(attachment => attachment.fileName);
+    return names.length ? '<br>ANEXOS: '+escapeHtml(names.join(', ')) : '';
+  }
+
+  function renderDivPendingFiles(prefix){
+    el(prefix+'FileList').innerHTML = divPendingFiles[prefix].map((file, index) =>
+      '<li><span>'+escapeHtml(file.name)+'</span><button class="btn-outline btn-sm" type="button" data-div-pending-remove="'+index+'">REMOVER</button></li>').join('');
+  }
+
+  function resetDivPendingFiles(prefix){
+    divPendingFiles[prefix] = [];
+    el(prefix+'Files').value = '';
+    renderDivPendingFiles(prefix);
+  }
+
+  function bindDivPendingFiles(prefix, statusId){
+    el(prefix+'Files').addEventListener('change', event => {
+      const rejected = [];
+      for(const file of Array.from(event.target.files || [])){
+        if(!DIV_ATTACH_TYPES.includes(file.type)) rejected.push(file.name+' (TIPO)');
+        else if(file.size > MAX_DOCUMENT_SIZE) rejected.push(file.name+' (MAIS DE 25 MB)');
+        else divPendingFiles[prefix].push(file);
+      }
+      event.target.value = '';
+      renderDivPendingFiles(prefix);
+      setDivFormStatus(statusId, rejected.length ? 'SÓ IMAGEM (JPG, PNG, WEBP) OU PDF ATÉ 25 MB. FORA: '+rejected.join(', ') : '', rejected.length ? 'error' : '');
+    });
+    el(prefix+'FileList').addEventListener('click', event => {
+      const button = event.target.closest('[data-div-pending-remove]');
+      if(!button) return;
+      divPendingFiles[prefix].splice(Number(button.dataset.divPendingRemove), 1);
+      renderDivPendingFiles(prefix);
+    });
+  }
+
+  async function divUploadAttachment(itemId, side, original){
+    const file = await prepareUploadFile(original);
+    if(!file || file.size <= 0) throw new Error('O ARQUIVO ESTÁ VAZIO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O ARQUIVO DEVE TER NO MÁXIMO 25 MB.');
+    const base = divAttachmentBase(itemId);
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const created = await divApi(base, {method:'POST', body:JSON.stringify({action:'create', side, fileName:file.name, contentType:file.type, fileSize:file.size, numberOfParts})});
+    const sessionId = created.session && created.session.id;
+    try{
+      for(let index = 0; index < numberOfParts; index += 1){
+        const response = await fetch('/api/divergences'+base, {method:'POST', headers:{Accept:'application/json','Content-Type':'application/octet-stream','x-divergence-upload-id':sessionId,'x-divergence-part-number':String(index + 1)},
+          body:file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size, (index + 1) * DOCUMENT_CHUNK_SIZE))});
+        if(!response.ok) throw new Error(((await response.json().catch(() => ({}))).error) || 'FALHA NO ENVIO.');
+      }
+      await divApi(base, {method:'POST', body:JSON.stringify({action:'complete', sessionId})});
+    }catch(error){
+      divApi(base, {method:'POST', body:JSON.stringify({action:'cancel', sessionId})}).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  /** Envia os arquivos escolhidos no diálogo; devolve os que falharam. */
+  async function divUploadPending(prefix, itemId, side){
+    const failed = [];
+    const files = divPendingFiles[prefix].slice();
+    for(const [index, file] of files.entries()){
+      showPurchaseToast('Enviando anexo '+(index + 1)+' de '+files.length+'…');
+      try{ await divUploadAttachment(itemId, side, file); }
+      catch(error){ failed.push(file.name+': '+error.message); }
+    }
+    return failed;
+  }
+
+  async function deleteDivAttachment(itemId, attachmentId){
+    const item = divDetailItem(itemId);
+    const attachment = item && (item.attachments || []).find(entry => entry.id === attachmentId);
+    if(!attachment || !confirm('EXCLUIR O ANEXO "'+attachment.fileName+'"? O ARQUIVO SERÁ APAGADO.')) return;
+    try{
+      await divApi(divAttachmentBase(itemId)+'?attachmentId='+encodeURIComponent(attachmentId), {method:'DELETE'});
+      showPurchaseToast('Anexo excluído.');
+      await loadDivDetail(divState.detailId);
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+    }
   }
 
   let divDialogItemId = '';
@@ -26168,6 +26298,7 @@ function renderHomeTasks(){
     el('divRespondStatus').value = ['em_verificacao','verificacao_loja','concluido','inventario'].includes(item.status) ? item.status : 'em_verificacao';
     el('divRespondText').value = item.stockResponse || '';
     setDivFormStatus('divRespondFormStatus', '');
+    resetDivPendingFiles('divRespond');
     el('divRespondDialog').showModal();
   }
 
@@ -26181,15 +26312,21 @@ function renderHomeTasks(){
       setDivFormStatus('divRespondFormStatus', 'ESCREVA A RESPOSTA PARA A LOJA.', 'error');
       return;
     }
+    // Desliga o botão enquanto envia (os anexos podem demorar).
+    const button = event.submitter;
+    if(button) button.disabled = true;
     try{
       await divApi('/'+encodeURIComponent(request.id)+'/items/'+encodeURIComponent(divDialogItemId)+'/respond', {
         method:'POST', body:JSON.stringify({status, response})
       });
+      const failed = await divUploadPending('divRespond', divDialogItemId, 'adm');
       el('divRespondDialog').close();
-      showPurchaseToast('Resposta registrada.');
+      showPurchaseToast(failed.length ? 'Resposta registrada, mas anexo(s) não enviado(s): '+failed.join(' · ') : 'Resposta registrada.', failed.length ? 'error' : undefined);
       await loadDivRequests({fromRespond:true});
     }catch(error){
       setDivFormStatus('divRespondFormStatus', error.message, 'error');
+    }finally{
+      if(button) button.disabled = false;
     }
   }
 
@@ -26202,6 +26339,7 @@ function renderHomeTasks(){
     el('divReplyPhysical').value = String(Number(item.physicalQty) || 0);
     el('divReplySystem').value = String(Number(item.systemQty) || 0);
     setDivFormStatus('divReplyFormStatus', '');
+    resetDivPendingFiles('divReply');
     el('divReplyDialog').showModal();
     el('divReplyText').focus();
   }
@@ -26222,6 +26360,8 @@ function renderHomeTasks(){
       setDivFormStatus('divReplyFormStatus', 'QUANTIDADES INVÁLIDAS (FÍSICA: INTEIRO, 0 OU MAIS; SISTEMA: INTEIRO, PODE SER NEGATIVO).', 'error');
       return;
     }
+    const button = event.submitter;
+    if(button) button.disabled = true;
     try{
       await divApi('/'+encodeURIComponent(request.id)+'/items/'+encodeURIComponent(divDialogItemId)+'/store-reply', {
         method:'POST',
@@ -26231,11 +26371,14 @@ function renderHomeTasks(){
           systemQty:system === '' ? undefined : Number(system)
         })
       });
+      const failed = await divUploadPending('divReply', divDialogItemId, 'loja');
       el('divReplyDialog').close();
-      showPurchaseToast('Retorno enviado ao estoque.');
+      showPurchaseToast(failed.length ? 'Retorno enviado, mas anexo(s) não enviado(s): '+failed.join(' · ') : 'Retorno enviado ao estoque.', failed.length ? 'error' : undefined);
       await loadDivRequests();
     }catch(error){
       setDivFormStatus('divReplyFormStatus', error.message, 'error');
+    }finally{
+      if(button) button.disabled = false;
     }
   }
 
@@ -26264,8 +26407,8 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(divDiffLabel(item))+'</td>'+
         '<td>'+escapeHtml(item.storeNotes || '—')+'</td>'+
         '<td>'+escapeHtml(DIV_ITEM_STATUS[item.status] || item.status)+'</td>'+
-        '<td>'+escapeHtml(item.stockResponse || '—')+(item.respondedAt ? '<br>('+escapeHtml(item.respondedByName || '—')+' · '+escapeHtml(divDateTime(item.respondedAt))+')' : '')+'</td>'+
-        '<td>'+escapeHtml(item.storeReply || '—')+(item.storeReplyAt ? '<br>('+escapeHtml(item.storeReplyByName || '—')+' · '+escapeHtml(divDateTime(item.storeReplyAt))+')' : '')+'</td>'+
+        '<td>'+escapeHtml(item.stockResponse || '—')+(item.respondedAt ? '<br>('+escapeHtml(item.respondedByName || '—')+' · '+escapeHtml(divDateTime(item.respondedAt))+')' : '')+divPrintAttachments(item, 'adm')+'</td>'+
+        '<td>'+escapeHtml(item.storeReply || '—')+(item.storeReplyAt ? '<br>('+escapeHtml(item.storeReplyByName || '—')+' · '+escapeHtml(divDateTime(item.storeReplyAt))+')' : '')+divPrintAttachments(item, 'loja')+'</td>'+
       '</tr>').join('')+
       '</tbody></table>';
     divPrintTitleBefore = document.title;
@@ -26454,6 +26597,8 @@ function renderHomeTasks(){
     if(respond) openDivRespondDialog(respond.dataset.divRespond);
     const reply = event.target.closest('[data-div-reply]');
     if(reply) openDivReplyDialog(reply.dataset.divReply);
+    const removeAttachment = event.target.closest('[data-div-attach-delete]');
+    if(removeAttachment) deleteDivAttachment(removeAttachment.dataset.divAttachItem, removeAttachment.dataset.divAttachDelete);
   });
   el('btnDivPdf').addEventListener('click', divPrintRequest);
   el('btnDivEdit').addEventListener('click', () => openDivRequestDialog(true));
@@ -26494,6 +26639,8 @@ function renderHomeTasks(){
   el('divRequestForm').addEventListener('submit', saveDivRequest);
   el('divRespondForm').addEventListener('submit', saveDivRespond);
   el('divReplyForm').addEventListener('submit', saveDivReply);
+  bindDivPendingFiles('divRespond', 'divRespondFormStatus');
+  bindDivPendingFiles('divReply', 'divReplyFormStatus');
   [
     ['btnCloseDivRequestDialog','divRequestDialog'],['btnCancelDivRequestDialog','divRequestDialog'],
     ['btnCloseDivRespondDialog','divRespondDialog'],['btnCancelDivRespondDialog','divRespondDialog'],

@@ -89,7 +89,7 @@ const TABLES = [
   "captured_products", "loan_devices", "loan_requests", "loan_request_updates",
   "supply_categories", "supply_products", "supply_items", "supply_request_events",
   "supply_requests", "supply_request_items", "supply_stock_movements", "supply_missing_marks",
-  "divergence_requests", "divergence_items", "divergence_item_events",
+  "divergence_requests", "divergence_items", "divergence_item_events", "divergence_item_attachments",
 ];
 
 function createFakeD1() {

@@ -4405,6 +4405,29 @@ export const divergenceItemEvents = pgTable(
   ],
 );
 
+// Anexos (imagem ou PDF) da resposta do ADM (side 'adm') e do retorno da
+// loja (side 'loja'), por item — migration 0137. Arquivo no R2 (r2_key).
+export const divergenceItemAttachments = pgTable(
+  "divergence_item_attachments",
+  {
+    id: text("id").primaryKey(),
+    itemId: text("item_id").notNull(),
+    requestId: text("request_id").notNull(),
+    side: text("side").notNull(),
+    r2Key: text("r2_key").notNull(),
+    fileName: text("file_name").notNull(),
+    contentType: text("content_type").notNull().default(""),
+    size: integer("size").notNull().default(0),
+    uploadedBy: text("uploaded_by").notNull().default(""),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [
+    index("divergence_item_attachments_item_idx").on(table.itemId),
+    index("divergence_item_attachments_request_idx").on(table.requestId),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Assistência > Orçamentos (migration 0078). Substitui o app externo
 // (Base44): o atendente monta o orçamento a partir da tabela de valores e

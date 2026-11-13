@@ -1,4 +1,5 @@
-import { canActOnStore, canSeeAllStores } from "../../lib/access-scope";
+import { canActOnStore, canSeeAllStores, hasCompany } from "../../lib/access-scope";
+import { documentsBucket } from "../documents/shared";
 import { RESOLVED_ITEM_STATUSES } from "../../lib/divergences";
 
 // Base comum das rotas de Estoque > Divergências — mesmo estilo de
@@ -236,7 +237,7 @@ export function eventStatement(
   event: {
     itemId: string;
     requestId: string;
-    kind: "created" | "respond" | "store_reply" | "store_edit" | "inventoried";
+    kind: "created" | "respond" | "store_reply" | "store_edit" | "inventoried" | "attachment" | "attachment_delete";
     fromStatus: string;
     toStatus: string;
     text: string;
@@ -299,6 +300,53 @@ export const READ_PERMISSIONS: DivergencePermission[] = [
   "divergencias:delete",
 ];
 
+
+/** Vê o pedido: permissão de leitura + todas as lojas, ou a própria loja. */
+export function canSeeRequest(actor: Identity, companyId: string) {
+  return canAny(actor, READ_PERMISSIONS) &&
+    (allStoresForAny(actor, READ_PERMISSIONS) || (hasCompany(actor.companyId) && actor.companyId === companyId));
+}
+
+export type AttachmentRow = {
+  id: string;
+  itemId: string;
+  side: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  uploadedBy: string;
+  uploadedByName: string;
+  createdAt: string;
+};
+
+export const ATTACHMENT_COLUMNS = `id, item_id AS itemId, side, file_name AS fileName, content_type AS contentType,
+  size, uploaded_by AS uploadedBy, uploaded_by_name AS uploadedByName, created_at AS createdAt`;
+
+/** Anexos de todos os itens do pedido numa consulta só (sem N+1). */
+export async function loadAttachments(database: D1Database, requestId: string) {
+  const result = await database
+    .prepare(`SELECT ${ATTACHMENT_COLUMNS} FROM divergence_item_attachments WHERE request_id=?1 ORDER BY created_at, id`)
+    .bind(requestId)
+    .all<AttachmentRow>();
+  return (result.results ?? []).map((row) => ({ ...row, size: Number(row.size) || 0 }));
+}
+
+/**
+ * Apaga do R2 os arquivos dos anexos do pedido/itens e devolve o DELETE dos
+ * registros para ir no batch. R2 antes do banco (mesma ordem do Compras):
+ * se o banco falhar, o registro fica e dá pra tentar de novo.
+ */
+export async function dropAttachmentsStatements(database: D1Database, column: "request_id" | "item_id", ids: string[]) {
+  if (!ids.length) return [];
+  const placeholders = ids.map((_, index) => `?${index + 1}`).join(",");
+  const rows = await database
+    .prepare(`SELECT r2_key AS r2Key FROM divergence_item_attachments WHERE ${column} IN (${placeholders})`)
+    .bind(...ids)
+    .all<{ r2Key: string }>();
+  const keys = (rows.results ?? []).map((row) => row.r2Key).filter(Boolean);
+  if (keys.length) await (await documentsBucket()).delete(keys);
+  return [database.prepare(`DELETE FROM divergence_item_attachments WHERE ${column} IN (${placeholders})`).bind(...ids)];
+}
 
 export type ParsedItem = {
   id: string;
