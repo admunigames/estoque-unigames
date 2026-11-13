@@ -52330,7 +52330,7 @@ function renderHomeTasks(){
   });
 
   // RECIBO DE COMISSIONAMENTO (13/11/2026): compacto, com a EMPRESA DE
-  // ADMISSÃO e o CNPJ dela, assinatura e data de recebimento à caneta. Vários
+  // ADMISSÃO e o CNPJ dela (sem loja atuante nem observações do lançamento), assinatura e data de recebimento à caneta. Vários
   // por folha (cada recibo não quebra entre páginas); individual ou em lote
   // (os funcionários dos filtros da tela).
   function rhComissaoReciboHtml(row){
@@ -52355,14 +52355,12 @@ function renderHomeTasks(){
       '<div class="rh-recibo-grid">'+
         field('COLABORADOR', row.employeeName)+field('CARGO', row.roleTitle)+
         field('EMPRESA DE ADMISSÃO', admission)+field('CNPJ', row.admissionCnpj ? rhFormatCnpj(row.admissionCnpj) : 'NÃO CADASTRADO')+
-        field('LOJA ATUANTE', row.actingCompanyName)+
       '</div>'+
       itemsHtml+
       '<table class="rh-print-table rh-recibo-totals"><thead><tr><th class="num">Comissão</th><th class="num">Bônus</th><th class="num">Premiações</th><th class="num">Descontos</th><th class="num">Ajustes</th><th class="num">Valor final</th></tr></thead>'+
         '<tbody><tr><td class="num">'+formatCentsBRL(row.commissionCents)+'</td><td class="num">'+formatCentsBRL(row.bonusesCents)+'</td>'+
         '<td class="num">'+formatCentsBRL(row.premiumsCents)+'</td><td class="num">'+(Number(row.discountsCents) ? '-' : '')+formatCentsBRL(row.discountsCents)+'</td>'+
         '<td class="num">'+formatCentsBRL(row.adjustmentsCents)+'</td><td class="num"><strong>'+formatCentsBRL(row.netCents)+'</strong></td></tr></tbody></table>'+
-      (row.notes ? '<div class="rh-recibo-meta">OBSERVAÇÕES: '+escapeHtml(row.notes)+'</div>' : '')+
       (rhComissaoRuleText ? '<div class="rh-recibo-meta rh-recibo-rule">COMO A COMISSÃO É APURADA: '+escapeHtml(rhComissaoRuleText)+'</div>' : '')+
       '<div class="rh-recibo-meta">DECLARO TER RECEBIDO O VALOR FINAL DE <strong>'+formatCentsBRL(row.netCents)+'</strong> REFERENTE AO COMISSIONAMENTO DA COMPETÊNCIA ACIMA.</div>'+
       '<div class="rh-recibo-sign"><div class="rh-recibo-sign-line">ASSINATURA DO COLABORADOR</div><div>DATA DE RECEBIMENTO: ____/____/________</div></div>'+

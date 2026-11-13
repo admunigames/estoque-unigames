@@ -43,5 +43,6 @@ test("tela: colunas na ordem pedida, filtros, recibos em lote e recibo sem a leg
   assert.match(recibo, /rhFormatCnpj\(row\.admissionCnpj\)/);
   assert.match(recibo, /ASSINATURA DO COLABORADOR/);
   assert.match(recibo, /DATA DE RECEBIMENTO/);
+  assert.doesNotMatch(recibo, /LOJA ATUANTE|OBSERVAÇÕES|row\.notes/, "recibo só com a empresa de admissão, sem observação do lançamento");
   assert.match(html, /\.rh-recibo\{[^}]*break-inside:avoid/, "vários recibos por folha sem cortar um ao meio");
 });
