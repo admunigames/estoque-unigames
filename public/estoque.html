@@ -51996,14 +51996,26 @@ function renderHomeTasks(){
     const admissao = el('rhComissaoAdmissao').value;
     return rhComissoes.filter(row =>
       (!search || normalizeSearchText(row.employeeName).includes(search)) &&
-      (!cargo || (cargo === '__none__' ? !row.roleTitle : row.roleTitle === cargo)) &&
+      (!cargo || (cargo === '__none__' ? !row.roleTitle : rhCargoKey(row.roleTitle) === cargo)) &&
       (!loja || row.actingCompanyId === loja) &&
       (!admissao || row.admissionCompanyId === admissao));
   }
 
+  // Cargo igual com ou sem acento/espaço a mais (TÉCNICO = TECNICO): uma
+  // opção só, mostrada com acento quando alguma grafia tiver.
+  function rhCargoKey(role){
+    return normalizeSearchText(role).replace(/\s+/g, ' ');
+  }
   function renderRhComissaoCargoOptions(){
-    const roles = [...new Set(rhComissoes.map(row => row.roleTitle).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    const options = roles.map(role => ({value:role, label:role}));
+    const labels = new Map();
+    rhComissoes.forEach(row => {
+      const key = rhCargoKey(row.roleTitle);
+      if(!key) return;
+      const label = String(row.roleTitle).trim().replace(/\s+/g, ' ').toLocaleUpperCase('pt-BR');
+      const current = labels.get(key);
+      if(!current || (rhCargoKey(current) === current.toLowerCase() && label.toLowerCase() !== key)) labels.set(key, label);
+    });
+    const options = [...labels.entries()].map(([value, label]) => ({value, label})).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
     if(rhComissoes.some(row => !row.roleTitle)) options.push({value:'__none__', label:'SEM CARGO CADASTRADO'});
     rhFillSelect('rhComissaoCargo', 'TODOS OS CARGOS', options);
   }

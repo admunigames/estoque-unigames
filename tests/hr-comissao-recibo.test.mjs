@@ -46,3 +46,27 @@ test("tela: colunas na ordem pedida, filtros, recibos em lote e recibo sem a leg
   assert.doesNotMatch(recibo, /LOJA ATUANTE|OBSERVAÇÕES|row\.notes/, "recibo só com a empresa de admissão, sem observação do lançamento");
   assert.match(html, /\.rh-recibo\{[^}]*break-inside:avoid/, "vários recibos por folha sem cortar um ao meio");
 });
+
+test("filtro de CARGO: com ou sem acento é o mesmo cargo (uma opção, mostrada com acento)", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  const grab = (marker) => {
+    const start = html.indexOf(marker);
+    let depth = 0, end = html.indexOf("{", start);
+    for (; end < html.length; end++) {
+      if (html[end] === "{") depth++;
+      if (html[end] === "}" && --depth === 0) break;
+    }
+    return html.slice(start, end + 1);
+  };
+  const source = ["function normalizeSearchText(", "function rhCargoKey(", "function renderRhComissaoCargoOptions("].map(grab).join("\n");
+  const run = new Function("rhComissoes", "rhFillSelect", `${source}; renderRhComissaoCargoOptions(); return rhCargoKey;`);
+  let options = [];
+  const rows = [{ roleTitle: "TECNICO" }, { roleTitle: "Técnico " }, { roleTitle: "VENDEDOR" }, { roleTitle: "" }];
+  const key = run(rows, (_id, _first, list) => { options = list; });
+  assert.deepEqual(options, [
+    { value: "tecnico", label: "TÉCNICO" },
+    { value: "vendedor", label: "VENDEDOR" },
+    { value: "__none__", label: "SEM CARGO CADASTRADO" },
+  ]);
+  assert.equal(key("TÉCNICO"), key("tecnico  "));
+});
