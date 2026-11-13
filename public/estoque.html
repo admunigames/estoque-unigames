@@ -8703,8 +8703,11 @@
       </div>
 
       <div id="rmaCreditsView" hidden>
+        <div class="dre-toolbar">
+          <div class="field"><label for="rmaCreditSituation">SITUAÇÃO</label><select id="rmaCreditSituation"><option value="">TODOS</option><option value="disponiveis">DISPONÍVEIS</option><option value="indisponiveis">INDISPONÍVEIS</option></select></div>
+        </div>
         <div class="supply-dashboard-grid gd-summary" id="rmaCreditsSummary"></div>
-        <div class="dre-toolbar-actions"><button class="btn-accent" type="button" data-rma-new="credit">NOVO CRÉDITO</button></div>
+        <div class="dre-toolbar-actions"><button class="btn-outline" type="button" id="btnRmaCreditsImage">GERAR IMAGEM</button><button class="btn-accent" type="button" data-rma-new="credit">NOVO CRÉDITO</button></div>
         <div class="table-panel responsive-table"><div class="table-scroll"><table>
           <thead><tr><th>Fornecedor</th><th>Gerado em</th><th>Valor</th><th>Usado</th><th>Saldo</th><th>Status</th><th>Uso</th><th>Documento</th><th>RMA</th><th></th></tr></thead>
           <tbody id="rmaCreditsBody"></tbody>
@@ -32276,10 +32279,12 @@ function renderHomeTasks(){
   // Disponível = tem saldo e não está cancelado nem totalmente usado (verde); o resto, vermelho.
   const rmaCreditAvailable = item => item.creditCents > item.usedCents && !['CANCELADO','UTILIZADO EM COMPRA','ABATIDO EM BOLETO'].includes(item.status);
   function renderRmaCredits(){
-    const rows = rmaExtra.credits;
+    // Filtro SITUAÇÃO só no navegador; o resumo conta só o que está na tela.
+    const situation = el('rmaCreditSituation').value;
+    const rows = situation ? rmaExtra.credits.filter(item => rmaCreditAvailable(item) === (situation === 'disponiveis')) : rmaExtra.credits;
     const live = rows.filter(item => item.status !== 'CANCELADO');
     el('rmaCreditsSummary').innerHTML =
-      '<article class="supply-dashboard-card"><span>CRÉDITOS</span><strong>'+rows.length+'</strong></article>'+
+      '<article class="supply-dashboard-card"><span>'+(situation === 'disponiveis' ? 'CRÉDITOS DISPONÍVEIS' : situation === 'indisponiveis' ? 'CRÉDITOS INDISPONÍVEIS' : 'CRÉDITOS')+'</span><strong>'+rows.length+'</strong></article>'+
       '<article class="supply-dashboard-card"><span>VALOR TOTAL</span><strong>'+formatCentsBRL(live.reduce((sum, item) => sum + item.creditCents, 0))+'</strong></article>'+
       '<article class="supply-dashboard-card"><span>SALDO DISPONÍVEL</span><strong class="gd-pos">'+formatCentsBRL(rows.filter(rmaCreditAvailable).reduce((sum, item) => sum + item.creditCents - item.usedCents, 0))+'</strong></article>'+
       '<article class="supply-dashboard-card"><span>NÃO DISPONÍVEIS</span><strong class="gd-neg">'+rows.filter(item => !rmaCreditAvailable(item)).length+'</strong></article>';
@@ -32294,7 +32299,7 @@ function renderHomeTasks(){
       '<td data-label="Documento">'+escapeHtml(item.documentNumber || '—')+(item.attachments || []).map(file => '<br><a href="'+RMA_API+'/file?id='+encodeURIComponent(file.id)+'" target="_blank" rel="noopener">'+escapeHtml(file.fileName)+'</a>').join('')+'</td>'+
       '<td data-label="RMA">'+escapeHtml(item.rmaCode || '—')+'</td>'+
       '<td style="white-space:nowrap"><button class="btn-outline btn-sm" type="button" data-rma-edit-credit="'+escapeHtml(item.id)+'">EDITAR</button> <button class="btn-outline btn-sm" type="button" data-rma-attach-credit="'+escapeHtml(item.id)+'">ANEXAR</button> <button class="btn-outline btn-sm" type="button" data-rma-delete-credit="'+escapeHtml(item.id)+'">EXCLUIR</button></td></tr>').join('')
-      : '<tr><td colspan="10" class="responsive-empty">Nenhum crédito cadastrado.</td></tr>';
+      : '<tr><td colspan="10" class="responsive-empty">'+(situation ? 'Nenhum crédito nesta situação.' : 'Nenhum crédito cadastrado.')+'</td></tr>';
   }
 
   function renderRmaDisposals(){
@@ -32846,6 +32851,66 @@ function renderHomeTasks(){
   el('rmaSearch') && el('rmaSearch').addEventListener('input', debounce(renderRmaList, 120));
   ['rmaDisposalMonth'].forEach(id => el(id) && el(id).addEventListener('change', renderRmaDisposals));
   el('rmaDisposalSearch') && el('rmaDisposalSearch').addEventListener('input', debounce(renderRmaDisposals, 120));
+  el('rmaCreditSituation') && el('rmaCreditSituation').addEventListener('change', renderRmaCredits);
+  // GERAR IMAGEM: sempre só os DISPONÍVEIS (ignora o filtro da tela), na
+  // mesma moldura das outras imagens (comDrawImageFrame + shareCanvasImage).
+  async function rmaBuildCreditsImage(list){
+    const P = COM_IMAGE_PALETTE;
+    const W = 1600, ROW = 64, TOTAL = 96;
+    const H = 172 + 6 + 30 + 52 + list.length * ROW + 24 + TOTAL + 30 + 58;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const [y0, m0, d0] = financeCurrentDateKey().split('-');
+    const today = d0+'/'+m0+'/'+y0;
+    const {HEADER} = await comDrawImageFrame(ctx, W, H, {
+      title: 'CRÉDITOS RMA DISPONÍVEIS', subtitle: '', pill: today,
+      footer: 'UNIGAMES · RMA', footerRight: 'GERADO EM '+today,
+    });
+    const text = (value, x, y, size, color, align, weight, max) => {
+      ctx.textAlign = align || 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.font = comFont(weight || 800, size);
+      ctx.fillText(max ? comFitText(ctx, String(value).toUpperCase(), max) : String(value).toUpperCase(), x, y);
+    };
+    // Colunas: fornecedor, referência/RMA, data, crédito, usado, saldo.
+    const cols = [[64, 'left', 430], [520, 'left', 330], [880, 'left', 160], [1210, 'right'], [1370, 'right'], [W - 64, 'right']];
+    let y = HEADER + 6 + 30;
+    ctx.fillStyle = '#1d487e';
+    comRoundRect(ctx, 40, y, W - 80, 52, 14);
+    ctx.fill();
+    ['FORNECEDOR', 'REFERÊNCIA / RMA', 'DATA', 'CRÉDITO', 'USADO', 'SALDO'].forEach((label, i) => text(label, cols[i][0], y + 26, 20, '#ffffff', cols[i][1], 900));
+    y += 52;
+    list.forEach((item, index) => {
+      ctx.fillStyle = index % 2 ? '#f3f7fb' : '#ffffff';
+      ctx.fillRect(40, y, W - 80, ROW);
+      ctx.fillStyle = '#3fb27f';
+      ctx.fillRect(40, y, 6, ROW);
+      const mid = y + ROW / 2;
+      text(item.supplier || '—', cols[0][0], mid, 23, P.ink, 'left', 900, cols[0][2]);
+      text([item.rmaCode, item.documentNumber].filter(Boolean).join(' · ') || '—', cols[1][0], mid, 20, P.soft, 'left', 700, cols[1][2]);
+      text(rmaDate(item.generatedDate), cols[2][0], mid, 20, P.soft, 'left', 700, cols[2][2]);
+      text(formatCentsBRL(item.creditCents), cols[3][0], mid, 21, P.ink, 'right', 800);
+      text(formatCentsBRL(item.usedCents), cols[4][0], mid, 21, P.soft, 'right', 700);
+      text(formatCentsBRL(item.creditCents - item.usedCents), cols[5][0], mid, 24, '#1f8a55', 'right', 900);
+      y += ROW;
+    });
+    y += 24;
+    ctx.fillStyle = '#1d487e';
+    comRoundRect(ctx, 40, y, W - 80, TOTAL, 22);
+    ctx.fill();
+    text(list.length+(list.length === 1 ? ' CRÉDITO DISPONÍVEL' : ' CRÉDITOS DISPONÍVEIS'), 76, y + TOTAL / 2, 30, '#ffffff', 'left', 900);
+    text('SALDO TOTAL '+formatCentsBRL(list.reduce((sum, item) => sum + item.creditCents - item.usedCents, 0)), W - 76, y + TOTAL / 2, 38, '#ffffff', 'right', 900);
+    return canvas;
+  }
+  el('btnRmaCreditsImage') && el('btnRmaCreditsImage').addEventListener('click', async () => {
+    const list = rmaExtra.credits.filter(rmaCreditAvailable);
+    if(!list.length){ showPurchaseToast('NENHUM CRÉDITO DISPONÍVEL PARA GERAR A IMAGEM.', 'error'); return; }
+    try{ await shareCanvasImage(await rmaBuildCreditsImage(list), 'creditos-rma-disponiveis-'+financeCurrentDateKey()+'.png'); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
   el('rmaSummary') && el('rmaSummary').addEventListener('click', event => {
     const card = event.target.closest('[data-rma-alert]');
     if(!card) return;
