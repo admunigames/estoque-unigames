@@ -20,6 +20,7 @@ const MODULE_LABELS: [string, string][] = [
   ["/api/inventario", "INVENTÁRIO"],
   ["/api/relatorios-logistica", "RELATÓRIOS LOGÍSTICA"],
   ["/api/reintegracao-fiscal", "REINTEGRAÇÃO FISCAL"],
+  ["/api/fornecedores-pagar", "FORNECEDORES A PAGAR"],
   ["/api/assistencia/ordens-servico", "ORDENS DE SERVIÇO"],
   ["/api/assistencia/precos", "CONSULTA DE PREÇOS"],
   ["/api/assistencia/estoque", "ESTOQUE ASSISTÊNCIA"],

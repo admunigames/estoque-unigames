@@ -5248,6 +5248,39 @@ export const fiscalReintegrations = pgTable(
   (table) => [index("fiscal_reintegrations_status_idx").on(table.status, table.requestedDate)],
 );
 
+// Financeiro > Fornecedores a Pagar (0138): cadastros próprios do módulo
+// (kind 'fornecedor' | 'tipo', só o nome) e lançamentos com um pagamento só
+// (aberto → pago na data). Interno: login com loja não vê.
+export const apSimpleOptions = pgTable("ap_simple_options", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  name: text("name").notNull(),
+  createdByName: text("created_by_name").notNull().default(""),
+  createdAt: text("created_at").notNull().default(sql`now()::text`),
+  deleted: integer("deleted").notNull().default(0),
+});
+
+export const apSimpleEntries = pgTable(
+  "ap_simple_entries",
+  {
+    id: text("id").primaryKey(),
+    supplierId: text("supplier_id").notNull(),
+    paymentTypeId: text("payment_type_id").notNull().default(""),
+    amountCents: integer("amount_cents").notNull(),
+    plannedDate: text("planned_date").notNull(),
+    notes: text("notes").notNull().default(""),
+    status: text("status").notNull().default("aberto"),
+    paidDate: text("paid_date").notNull().default(""),
+    paidByName: text("paid_by_name").notNull().default(""),
+    paidAt: text("paid_at").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    deleted: integer("deleted").notNull().default(0),
+  },
+  (table) => [index("ap_simple_entries_planned_idx").on(table.status, table.plannedDate)],
+);
+
 // Avaliação Operacional (0134): situações por unidade com peso 1–5; total do
 // mês = soma dos pesos, menor total = LOJA PREMIUM. Unidades fixas na rota.
 export const opsEvaluations = pgTable(

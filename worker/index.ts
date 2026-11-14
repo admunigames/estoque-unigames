@@ -93,6 +93,7 @@ type Permission =
   | "inventario:view" | "inventario:count" | "inventario:manage" | "inventario:delete"
   | "relatorios_logistica:view" | "relatorios_logistica:send"
   | "reintegracao_fiscal:view" | "reintegracao_fiscal:create" | "reintegracao_fiscal:emit" | "reintegracao_fiscal:delete"
+  | "fornecedores_pagar:view" | "fornecedores_pagar:create" | "fornecedores_pagar:pay" | "fornecedores_pagar:delete"
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
   | "avaliacao_operacional:view" | "avaliacao_operacional:create" | "avaliacao_operacional:edit" | "avaliacao_operacional:delete"
   | "treinamento:view" | "treinamento:team"
@@ -275,6 +276,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "relatorios_logistica:view", "relatorios_logistica:send",
   // Estoque > Reintegração Fiscal — interno: login com loja não vê (a rota confere).
   "reintegracao_fiscal:view", "reintegracao_fiscal:create", "reintegracao_fiscal:emit", "reintegracao_fiscal:delete",
+  // Financeiro > Fornecedores a Pagar — interno: login com loja não vê (a rota confere).
+  "fornecedores_pagar:view", "fornecedores_pagar:create", "fornecedores_pagar:pay", "fornecedores_pagar:delete",
   // Auditoria Operacional (checklist de loja) — loja só lê as finalizadas da própria loja (a rota confere).
   "auditoria_operacional:view", "auditoria_operacional:audit", "auditoria_operacional:manage", "auditoria_operacional:delete",
   // Avaliação Operacional — loja só vê/age na própria unidade (a rota confere).
@@ -397,6 +400,7 @@ const APP_ROUTE_PATHS = new Set([
   "/inventario",
   "/relatorios-logistica",
   "/reintegracao-fiscal",
+  "/fornecedores-a-pagar",
   "/auditoria-operacional",
   "/avaliacao-operacional",
   "/entradas",
@@ -1434,6 +1438,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   inventario: ["inventario:view", "inventario:count", "inventario:manage", "inventario:delete"],
   relatoriosLogistica: ["relatorios_logistica:view", "relatorios_logistica:send"],
   reintegracaoFiscal: ["reintegracao_fiscal:view", "reintegracao_fiscal:create", "reintegracao_fiscal:emit", "reintegracao_fiscal:delete"],
+  fornecedoresPagar: ["fornecedores_pagar:view", "fornecedores_pagar:create", "fornecedores_pagar:pay", "fornecedores_pagar:delete"],
   rma: ["rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete", "rma:config"],
   estoqueAssistencia: [
     "estoque_assistencia:view", "estoque_assistencia:entrada", "estoque_assistencia:baixa", "estoque_assistencia:manage", "estoque_assistencia:delete",
@@ -1555,6 +1560,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/relatorios-logistica" || path.startsWith("/api/relatorios-logistica"), "relatoriosLogistica"],
     // Estoque > Reintegração Fiscal — permissão própria (reintegracao_fiscal:*).
     [path === "/reintegracao-fiscal" || path.startsWith("/api/reintegracao-fiscal"), "reintegracaoFiscal"],
+    // Financeiro > Fornecedores a Pagar — permissão própria (fornecedores_pagar:*).
+    [path === "/fornecedores-a-pagar" || path.startsWith("/api/fornecedores-pagar"), "fornecedoresPagar"],
     // Cadastros > Auditoria — permissão própria (audit:view). Checado antes
     // do bucket "/cadastros/" (Base de Dados).
     [path === "/cadastros/auditoria" || path.startsWith("/api/audit"), "audit"],
