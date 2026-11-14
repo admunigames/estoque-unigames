@@ -171,6 +171,9 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   ops_audits: ["company_name", "auditor_name", "finalized_by_name"],
   ops_audit_answers: ["section", "group_name", "text", "note", "updated_by_name"],
   ops_evaluations: ["description", "responsible", "created_by_name", "updated_by_name"],
+  // FIDELIZA: vendas importadas já chegam em maiúsculas pela rota (fora da lista).
+  fideliza_contacts: ["note", "created_by_name"],
+  fideliza_imports: ["created_by_name"],
   commercial_gd_store_info: ["updated_by_name"],
   rma_cases: ["store_name", "supplier", "responsible", "os_situation", "accessories", "product_name", "product_category", "brand", "product_notes", "defect_description", "technical_analysis", "finalized_by_name", "solution_description", "next_action", "created_by_name", "updated_by_name"],
   rma_updates: ["responsible", "description", "next_action", "created_by_name", "updated_by_name"],

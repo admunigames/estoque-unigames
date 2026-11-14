@@ -4434,7 +4434,7 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Controle GD e Relatório NF, também esses dois — por isso
   // data-any-permission inclui controle_gd e relatorio_nf além de comercial
   // (ver pageComercialControleGd e pageComercialRelatorioNf).
-  assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,treinamento">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
+  assert.match(html, /<div class="nav-group" data-any-permission="comercial,controle_gd,treinamento,fideliza">\s*<button class="nav-group-toggle" id="navComercialMenu"/);
   assert.match(html, /id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial"/);
   // Treinamento (Unigames Academy): permissão própria treinamento:view/team;
   // dados só pelo servidor (/api/commercial/academy/*), sem a chave no front.

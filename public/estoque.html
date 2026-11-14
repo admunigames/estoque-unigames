@@ -4412,7 +4412,7 @@
         <a class="nav-item sub-item" id="navAssistenciaEstoque" data-page="assistenciaEstoque" data-permission="estoque_assistencia" data-home-desc="Peças da assistência (gabinete, placa mãe, processador, memória, SSD, vídeo, fonte, cooler) com entrada e baixa rápidas e histórico." title="Estoque Assistência" href="/assistencia/estoque"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><line x1="12" y1="13" x2="12" y2="21"/></svg></span><span class="nav-label">Estoque Assistência</span></a>
       </div>
     </div>
-    <div class="nav-group" data-any-permission="comercial,controle_gd,treinamento">
+    <div class="nav-group" data-any-permission="comercial,controle_gd,treinamento,fideliza">
       <button class="nav-group-toggle" id="navComercialMenu" type="button" aria-expanded="false" aria-controls="navComercialSubmenu">
         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 16.5 9 11 13 14.5 20.5 7"/><polyline points="15.5 7 20.5 7 20.5 12"/></svg></span><span class="nav-label">Comercial</span><span class="nav-group-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </button>
@@ -4420,6 +4420,7 @@
         <a class="nav-item sub-item" id="navComercialAcompanhamento" data-page="comercialAcompanhamento" data-permission="comercial" data-home-desc="Dashboard e comissão do seu usuário, ranking geral (só percentual) e importação da planilha de metas." title="Acompanhamento Metas" href="/comercial/acompanhamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l3.5-5"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg></span><span class="nav-label">Acompanhamento Metas</span></a>
         <a class="nav-item sub-item" id="navComercialControleGd" data-page="comercialControleGd" data-permission="controle_gd" data-home-desc="Gordura por venda (data, ID, vendedor e valor), saldo anterior e total do mês por loja, com alerta de status e relatório para WhatsApp." title="Controle de Gorduras" href="/comercial/controle-gd"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></span><span class="nav-label">Controle de Gorduras</span></a>
         <a class="nav-item sub-item" id="navComercialTreinamento" data-page="comercialTreinamento" data-permission="treinamento" data-home-desc="Trilhas e aulas da Unigames Academy com o seu progresso; gestores acompanham a equipe." title="Treinamento" href="/comercial/treinamento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11"/><path d="M21.5 9v5"/></svg></span><span class="nav-label">Treinamento</span></a>
+        <a class="nav-item sub-item" id="navFideliza" data-page="fideliza" data-permission="fideliza" data-home-desc="Clientes do Relatório de PDV, recorrência, inativos e contatos de recompra pelo WhatsApp, por loja." title="FIDELIZA" href="/fideliza"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></span><span class="nav-label">FIDELIZA</span></a>
       </div>
     </div>
     <div class="nav-group" data-any-permission="finance,payables,fornecedores_pagar">
@@ -9429,6 +9430,85 @@
     </section>
 
 
+    <section id="pageFideliza" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title">FIDELIZA</h2>
+        </div>
+        <div class="page-header-meta">
+          <p class="page-desc">Clientes identificados no Relatório de PDV, recorrência, inativos e contatos de recompra pelo WhatsApp.</p>
+          <div class="page-header-actions"><button class="btn-outline" id="btnFidReload" type="button">ATUALIZAR</button></div>
+        </div>
+      </header>
+      <div class="dre-toolbar">
+        <div class="field"><label for="fidStore">LOJA</label><select id="fidStore"></select></div>
+      </div>
+      <div class="supply-tabs" role="tablist" aria-label="FIDELIZA">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-fid-view="clientes">CLIENTES</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="agenda">AGENDA E CONTATOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="importar" hidden>IMPORTAR RELATÓRIO</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="config" hidden>CONFIGURAÇÃO</button>
+      </div>
+
+      <div id="fidClientesView">
+        <div class="supply-dashboard-grid gd-summary" id="fidSummary"></div>
+        <div class="dre-toolbar">
+          <div class="field"><label for="fidSegment">MOSTRAR</label>
+            <select id="fidSegment"><option value="">TODOS</option><option value="recorrentes">RECORRENTES (2+ COMPRAS)</option><option value="unica">COMPRA ÚNICA</option><option value="inativos">INATIVOS</option></select>
+          </div>
+          <div class="field"><label for="fidSearch">BUSCAR</label><input id="fidSearch" type="search" maxlength="60" placeholder="NOME OU TELEFONE" autocomplete="off"></div>
+        </div>
+        <div class="table-panel responsive-table"><div class="table-scroll">
+          <table><thead><tr><th>Cliente</th><th>Compras</th><th>Primeira</th><th>Última</th><th>Total</th><th>Último contato</th><th></th></tr></thead>
+          <tbody id="fidClientsBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody></table>
+        </div></div>
+        <p class="purchase-field-help" id="fidClientsNote"></p>
+      </div>
+
+      <div id="fidAgendaView" hidden>
+        <div class="supply-dashboard-grid gd-summary" id="fidAgendaSummary"></div>
+        <h3 class="supply-section-title">RETORNOS AGENDADOS</h3>
+        <div class="table-panel responsive-table"><div class="table-scroll">
+          <table><thead><tr><th>Retorno</th><th>Cliente</th><th>Observação</th><th>Agendado por</th><th></th></tr></thead>
+          <tbody id="fidPendingBody"></tbody></table>
+        </div></div>
+        <h3 class="supply-section-title">ÚLTIMOS CONTATOS</h3>
+        <div class="table-panel responsive-table"><div class="table-scroll">
+          <table><thead><tr><th>Quando</th><th>Cliente</th><th>Resultado</th><th>Observação</th><th>Por</th></tr></thead>
+          <tbody id="fidRecentBody"></tbody></table>
+        </div></div>
+      </div>
+
+      <div id="fidImportarView" hidden>
+        <form class="table-panel" id="fidImportForm" novalidate style="padding:14px;margin-bottom:14px;">
+          <h3 class="supply-section-title" style="margin-top:0">IMPORTAR RELATÓRIO DE PDV</h3>
+          <div class="purchase-form-grid assist-grid-3">
+            <div class="purchase-field"><label for="fidImportFile">ARQUIVO (.XLS DO SISTEMA DA LOJA) *</label><input id="fidImportFile" type="file" accept=".xls,.htm,.html"></div>
+            <div class="purchase-field"><label for="fidImportStore">LOJA</label><select id="fidImportStore"></select></div>
+          </div>
+          <p class="purchase-field-help">A LOJA É LIDA DO CABEÇALHO DO RELATÓRIO; CONFIRA NA PRÉVIA. SÓ ENTRAM VENDAS FINALIZADAS COM TELEFONE (BALCÃO "CLIENTES UNIGAMES" FICA DE FORA). REIMPORTAR O MESMO PERÍODO NÃO DUPLICA.</p>
+          <button class="btn-outline" id="btnFidPreview" type="submit">VER PRÉVIA</button>
+          <div id="fidImportPreview" hidden style="margin-top:12px"></div>
+        </form>
+        <h3 class="supply-section-title">IMPORTAÇÕES</h3>
+        <div class="table-panel responsive-table"><div class="table-scroll">
+          <table><thead><tr><th>Quando</th><th>Loja</th><th>Período</th><th>Vendas no arquivo</th><th>De clientes</th><th>Novas</th><th>Apagadas (histórico)</th><th>Por</th></tr></thead>
+          <tbody id="fidImportsBody"></tbody></table>
+        </div></div>
+      </div>
+
+      <form class="table-panel" id="fidConfigView" novalidate hidden style="padding:14px;">
+        <div class="purchase-form-grid">
+          <div class="purchase-field full"><label for="fidCfgMessage">MENSAGEM DO WHATSAPP ({NOME} = PRIMEIRO NOME, {LOJA} = LOJA)</label><textarea id="fidCfgMessage" rows="3" maxlength="600"></textarea></div>
+          <div class="purchase-field"><label for="fidCfgInactive">INATIVO APÓS (DIAS SEM COMPRA)</label><input id="fidCfgInactive" type="number" min="30" max="1095" step="1" inputmode="numeric"></div>
+          <div class="purchase-field"><label for="fidCfgHistory">HISTÓRICO GUARDADO (MESES; 0 = TUDO)</label><input id="fidCfgHistory" type="number" min="0" max="120" step="1" inputmode="numeric"></div>
+        </div>
+        <p class="purchase-field-help">COM HISTÓRICO DEFINIDO, AS VENDAS MAIS ANTIGAS QUE ISSO SÃO APAGADAS NA PRÓXIMA IMPORTAÇÃO DA LOJA (A PRÉVIA MOSTRA QUANTAS).</p>
+        <button class="btn-accent" id="btnFidCfgSave" type="submit">SALVAR</button>
+      </form>
+    </section>
+
     <section id="pageComercialTreinamento" class="page wrap">
       <header class="page-header">
         <div class="page-heading">
@@ -10703,6 +10783,28 @@
     <div class="purchase-form-actions"><button class="btn-accent" type="submit">SALVAR</button></div>
   </form>
 </dialog>
+<dialog class="purchase-dialog" id="fidClientDialog" aria-labelledby="fidClientDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="fidClientDialogTitle">CLIENTE</h3>
+    <button class="purchase-dialog-close" id="btnCloseFidClientDialog" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <div id="fidClientInfo"></div>
+    <form id="fidContactForm" novalidate hidden>
+      <h3 class="supply-section-title">REGISTRAR CONTATO</h3>
+      <div class="purchase-form-grid">
+        <div class="purchase-field"><label for="fidContactResult">RESULTADO *</label><select id="fidContactResult"></select></div>
+        <div class="purchase-field" id="fidContactDateField" hidden><label for="fidContactDate">DATA DO RETORNO *</label><input id="fidContactDate" type="date"></div>
+        <div class="purchase-field full"><label for="fidContactNote">OBSERVAÇÃO</label><input id="fidContactNote" maxlength="500" autocomplete="off"></div>
+      </div>
+      <button class="btn-accent" id="btnFidContactSave" type="submit">REGISTRAR CONTATO</button>
+    </form>
+    <h3 class="supply-section-title">CONTATOS</h3>
+    <div id="fidClientContacts"></div>
+    <h3 class="supply-section-title">COMPRAS NESTA LOJA</h3>
+    <div id="fidClientSales"></div>
+  </div>
+</dialog>
 <dialog class="purchase-dialog" id="comRuleDialog" aria-labelledby="comRuleDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="comRuleDialogTitle">NOVA VIGÊNCIA</h3>
@@ -11352,6 +11454,17 @@
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:create"> Lançar gordura</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:edit"> Alterar e excluir gordura</label>
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="controle_gd:opening"> Alterar o saldo anterior</label>
+              </div>
+            </details>
+            <details class="permission-module">
+              <summary>Comercial - FIDELIZA</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="fideliza:view"> VER clientes, recorrência, inativos e agenda da própria loja</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="fideliza:contact"> CONTATAR: registrar contato, resultado e retorno agendado</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="fideliza:import"> IMPORTAR o Relatório de PDV (ADM responsável)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="fideliza:all_stores"> VER TODAS AS LOJAS (só vale para login SEM loja vinculada)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="fideliza:export"> EXPORTAR lista de clientes e contatos (dado pessoal)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="fideliza:manage"> GERENCIAR mensagem do WhatsApp, histórico e prazo de inatividade</label>
               </div>
             </details>
             <details class="permission-module">
@@ -16110,6 +16223,7 @@
     financeiroOrcamento:'/financeiro/orcamento',
     comercialRelatorioNf:'/relatorio-nf',
     comercialTreinamento:'/comercial/treinamento',
+    fideliza:'/fideliza',
     financeiroFluxoCaixa:'/financeiro/fluxo-de-caixa',
     financeiroMaquinetas:'/financeiro/maquinetas',
     financeiroCartoesCorp:'/financeiro/cartoes-corporativos',
@@ -16185,6 +16299,7 @@
     financeiroOrcamento:'ORÇAMENTO',
     comercialRelatorioNf:'RELATÓRIO NF',
     comercialTreinamento:'TREINAMENTO',
+    fideliza:'FIDELIZA',
     financeiroFluxoCaixa:'FLUXO DE CAIXA',
     financeiroMaquinetas:'MAQUINETAS',
     financeiroCartoesCorp:'CARTÕES CORPORATIVOS',
@@ -16254,6 +16369,7 @@
     financeiroOrcamento:'finance',
     comercialRelatorioNf:'relatorio_nf',
     comercialTreinamento:'treinamento',
+    fideliza:'fideliza',
     financeiroFluxoCaixa:'finance',
     financeiroMaquinetas:'finance',
     financeiroCartoesCorp:'finance',
@@ -16508,7 +16624,7 @@
   function isCommercialOnlySession(){
     return currentSession.role !== 'admin' &&
       currentSession.permissions.length > 0 &&
-      currentSession.permissions.every(permission => permission.indexOf('comercial:') === 0 || permission.indexOf('treinamento:') === 0);
+      currentSession.permissions.every(permission => permission.indexOf('comercial:') === 0 || permission.indexOf('treinamento:') === 0 || permission.indexOf('fideliza:') === 0);
   }
 
   function applyAccessVisibility(){
@@ -16931,7 +17047,7 @@
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos' || name === 'assistenciaEstoque';
     const isFinanceiro = name === 'financeiroDashboard' || name === 'financeiro' || name === 'financeiroPayables' || name === 'financeiroInvoices' || name === 'financeiroExpenses' || name === 'financeiroSupplierStatement' || name === 'financeiroOrcamento' || name === 'financeiroFluxoCaixa' || name === 'financeiroMaquinetas' || name === 'financeiroCartoesCorp' || name === 'financeiroConciliacao' || name === 'financeiroCrediarios' || name === 'financeiroConciliacaoVendas' || name === 'financeiroReposicao' || name === 'financeiroRecargas' || name === 'financeiroDeclaracaoShopping' || name === 'obras' || name === 'fornecedoresPagar';
-    const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialTreinamento';
+    const isComercial = name === 'comercialAcompanhamento' || name === 'comercialControleGd' || name === 'comercialTreinamento' || name === 'fideliza';
     document.body.classList.toggle('home-active', isHome);
     if(isHome) setSidebarOpen(false, false);
     if(isHome) scrambleText(el('homeBrandTitle'));
@@ -17004,6 +17120,7 @@
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'comercialTreinamento') loadTreinamentoPage();
+    if(name === 'fideliza') loadFidelizaPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
@@ -17083,6 +17200,7 @@
     if(name === 'financeiroOrcamento') loadOrcamentoPage();
     if(name === 'comercialRelatorioNf') loadRelatorioNfPage();
     if(name === 'comercialTreinamento') loadTreinamentoPage();
+    if(name === 'fideliza') loadFidelizaPage();
     if(name === 'financeiroFluxoCaixa') loadFluxoCaixaPage();
     if(name === 'financeiroMaquinetas') loadMaquinetasPage();
     if(name === 'financeiroCartoesCorp') loadCartoesCorpPage();
@@ -31577,6 +31695,240 @@ function renderHomeTasks(){
     document.body.classList.remove('pdf-export', 'avop-printing');
     document.title = avopPrintTitleBefore;
     avopPrintTitleBefore = '';
+  });
+
+  // ---------- COMERCIAL · FIDELIZA ----------
+  // CRM de recompra (permissões fideliza:*). O servidor decide as lojas: login
+  // com loja só recebe a própria; o front só reflete (can/stores).
+  const FID_API = '/api/fideliza';
+  let fidHome = null, fidView = 'clientes', fidClients = null, fidClientKey = '', fidSearchTimer = 0, fidImportText = '';
+
+  const fidStoreId = () => el('fidStore').value;
+  const fidStoreName = () => ((fidHome && fidHome.stores.find(store => store.id === fidStoreId())) || {}).name || '';
+  const fidResult = key => (fidHome && fidHome.results[key]) || key;
+  const fidPhone = key => key.length === 11 ? '('+key.slice(0,2)+') '+key.slice(2,7)+'-'+key.slice(7) : '('+key.slice(0,2)+') '+key.slice(2,6)+'-'+key.slice(6);
+
+  function fidWhatsLink(key, name){
+    const first = String(name || '').trim().split(/\s+/)[0] || '';
+    const text = String(fidHome.settings.message || '').replace(/\{NOME\}/gi, first).replace(/\{LOJA\}/gi, fidStoreName());
+    return 'https://wa.me/55'+encodeURIComponent(key)+'?text='+encodeURIComponent(text);
+  }
+
+  async function loadFidelizaPage(){
+    try{
+      fidHome = await invApi('GET', null, '', FID_API);
+      const select = el('fidStore'), current = select.value;
+      select.innerHTML = fidHome.stores.map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(store.name)+'</option>').join('');
+      if(fidHome.stores.some(store => store.id === current)) select.value = current;
+      select.disabled = fidHome.stores.length < 2;
+      el('fidImportStore').innerHTML = '<option value="">PELO CABEÇALHO DO ARQUIVO</option>'+fidHome.importStores.map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(store.name)+'</option>').join('');
+      document.querySelector('[data-fid-view="importar"]').hidden = !fidHome.can.import;
+      document.querySelector('[data-fid-view="config"]').hidden = !fidHome.can.manage;
+      el('fidContactResult').innerHTML = Object.entries(fidHome.results).map(([key, label]) => '<option value="'+key+'">'+escapeHtml(label)+'</option>').join('');
+      el('fidCfgMessage').value = fidHome.settings.message;
+      el('fidCfgInactive').value = fidHome.settings.inactiveDays;
+      el('fidCfgHistory').value = fidHome.settings.historyMonths;
+      renderFidImports();
+      if(!fidHome.stores.length && fidView !== 'importar' && fidView !== 'config'){
+        if(fidHome.can.import) return setFidView('importar');
+        el('fidSummary').innerHTML = '';
+        el('fidClientsBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">SEU LOGIN NÃO ESTÁ VINCULADO A UMA LOJA (OU NÃO TEM "VER TODAS AS LOJAS").</td></tr>';
+        return;
+      }
+      setFidView(fidView);
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  function setFidView(view){
+    const tab = document.querySelector('[data-fid-view="'+view+'"]');
+    fidView = tab && !tab.hidden ? view : 'clientes';
+    document.querySelectorAll('[data-fid-view]').forEach(button => {
+      const active = button.dataset.fidView === fidView;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    el('fidClientesView').hidden = fidView !== 'clientes';
+    el('fidAgendaView').hidden = fidView !== 'agenda';
+    el('fidImportarView').hidden = fidView !== 'importar';
+    el('fidConfigView').hidden = fidView !== 'config';
+    if(fidView === 'clientes') loadFidClients();
+    if(fidView === 'agenda') loadFidAgenda();
+  }
+
+  async function loadFidClients(){
+    if(!fidStoreId()) return;
+    const query = '?view=clients&companyId='+encodeURIComponent(fidStoreId())+'&segment='+encodeURIComponent(el('fidSegment').value)+'&q='+encodeURIComponent(el('fidSearch').value.trim());
+    try{
+      fidClients = await invApi('GET', null, query, FID_API);
+      const s = fidClients.summary;
+      el('fidSummary').innerHTML =
+        '<article class="supply-dashboard-card"><span>CLIENTES IDENTIFICADOS</span><strong>'+s.clients+'</strong></article>'+
+        '<article class="supply-dashboard-card"><span>RECORRENTES (2+ COMPRAS)</span><strong>'+s.recurring+'</strong><small>'+(s.clients ? Math.round(s.recurring * 100 / s.clients) : 0)+'% DOS CLIENTES</small></article>'+
+        '<article class="supply-dashboard-card warning"><span>INATIVOS</span><strong>'+s.inactive+'</strong><small>SEM COMPRA DESDE '+escapeHtml(gdDateLabel(fidClients.cutoff))+'</small></article>';
+      renderFidClients();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  function fidContactLabel(contact){
+    if(!contact) return '<span class="os-update-meta">NUNCA CONTATADO</span>';
+    return escapeHtml(fidResult(contact.result))+(contact.scheduledFor ? ' · '+escapeHtml(gdDateLabel(contact.scheduledFor)) : '')+
+      '<small class="os-update-meta">'+escapeHtml((formatDateTimeBR(contact.createdAt) || '')+' · '+contact.createdByName)+'</small>';
+  }
+
+  function renderFidClients(){
+    const rows = fidClients.clients;
+    el('fidClientsBody').innerHTML = rows.length ? rows.map(client => {
+      const key = escapeHtml(client.key);
+      return '<tr><td data-label="Cliente"><strong>'+escapeHtml(client.name)+'</strong></td>'+
+        '<td data-label="Compras">'+client.purchases+'</td><td data-label="Primeira">'+escapeHtml(gdDateLabel(client.firstDate))+'</td>'+
+        '<td data-label="Última">'+escapeHtml(gdDateLabel(client.lastDate))+'</td><td data-label="Total">'+formatCentsBRL(client.totalCents)+'</td>'+
+        '<td data-label="Último contato">'+fidContactLabel(client.lastContact)+'</td>'+
+        '<td style="white-space:nowrap"><a class="btn-outline btn-sm" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(fidWhatsLink(client.key, client.name))+'">WHATSAPP</a> '+
+        '<button class="btn-accent btn-sm" type="button" data-fid-open="'+key+'">'+(fidHome.can.contact ? 'CONTATO' : 'VER')+'</button></td></tr>';
+    }).join('') : '<tr><td colspan="7" class="responsive-empty">NENHUM CLIENTE'+(fidClients.summary.clients ? ' NESTE FILTRO.' : ' — AINDA NÃO HÁ RELATÓRIO IMPORTADO DESTA LOJA.')+'</td></tr>';
+    el('fidClientsNote').textContent = fidClients.truncated ? 'MOSTRANDO OS PRIMEIROS '+rows.length+' — USE A BUSCA OU O FILTRO PARA ACHAR OS DEMAIS.' : '';
+  }
+
+  async function loadFidAgenda(){
+    if(!fidStoreId()) return;
+    try{
+      const data = await invApi('GET', null, '?view=agenda&companyId='+encodeURIComponent(fidStoreId()), FID_API);
+      const today = todayDateKeyRecife();
+      const late = data.pending.filter(item => item.scheduledFor <= today).length;
+      el('fidAgendaSummary').innerHTML =
+        '<article class="supply-dashboard-card'+(late ? ' warning' : '')+'"><span>RETORNOS PARA HOJE OU ATRASADOS</span><strong>'+late+'</strong><small>'+data.pending.length+' AGENDADOS NO TOTAL</small></article>'+
+        '<article class="supply-dashboard-card"><span>CONTATOS HOJE</span><strong>'+data.today+'</strong></article>'+
+        '<article class="supply-dashboard-card"><span>REATIVADOS NO MÊS</span><strong>'+data.reactivatedMonth+'</strong></article>';
+      el('fidPendingBody').innerHTML = data.pending.length ? data.pending.map(item =>
+        '<tr><td data-label="Retorno"><strong>'+escapeHtml(gdDateLabel(item.scheduledFor))+'</strong>'+(item.scheduledFor < today ? '<small class="os-update-meta">ATRASADO</small>' : item.scheduledFor === today ? '<small class="os-update-meta">HOJE</small>' : '')+'</td>'+
+        '<td data-label="Cliente">'+escapeHtml(item.customerName)+'</td><td data-label="Observação">'+escapeHtml(item.note || '—')+'</td>'+
+        '<td data-label="Agendado por">'+escapeHtml(item.createdByName)+'</td>'+
+        '<td><button class="btn-accent btn-sm" type="button" data-fid-open="'+escapeHtml(item.key)+'">ABRIR</button></td></tr>').join('')
+        : '<tr><td colspan="5" class="responsive-empty">NENHUM RETORNO AGENDADO.</td></tr>';
+      el('fidRecentBody').innerHTML = data.recent.length ? data.recent.map(item =>
+        '<tr><td data-label="Quando">'+escapeHtml(formatDateTimeBR(item.createdAt) || '')+'</td><td data-label="Cliente"><button class="btn-outline btn-sm" type="button" data-fid-open="'+escapeHtml(item.key)+'">'+escapeHtml(item.customerName)+'</button></td>'+
+        '<td data-label="Resultado">'+escapeHtml(fidResult(item.result))+(item.scheduledFor ? ' · '+escapeHtml(gdDateLabel(item.scheduledFor)) : '')+'</td>'+
+        '<td data-label="Observação">'+escapeHtml(item.note || '—')+'</td><td data-label="Por">'+escapeHtml(item.createdByName)+'</td></tr>').join('')
+        : '<tr><td colspan="5" class="responsive-empty">NENHUM CONTATO REGISTRADO NOS ÚLTIMOS 6 MESES.</td></tr>';
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  async function openFidClient(key){
+    try{
+      const data = await invApi('GET', null, '?view=client&companyId='+encodeURIComponent(fidStoreId())+'&key='+encodeURIComponent(key), FID_API);
+      fidClientKey = key;
+      const name = data.sales[0].customerName;
+      el('fidClientDialogTitle').textContent = name;
+      el('fidClientInfo').innerHTML = '<p>'+escapeHtml(fidStoreName())+' · '+data.sales.length+' COMPRA(S) · ÚLTIMA EM '+escapeHtml(gdDateLabel(data.sales[0].saleDate))+'</p>'+
+        '<p><a class="btn-outline" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(fidWhatsLink(key, name))+'">WHATSAPP '+escapeHtml(fidPhone(key))+'</a></p>';
+      el('fidContactForm').hidden = !fidHome.can.contact;
+      el('fidContactForm').reset();
+      el('fidContactDateField').hidden = true;
+      el('fidContactDate').min = todayDateKeyRecife();
+      el('fidClientContacts').innerHTML = data.contacts.length ? '<ul>'+data.contacts.map(contact =>
+        '<li><strong>'+escapeHtml(fidResult(contact.result))+'</strong>'+(contact.scheduledFor ? ' · RETORNO '+escapeHtml(gdDateLabel(contact.scheduledFor)) : '')+(contact.note ? ' — '+escapeHtml(contact.note) : '')+
+        '<small class="os-update-meta">'+escapeHtml((formatDateTimeBR(contact.createdAt) || '')+' · '+contact.createdByName)+'</small></li>').join('')+'</ul>'
+        : '<p class="purchase-field-help">NENHUM CONTATO REGISTRADO.</p>';
+      el('fidClientSales').innerHTML = '<ul>'+data.sales.map(sale =>
+        '<li><strong>'+escapeHtml(gdDateLabel(sale.saleDate))+' · '+formatCentsBRL(sale.totalCents)+'</strong> · VENDA '+escapeHtml(sale.saleNo)+' · '+escapeHtml(sale.seller)+' · '+escapeHtml(sale.payment)+
+        '<small class="os-update-meta">'+escapeHtml(sale.items.map(item => (item.qty && item.qty !== 1 ? item.qty+'× ' : '')+item.name).join(' · '))+'</small></li>').join('')+'</ul>';
+      if(!el('fidClientDialog').open) el('fidClientDialog').showModal();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  function renderFidImports(){
+    const rows = fidHome.imports || [];
+    el('fidImportsBody').innerHTML = rows.length ? rows.map(item =>
+      '<tr><td data-label="Quando">'+escapeHtml(formatDateTimeBR(item.createdAt) || '')+'</td><td data-label="Loja">'+escapeHtml(item.companyName)+'</td>'+
+      '<td data-label="Período">'+escapeHtml(gdDateLabel(item.periodStart)+' A '+gdDateLabel(item.periodEnd))+'</td>'+
+      '<td data-label="Vendas no arquivo">'+item.salesTotal+'</td><td data-label="De clientes">'+item.salesKept+'</td><td data-label="Novas">'+item.salesNew+'</td>'+
+      '<td data-label="Apagadas (histórico)">'+item.salesPurged+'</td><td data-label="Por">'+escapeHtml(item.createdByName)+'</td></tr>').join('')
+      : '<tr><td colspan="8" class="responsive-empty">NENHUMA IMPORTAÇÃO AINDA.</td></tr>';
+  }
+
+  async function fidReadFile(file){
+    const buffer = await file.arrayBuffer();
+    try{ return new TextDecoder('utf-8', {fatal:true}).decode(buffer); }
+    catch{ return new TextDecoder('windows-1252').decode(buffer); }
+  }
+
+  async function fidSendImport(preview){
+    const file = el('fidImportFile').files[0];
+    if(!file) throw new Error('SELECIONE O RELATÓRIO DE PDV (.XLS).');
+    if(file.size > 15 * 1024 * 1024) throw new Error('ARQUIVO MAIOR QUE 15 MB — EXPORTE UM PERÍODO MENOR.');
+    if(preview || !fidImportText) fidImportText = await fidReadFile(file);
+    return invApi('POST', {action:'import', preview, companyId: el('fidImportStore').value, fileName: file.name, text: fidImportText}, '', FID_API);
+  }
+
+  function renderFidPreview(p){
+    const box = el('fidImportPreview');
+    box.hidden = false;
+    box.innerHTML = '<div class="supply-dashboard-grid gd-summary">'+
+      '<article class="supply-dashboard-card"><span>LOJA</span><strong>'+escapeHtml(p.storeName)+'</strong><small>CABEÇALHO: '+escapeHtml(p.storeLabel || '—')+'</small></article>'+
+      '<article class="supply-dashboard-card"><span>PERÍODO</span><strong>'+escapeHtml(gdDateLabel(p.periodStart))+'</strong><small>ATÉ '+escapeHtml(gdDateLabel(p.periodEnd))+'</small></article>'+
+      '<article class="supply-dashboard-card"><span>VENDAS DE CLIENTES</span><strong>'+p.salesKept+'</strong><small>DE '+p.salesTotal+' NO ARQUIVO · '+p.customers+' CLIENTES</small></article>'+
+      '<article class="supply-dashboard-card"><span>NOVAS</span><strong>'+p.salesNew+'</strong><small>'+(p.salesKept - p.salesNew)+' JÁ IMPORTADAS</small></article>'+
+      (p.purged ? '<article class="supply-dashboard-card warning"><span>SERÃO APAGADAS</span><strong>'+p.purged+'</strong><small>ANTERIORES A '+escapeHtml(gdDateLabel(p.purgeBefore))+' (HISTÓRICO)</small></article>' : '')+
+      '</div><button class="btn-accent" type="button" id="btnFidImportConfirm">CONFIRMAR IMPORTAÇÃO</button>';
+    el('fidImportStore').value = p.storeId;
+  }
+
+  document.querySelectorAll('[data-fid-view]').forEach(button => button.addEventListener('click', () => setFidView(button.dataset.fidView)));
+  el('btnFidReload') && el('btnFidReload').addEventListener('click', loadFidelizaPage);
+  el('fidStore') && el('fidStore').addEventListener('change', () => setFidView(fidView));
+  el('fidSegment') && el('fidSegment').addEventListener('change', loadFidClients);
+  el('fidSearch') && el('fidSearch').addEventListener('input', () => { clearTimeout(fidSearchTimer); fidSearchTimer = setTimeout(loadFidClients, 350); });
+  document.addEventListener('click', event => {
+    const open = event.target.closest('[data-fid-open]');
+    if(open) openFidClient(open.dataset.fidOpen);
+  });
+  el('btnCloseFidClientDialog') && el('btnCloseFidClientDialog').addEventListener('click', () => el('fidClientDialog').close());
+  el('fidContactResult') && el('fidContactResult').addEventListener('change', () => {
+    el('fidContactDateField').hidden = el('fidContactResult').value !== 'retorno_agendado';
+  });
+  el('fidContactForm') && el('fidContactForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnFidContactSave');
+    button.disabled = true;
+    try{
+      await invApi('POST', {action:'contact', companyId: fidStoreId(), customerKey: fidClientKey, result: el('fidContactResult').value,
+        scheduledFor: el('fidContactDate').value, note: el('fidContactNote').value}, '', FID_API);
+      showPurchaseToast('CONTATO REGISTRADO.');
+      await openFidClient(fidClientKey);
+      if(fidView === 'agenda') loadFidAgenda(); else loadFidClients();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; }
+  });
+  el('fidImportFile') && el('fidImportFile').addEventListener('change', () => { fidImportText = ''; el('fidImportPreview').hidden = true; });
+  el('fidImportStore') && el('fidImportStore').addEventListener('change', () => { el('fidImportPreview').hidden = true; });
+  el('fidImportForm') && el('fidImportForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnFidPreview');
+    button.disabled = true;
+    try{ renderFidPreview((await fidSendImport(true)).preview); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; }
+  });
+  el('fidImportPreview') && el('fidImportPreview').addEventListener('click', async event => {
+    const button = event.target.closest('#btnFidImportConfirm');
+    if(!button) return;
+    button.disabled = true;
+    try{
+      const done = (await fidSendImport(false)).preview;
+      showPurchaseToast(done.salesNew+' VENDAS NOVAS IMPORTADAS ('+done.storeName+').');
+      el('fidImportForm').reset();
+      el('fidImportPreview').hidden = true;
+      fidImportText = '';
+      await loadFidelizaPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); button.disabled = false; }
+  });
+  el('fidConfigView') && el('fidConfigView').addEventListener('submit', async event => {
+    event.preventDefault();
+    try{
+      await invApi('PUT', {message: el('fidCfgMessage').value, inactiveDays: el('fidCfgInactive').value, historyMonths: el('fidCfgHistory').value}, '', FID_API);
+      showPurchaseToast('CONFIGURAÇÃO SALVA.');
+      await loadFidelizaPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
 
   // ---------- ASSISTÊNCIA · ESTOQUE ----------
@@ -49237,6 +49589,7 @@ function renderHomeTasks(){
     'works:manage':'Obras: cadastrar e gerenciar',
     'relatorio_nf:view':'Estoque - Relatório NF: visualizar','relatorio_nf:manage':'Estoque - Relatório NF: lançar/gerenciar',
     'treinamento:view':'Comercial - Treinamento: ver o próprio','treinamento:team':'Comercial - Treinamento: equipe e vínculos',
+    'fideliza:view':'FIDELIZA: ver a própria loja','fideliza:contact':'FIDELIZA: contatar','fideliza:import':'FIDELIZA: importar relatório','fideliza:all_stores':'FIDELIZA: ver todas as lojas','fideliza:export':'FIDELIZA: exportar','fideliza:manage':'FIDELIZA: gerenciar',
     'audit:view':'Auditoria: visualizar',
     'controle_gd:view':'Comercial - Controle de Gorduras: visualizar','controle_gd:create':'Comercial - Controle de Gorduras: lançar gordura','controle_gd:edit':'Comercial - Controle de Gorduras: alterar e excluir gordura','controle_gd:opening':'Comercial - Controle de Gorduras: alterar saldo anterior','gorduras_assistencia:view':'Assistência - Controle Gorduras Assistência: visualizar','gorduras_assistencia:create':'Assistência - Controle Gorduras Assistência: lançar gordura','gorduras_assistencia:edit':'Assistência - Controle Gorduras Assistência: alterar e excluir gordura','gorduras_assistencia:opening':'Assistência - Controle Gorduras Assistência: alterar saldo anterior',
     'documents:create':'Documentos: cadastrar','documents:edit':'Documentos: editar','documents:delete':'Documentos: excluir',

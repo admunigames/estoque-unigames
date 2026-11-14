@@ -5302,3 +5302,61 @@ export const opsEvaluations = pgTable(
   },
   (table) => [index("ops_evaluations_month_idx").on(table.deleted, table.eventDate)],
 );
+
+// Comercial > FIDELIZA (0139): vendas de clientes identificados do Relatório
+// de PDV (id = loja:nº venda, reimportar não duplica), contatos da loja e
+// registro das importações. Config em shared_state 'fideliza_settings'.
+export const fidelizaSales = pgTable(
+  "fideliza_sales",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    saleNo: text("sale_no").notNull(),
+    saleDate: text("sale_date").notNull(),
+    customerKey: text("customer_key").notNull(),
+    customerName: text("customer_name").notNull().default(""),
+    seller: text("seller").notNull().default(""),
+    payment: text("payment").notNull().default(""),
+    totalCents: integer("total_cents").notNull().default(0),
+    itemsJson: text("items_json").notNull().default("[]"),
+    importId: text("import_id").notNull().default(""),
+  },
+  (table) => [
+    index("fideliza_sales_customer_idx").on(table.companyId, table.customerKey, table.saleDate),
+    index("fideliza_sales_date_idx").on(table.companyId, table.saleDate),
+  ],
+);
+
+export const fidelizaContacts = pgTable(
+  "fideliza_contacts",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    customerKey: text("customer_key").notNull(),
+    customerName: text("customer_name").notNull().default(""),
+    result: text("result").notNull(),
+    note: text("note").notNull().default(""),
+    scheduledFor: text("scheduled_for").notNull().default(""),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    deleted: integer("deleted").notNull().default(0),
+  },
+  (table) => [index("fideliza_contacts_customer_idx").on(table.companyId, table.customerKey, table.createdAt)],
+);
+
+export const fidelizaImports = pgTable("fideliza_imports", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  companyName: text("company_name").notNull().default(""),
+  fileName: text("file_name").notNull().default(""),
+  periodStart: text("period_start").notNull().default(""),
+  periodEnd: text("period_end").notNull().default(""),
+  salesTotal: integer("sales_total").notNull().default(0),
+  salesKept: integer("sales_kept").notNull().default(0),
+  salesNew: integer("sales_new").notNull().default(0),
+  salesPurged: integer("sales_purged").notNull().default(0),
+  createdBy: text("created_by").notNull().default(""),
+  createdByName: text("created_by_name").notNull().default(""),
+  createdAt: text("created_at").notNull().default(sql`now()::text`),
+});

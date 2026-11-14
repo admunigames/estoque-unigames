@@ -97,6 +97,7 @@ type Permission =
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
   | "avaliacao_operacional:view" | "avaliacao_operacional:create" | "avaliacao_operacional:edit" | "avaliacao_operacional:delete"
   | "treinamento:view" | "treinamento:team"
+  | "fideliza:view" | "fideliza:contact" | "fideliza:import" | "fideliza:all_stores" | "fideliza:export" | "fideliza:manage"
   | "audit:view"
   | "rh_funcionarios:view" | "rh_funcionarios:create" | "rh_funcionarios:edit" | "rh_funcionarios:delete"
   | "users:manage";
@@ -285,6 +286,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
   // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
   "treinamento:view", "treinamento:team",
+  // Comercial > FIDELIZA — login com loja fica na própria loja (a rota confere).
+  "fideliza:view", "fideliza:contact", "fideliza:import", "fideliza:all_stores", "fideliza:export", "fideliza:manage",
   // Documentos — visualizar é liberado para todo usuário logado (menos
   // login só-Comercial); cadastrar, editar (renomear, mover de pasta e
   // substituir o arquivo) e excluir têm permissão própria, válida para as
@@ -437,6 +440,7 @@ const APP_ROUTE_PATHS = new Set([
   "/comercial/relatorio-nf",
   "/relatorio-nf",
   "/comercial/treinamento",
+  "/fideliza",
   "/financeiro/painel",
   "/financeiro/dre",
   "/financeiro/contas-a-pagar",
@@ -1455,6 +1459,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
     "gorduras_assistencia:view", "gorduras_assistencia:create", "gorduras_assistencia:edit", "gorduras_assistencia:opening",
   ],
   treinamento: ["treinamento:view", "treinamento:team"],
+  fideliza: ["fideliza:view", "fideliza:contact", "fideliza:import", "fideliza:all_stores", "fideliza:export", "fideliza:manage"],
   audit: ["audit:view"],
   employees: ["payroll:manage", "rh_funcionarios:view", "rh_funcionarios:create", "rh_funcionarios:edit", "rh_funcionarios:delete"],
 };
@@ -1705,6 +1710,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
       path === "/comercial/treinamento" || path.startsWith("/api/commercial/academy"),
       "treinamento",
     ],
+    // Comercial > FIDELIZA — permissão própria (fideliza:*); escopo na rota.
+    [path === "/fideliza" || path.startsWith("/api/fideliza"), "fideliza"],
     // Comercial — permissão própria (comercial:*). O escopo por loja e a
     // distinção view/manage ficam em app/api/commercial/shared.ts.
     [

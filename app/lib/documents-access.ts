@@ -32,7 +32,8 @@ export function isCommercialOnlyAccess(user: DocumentAccessUser): boolean {
     user.role !== "admin" &&
     user.permissions.length > 0 &&
     user.permissions.every(
-      (permission) => permission.startsWith("comercial:") || permission.startsWith("treinamento:"),
+      (permission) =>
+        permission.startsWith("comercial:") || permission.startsWith("treinamento:") || permission.startsWith("fideliza:"),
     )
   );
 }
