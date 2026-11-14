@@ -1295,6 +1295,7 @@
   .purchase-field.full{grid-column:1 / -1;}
   .purchase-field label{color:var(--ink-soft); font:700 9.5px/1.3 var(--mono); letter-spacing:.45px;}
   .purchase-field-help{color:var(--ink-faint); font:10px/1.45 var(--sans);}
+  .fid-phone{color:var(--accent); font-weight:600; white-space:nowrap; text-decoration:underline; text-underline-offset:2px;}
   .purchase-field-static{padding:8px 0; font:600 13px/1.3 var(--sans); color:var(--ink);}
   .purchase-form-section{grid-column:1 / -1; margin-top:4px; padding-top:14px; border-top:1px solid var(--border); color:var(--accent); font:700 10px/1.3 var(--mono);}
   .purchase-form-actions{display:flex; justify-content:flex-end; gap:9px; margin-top:18px;}
@@ -9460,8 +9461,8 @@
           <div class="field"><label for="fidSearch">BUSCAR</label><input id="fidSearch" type="search" maxlength="60" placeholder="NOME OU TELEFONE" autocomplete="off"></div>
         </div>
         <div class="table-panel responsive-table"><div class="table-scroll">
-          <table><thead><tr><th>Cliente</th><th>Compras</th><th>Primeira</th><th>Última</th><th>Total</th><th>Último contato</th><th></th></tr></thead>
-          <tbody id="fidClientsBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody></table>
+          <table><thead><tr><th>Cliente</th><th>Telefone (WhatsApp)</th><th>Compras</th><th>Primeira</th><th>Última</th><th>Total</th><th>Último contato</th><th></th></tr></thead>
+          <tbody id="fidClientsBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody></table>
         </div></div>
         <p class="purchase-field-help" id="fidClientsNote"></p>
       </div>
@@ -31713,6 +31714,8 @@ function renderHomeTasks(){
     const text = String(fidHome.settings.message || '').replace(/\{NOME\}/gi, first).replace(/\{LOJA\}/gi, fidStoreName());
     return 'https://wa.me/55'+encodeURIComponent(key)+'?text='+encodeURIComponent(text);
   }
+  // O número do cliente é o próprio link do WhatsApp (pedido de 14/11/2026).
+  const fidPhoneLink = (key, name) => '<a class="fid-phone" target="_blank" rel="noopener noreferrer" title="ABRIR NO WHATSAPP" href="'+escapeHtml(fidWhatsLink(key, name))+'">'+escapeHtml(fidPhone(key))+'</a>';
 
   async function loadFidelizaPage(){
     try{
@@ -31732,7 +31735,7 @@ function renderHomeTasks(){
       if(!fidHome.stores.length && fidView !== 'importar' && fidView !== 'config'){
         if(fidHome.can.import) return setFidView('importar');
         el('fidSummary').innerHTML = '';
-        el('fidClientsBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">SEU LOGIN NÃO ESTÁ VINCULADO A UMA LOJA (OU NÃO TEM "VER TODAS AS LOJAS").</td></tr>';
+        el('fidClientsBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">SEU LOGIN NÃO ESTÁ VINCULADO A UMA LOJA (OU NÃO TEM "VER TODAS AS LOJAS").</td></tr>';
         return;
       }
       setFidView(fidView);
@@ -31780,12 +31783,12 @@ function renderHomeTasks(){
     el('fidClientsBody').innerHTML = rows.length ? rows.map(client => {
       const key = escapeHtml(client.key);
       return '<tr><td data-label="Cliente"><strong>'+escapeHtml(client.name)+'</strong></td>'+
+        '<td data-label="Telefone (WhatsApp)">'+fidPhoneLink(client.key, client.name)+'</td>'+
         '<td data-label="Compras">'+client.purchases+'</td><td data-label="Primeira">'+escapeHtml(gdDateLabel(client.firstDate))+'</td>'+
         '<td data-label="Última">'+escapeHtml(gdDateLabel(client.lastDate))+'</td><td data-label="Total">'+formatCentsBRL(client.totalCents)+'</td>'+
         '<td data-label="Último contato">'+fidContactLabel(client.lastContact)+'</td>'+
-        '<td style="white-space:nowrap"><a class="btn-outline btn-sm" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(fidWhatsLink(client.key, client.name))+'">WHATSAPP</a> '+
-        '<button class="btn-accent btn-sm" type="button" data-fid-open="'+key+'">'+(fidHome.can.contact ? 'CONTATO' : 'VER')+'</button></td></tr>';
-    }).join('') : '<tr><td colspan="7" class="responsive-empty">NENHUM CLIENTE'+(fidClients.summary.clients ? ' NESTE FILTRO.' : ' — AINDA NÃO HÁ RELATÓRIO IMPORTADO DESTA LOJA.')+'</td></tr>';
+        '<td style="white-space:nowrap"><button class="btn-accent btn-sm" type="button" data-fid-open="'+key+'">'+(fidHome.can.contact ? 'CONTATO' : 'VER')+'</button></td></tr>';
+    }).join('') : '<tr><td colspan="8" class="responsive-empty">NENHUM CLIENTE'+(fidClients.summary.clients ? ' NESTE FILTRO.' : ' — AINDA NÃO HÁ RELATÓRIO IMPORTADO DESTA LOJA.')+'</td></tr>';
     el('fidClientsNote').textContent = fidClients.truncated ? 'MOSTRANDO OS PRIMEIROS '+rows.length+' — USE A BUSCA OU O FILTRO PARA ACHAR OS DEMAIS.' : '';
   }
 
@@ -31801,7 +31804,7 @@ function renderHomeTasks(){
         '<article class="supply-dashboard-card"><span>REATIVADOS NO MÊS</span><strong>'+data.reactivatedMonth+'</strong></article>';
       el('fidPendingBody').innerHTML = data.pending.length ? data.pending.map(item =>
         '<tr><td data-label="Retorno"><strong>'+escapeHtml(gdDateLabel(item.scheduledFor))+'</strong>'+(item.scheduledFor < today ? '<small class="os-update-meta">ATRASADO</small>' : item.scheduledFor === today ? '<small class="os-update-meta">HOJE</small>' : '')+'</td>'+
-        '<td data-label="Cliente">'+escapeHtml(item.customerName)+'</td><td data-label="Observação">'+escapeHtml(item.note || '—')+'</td>'+
+        '<td data-label="Cliente">'+escapeHtml(item.customerName)+'<br>'+fidPhoneLink(item.key, item.customerName)+'</td><td data-label="Observação">'+escapeHtml(item.note || '—')+'</td>'+
         '<td data-label="Agendado por">'+escapeHtml(item.createdByName)+'</td>'+
         '<td><button class="btn-accent btn-sm" type="button" data-fid-open="'+escapeHtml(item.key)+'">ABRIR</button></td></tr>').join('')
         : '<tr><td colspan="5" class="responsive-empty">NENHUM RETORNO AGENDADO.</td></tr>';
@@ -31820,7 +31823,7 @@ function renderHomeTasks(){
       const name = data.sales[0].customerName;
       el('fidClientDialogTitle').textContent = name;
       el('fidClientInfo').innerHTML = '<p>'+escapeHtml(fidStoreName())+' · '+data.sales.length+' COMPRA(S) · ÚLTIMA EM '+escapeHtml(gdDateLabel(data.sales[0].saleDate))+'</p>'+
-        '<p><a class="btn-outline" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(fidWhatsLink(key, name))+'">WHATSAPP '+escapeHtml(fidPhone(key))+'</a></p>';
+        '<p>WHATSAPP: '+fidPhoneLink(key, name)+'</p>';
       el('fidContactForm').hidden = !fidHome.can.contact;
       el('fidContactForm').reset();
       el('fidContactDateField').hidden = true;
