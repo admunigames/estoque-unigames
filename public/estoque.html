@@ -9442,14 +9442,41 @@
           <div class="page-header-actions"><button class="btn-outline" id="btnFidReload" type="button">ATUALIZAR</button></div>
         </div>
       </header>
-      <div class="dre-toolbar">
+      <div class="dre-toolbar" id="fidStoreBar">
         <div class="field"><label for="fidStore">LOJA</label><select id="fidStore"></select></div>
       </div>
       <div class="supply-tabs" role="tablist" aria-label="FIDELIZA">
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="geral">VISÃO GERAL</button>
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-fid-view="clientes">CLIENTES</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="agenda">AGENDA E CONTATOS</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="importar" hidden>IMPORTAR RELATÓRIO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="config" hidden>CONFIGURAÇÃO</button>
+      </div>
+
+      <div id="fidGeralView" hidden>
+        <div class="supply-dashboard-grid gd-summary" id="fidGeralSummary"></div>
+        <h3 class="supply-section-title">PÓDIO DO DIA (CONTATOS E REATIVAÇÕES DE HOJE, TODAS AS LOJAS)</h3>
+        <div class="table-panel responsive-table"><div class="table-scroll">
+          <table><thead><tr><th>Posição</th><th>Loja</th><th>Reativados hoje</th><th>Contatos hoje</th></tr></thead>
+          <tbody id="fidPodiumBody"></tbody></table>
+        </div></div>
+        <h3 class="supply-section-title">POR LOJA</h3>
+        <div class="table-panel responsive-table"><div class="table-scroll">
+          <table><thead><tr><th>Loja</th><th>Clientes</th><th>Recorrentes</th><th>Inativos</th><th>Contatos hoje</th><th>Contatos no mês</th><th>Clientes contatados no mês</th><th>Reativados no mês</th><th>Relatório até</th><th></th></tr></thead>
+          <tbody id="fidStoresBody"></tbody></table>
+        </div></div>
+        <form class="table-panel" id="fidExportForm" novalidate hidden style="padding:14px;margin-top:14px;">
+          <h3 class="supply-section-title" style="margin-top:0">EXPORTAR (CSV)</h3>
+          <div class="purchase-form-grid assist-grid-3">
+            <div class="purchase-field"><label for="fidExportKind">O QUÊ</label><select id="fidExportKind"><option value="clientes">CLIENTES</option><option value="contatos">CONTATOS REGISTRADOS</option></select></div>
+            <div class="purchase-field"><label for="fidExportStore">LOJA</label><select id="fidExportStore"></select></div>
+            <div class="purchase-field" id="fidExportSegmentField"><label for="fidExportSegment">CLIENTES</label><select id="fidExportSegment"><option value="">TODOS</option><option value="recorrentes">RECORRENTES (2+ COMPRAS)</option><option value="unica">COMPRA ÚNICA</option><option value="inativos">INATIVOS</option></select></div>
+            <div class="purchase-field" id="fidExportFromField" hidden><label for="fidExportFrom">DE</label><input id="fidExportFrom" type="date"></div>
+            <div class="purchase-field" id="fidExportToField" hidden><label for="fidExportTo">ATÉ</label><input id="fidExportTo" type="date"></div>
+          </div>
+          <p class="purchase-field-help">CONTÉM NOME E TELEFONE DE CLIENTES (DADO PESSOAL — LGPD). CADA DOWNLOAD FICA REGISTRADO NA AUDITORIA COM O SEU USUÁRIO.</p>
+          <button class="btn-accent" id="btnFidExport" type="submit">BAIXAR CSV</button>
+        </form>
       </div>
 
       <div id="fidClientesView">
@@ -31702,7 +31729,7 @@ function renderHomeTasks(){
   // CRM de recompra (permissões fideliza:*). O servidor decide as lojas: login
   // com loja só recebe a própria; o front só reflete (can/stores).
   const FID_API = '/api/fideliza';
-  let fidHome = null, fidView = 'clientes', fidClients = null, fidClientKey = '', fidSearchTimer = 0, fidImportText = '';
+  let fidHome = null, fidView = '', fidClients = null, fidClientKey = '', fidSearchTimer = 0, fidImportText = '';
 
   const fidStoreId = () => el('fidStore').value;
   const fidStoreName = () => ((fidHome && fidHome.stores.find(store => store.id === fidStoreId())) || {}).name || '';
@@ -31731,8 +31758,13 @@ function renderHomeTasks(){
       el('fidCfgMessage').value = fidHome.settings.message;
       el('fidCfgInactive').value = fidHome.settings.inactiveDays;
       el('fidCfgHistory').value = fidHome.settings.historyMonths;
+      el('fidExportForm').hidden = !fidHome.can.export;
+      el('fidExportStore').innerHTML = (fidHome.stores.length > 1 ? '<option value="">TODAS</option>' : '')+fidHome.stores.map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(store.name)+'</option>').join('');
+      if(!el('fidExportFrom').value){ el('fidExportTo').value = todayDateKeyRecife(); el('fidExportFrom').value = todayDateKeyRecife().slice(0, 8)+'01'; }
+      // Gestão (várias lojas) abre na Visão Geral; a loja abre nos clientes.
+      if(!fidView) fidView = fidHome.stores.length > 1 ? 'geral' : 'clientes';
       renderFidImports();
-      if(!fidHome.stores.length && fidView !== 'importar' && fidView !== 'config'){
+      if(!fidHome.stores.length && fidView !== 'importar' && fidView !== 'config' && fidView !== 'geral'){
         if(fidHome.can.import) return setFidView('importar');
         el('fidSummary').innerHTML = '';
         el('fidClientsBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">SEU LOGIN NÃO ESTÁ VINCULADO A UMA LOJA (OU NÃO TEM "VER TODAS AS LOJAS").</td></tr>';
@@ -31750,12 +31782,43 @@ function renderHomeTasks(){
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', active ? 'true' : 'false');
     });
+    el('fidGeralView').hidden = fidView !== 'geral';
+    el('fidStoreBar').hidden = fidView === 'geral' || fidView === 'importar' || fidView === 'config';
     el('fidClientesView').hidden = fidView !== 'clientes';
     el('fidAgendaView').hidden = fidView !== 'agenda';
     el('fidImportarView').hidden = fidView !== 'importar';
     el('fidConfigView').hidden = fidView !== 'config';
+    if(fidView === 'geral') loadFidOverview();
     if(fidView === 'clientes') loadFidClients();
     if(fidView === 'agenda') loadFidAgenda();
+  }
+
+  async function loadFidOverview(){
+    try{
+      const data = await invApi('GET', null, '?view=overview', FID_API);
+      const sum = key => data.stores.reduce((total, store) => total + store[key], 0);
+      const clients = sum('clients'), recurring = sum('recurring');
+      el('fidGeralSummary').innerHTML =
+        '<article class="supply-dashboard-card"><span>CLIENTES IDENTIFICADOS</span><strong>'+clients+'</strong><small>'+data.stores.length+' LOJA(S)</small></article>'+
+        '<article class="supply-dashboard-card"><span>RECORRENTES</span><strong>'+recurring+'</strong><small>'+(clients ? Math.round(recurring * 100 / clients) : 0)+'% DOS CLIENTES</small></article>'+
+        '<article class="supply-dashboard-card warning"><span>INATIVOS</span><strong>'+sum('inactive')+'</strong><small>SEM COMPRA DESDE '+escapeHtml(gdDateLabel(data.cutoff))+'</small></article>'+
+        '<article class="supply-dashboard-card"><span>CONTATOS NO MÊS</span><strong>'+sum('contactsMonth')+'</strong><small>'+sum('contactsToday')+' HOJE</small></article>'+
+        '<article class="supply-dashboard-card"><span>REATIVADOS NO MÊS</span><strong>'+sum('reactivatedMonth')+'</strong></article>';
+      const medal = ['🥇', '🥈', '🥉'];
+      el('fidPodiumBody').innerHTML = data.podium.map((row, index) => {
+        const empty = !row.contacts && !row.reactivated;
+        return '<tr><td data-label="Posição"><strong>'+(empty ? '—' : (medal[index] || '')+' '+(index + 1)+'º')+'</strong></td><td data-label="Loja">'+escapeHtml(row.name)+'</td>'+
+          '<td data-label="Reativados hoje">'+row.reactivated+'</td><td data-label="Contatos hoje">'+row.contacts+'</td></tr>';
+      }).join('') || '<tr><td colspan="4" class="responsive-empty">NENHUMA LOJA.</td></tr>';
+      el('fidStoresBody').innerHTML = data.stores.map(store =>
+        '<tr><td data-label="Loja"><strong>'+escapeHtml(store.name)+'</strong></td><td data-label="Clientes">'+store.clients+'</td>'+
+        '<td data-label="Recorrentes">'+store.recurring+(store.clients ? ' <small class="os-update-meta">'+Math.round(store.recurring * 100 / store.clients)+'%</small>' : '')+'</td>'+
+        '<td data-label="Inativos">'+store.inactive+'</td><td data-label="Contatos hoje">'+store.contactsToday+'</td><td data-label="Contatos no mês">'+store.contactsMonth+'</td>'+
+        '<td data-label="Clientes contatados no mês">'+store.contactedCustomersMonth+'</td><td data-label="Reativados no mês">'+store.reactivatedMonth+'</td>'+
+        '<td data-label="Relatório até">'+(store.lastPeriod ? escapeHtml(gdDateLabel(store.lastPeriod)) : '<span class="os-update-meta">SEM IMPORTAÇÃO</span>')+'</td>'+
+        '<td><button class="btn-outline btn-sm" type="button" data-fid-store="'+escapeHtml(store.id)+'">CLIENTES</button></td></tr>').join('')
+        || '<tr><td colspan="10" class="responsive-empty">SEU LOGIN NÃO ALCANÇA NENHUMA LOJA.</td></tr>';
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   }
 
   async function loadFidClients(){
@@ -31878,6 +31941,39 @@ function renderHomeTasks(){
 
   document.querySelectorAll('[data-fid-view]').forEach(button => button.addEventListener('click', () => setFidView(button.dataset.fidView)));
   el('btnFidReload') && el('btnFidReload').addEventListener('click', loadFidelizaPage);
+  el('fidStoresBody') && el('fidStoresBody').addEventListener('click', event => {
+    const button = event.target.closest('[data-fid-store]');
+    if(!button) return;
+    el('fidStore').value = button.dataset.fidStore;
+    setFidView('clientes');
+  });
+  el('fidExportKind') && el('fidExportKind').addEventListener('change', () => {
+    const contacts = el('fidExportKind').value === 'contatos';
+    el('fidExportSegmentField').hidden = contacts;
+    el('fidExportFromField').hidden = !contacts;
+    el('fidExportToField').hidden = !contacts;
+  });
+  el('fidExportForm') && el('fidExportForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnFidExport');
+    const kind = el('fidExportKind').value, store = el('fidExportStore');
+    const label = (kind === 'contatos' ? 'CONTATOS '+gdDateLabel(el('fidExportFrom').value)+' A '+gdDateLabel(el('fidExportTo').value) : 'CLIENTES '+el('fidExportSegment').selectedOptions[0].text)+' · '+store.selectedOptions[0].text;
+    button.disabled = true;
+    try{
+      // POST de propósito: o download fica na auditoria (description = filtro).
+      const response = await fetch(FID_API, {method:'POST', cache:'no-store', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'export', kind, companyId: store.value, segment: el('fidExportSegment').value,
+          from: el('fidExportFrom').value, to: el('fidExportTo').value, description: label})});
+      if(!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'NÃO FOI POSSÍVEL EXPORTAR.');
+      const name = (/filename="([^"]+)"/.exec(response.headers.get('content-disposition') || '') || [])[1] || 'fideliza.csv';
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      showPurchaseToast('CSV BAIXADO.');
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; }
+  });
   el('fidStore') && el('fidStore').addEventListener('change', () => setFidView(fidView));
   el('fidSegment') && el('fidSegment').addEventListener('change', loadFidClients);
   el('fidSearch') && el('fidSearch').addEventListener('input', () => { clearTimeout(fidSearchTimer); fidSearchTimer = setTimeout(loadFidClients, 350); });

@@ -121,3 +121,39 @@ test("importa (prévia → grava → reimporta sem duplicar), lista, contata e r
   assert.equal(left.summary.clients, 1);
   assert.equal((await (await call(ADM, "GET")).json()).settings.message, "OI {NOME}");
 });
+
+test("visão geral: indicadores do escopo + pódio de todas as lojas; exportar CSV só com permissão e no escopo", async () => {
+  const admOverview = await (await call(ADM, "GET", undefined, "?view=overview")).json();
+  const rowA = admOverview.stores.find((store) => store.id === A);
+  assert.equal(admOverview.stores.length, 2);
+  assert.deepEqual([rowA.clients, rowA.recurring, rowA.contactsToday, rowA.reactivatedMonth, rowA.contactedCustomersMonth], [1, 1, 2, 1, 1]);
+  assert.ok(rowA.lastPeriod);
+  assert.deepEqual(admOverview.podium[0], { name: "RIOMAR", contacts: 2, reactivated: 1 });
+
+  // Loja B: indicadores só da própria loja, mas o pódio mostra as contagens de todas.
+  const lojaB = await (await call(LOJA_B, "GET", undefined, "?view=overview")).json();
+  assert.deepEqual(lojaB.stores.map((store) => store.id), [B]);
+  assert.equal(lojaB.podium.length, 2);
+  assert.equal(JSON.stringify(lojaB).includes("8199"), false);
+
+  const EXPORT = { id: "ex", name: "GESTOR", permissions: ["fideliza:view", "fideliza:all_stores", "fideliza:export"] };
+  const exportB = { ...LOJA_B, permissions: [...LOJA_B.permissions, "fideliza:export"] };
+  assert.equal((await call(ADM, "POST", { action: "export", kind: "clientes" })).status, 403);
+  assert.equal((await call(exportB, "POST", { action: "export", kind: "clientes", companyId: A })).status, 404);
+  const onlyB = await (await call(exportB, "POST", { action: "export", kind: "clientes" })).text();
+  assert.equal(onlyB.trim().split("\r\n").length, 1);
+
+  const clients = await call(EXPORT, "POST", { action: "export", kind: "clientes", description: "CLIENTES · TODAS" });
+  assert.equal(clients.status, 200);
+  assert.match(clients.headers.get("content-type"), /text\/csv/);
+  const lines = (await clients.text()).replace(/^﻿/, "").trim().split("\r\n");
+  assert.equal(lines.length, 2);
+  assert.match(lines[1], /^"RIOMAR";"MARIA RECORRENTE";"\(81\) 99777-2222";"2";/);
+  assert.match(lines[1], /"RECORRENTE"/);
+
+  const today = new Date().toISOString().slice(0, 10);
+  assert.equal((await call(EXPORT, "POST", { action: "export", kind: "contatos", from: today, to: "2000-01-01" })).status, 400);
+  const contacts = (await (await call(EXPORT, "POST", { action: "export", kind: "contatos", companyId: A, from: "2000-01-01", to: "2099-12-31" })).text()).trim().split("\r\n");
+  assert.equal(contacts.length, 3);
+  assert.match(contacts[1], /"RETORNO AGENDADO";"01\/01\/2099";"LIGAR À TARDE";"VENDEDOR A"/);
+});
