@@ -52102,6 +52102,7 @@ function renderHomeTasks(){
     try{
       const data = await rhApiRequest('/benefits?'+params.toString());
       rhBeneficiosRows = Array.isArray(data.benefits) ? data.benefits : [];
+      rhBeneficiosRows.sort((x, y) => String(x.employeeName || '').localeCompare(String(y.employeeName || ''), 'pt-BR'));
       el('rhBeneficiosPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+
         ' · '+(el('rhBeneficioFiltroLoja').value ? (companies.find(company => company.id === el('rhBeneficioFiltroLoja').value) || {name:'—'}).name : 'Todas as lojas');
       renderRhBeneficiosTable();
@@ -52577,6 +52578,7 @@ function renderHomeTasks(){
     try{
       const data = await rhApiRequest('/benefit-cycle?'+params.toString());
       rhCicloRows = Array.isArray(data.rows) ? data.rows : [];
+      rhCicloRows.sort((x, y) => String(x.fullName || '').localeCompare(String(y.fullName || ''), 'pt-BR'));
       rhCicloSeedGenerated();
       renderRhCicloTable(data);
     }catch(error){
