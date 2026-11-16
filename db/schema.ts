@@ -5255,11 +5255,17 @@ export const apSimpleOptions = pgTable("ap_simple_options", {
   id: text("id").primaryKey(),
   kind: text("kind").notNull(),
   name: text("name").notNull(),
+  // Prazo do fornecedor em dias após o pedido (0140); NULL = sem prazo.
+  paymentDays: integer("payment_days"),
   createdByName: text("created_by_name").notNull().default(""),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   deleted: integer("deleted").notNull().default(0),
 });
 
+// 0140: lançamento = PEDIDO (planned_date = data do pedido) com moeda,
+// vários pagamentos (ap_simple_payments) e anexos; status 'pago' = quitado.
+// scheduled_date = programação livre ('' = sem data). payment_type_id fica
+// guardado, fora da tela.
 export const apSimpleEntries = pgTable(
   "ap_simple_entries",
   {
@@ -5267,7 +5273,9 @@ export const apSimpleEntries = pgTable(
     supplierId: text("supplier_id").notNull(),
     paymentTypeId: text("payment_type_id").notNull().default(""),
     amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull().default("BRL"),
     plannedDate: text("planned_date").notNull(),
+    scheduledDate: text("scheduled_date").notNull().default(""),
     notes: text("notes").notNull().default(""),
     status: text("status").notNull().default("aberto"),
     paidDate: text("paid_date").notNull().default(""),
@@ -5279,6 +5287,42 @@ export const apSimpleEntries = pgTable(
     deleted: integer("deleted").notNull().default(0),
   },
   (table) => [index("ap_simple_entries_planned_idx").on(table.status, table.plannedDate)],
+);
+
+// Pagamentos de um pedido (0140). Excluir = deleted=1 com quem excluiu.
+export const apSimplePayments = pgTable(
+  "ap_simple_payments",
+  {
+    id: text("id").primaryKey(),
+    entryId: text("entry_id").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    paidDate: text("paid_date").notNull(),
+    notes: text("notes").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    deleted: integer("deleted").notNull().default(0),
+    deletedByName: text("deleted_by_name").notNull().default(""),
+    deletedAt: text("deleted_at").notNull().default(""),
+  },
+  (table) => [index("ap_simple_payments_entry_idx").on(table.entryId)],
+);
+
+// Anexos do pedido (0140) no R2 (fornecedores-pagar/<pedido>/...).
+export const apSimpleAttachments = pgTable(
+  "ap_simple_attachments",
+  {
+    id: text("id").primaryKey(),
+    entryId: text("entry_id").notNull(),
+    fileName: text("file_name").notNull(),
+    r2Key: text("r2_key").notNull(),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    contentType: text("content_type").notNull().default(""),
+    uploadedByName: text("uploaded_by_name").notNull().default(""),
+    uploadedAt: text("uploaded_at").notNull().default(sql`now()::text`),
+    deleted: integer("deleted").notNull().default(0),
+    deletedByName: text("deleted_by_name").notNull().default(""),
+  },
+  (table) => [index("ap_simple_attachments_entry_idx").on(table.entryId)],
 );
 
 // Avaliação Operacional (0134): situações por unidade com peso 1–5; total do

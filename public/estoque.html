@@ -5415,6 +5415,7 @@
           <h2 class="page-title">Fornecedores a Pagar</h2>
         </div>
         <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnFpgImage" type="button">GERAR IMAGEM</button>
           <button class="btn-outline" id="btnFpgReload" type="button">ATUALIZAR</button>
         </div>
       </header>
@@ -5424,60 +5425,60 @@
         <button class="supply-tab" type="button" role="tab" data-fpg-tab="cadastros">CADASTROS</button>
       </div>
       <div class="supply-dashboard-grid gd-summary" id="fpgSummary"></div>
+      <div class="dre-toolbar" id="fpgFilters">
+        <div class="field"><label for="fpgFilterSupplier">FORNECEDOR</label><select id="fpgFilterSupplier"><option value="">TODOS</option></select></div>
+        <div class="field"><label for="fpgFilterStatus">SITUAÇÃO</label>
+          <select id="fpgFilterStatus"><option value="aberto">EM ABERTO</option><option value="parcial">PAGO PARCIAL</option><option value="pago">QUITADOS</option><option value="">TODOS</option></select>
+        </div>
+        <div class="field"><label for="fpgFilterDue">PRAZO</label>
+          <select id="fpgFilterDue"><option value="vencidos">VENCIDOS</option><option value="hoje">VENCE HOJE</option><option value="7">PRÓXIMOS 7 DIAS</option><option value="15">PRÓXIMOS 15 DIAS</option><option value="30">PRÓXIMOS 30 DIAS</option><option value="sem">SEM PRAZO</option><option value="" selected>TODOS</option></select>
+        </div>
+      </div>
       <div id="fpgLancView">
         <form class="table-panel" id="fpgForm" novalidate hidden style="padding:14px;margin-bottom:14px;">
-          <h3 class="supply-section-title" style="margin-top:0" id="fpgFormTitle">NOVO LANÇAMENTO</h3>
+          <h3 class="supply-section-title" style="margin-top:0" id="fpgFormTitle">NOVO PEDIDO</h3>
           <div class="purchase-form-grid assist-grid-3">
             <div class="purchase-field"><label for="fpgSupplier">FORNECEDOR *</label><select id="fpgSupplier"></select></div>
-            <div class="purchase-field"><label for="fpgType">TIPO DE PAGAMENTO *</label><select id="fpgType"></select></div>
-            <div class="purchase-field"><label for="fpgAmount">VALOR (R$) *</label><input id="fpgAmount" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
-            <div class="purchase-field"><label for="fpgDate">DATA PROGRAMADA *</label><input id="fpgDate" type="date"></div>
+            <div class="purchase-field"><label for="fpgCurrency">MOEDA *</label><select id="fpgCurrency"><option value="BRL">REAL (R$)</option><option value="USD">DÓLAR (US$)</option></select></div>
+            <div class="purchase-field"><label for="fpgAmount">VALOR TOTAL *</label><input id="fpgAmount" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
+            <div class="purchase-field"><label for="fpgDate">DATA DO PEDIDO *</label><input id="fpgDate" type="date"></div>
             <div class="purchase-field" style="grid-column:span 2"><label for="fpgNotes">OBSERVAÇÃO</label><input id="fpgNotes" maxlength="500" autocomplete="off"></div>
+            <div class="purchase-field" style="grid-column:span 2"><label for="fpgFile">ANEXAR O PEDIDO (PDF, JPG, PNG, CSV, XLS, XLSX)</label><input id="fpgFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.csv,.xls,.xlsx"></div>
           </div>
-          <p class="purchase-field-help">FORNECEDOR E TIPO DE PAGAMENTO VÊM DA ABA CADASTROS (SÓ DESTE MÓDULO). UM PAGAMENTO POR LANÇAMENTO.</p>
+          <p class="purchase-field-help">VENCIMENTO = DATA DO PEDIDO + PRAZO DO FORNECEDOR (ABA CADASTROS). OS PAGAMENTOS DO PEDIDO (UM OU VÁRIOS) FICAM EM PAGAMENTOS.</p>
           <button class="btn-accent" id="btnFpgSave" type="submit">ADICIONAR</button>
           <button class="btn-outline" id="btnFpgCancelEdit" type="button" hidden>CANCELAR EDIÇÃO</button>
         </form>
-        <div class="dre-toolbar">
-          <div class="field"><label for="fpgFilterSupplier">FORNECEDOR</label><select id="fpgFilterSupplier"><option value="">TODOS</option></select></div>
-          <div class="field"><label for="fpgFilterStatus">PAGAMENTO</label>
-            <select id="fpgFilterStatus"><option value="aberto">EM ABERTO</option><option value="atrasado">EM ATRASO</option><option value="pago">PAGOS</option><option value="">TODOS</option></select>
-          </div>
-          <div class="field"><label for="fpgFilterType">TIPO DE PAGAMENTO</label><select id="fpgFilterType"><option value="">TODOS</option></select></div>
-        </div>
         <div class="bulk-bar" id="fpgBulkBar">
           <label class="bulk-select-all"><input type="checkbox" id="fpgCheckAll"> SELECIONAR TODOS</label>
           <div class="bulk-bar-actions" id="fpgBulkActions" hidden>
             <strong class="bulk-bar-count" id="fpgBulkCount"></strong>
-            <button class="btn-outline btn-sm" type="button" data-fpg-bulk="pay">MARCAR COMO PAGO</button>
-            <button class="btn-outline btn-sm" type="button" data-fpg-bulk="unpay">DESFAZER PAGAMENTO</button>
+            <button class="btn-outline btn-sm" type="button" data-fpg-bulk="pay">QUITAR (PAGAR O QUE FALTA)</button>
             <button class="btn-outline btn-sm" type="button" data-fpg-bulk="reschedule">ALTERAR DATA PROGRAMADA</button>
             <button class="btn-outline btn-sm" type="button" data-fpg-bulk="delete">EXCLUIR</button>
             <button class="btn-outline btn-sm" type="button" data-fpg-bulk="clear">LIMPAR SELEÇÃO</button>
           </div>
         </div>
         <div class="table-panel responsive-table"><div class="table-scroll">
-          <table><thead><tr><th></th><th>Data programada</th><th>Fornecedor</th><th>Tipo de pagamento</th><th>Valor</th><th>Observação</th><th>Situação</th><th></th></tr></thead>
-          <tbody id="fpgBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody></table>
+          <table><thead><tr><th></th><th>Data do pedido</th><th>Fornecedor</th><th>Vencimento</th><th>Valor total</th><th>Pago</th><th>Falta pagar</th><th>Observação</th><th>Anexo</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="fpgBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody></table>
         </div></div>
       </div>
       <div id="fpgProgView" hidden>
-        <p class="purchase-field-help">PAGAMENTOS EM ABERTO POR DATA PROGRAMADA (ATRASADOS PRIMEIRO). SEGUE OS FILTROS DE FORNECEDOR E TIPO DA ABA LANÇAMENTOS.</p>
+        <p class="purchase-field-help">CONTROLE PRÓPRIO: PROGRAME, MUDE OU APAGUE A DATA DE CADA PEDIDO EM ABERTO QUANDO QUISER. O VENCIMENTO É SÓ SUGESTÃO. SEGUE OS FILTROS DE FORNECEDOR E PRAZO.</p>
         <div id="fpgProgBody"></div>
       </div>
       <div id="fpgCadView" hidden>
-        <div class="assist-grid-2" style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
-          <section class="table-panel" style="padding:14px;">
-            <h3 class="supply-section-title" style="margin-top:0">FORNECEDORES</h3>
-            <form class="dre-toolbar" data-fpg-option-form="fornecedor" novalidate><div class="field" style="flex:1"><label for="fpgNewSupplier">NOME</label><input id="fpgNewSupplier" maxlength="120" autocomplete="off"></div><button class="btn-accent" type="submit">ADICIONAR</button></form>
-            <ul class="div-product-list" id="fpgSupplierList"></ul>
-          </section>
-          <section class="table-panel" style="padding:14px;">
-            <h3 class="supply-section-title" style="margin-top:0">TIPOS DE PAGAMENTO</h3>
-            <form class="dre-toolbar" data-fpg-option-form="tipo" novalidate><div class="field" style="flex:1"><label for="fpgNewType">NOME</label><input id="fpgNewType" maxlength="120" autocomplete="off"></div><button class="btn-accent" type="submit">ADICIONAR</button></form>
-            <ul class="div-product-list" id="fpgTypeList"></ul>
-          </section>
-        </div>
+        <section class="table-panel" style="padding:14px;max-width:720px;">
+          <h3 class="supply-section-title" style="margin-top:0">FORNECEDORES</h3>
+          <form class="dre-toolbar" id="fpgSupplierForm" novalidate>
+            <div class="field" style="flex:1"><label for="fpgNewSupplier">NOME</label><input id="fpgNewSupplier" maxlength="120" autocomplete="off"></div>
+            <div class="field"><label for="fpgNewDays">PRAZO (DIAS APÓS O PEDIDO)</label><input id="fpgNewDays" type="number" min="0" max="365" inputmode="numeric" placeholder="SEM PRAZO"></div>
+            <button class="btn-accent" type="submit">ADICIONAR</button>
+          </form>
+          <p class="purchase-field-help">PRAZO VAZIO = SEM PRAZO (O PEDIDO APARECE COM VENCIMENTO "—"). MUDAR O PRAZO RECALCULA O VENCIMENTO DE TODOS OS PEDIDOS DO FORNECEDOR.</p>
+          <ul class="div-product-list" id="fpgSupplierList"></ul>
+        </section>
       </div>
     </section>
 
@@ -11220,7 +11221,7 @@
 
 <dialog class="purchase-dialog div-small-dialog" id="fpgDateDialog" aria-labelledby="fpgDateDialogTitle">
   <div class="purchase-dialog-head">
-    <h3 id="fpgDateDialogTitle">MARCAR COMO PAGO</h3>
+    <h3 id="fpgDateDialogTitle">QUITAR PEDIDO</h3>
     <button class="purchase-dialog-close" id="btnCloseFpgDateDialog" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="fpgDateForm" novalidate>
@@ -11231,11 +11232,32 @@
       </div>
       <div class="purchase-field full"><label for="fpgDialogDate" id="fpgDialogDateLabel">DATA DO PAGAMENTO</label><input id="fpgDialogDate" type="date"></div>
     </div>
+    <p class="purchase-field-help" id="fpgDateHelp"></p>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelFpgDateDialog" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit" id="btnFpgDateConfirm">CONFIRMAR</button>
     </div>
   </form>
+</dialog>
+<dialog class="purchase-dialog" id="fpgOrderDialog" aria-labelledby="fpgOrderDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="fpgOrderDialogTitle">PAGAMENTOS DO PEDIDO</h3>
+    <button class="purchase-dialog-close" type="button" data-fpg-close aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <div class="purchase-card-details" id="fpgOrderSummary"></div>
+    <h4 class="supply-section-title">PAGAMENTOS</h4>
+    <div class="table-scroll"><table><thead><tr><th>Data</th><th>Valor</th><th>Observação</th><th>Lançado por</th><th></th></tr></thead><tbody id="fpgPaymentsBody"></tbody></table></div>
+    <form class="purchase-form-grid assist-grid-3" id="fpgPaymentForm" novalidate>
+      <div class="purchase-field"><label for="fpgPayDate">DATA DO PAGAMENTO *</label><input id="fpgPayDate" type="date"></div>
+      <div class="purchase-field"><label for="fpgPayAmount">VALOR PAGO *</label><input id="fpgPayAmount" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
+      <div class="purchase-field"><label for="fpgPayNotes">OBSERVAÇÃO</label><input id="fpgPayNotes" maxlength="500" autocomplete="off"></div>
+      <div class="purchase-field full"><button class="btn-accent" type="submit" id="btnFpgAddPayment">REGISTRAR PAGAMENTO</button></div>
+    </form>
+    <h4 class="supply-section-title">ANEXOS</h4>
+    <div id="fpgOrderFiles"></div>
+    <div class="purchase-field" id="fpgOrderFileField"><label for="fpgOrderFile">ANEXAR ARQUIVO (PDF, JPG, PNG, CSV, XLS, XLSX)</label><input id="fpgOrderFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.csv,.xls,.xlsx"></div>
+  </div>
 </dialog>
 <dialog class="purchase-dialog div-small-dialog" id="divRespondDialog" aria-labelledby="divRespondDialogTitle">
   <div class="purchase-dialog-head">
@@ -31505,19 +31527,36 @@ function renderHomeTasks(){
   });
 
   // ---------- FINANCEIRO · FORNECEDORES A PAGAR ----------
-  // Só controle: um pagamento por lançamento (pago ou não). Fornecedor e tipo
-  // de pagamento são cadastros SÓ deste módulo. Interno: login com loja não vê
-  // (a rota app/api/fornecedores-pagar confere tudo; aqui só reflete).
+  // Cada lançamento é um PEDIDO: valor total em R$ ou US$ (nunca convertido;
+  // totais separados por moeda), data do pedido, vários pagamentos até o
+  // total e anexos. Vencimento = pedido + prazo do fornecedor (vem calculado
+  // da rota; sem prazo = ''). PROGRAMAÇÃO é livre (data ou vazio). Interno:
+  // login com loja não vê (a rota app/api/fornecedores-pagar confere tudo).
   const FPG_API = '/api/fornecedores-pagar';
+  const FPG_FILE_API = FPG_API+'/attachment';
   let fpgData = null;
   let fpgTab = 'lancamentos';
   let fpgEditId = '';
   let fpgDialogMode = '';
   let fpgDialogIds = [];
+  let fpgOrderId = '';
   const fpgSelected = new Set();
 
-  const fpgName = (list, id) => (list.find(item => item.id === id) || {}).name || '—';
-  const fpgLate = (item, today) => item.status === 'aberto' && item.plannedDate < today;
+  const fpgName = id => (fpgData.suppliers.find(item => item.id === id) || {}).name || '—';
+  const fpgCur = item => item.currency === 'USD' ? 'USD' : 'BRL';
+  const fpgMoney = (cents, currency) => ((Number(cents) || 0) / 100).toLocaleString('pt-BR', {style:'currency', currency: currency === 'USD' ? 'USD' : 'BRL'});
+  const fpgLeft = item => item.amountCents - item.paidCents;
+  const fpgIsOpen = item => fpgLeft(item) > 0;
+  const fpgAddDays = (iso, days) => { const date = new Date(iso+'T12:00:00Z'); date.setUTCDate(date.getUTCDate() + days); return date.toISOString().slice(0, 10); };
+  const fpgFileLink = file => '<a href="'+FPG_FILE_API+'?id='+encodeURIComponent(file.id)+'" target="_blank" rel="noopener">'+escapeHtml(file.fileName)+'</a>'+
+    ' · <a href="'+FPG_FILE_API+'?id='+encodeURIComponent(file.id)+'&download=1">BAIXAR</a>';
+
+  // Soma por moeda: "R$ …" e, se houver dólar na lista, "· US$ …".
+  function fpgSum(list, value){
+    const totals = {BRL:0, USD:0};
+    list.forEach(item => { totals[fpgCur(item)] += value(item); });
+    return fpgMoney(totals.BRL, 'BRL')+(list.some(item => fpgCur(item) === 'USD') ? ' · '+fpgMoney(totals.USD, 'USD') : '');
+  }
 
   function fpgFillSelect(id, list, first, onlyActive){
     const select = el(id), current = select.value;
@@ -31530,97 +31569,118 @@ function renderHomeTasks(){
     try{
       fpgData = await invApi('GET', null, '', FPG_API);
       fpgFillSelect('fpgSupplier', fpgData.suppliers, 'SELECIONE', true);
-      fpgFillSelect('fpgType', fpgData.types, 'SELECIONE', true);
       fpgFillSelect('fpgFilterSupplier', fpgData.suppliers, 'TODOS');
-      fpgFillSelect('fpgFilterType', fpgData.types, 'TODOS');
       if(!el('fpgDate').value) el('fpgDate').value = todayDateKeyRecife();
       el('fpgForm').hidden = !fpgData.can.create;
-      document.querySelectorAll('[data-fpg-option-form]').forEach(form => { form.hidden = !fpgData.can.create; });
+      el('fpgSupplierForm').hidden = !fpgData.can.create;
       const ids = new Set(fpgData.items.map(item => item.id));
       [...fpgSelected].forEach(id => { if(!ids.has(id)) fpgSelected.delete(id); });
       renderFpg();
+      if(fpgOrderId && el('fpgOrderDialog').open) fpgRenderOrder();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   }
 
-  // Filtros de fornecedor e tipo valem para as duas abas; PAGAMENTO só para a lista.
-  function fpgFiltered(){
-    const supplier = el('fpgFilterSupplier').value, type = el('fpgFilterType').value;
-    return fpgData.items.filter(item => (!supplier || item.supplierId === supplier) && (!type || item.paymentTypeId === type));
+  // Filtro de prazo: VENCIDOS/HOJE/PRÓXIMOS só olham pedidos com saldo.
+  function fpgDueMatch(item, filter, today){
+    if(!filter) return true;
+    if(filter === 'sem') return !item.dueDate;
+    if(!item.dueDate || !fpgIsOpen(item)) return false;
+    if(filter === 'vencidos') return item.dueDate < today;
+    if(filter === 'hoje') return item.dueDate === today;
+    return item.dueDate >= today && item.dueDate <= fpgAddDays(today, Number(filter));
+  }
+  function fpgStatusMatch(item, view){
+    if(view === 'aberto') return fpgIsOpen(item);
+    if(view === 'parcial') return fpgIsOpen(item) && item.paidCents > 0;
+    if(view === 'pago') return !fpgIsOpen(item);
+    return true;
+  }
+  // Fornecedor + prazo: resumo e programação. Com situação: tabela e imagem.
+  function fpgFiltered(withStatus){
+    const supplier = el('fpgFilterSupplier').value, due = el('fpgFilterDue').value, view = el('fpgFilterStatus').value, today = todayDateKeyRecife();
+    return fpgData.items.filter(item => (!supplier || item.supplierId === supplier) && fpgDueMatch(item, due, today) && (!withStatus || fpgStatusMatch(item, view)));
+  }
+
+  function fpgDueHtml(item, today){
+    if(!item.dueDate) return '—';
+    const late = fpgIsOpen(item) && item.dueDate < today;
+    return '<span'+(late ? ' class="gd-neg"' : '')+'>'+escapeHtml(gdDateLabel(item.dueDate))+(late ? ' · VENCIDO' : item.dueDate === today && fpgIsOpen(item) ? ' · HOJE' : '')+'</span>';
   }
 
   function fpgStatusHtml(item, today){
-    if(item.status === 'pago'){
-      const onPlanned = item.paidDate === item.plannedDate;
-      return '<span class="status-pill done">PAGO</span><small class="os-update-meta">EM '+escapeHtml(gdDateLabel(item.paidDate))+
-        (onPlanned ? ' · NA DATA PROGRAMADA' : '')+' · '+escapeHtml(item.paidByName)+'</small>';
+    if(!fpgIsOpen(item)){
+      const last = item.payments[item.payments.length - 1];
+      return '<span class="status-pill done">QUITADO</span>'+(last ? '<small class="os-update-meta">EM '+escapeHtml(gdDateLabel(last.paidDate))+'</small>' : '');
     }
-    return fpgLate(item, today) ? '<span class="status-pill alert">EM ATRASO</span>' : '<span class="status-pill">EM ABERTO</span>';
+    if(item.dueDate && item.dueDate < today) return '<span class="status-pill alert">VENCIDO</span>';
+    return item.paidCents > 0 ? '<span class="status-pill waiting">PAGO PARCIAL</span>' : '<span class="status-pill">EM ABERTO</span>';
   }
 
   function renderFpg(){
     if(!fpgData) return;
     const today = todayDateKeyRecife(), can = fpgData.can;
-    const base = fpgFiltered();
-    const open = base.filter(item => item.status === 'aberto');
-    const late = open.filter(item => item.plannedDate < today);
-    const sum = list => formatCentsBRL(list.reduce((total, item) => total + Number(item.amountCents || 0), 0));
+    const base = fpgFiltered(false);
+    const open = base.filter(fpgIsOpen);
+    const late = open.filter(item => item.dueDate && item.dueDate < today);
     const month = today.slice(0, 7);
-    const paidMonth = base.filter(item => item.status === 'pago' && String(item.paidDate).slice(0, 7) === month);
+    const paidMonth = item => item.payments.filter(row => String(row.paidDate).slice(0, 7) === month).reduce((sum, row) => sum + row.amountCents, 0);
+    const paidMonthList = base.filter(item => paidMonth(item) > 0);
     el('fpgSummary').innerHTML =
-      '<article class="supply-dashboard-card"><span>A PAGAR ('+open.length+')</span><strong>'+sum(open)+'</strong></article>'+
-      '<article class="supply-dashboard-card danger"><span>EM ATRASO ('+late.length+')</span><strong>'+sum(late)+'</strong></article>'+
-      '<article class="supply-dashboard-card"><span>PAGOS NO MÊS ('+paidMonth.length+')</span><strong>'+sum(paidMonth)+'</strong></article>';
+      '<article class="supply-dashboard-card"><span>FALTA PAGAR ('+open.length+')</span><strong>'+fpgSum(open, fpgLeft)+'</strong></article>'+
+      '<article class="supply-dashboard-card danger"><span>VENCIDOS ('+late.length+')</span><strong>'+fpgSum(late, fpgLeft)+'</strong></article>'+
+      '<article class="supply-dashboard-card"><span>PAGO NO MÊS</span><strong>'+fpgSum(paidMonthList, paidMonth)+'</strong></article>';
 
-    const view = el('fpgFilterStatus').value;
-    const rows = base.filter(item => !view || (view === 'atrasado' ? fpgLate(item, today) : item.status === view))
-      .sort((a, b) => view === 'pago' ? 0 : a.plannedDate.localeCompare(b.plannedDate));
+    const rows = fpgFiltered(true).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999') || b.orderDate.localeCompare(a.orderDate));
     const bulkable = can.create || can.pay || can.delete;
     el('fpgBulkBar').hidden = !bulkable;
     el('fpgBody').innerHTML = rows.length ? rows.map(item => {
-      const id = escapeHtml(item.id), isOpen = item.status === 'aberto';
-      const buttons = (isOpen && can.pay ? '<button class="btn-accent btn-sm" type="button" data-fpg-pay="'+id+'">PAGO</button> ' : '')+
-        (!isOpen && can.pay ? '<button class="btn-outline btn-sm" type="button" data-fpg-unpay="'+id+'">DESFAZER</button> ' : '')+
+      const id = escapeHtml(item.id), cur = fpgCur(item);
+      const buttons = '<button class="btn-accent btn-sm" type="button" data-fpg-order="'+id+'">PAGAMENTOS</button> '+
         (can.create ? '<button class="btn-outline btn-sm" type="button" data-fpg-edit="'+id+'">EDITAR</button> ' : '')+
         (can.delete ? '<button class="btn-outline btn-sm" type="button" data-fpg-del="'+id+'">EXCLUIR</button>' : '');
       return '<tr><td>'+(bulkable ? '<input class="bulk-check" type="checkbox" data-fpg-check="'+id+'"'+(fpgSelected.has(item.id) ? ' checked' : '')+' aria-label="Selecionar">' : '')+'</td>'+
-        '<td data-label="Data programada">'+escapeHtml(gdDateLabel(item.plannedDate))+'</td>'+
-        '<td data-label="Fornecedor"><strong>'+escapeHtml(fpgName(fpgData.suppliers, item.supplierId))+'</strong></td>'+
-        '<td data-label="Tipo de pagamento">'+escapeHtml(fpgName(fpgData.types, item.paymentTypeId))+'</td>'+
-        '<td data-label="Valor"><strong>'+formatCentsBRL(item.amountCents)+'</strong></td>'+
+        '<td data-label="Data do pedido">'+escapeHtml(gdDateLabel(item.orderDate))+'</td>'+
+        '<td data-label="Fornecedor"><strong>'+escapeHtml(fpgName(item.supplierId))+'</strong></td>'+
+        '<td data-label="Vencimento">'+fpgDueHtml(item, today)+'</td>'+
+        '<td data-label="Valor total"><strong>'+fpgMoney(item.amountCents, cur)+'</strong></td>'+
+        '<td data-label="Pago">'+fpgMoney(item.paidCents, cur)+'</td>'+
+        '<td data-label="Falta pagar"><strong>'+fpgMoney(fpgLeft(item), cur)+'</strong></td>'+
         '<td data-label="Observação">'+escapeHtml(item.notes || '—')+'</td>'+
+        '<td data-label="Anexo">'+(item.attachments.length ? item.attachments.map(fpgFileLink).join('<br>') : '—')+'</td>'+
         '<td data-label="Situação">'+fpgStatusHtml(item, today)+'</td>'+
         '<td style="white-space:nowrap">'+buttons+'</td></tr>';
-    }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum lançamento.</td></tr>';
+    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhum pedido.</td></tr>';
     const visible = rows.map(item => item.id);
     el('fpgCheckAll').checked = visible.length > 0 && visible.every(id => fpgSelected.has(id));
     el('fpgBulkActions').hidden = !fpgSelected.size;
     el('fpgBulkCount').textContent = fpgSelected.size+' SELECIONADO(S)';
 
-    // Programação: em aberto agrupado por data programada; atrasados num bloco só, no topo.
+    // Programação: em aberto por data programada; atrasados no topo, sem data no fim.
     const groups = new Map();
-    open.slice().sort((a, b) => a.plannedDate.localeCompare(b.plannedDate)).forEach(item => {
-      const key = item.plannedDate < today ? 'atrasado' : item.plannedDate;
+    open.slice().sort((a, b) => (a.scheduledDate || '9999').localeCompare(b.scheduledDate || '9999')).forEach(item => {
+      const key = !item.scheduledDate ? 'sem' : item.scheduledDate < today ? 'atrasado' : item.scheduledDate;
       if(!groups.has(key)) groups.set(key, []);
       groups.get(key).push(item);
     });
     el('fpgProgBody').innerHTML = groups.size ? [...groups].map(([key, list]) => {
-      const title = key === 'atrasado' ? 'EM ATRASO' : (key === today ? 'HOJE · ' : '')+gdDateLabel(key);
+      const title = key === 'atrasado' ? 'PROGRAMADOS PARA DATA PASSADA' : key === 'sem' ? 'SEM DATA PROGRAMADA' : (key === today ? 'HOJE · ' : '')+gdDateLabel(key);
       return '<section class="table-panel" style="padding:12px 14px;margin-bottom:12px;">'+
-        '<div class="div-panel-head"><h3'+(key === 'atrasado' ? ' class="gd-neg"' : '')+'>'+escapeHtml(title)+'</h3><span>'+list.length+' PAGAMENTO(S) · '+sum(list)+'</span></div>'+
-        '<div class="table-scroll"><table style="table-layout:fixed;min-width:640px"><tbody>'+list.map(item =>
-          '<tr><td>'+escapeHtml(gdDateLabel(item.plannedDate))+'</td><td><strong>'+escapeHtml(fpgName(fpgData.suppliers, item.supplierId))+'</strong></td>'+
-          '<td>'+escapeHtml(fpgName(fpgData.types, item.paymentTypeId))+'</td><td><strong>'+formatCentsBRL(item.amountCents)+'</strong></td>'+
-          '<td>'+escapeHtml(item.notes || '')+'</td>'+
-          '<td style="white-space:nowrap">'+(can.pay ? '<button class="btn-accent btn-sm" type="button" data-fpg-pay="'+escapeHtml(item.id)+'">PAGO</button>' : '')+'</td></tr>').join('')+
+        '<div class="div-panel-head"><h3'+(key === 'atrasado' ? ' class="gd-neg"' : '')+'>'+escapeHtml(title)+'</h3><span>'+list.length+' PEDIDO(S) · '+fpgSum(list, fpgLeft)+'</span></div>'+
+        '<div class="table-scroll"><table style="min-width:760px"><thead><tr><th>Programado</th><th>Fornecedor</th><th>Vencimento</th><th>Falta pagar</th><th>Observação</th><th></th></tr></thead><tbody>'+list.map(item =>
+          '<tr><td>'+(can.create ? '<input type="date" data-fpg-schedule="'+escapeHtml(item.id)+'" value="'+escapeHtml(item.scheduledDate)+'" aria-label="Data programada">' : escapeHtml(gdDateLabel(item.scheduledDate) || '—'))+'</td>'+
+          '<td><strong>'+escapeHtml(fpgName(item.supplierId))+'</strong></td><td>'+fpgDueHtml(item, today)+'</td>'+
+          '<td><strong>'+fpgMoney(fpgLeft(item), fpgCur(item))+'</strong></td><td>'+escapeHtml(item.notes || '')+'</td>'+
+          '<td style="white-space:nowrap"><button class="btn-accent btn-sm" type="button" data-fpg-order="'+escapeHtml(item.id)+'">PAGAMENTOS</button></td></tr>').join('')+
         '</tbody></table></div></section>';
-    }).join('') : '<p class="responsive-empty">Nenhum pagamento em aberto.</p>';
+    }).join('') : '<p class="responsive-empty">Nenhum pedido em aberto.</p>';
 
-    const optionList = (list, kind) => list.filter(item => item.active).map(item =>
-      '<li class="div-product-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;"><span>'+escapeHtml(item.name)+'</span>'+
-      (can.create ? '<button class="btn-outline btn-sm" type="button" data-fpg-option-del="'+escapeHtml(item.id)+'" data-fpg-option-kind="'+kind+'">EXCLUIR</button>' : '')+'</li>').join('')
+    el('fpgSupplierList').innerHTML = fpgData.suppliers.filter(item => item.active).map(item =>
+      '<li class="div-product-row" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;"><span>'+escapeHtml(item.name)+'</span>'+
+      '<span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">'+(can.create
+        ? '<label class="purchase-field-help" style="margin:0;display:flex;align-items:center;gap:6px;white-space:nowrap">PRAZO <input type="number" min="0" max="365" inputmode="numeric" style="width:90px" data-fpg-days="'+escapeHtml(item.id)+'" value="'+(item.paymentDays === null ? '' : item.paymentDays)+'" placeholder="SEM"> DIAS</label>'+
+          '<button class="btn-outline btn-sm" type="button" data-fpg-option-del="'+escapeHtml(item.id)+'">EXCLUIR</button>'
+        : '<small>'+(item.paymentDays === null ? 'SEM PRAZO' : item.paymentDays+' DIAS')+'</small>')+'</span></li>').join('')
       || '<li class="responsive-empty">Nenhum cadastro.</li>';
-    el('fpgSupplierList').innerHTML = optionList(fpgData.suppliers, 'fornecedor');
-    el('fpgTypeList').innerHTML = optionList(fpgData.types, 'tipo');
   }
 
   function fpgSetTab(tab){
@@ -31632,15 +31692,39 @@ function renderHomeTasks(){
     el('fpgLancView').hidden = tab !== 'lancamentos';
     el('fpgProgView').hidden = tab !== 'programacao';
     el('fpgCadView').hidden = tab !== 'cadastros';
+    el('fpgFilters').hidden = tab === 'cadastros';
   }
 
   function fpgResetForm(){
     fpgEditId = '';
-    el('fpgFormTitle').textContent = 'NOVO LANÇAMENTO';
+    el('fpgFormTitle').textContent = 'NOVO PEDIDO';
     el('btnFpgSave').textContent = 'ADICIONAR';
     el('btnFpgCancelEdit').hidden = true;
     el('fpgAmount').value = '';
     el('fpgNotes').value = '';
+    el('fpgFile').value = '';
+    el('fpgCurrency').value = 'BRL';
+  }
+
+  async function fpgUpload(entryId, file){
+    file = await prepareUploadFile(file);
+    if(!file || file.size <= 0) throw new Error('SELECIONE UM ARQUIVO.');
+    if(file.size > MAX_DOCUMENT_SIZE) throw new Error('O ARQUIVO DEVE TER NO MÁXIMO 25 MB.');
+    const numberOfParts = Math.ceil(file.size / DOCUMENT_CHUNK_SIZE);
+    const created = await invApi('POST', {action:'create', entryId, fileName: file.name, contentType: file.type || 'application/octet-stream', fileSize: file.size, numberOfParts}, '', FPG_FILE_API);
+    const sessionId = created.session && created.session.id;
+    try{
+      for(let index = 0; index < numberOfParts; index += 1){
+        if(numberOfParts > 1) showPurchaseToast('ENVIANDO PARTE '+(index + 1)+' DE '+numberOfParts+'…');
+        const response = await fetch(FPG_FILE_API, {method:'POST', headers:{Accept:'application/json','Content-Type':'application/octet-stream','x-fpg-upload-id':sessionId,'x-fpg-part-number':String(index + 1)},
+          body: file.slice(index * DOCUMENT_CHUNK_SIZE, Math.min(file.size, (index + 1) * DOCUMENT_CHUNK_SIZE))});
+        if(!response.ok) throw new Error(((await response.json().catch(() => ({}))).error) || 'FALHA NO ENVIO.');
+      }
+      await invApi('POST', {action:'complete', sessionId}, '', FPG_FILE_API);
+    }catch(error){
+      invApi('POST', {action:'cancel', sessionId}, '', FPG_FILE_API).catch(() => undefined);
+      throw error;
+    }
   }
 
   function fpgOpenDialog(mode, ids){
@@ -31648,106 +31732,234 @@ function renderHomeTasks(){
     fpgDialogMode = mode;
     fpgDialogIds = ids;
     const items = fpgData.items.filter(item => ids.includes(item.id));
-    const total = formatCentsBRL(items.reduce((sum, item) => sum + Number(item.amountCents || 0), 0));
+    const open = items.filter(fpgIsOpen);
     const today = todayDateKeyRecife();
-    el('fpgDateDialogTitle').textContent = mode === 'pay' ? 'MARCAR COMO PAGO' : 'ALTERAR DATA PROGRAMADA';
+    el('fpgDateDialogTitle').textContent = mode === 'pay' ? 'QUITAR PEDIDO(S)' : 'ALTERAR DATA PROGRAMADA';
     el('fpgPayWhenField').hidden = mode !== 'pay';
     el('fpgDialogDateLabel').textContent = mode === 'pay' ? 'DATA DO PAGAMENTO' : 'NOVA DATA PROGRAMADA';
-    el('fpgDateSummary').innerHTML = items.length === 1
-      ? '<div class="purchase-card-detail"><span>FORNECEDOR</span><strong>'+escapeHtml(fpgName(fpgData.suppliers, items[0].supplierId))+'</strong></div>'+
-        '<div class="purchase-card-detail"><span>VALOR</span><strong>'+total+'</strong></div>'+
-        '<div class="purchase-card-detail"><span>DATA PROGRAMADA</span><strong>'+escapeHtml(gdDateLabel(items[0].plannedDate))+'</strong></div>'
-      : '<div class="purchase-card-detail"><span>LANÇAMENTOS</span><strong>'+items.length+'</strong></div><div class="purchase-card-detail"><span>TOTAL</span><strong>'+total+'</strong></div>';
+    el('fpgDateHelp').textContent = mode === 'pay'
+      ? 'REGISTRA UM PAGAMENTO COM O QUE FALTA EM CADA PEDIDO. SEM DATA PROGRAMADA (OU FUTURA) = HOJE.'
+      : 'DEIXE EM BRANCO PARA FICAR SEM DATA. SÓ VALE PARA PEDIDOS EM ABERTO.';
+    el('fpgDateSummary').innerHTML =
+      '<div class="purchase-card-detail"><span>PEDIDOS EM ABERTO</span><strong>'+open.length+(items.length > open.length ? ' (DE '+items.length+')' : '')+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>FALTA PAGAR</span><strong>'+fpgSum(open, fpgLeft)+'</strong></div>';
     const date = el('fpgDialogDate');
     date.max = mode === 'pay' ? today : '';
-    date.value = mode === 'pay' && items.length === 1 && items[0].plannedDate <= today ? items[0].plannedDate : today;
+    date.value = mode === 'pay' ? today : (items.length === 1 ? items[0].scheduledDate : '');
     el('fpgPayWhen').value = 'planned';
     date.disabled = mode === 'pay';
     el('fpgDateDialog').showModal();
   }
 
+  function fpgRenderOrder(){
+    const item = fpgData.items.find(row => row.id === fpgOrderId);
+    if(!item){ el('fpgOrderDialog').close(); return; }
+    const cur = fpgCur(item), can = fpgData.can, left = fpgLeft(item);
+    el('fpgOrderDialogTitle').textContent = 'PEDIDO · '+fpgName(item.supplierId);
+    el('fpgOrderSummary').innerHTML =
+      '<div class="purchase-card-detail"><span>DATA DO PEDIDO</span><strong>'+escapeHtml(gdDateLabel(item.orderDate))+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>VENCIMENTO</span><strong>'+fpgDueHtml(item, todayDateKeyRecife())+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>VALOR TOTAL</span><strong>'+fpgMoney(item.amountCents, cur)+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>PAGO</span><strong>'+fpgMoney(item.paidCents, cur)+'</strong></div>'+
+      '<div class="purchase-card-detail"><span>FALTA PAGAR</span><strong'+(left > 0 ? '' : ' class="gd-pos"')+'>'+(left > 0 ? fpgMoney(left, cur) : 'QUITADO')+'</strong></div>';
+    el('fpgPaymentsBody').innerHTML = item.payments.length ? item.payments.map(row =>
+      '<tr><td>'+escapeHtml(gdDateLabel(row.paidDate))+'</td><td><strong>'+fpgMoney(row.amountCents, cur)+'</strong></td><td>'+escapeHtml(row.notes || '—')+'</td>'+
+      '<td>'+escapeHtml(row.createdByName || '—')+'</td><td>'+(can.pay ? '<button class="btn-outline btn-sm" type="button" data-fpg-unpayment="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+'</td></tr>').join('')
+      : '<tr><td colspan="5" class="responsive-empty">Nenhum pagamento.</td></tr>';
+    el('fpgPaymentForm').hidden = !can.pay || left <= 0;
+    el('fpgPayAmount').value = (left / 100).toLocaleString('pt-BR', {minimumFractionDigits:2});
+    el('fpgPayDate').max = todayDateKeyRecife();
+    if(!el('fpgPayDate').value) el('fpgPayDate').value = todayDateKeyRecife();
+    el('fpgOrderFiles').innerHTML = item.attachments.length ? item.attachments.map(file =>
+      '<p style="margin:4px 0">'+fpgFileLink(file)+(can.create ? ' <button class="btn-outline btn-sm" type="button" data-fpg-file-del="'+escapeHtml(file.id)+'">EXCLUIR</button>' : '')+'</p>').join('')
+      : '<p class="responsive-empty">Nenhum anexo.</p>';
+    el('fpgOrderFileField').hidden = !can.create;
+  }
+
   async function fpgPatch(action, ids, extra){
     const result = await invApi('PATCH', {action, ids, ...(extra || {})}, '', FPG_API);
-    if(result.skipped) showPurchaseToast(result.skipped+' LANÇAMENTO(S) IGNORADO(S) (JÁ PAGOS).');
+    if(result.skipped) showPurchaseToast(result.skipped+' PEDIDO(S) IGNORADO(S) (JÁ QUITADOS).');
     return result;
   }
 
+  // GERAR IMAGEM: segue os filtros da tela; uma linha por fornecedor com o que
+  // falta pagar e o próximo vencimento (valor somado dos pedidos nessa data).
+  // Um bloco por moeda; mesma moldura das outras imagens (comDrawImageFrame).
+  function fpgImageBlocks(list){
+    return ['BRL', 'USD'].map(currency => {
+      const bySupplier = new Map();
+      list.filter(item => fpgIsOpen(item) && fpgCur(item) === currency).forEach(item => {
+        if(!bySupplier.has(item.supplierId)) bySupplier.set(item.supplierId, []);
+        bySupplier.get(item.supplierId).push(item);
+      });
+      const rows = [...bySupplier].map(([supplierId, items]) => {
+        const dated = items.filter(item => item.dueDate).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+        const nextDate = dated.length ? dated[0].dueDate : '';
+        return {name: fpgName(supplierId), debt: items.reduce((sum, item) => sum + fpgLeft(item), 0), nextDate,
+          nextCents: dated.filter(item => item.dueDate === nextDate).reduce((sum, item) => sum + fpgLeft(item), 0)};
+      }).sort((a, b) => (a.nextDate || '9999').localeCompare(b.nextDate || '9999') || a.name.localeCompare(b.name));
+      return {currency, rows};
+    }).filter(block => block.rows.length);
+  }
+
+  async function fpgBuildImage(blocks, subtitle){
+    const P = COM_IMAGE_PALETTE;
+    const W = 1600, ROW = 64, HEAD = 52, TOTAL = 80, LABEL = 56;
+    const labeled = blocks.some(block => block.currency === 'USD');
+    const H = 172 + 6 + 30 + blocks.reduce((sum, block) => sum + (labeled ? LABEL : 0) + HEAD + block.rows.length * ROW + 16 + TOTAL + 30, 0) + 58;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const today = todayDateKeyRecife();
+    const {HEADER} = await comDrawImageFrame(ctx, W, H, {
+      title: 'FORNECEDORES A PAGAR', subtitle, pill: gdDateLabel(today),
+      footer: 'UNIGAMES · FORNECEDORES A PAGAR', footerRight: 'GERADO EM '+gdDateLabel(today),
+    });
+    const text = (value, x, y, size, color, align, weight, max) => {
+      ctx.textAlign = align || 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.font = comFont(weight || 800, size);
+      ctx.fillText(max ? comFitText(ctx, String(value).toUpperCase(), max) : String(value).toUpperCase(), x, y);
+    };
+    // Colunas: fornecedor, débito total, próximo a vencer (valor), vencimento.
+    const cols = [[64, 'left', 640], [1010, 'right'], [1320, 'right'], [W - 64, 'right']];
+    let y = HEADER + 6 + 30;
+    blocks.forEach(block => {
+      if(labeled){
+        text(block.currency === 'USD' ? 'DÓLAR (US$)' : 'REAL (R$)', 48, y + LABEL / 2, 30, '#1d487e', 'left', 900);
+        y += LABEL;
+      }
+      ctx.fillStyle = '#1d487e';
+      comRoundRect(ctx, 40, y, W - 80, HEAD, 14);
+      ctx.fill();
+      ['FORNECEDOR', 'DÉBITO TOTAL', 'PRÓXIMO A VENCER', 'VENCIMENTO'].forEach((label, i) => text(label, cols[i][0], y + HEAD / 2, 20, '#ffffff', cols[i][1], 900));
+      y += HEAD;
+      block.rows.forEach((row, index) => {
+        const late = row.nextDate && row.nextDate < today;
+        ctx.fillStyle = index % 2 ? '#f3f7fb' : '#ffffff';
+        ctx.fillRect(40, y, W - 80, ROW);
+        ctx.fillStyle = late ? '#c0392b' : row.nextDate ? '#3fb27f' : '#9aa9b8';
+        ctx.fillRect(40, y, 6, ROW);
+        const mid = y + ROW / 2;
+        text(row.name, cols[0][0], mid, 23, P.ink, 'left', 900, cols[0][2]);
+        text(fpgMoney(row.debt, block.currency), cols[1][0], mid, 23, P.ink, 'right', 900);
+        if(row.nextDate){
+          text(fpgMoney(row.nextCents, block.currency), cols[2][0], mid, 22, P.ink, 'right', 800);
+          text((late ? 'VENCIDO ' : '')+gdDateLabel(row.nextDate), cols[3][0], mid, 21, late ? '#c0392b' : P.soft, 'right', 800);
+        }else{
+          text('SEM PRAZO', cols[2][0], mid, 21, P.soft, 'right', 800);
+          text('—', cols[3][0], mid, 21, P.soft, 'right', 700);
+        }
+        y += ROW;
+      });
+      y += 16;
+      ctx.fillStyle = '#1d487e';
+      comRoundRect(ctx, 40, y, W - 80, TOTAL, 20);
+      ctx.fill();
+      text(block.rows.length+(block.rows.length === 1 ? ' FORNECEDOR' : ' FORNECEDORES'), 76, y + TOTAL / 2, 28, '#ffffff', 'left', 900);
+      text('DÉBITO TOTAL '+fpgMoney(block.rows.reduce((sum, row) => sum + row.debt, 0), block.currency), W - 76, y + TOTAL / 2, 34, '#ffffff', 'right', 900);
+      y += TOTAL + 30;
+    });
+    return canvas;
+  }
+
+  el('btnFpgImage') && el('btnFpgImage').addEventListener('click', async () => {
+    if(!fpgData) return;
+    const blocks = fpgImageBlocks(fpgFiltered(true));
+    if(!blocks.length){ showPurchaseToast('NENHUM VALOR A PAGAR NOS FILTROS ATUAIS.', 'error'); return; }
+    const label = id => { const select = el(id); return select.options[select.selectedIndex].text; };
+    const subtitle = ['FORNECEDOR: '+label('fpgFilterSupplier'), 'SITUAÇÃO: '+label('fpgFilterStatus'), 'PRAZO: '+label('fpgFilterDue')].join(' · ');
+    try{ await shareCanvasImage(await fpgBuildImage(blocks, subtitle), 'fornecedores-a-pagar-'+todayDateKeyRecife()+'.png'); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
   el('btnFpgReload') && el('btnFpgReload').addEventListener('click', loadFpgPage);
   document.querySelectorAll('[data-fpg-tab]').forEach(button => button.addEventListener('click', () => fpgSetTab(button.dataset.fpgTab)));
-  ['fpgFilterSupplier', 'fpgFilterStatus', 'fpgFilterType'].forEach(id => el(id) && el(id).addEventListener('change', renderFpg));
+  ['fpgFilterSupplier', 'fpgFilterStatus', 'fpgFilterDue'].forEach(id => el(id) && el(id).addEventListener('change', renderFpg));
   el('btnFpgCancelEdit') && el('btnFpgCancelEdit').addEventListener('click', fpgResetForm);
   el('fpgForm') && el('fpgForm').addEventListener('submit', async event => {
     event.preventDefault();
     const button = el('btnFpgSave');
-    const amountCents = parseMoneyToCents(el('fpgAmount').value);
-    const fields = {supplierId: el('fpgSupplier').value, paymentTypeId: el('fpgType').value, amountCents,
-      plannedDate: el('fpgDate').value, notes: el('fpgNotes').value};
+    const fields = {supplierId: el('fpgSupplier').value, currency: el('fpgCurrency').value, amountCents: parseMoneyToCents(el('fpgAmount').value),
+      orderDate: el('fpgDate').value, notes: el('fpgNotes').value};
+    const file = el('fpgFile').files[0];
+    const editing = fpgEditId;
     button.disabled = true;
     try{
-      if(fpgEditId) await invApi('PATCH', {action:'edit', id: fpgEditId, ...fields}, '', FPG_API);
-      else await invApi('POST', fields, '', FPG_API);
-      showPurchaseToast(fpgEditId ? 'LANÇAMENTO ATUALIZADO.' : 'LANÇAMENTO ADICIONADO.');
+      let id = editing;
+      if(editing) await invApi('PATCH', {action:'edit', id: editing, ...fields}, '', FPG_API);
+      else id = (await invApi('POST', fields, '', FPG_API)).id;
       fpgResetForm();
+      if(file){
+        try{ await fpgUpload(id, file); }
+        catch(error){ showPurchaseToast('PEDIDO SALVO, MAS O ANEXO FALHOU: '+error.message, 'error'); await loadFpgPage(); return; }
+      }
+      showPurchaseToast(editing ? 'PEDIDO ATUALIZADO.' : 'PEDIDO ADICIONADO.');
       await loadFpgPage();
       el('fpgAmount').focus();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
     finally{ button.disabled = false; }
   });
 
-  document.querySelectorAll('[data-fpg-option-form]').forEach(form => form.addEventListener('submit', async event => {
+  el('fpgSupplierForm') && el('fpgSupplierForm').addEventListener('submit', async event => {
     event.preventDefault();
-    const input = form.querySelector('input');
     try{
-      await invApi('POST', {kind: form.dataset.fpgOptionForm, name: input.value}, '', FPG_API);
-      input.value = '';
+      await invApi('POST', {kind:'fornecedor', name: el('fpgNewSupplier').value, paymentDays: el('fpgNewDays').value}, '', FPG_API);
+      el('fpgNewSupplier').value = '';
+      el('fpgNewDays').value = '';
       await loadFpgPage();
-      input.focus();
+      el('fpgNewSupplier').focus();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
-  }));
+  });
 
   el('pageFornecedoresPagar') && el('pageFornecedoresPagar').addEventListener('click', async event => {
     const t = event.target;
-    const pay = t.closest('[data-fpg-pay]'), unpay = t.closest('[data-fpg-unpay]'), edit = t.closest('[data-fpg-edit]');
+    const order = t.closest('[data-fpg-order]'), edit = t.closest('[data-fpg-edit]');
     const del = t.closest('[data-fpg-del]'), optionDel = t.closest('[data-fpg-option-del]'), bulk = t.closest('[data-fpg-bulk]');
     try{
-      if(pay) return fpgOpenDialog('pay', [pay.dataset.fpgPay]);
+      if(order){
+        fpgOrderId = order.dataset.fpgOrder;
+        el('fpgPayDate').value = '';
+        el('fpgPayNotes').value = '';
+        fpgRenderOrder();
+        el('fpgOrderDialog').showModal();
+        return;
+      }
       if(edit){
         const item = fpgData.items.find(row => row.id === edit.dataset.fpgEdit);
         if(!item) return;
         fpgSetTab('lancamentos');
         fpgEditId = item.id;
         // Cadastro excluído: mantém a opção para não perder o vínculo ao editar.
-        for(const [id, list, value] of [['fpgSupplier', fpgData.suppliers, item.supplierId], ['fpgType', fpgData.types, item.paymentTypeId]]){
-          el(id).value = value;
-          if(el(id).value !== value) fpgFillSelect(id, list.filter(entry => entry.active || entry.id === value), 'SELECIONE'), el(id).value = value;
+        el('fpgSupplier').value = item.supplierId;
+        if(el('fpgSupplier').value !== item.supplierId){
+          fpgFillSelect('fpgSupplier', fpgData.suppliers.filter(entry => entry.active || entry.id === item.supplierId), 'SELECIONE');
+          el('fpgSupplier').value = item.supplierId;
         }
+        el('fpgCurrency').value = fpgCur(item);
         el('fpgAmount').value = (Number(item.amountCents) / 100).toLocaleString('pt-BR', {minimumFractionDigits:2});
-        el('fpgDate').value = item.plannedDate;
+        el('fpgDate').value = item.orderDate;
         el('fpgNotes').value = item.notes || '';
-        el('fpgFormTitle').textContent = 'EDITAR LANÇAMENTO';
+        el('fpgFormTitle').textContent = 'EDITAR PEDIDO';
         el('btnFpgSave').textContent = 'SALVAR';
         el('btnFpgCancelEdit').hidden = false;
         el('fpgForm').scrollIntoView({behavior:'smooth', block:'start'});
         return;
       }
-      if(unpay){
-        if(!await askConfirm('DESFAZER O PAGAMENTO? O LANÇAMENTO VOLTA PARA EM ABERTO.', {okText:'DESFAZER'})) return;
-        await fpgPatch('unpay', [unpay.dataset.fpgUnpay]);
-      }else if(del){
-        if(!await askConfirm('EXCLUIR ESTE LANÇAMENTO?', {okText:'EXCLUIR', danger:true})) return;
+      if(del){
+        if(!await askConfirm('EXCLUIR ESTE PEDIDO (COM OS PAGAMENTOS E ANEXOS)?', {okText:'EXCLUIR', danger:true})) return;
         await invApi('DELETE', {ids: [del.dataset.fpgDel]}, '', FPG_API);
       }else if(optionDel){
-        if(!await askConfirm('EXCLUIR ESTE CADASTRO? OS LANÇAMENTOS JÁ FEITOS CONTINUAM COM O NOME.', {okText:'EXCLUIR', danger:true})) return;
+        if(!await askConfirm('EXCLUIR ESTE FORNECEDOR? OS PEDIDOS JÁ FEITOS CONTINUAM COM O NOME E O PRAZO.', {okText:'EXCLUIR', danger:true})) return;
         await invApi('DELETE', {optionId: optionDel.dataset.fpgOptionDel}, '', FPG_API);
       }else if(bulk){
         const action = bulk.dataset.fpgBulk, ids = [...fpgSelected];
         if(action === 'clear'){ fpgSelected.clear(); return renderFpg(); }
         if(action === 'pay' || action === 'reschedule') return fpgOpenDialog(action, ids);
-        if(action === 'unpay'){
-          if(!await askConfirm('DESFAZER O PAGAMENTO DE '+ids.length+' LANÇAMENTO(S)?', {okText:'DESFAZER'})) return;
-          await fpgPatch('unpay', ids);
-        }else if(action === 'delete'){
-          if(!await askConfirm('EXCLUIR '+ids.length+' LANÇAMENTO(S)?', {okText:'EXCLUIR', danger:true})) return;
+        if(action === 'delete'){
+          if(!await askConfirm('EXCLUIR '+ids.length+' PEDIDO(S)?', {okText:'EXCLUIR', danger:true})) return;
           await invApi('DELETE', {ids}, '', FPG_API);
           fpgSelected.clear();
         }else return;
@@ -31755,16 +31967,63 @@ function renderHomeTasks(){
       await loadFpgPage();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
-  el('pageFornecedoresPagar') && el('pageFornecedoresPagar').addEventListener('change', event => {
-    const check = event.target.closest('[data-fpg-check]');
+  el('pageFornecedoresPagar') && el('pageFornecedoresPagar').addEventListener('change', async event => {
+    const t = event.target;
+    const check = t.closest('[data-fpg-check]'), schedule = t.closest('[data-fpg-schedule]'), days = t.closest('[data-fpg-days]');
+    if(schedule || days){
+      try{
+        if(schedule) await fpgPatch('reschedule', [schedule.dataset.fpgSchedule], {scheduledDate: schedule.value});
+        else await invApi('PATCH', {action:'supplier', optionId: days.dataset.fpgDays, paymentDays: days.value}, '', FPG_API);
+        showPurchaseToast(schedule ? 'PROGRAMAÇÃO SALVA.' : 'PRAZO SALVO.');
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+      return loadFpgPage();
+    }
     if(check){
       if(check.checked) fpgSelected.add(check.dataset.fpgCheck); else fpgSelected.delete(check.dataset.fpgCheck);
-    }else if(event.target.id === 'fpgCheckAll'){
+    }else if(t.id === 'fpgCheckAll'){
       document.querySelectorAll('#fpgBody [data-fpg-check]').forEach(box => {
-        if(event.target.checked) fpgSelected.add(box.dataset.fpgCheck); else fpgSelected.delete(box.dataset.fpgCheck);
+        if(t.checked) fpgSelected.add(box.dataset.fpgCheck); else fpgSelected.delete(box.dataset.fpgCheck);
       });
     }else return;
     renderFpg();
+  });
+
+  // Diálogo do pedido: pagamentos (vários até o total) e anexos.
+  el('fpgOrderDialog') && el('fpgOrderDialog').addEventListener('click', async event => {
+    if(event.target.closest('[data-fpg-close]')) return el('fpgOrderDialog').close();
+    const unpayment = event.target.closest('[data-fpg-unpayment]'), fileDel = event.target.closest('[data-fpg-file-del]');
+    try{
+      if(unpayment){
+        if(!await askConfirm('EXCLUIR ESTE PAGAMENTO? FICA REGISTRADO QUEM EXCLUIU.', {okText:'EXCLUIR', danger:true})) return;
+        await invApi('PATCH', {action:'unpayment', paymentId: unpayment.dataset.fpgUnpayment}, '', FPG_API);
+        showPurchaseToast('PAGAMENTO EXCLUÍDO.');
+      }else if(fileDel){
+        if(!await askConfirm('EXCLUIR ESTE ANEXO?', {okText:'EXCLUIR', danger:true})) return;
+        await invApi('DELETE', {attachmentId: fileDel.dataset.fpgFileDel}, '', FPG_FILE_API);
+      }else return;
+      await loadFpgPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('fpgPaymentForm') && el('fpgPaymentForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnFpgAddPayment');
+    button.disabled = true;
+    try{
+      await invApi('PATCH', {action:'payment', id: fpgOrderId, amountCents: parseMoneyToCents(el('fpgPayAmount').value),
+        paidDate: el('fpgPayDate').value, notes: el('fpgPayNotes').value}, '', FPG_API);
+      el('fpgPayNotes').value = '';
+      showPurchaseToast('PAGAMENTO REGISTRADO.');
+      await loadFpgPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; }
+  });
+  el('fpgOrderFile') && el('fpgOrderFile').addEventListener('change', async () => {
+    const input = el('fpgOrderFile'), file = input.files[0];
+    if(!file) return;
+    input.disabled = true;
+    try{ await fpgUpload(fpgOrderId, file); showPurchaseToast('ANEXO ENVIADO.'); await loadFpgPage(); }
+    catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ input.value = ''; input.disabled = false; }
   });
 
   el('fpgPayWhen') && el('fpgPayWhen').addEventListener('change', () => { el('fpgDialogDate').disabled = el('fpgPayWhen').value === 'planned'; });
@@ -31779,7 +32038,7 @@ function renderHomeTasks(){
         await fpgPatch('pay', fpgDialogIds, planned ? {} : {paidDate: el('fpgDialogDate').value});
         showPurchaseToast('PAGAMENTO REGISTRADO.');
       }else{
-        await fpgPatch('reschedule', fpgDialogIds, {plannedDate: el('fpgDialogDate').value});
+        await fpgPatch('reschedule', fpgDialogIds, {scheduledDate: el('fpgDialogDate').value});
         showPurchaseToast('DATA PROGRAMADA ALTERADA.');
       }
       el('fpgDateDialog').close();
