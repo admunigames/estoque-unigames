@@ -50,14 +50,14 @@ test("férias CLT: período mais antigo com saldo, vencimento 12 meses após o a
   assert.equal(vacationStatus("", [], "2025-12-01").next, null);
 });
 
-test("benefício: VALOR TOTAL do cadastro substitui a regra; transporte proporcional aos dias", () => {
+test("benefício: alimentação TOTAL e transporte POR DIA do cadastro substituem a regra", () => {
   const rule = { foodCents: 24500, transportPerDayCents: 900 };
   const regra = employeeBenefitRule(rule, {}, 22);
   assert.deepEqual(cycleBenefitAmounts(regra, 22), { foodCents: 24500, transportCents: 19800, totalCents: 44300 });
-  const total = employeeBenefitRule(rule, { benefitFoodTotalCents: 30000, benefitTransportTotalCents: 22000 }, 22);
-  assert.deepEqual(cycleBenefitAmounts(total, 22), { foodCents: 30000, transportCents: 22000, totalCents: 52000 });
-  assert.equal(cycleBenefitAmounts(total, 11).transportCents, 11000);
-  assert.equal(cycleBenefitAmounts(total, 33).transportCents, 33000);
+  const total = employeeBenefitRule(rule, { benefitFoodTotalCents: 30000, benefitTransportTotalCents: 1800 }, 22);
+  assert.deepEqual(cycleBenefitAmounts(total, 22), { foodCents: 30000, transportCents: 39600, totalCents: 69600 });
+  assert.equal(cycleBenefitAmounts(total, 11).transportCents, 19800);
+  assert.equal(cycleBenefitAmounts(employeeBenefitRule(rule, {}, 22), 10).transportCents, 9000);
 });
 
 test("loja atuante em lote: grava o mês e o cadastro acompanha", async () => {

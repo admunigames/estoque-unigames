@@ -118,9 +118,10 @@ export type CycleBenefitAmounts = {
 };
 
 /**
- * Valor do funcionário no ciclo: o VALOR TOTAL MENSAL do cadastro (> 0)
- * substitui a regra da escala (31/10/2026). O transporte total vale para os
- * dias contados do ciclo; a revisão de dias de passagem aplica a proporção.
+ * Valor do funcionário no ciclo: alimentação = VALOR TOTAL MENSAL do cadastro
+ * (> 0) e transporte = VALOR POR DIA do cadastro (> 0, desde 16/11/2026;
+ * a coluna benefit_transport_total_cents guarda o valor do dia). Vazio = regra
+ * da escala. transportTotalCents fica 0 (cálculo sempre dias × valor do dia).
  */
 export type EmployeeBenefitRule = BenefitRule & { transportTotalCents: number; countedDays: number };
 export function employeeBenefitRule(
@@ -130,7 +131,7 @@ export function employeeBenefitRule(
 ): EmployeeBenefitRule {
   const food = Math.max(0, Math.round(Number(employee.benefitFoodTotalCents) || 0));
   const transport = Math.max(0, Math.round(Number(employee.benefitTransportTotalCents) || 0));
-  return { foodCents: food || rule.foodCents, transportPerDayCents: rule.transportPerDayCents, transportTotalCents: transport, countedDays };
+  return { foodCents: food || rule.foodCents, transportPerDayCents: transport || rule.transportPerDayCents, transportTotalCents: 0, countedDays };
 }
 
 /** Alimentação cheia ± ajuste da revisão; transporte = dias × valor do dia (ou total proporcional). */
