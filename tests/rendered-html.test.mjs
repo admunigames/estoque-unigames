@@ -727,7 +727,7 @@ test("isola tarefas por usuário e oferece prioridade, recorrência e lembretes 
     "utf8",
   );
   assert.match(html, /tarefas:'tasks'/);
-  assert.match(html, /if\(livePageName === 'tarefas'\) await refreshAfterAction\(\(\) => Promise\.all\(\[loadTasks\(\),loadTaskAgenda\(\)\]\)\)/);
+  assert.match(html, /if\(livePageName === 'tarefas'\) await refreshAfterAction\(\(\) => Promise\.all\(\[loadTasks\(\),loadTaskAgenda\(\)\]\)\.then\(\(\) => renderHomeTasks\(\)\)\)/);
   assert.match(liveEvents, /module: "tasks", audience: \{ kind: "user", userId: actor\.id \}/);
   assert.match(html, /id="taskInputPriority"/);
   assert.match(html, /value="urgent">URGENTE/);
@@ -801,7 +801,7 @@ test("anima a caixa de tarefa concluída (aba Tarefas + Início) só com CSS no 
   assert.match(block, /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*\.task-row\.is-toggling input\[type=checkbox\]::after,\.home-task-row\.is-toggling \.home-task-check::after,[\s\S]*\{transition:none!important;\}\s*\}/);
 
   // Handlers só acrescentam a classe temporária (lógica de salvar inalterada).
-  assert.match(html, /event\.target\.closest\('\.task-row'\)\.classList\.toggle\('done', task\.done\);\n    markTaskToggling\(event\.target\.closest\('\.task-row'\)\);/);
+  assert.match(html, /const row = event\.target\.closest\('\.task-row'\);\n    row\.classList\.toggle\('done', event\.target\.checked\);\n    markTaskToggling\(row\);/);
   assert.match(html, /row\.classList\.toggle\('done', event\.target\.checked\);\n    markTaskToggling\(row\);/);
 
   const timers = new Map();

@@ -1365,6 +1365,8 @@ function hasAnyPermission(user: AuthenticatedUser, permissions: Permission[]): b
 
 function sharedStatePermission(key: string, scope: string, write: boolean): Permission | Permission[] {
   const normalized = `${scope}:${key}`.toLowerCase();
+  // Nota adesiva ligada/desligada: preferência pessoal (chave por usuário na rota).
+  if (key === "tarefas-nota") return ["tasks:view", "tasks:manage"];
   if (normalized.includes("tarefa")) return write ? "tasks:manage" : ["tasks:view", "tasks:manage"];
   if (normalized.includes("puxada")) return write ? "pulls:view" : ["pulls:view", "report41:view"];
   // Vínculo login × participante da Unigames Academy: só pela rota própria

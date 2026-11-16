@@ -336,7 +336,9 @@
     min-height:38px; padding:7px 8px; border-radius:8px; border:1px solid rgba(79,134,189,.42);
     background:rgba(79,134,189,.1); color:var(--ink); font:700 8.5px/1.25 var(--mono); cursor:pointer;
   }
-  #btnAppearance{grid-column:1 / -1;}
+  #btnAppearance,#btnTaskNoteToggle{grid-column:1 / -1;}
+  .task-note-switch{--task-check:var(--accent); --task-check-border:var(--ink-faint); display:inline-flex; align-items:center; gap:8px; color:var(--ink); font:800 10px/1.2 var(--mono); letter-spacing:.4px; cursor:pointer;}
+  .task-note-switch .home-task-check{min-height:0;}
   .ios-storage-actions button:active{transform:scale(.98);}
   .ios-install-hint{
     position:fixed; z-index:1200; left:max(12px,env(safe-area-inset-left)); right:max(12px,env(safe-area-inset-right));
@@ -4306,6 +4308,54 @@
     .assist-doc-table tr{break-inside:avoid; page-break-inside:avoid;}
   }
 </style>
+<!-- NOTA ADESIVA DE TAREFAS: estilo isolado (cores fixas de post-it, igual nos 3 temas)
+     porque este bloco é copiado para a janela "fora do site" (Picture-in-Picture). -->
+<style id="taskNoteStyles">
+  .task-note{
+    position:fixed; z-index:950; right:calc(16px + env(safe-area-inset-right)); bottom:calc(16px + env(safe-area-inset-bottom));
+    width:250px; max-width:calc(100vw - 32px); box-sizing:border-box; color:#3d3300; background:#fff2a1;
+    border-radius:2px 2px 14px 2px; box-shadow:0 12px 24px rgba(0,0,0,.3),0 2px 5px rgba(0,0,0,.2);
+    transform:rotate(-1.5deg); font:600 11.5px/1.35 var(--sans,'Inter',system-ui,sans-serif); text-transform:uppercase;
+  }
+  .task-note[hidden]{display:none;}
+  .task-note-head{display:flex; align-items:center; gap:6px; padding:8px 8px 6px 10px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;}
+  .task-note:not(.is-min) .task-note-head{border-bottom:1px dashed rgba(61,51,0,.28);}
+  .task-note-head:active{cursor:grabbing;}
+  .task-note-title{font-weight:800; font-size:11px; letter-spacing:.4px; white-space:nowrap;}
+  .task-note-count{flex:1; min-width:0; font-size:9.5px; font-weight:800; opacity:.72; white-space:nowrap;}
+  .task-note button{min-height:0; width:auto; margin:0; padding:0; border:0; border-radius:5px; background:none; box-shadow:none; color:inherit; font:inherit; font-size:inherit; cursor:pointer;}
+  .task-note button:hover{background:rgba(61,51,0,.12);}
+  .task-note button:focus-visible,.task-note .task-note-check:focus-visible{outline:2px solid #3d3300; outline-offset:2px;}
+  .task-note .task-note-btn{flex:0 0 22px; height:22px; font-size:14px; font-weight:800; line-height:22px; text-align:center;}
+  .task-note-list{max-height:204px; overflow-y:auto; overscroll-behavior:contain; padding:4px 6px;}
+  .task-note-item{display:flex; align-items:flex-start; gap:7px; padding:5px 4px; transition:opacity .15s ease;}
+  .task-note-item.done{opacity:.55;}
+  .task-note-item.done .task-note-text{text-decoration:line-through;}
+  .task-note-text{flex:1; min-width:0; overflow-wrap:anywhere;}
+  .task-note-text b{font-weight:800;}
+  .task-note-late{display:inline-block; margin-left:4px; padding:0 4px; border-radius:3px; background:#b3261e; color:#fff; font-size:8.5px; font-weight:800; letter-spacing:.3px; vertical-align:1px;}
+  .task-note .task-note-check{
+    -webkit-appearance:none; appearance:none; position:relative; flex:0 0 15px; width:15px; height:15px; min-height:0; margin:1px 0 0;
+    border:1.5px solid #6b5a00; border-radius:4px; background:rgba(255,255,255,.45); cursor:pointer; transition:background-color .12s ease;
+  }
+  .task-note .task-note-check::before{content:''; position:absolute; inset:-8px;}
+  .task-note .task-note-check:checked{background:#3d3300; border-color:#3d3300;}
+  .task-note .task-note-check:checked::after{content:''; position:absolute; left:3.5px; top:0; width:3px; height:7px; border:solid #fff2a1; border-width:0 2px 2px 0; transform:rotate(45deg);}
+  .task-note .task-note-hide{flex:0 0 18px; height:18px; font-size:15px; line-height:18px; text-align:center; opacity:.45;}
+  .task-note .task-note-hide:hover{opacity:1;}
+  .task-note-empty{padding:8px 4px; font-size:10px; opacity:.7;}
+  .task-note-foot{padding:5px 10px 8px; border-top:1px dashed rgba(61,51,0,.28); font-size:9.5px; font-weight:700;}
+  .task-note-foot button{text-decoration:underline; font-weight:800;}
+  .task-note.in-pip{position:static; width:auto; max-width:none; min-height:100vh; transform:none; border-radius:0; box-shadow:none;}
+  .task-note.in-pip .task-note-head{cursor:default;}
+  .task-note.in-pip .task-note-list{max-height:none;}
+  @media (max-width:680px){
+    .task-note{width:220px; right:calc(10px + env(safe-area-inset-right)); bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px;}
+    .task-note.is-min{width:auto;}
+    .task-note .task-note-btn{flex-basis:30px; height:30px; line-height:30px;}
+    body.task-note-on .content{padding-bottom:64px;}
+  }
+</style>
 </head>
 <body class="home-active">
 
@@ -4509,6 +4559,7 @@
         <button id="btnIosBackup" type="button" data-env-admin-only>EXPORTAR BACKUP</button>
         <button id="btnIosRestore" type="button" data-env-admin-only>RESTAURAR BACKUP</button>
         <button id="btnAppearance" type="button">APARÊNCIA E APLICATIVO</button>
+        <button id="btnTaskNoteToggle" type="button" hidden>NOTA DE TAREFAS: LIGADA</button>
       </div>
       <input class="pull-hidden-input" id="iosRestoreInput" type="file" accept=".json,application/json">
     </div>
@@ -6375,6 +6426,7 @@
           <input type="date" id="taskDate">
         </div>
         <div class="task-meta" id="taskMeta" style="color:var(--ink-soft); font-family:var(--mono); font-size:11.5px;">Selecione uma data</div>
+        <label class="task-note-switch" title="NOTA ADESIVA COM AS TAREFAS DE HOJE EM TODOS OS MÓDULOS"><input type="checkbox" class="home-task-check" id="taskNoteEnabled" checked> NOTA DE TAREFAS</label>
         <div class="actions">
           <button class="btn-outline" id="btnClearTaskDay" type="button">LIMPAR DIA</button>
           <button class="btn-accent" id="btnDownloadTaskTxt" type="button">BAIXAR TXT</button>
@@ -15338,6 +15390,7 @@
   <strong>LEMBRETE DE TAREFA</strong>
   <span id="taskReminderToastText"></span>
 </div>
+<aside class="task-note" id="taskNote" aria-label="NOTA DE TAREFAS" hidden></aside>
 
 <script>
 (function(){
@@ -15785,7 +15838,7 @@
         return Promise.all(refreshes);
       });
     }
-    if(livePageName === 'tarefas') await refreshAfterAction(() => Promise.all([loadTasks(),loadTaskAgenda()]));
+    if(livePageName === 'tarefas') await refreshAfterAction(() => Promise.all([loadTasks(),loadTaskAgenda()]).then(() => renderHomeTasks()));
     if(livePageName === 'aparelhosEmprestimo'){
       await refreshAfterAction(() => Promise.all([loadLoanDevices(),loadLoanRequests()]));
       const openRequestId = el('loanRequestDetailsId').value;
@@ -21238,7 +21291,9 @@
       carriedFrom:task && typeof task.carriedFrom === 'string' ? task.carriedFrom : '',
       priority:task && ['low','medium','high','urgent'].includes(task.priority) ? task.priority : 'medium',
       recurrence:task && ['daily','weekly','monthly'].includes(task.recurrence) ? task.recurrence : 'none',
-      seriesId:task && typeof task.seriesId === 'string' ? task.seriesId : ''
+      seriesId:task && typeof task.seriesId === 'string' ? task.seriesId : '',
+      // "TIRAR DA NOTA": some só da nota adesiva; a tarefa continua igual.
+      ...(task && task.noteHidden ? {noteHidden:true} : {})
     })) : [];
     return {tasks, notes:typeof source.notes === 'string' ? source.notes : ''};
   }
@@ -21591,22 +21646,35 @@
     if(document.visibilityState === 'visible') resumeTaskReminderMonitor();
     else clearInterval(taskReminderTimer);
   });
+  // Regra ÚNICA de concluir/reabrir: aba Tarefas, Início e nota adesiva chamam esta função.
+  // `loaded` = dados já em tela (aba Tarefas); sem ele, lê o dia do banco.
+  async function setTaskDone(dateKey, id, done, loaded){
+    const key = 'tarefas:' + dateKey;
+    let data = loaded;
+    if(!data){
+      const result = await storage.get(key);
+      data = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
+    }
+    const task = data.tasks.find(item => item.id === id);
+    if(!task) throw new Error('TAREFA NÃO ENCONTRADA');
+    task.done = done;
+    await storage.set(key, JSON.stringify(data));
+    if(el('taskDate').value === dateKey) renderTasks(data);
+    if(canAccess('tasks')) renderHomeTasks();
+    await syncTaskCarryover(dateKey, task, !task.done && task.outcome === 'carryover');
+    await syncTaskRecurrence(dateKey,task,true);
+    loadTaskAgenda();
+  }
   el('taskList').addEventListener('change', async event => {
     const id = event.target.dataset.taskDone;
     if(!id) return;
     const data = readTaskData();
-    const task = data.tasks.find(item => item.id === id);
-    if(!task) return;
-    task.done = event.target.checked;
-    event.target.closest('.task-row').classList.toggle('done', task.done);
-    markTaskToggling(event.target.closest('.task-row'));
-    try{
-      await saveTaskData(data);
-      await syncTaskCarryover(el('taskDate').value, task, !task.done && task.outcome === 'carryover');
-      await syncTaskRecurrence(el('taskDate').value,task,true);
-      loadTaskAgenda();
-    }
-    catch{ task.done = !task.done; renderTasks(data); showError('Não foi possível atualizar a tarefa. Tente novamente.'); }
+    if(!data.tasks.some(item => item.id === id)) return;
+    const row = event.target.closest('.task-row');
+    row.classList.toggle('done', event.target.checked);
+    markTaskToggling(row);
+    try{ await setTaskDone(el('taskDate').value, id, event.target.checked, data); }
+    catch{ loadTasks(); showError('Não foi possível atualizar a tarefa. Tente novamente.'); }
   });
   el('taskList').addEventListener('change', async event => {
     const id = event.target.dataset.taskOutcome;
@@ -21769,6 +21837,7 @@ function renderHomeTasks(){
     storage.get('tarefas:' + dateKey).then(result => {
       if(!result || !result.value){
         homeTodayTasks = [];
+        renderTaskNote();
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
         return;
       }
@@ -21776,6 +21845,7 @@ function renderHomeTasks(){
       try{ data = JSON.parse(result.value); } catch{ data = {}; }
       const tasks = normalizeTaskData(data).tasks;
       homeTodayTasks = tasks;
+      renderTaskNote();
       checkTaskReminders();
       if(tasks.length === 0){
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
@@ -21802,22 +21872,11 @@ function renderHomeTasks(){
   el('homeTasksList').addEventListener('change', async event => {
     const id = event.target.dataset.homeTaskDone;
     if(!id) return;
-    const todayKey = todayDateKey();
     const row = event.target.closest('.home-task-row');
     row.classList.toggle('done', event.target.checked);
     markTaskToggling(row);
     try{
-      const result = await storage.get('tarefas:' + todayKey);
-      const data = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
-      const task = data.tasks.find(item => item.id === id);
-      if(!task) throw new Error('TAREFA NÃO ENCONTRADA');
-      task.done = event.target.checked;
-      await storage.set('tarefas:' + todayKey, JSON.stringify(data));
-      await syncTaskCarryover(todayKey, task, !task.done && task.outcome === 'carryover');
-      await syncTaskRecurrence(todayKey,task,true);
-      if(el('taskDate').value === todayKey) renderTasks(data);
-      if(canAccess('tasks')) renderHomeTasks();
-      loadTaskAgenda();
+      await setTaskDone(todayDateKey(), id, event.target.checked);
     } catch{
       event.target.checked = !event.target.checked;
       row.classList.toggle('done', event.target.checked);
@@ -21845,6 +21904,186 @@ function renderHomeTasks(){
       renderHomeTasks();
     }
   });
+
+  // ===== NOTA ADESIVA DE TAREFAS =====
+  // Mostra homeTodayTasks (o mesmo dado da Início), conclui por setTaskDone e
+  // guarda "escondida da nota" na própria tarefa. Liga/desliga por usuário em
+  // shared_state 'tarefas-nota'; posição e minimizado só neste aparelho.
+  // Fora do site: Document Picture-in-Picture renderiza a MESMA nota, com os
+  // mesmos handlers desta página (sem segunda fonte de verdade).
+  const TASK_NOTE_STATE_KEY = 'tarefas-nota';
+  const taskNotePipSupported = () => 'documentPictureInPicture' in window && !matchMedia('(max-width:680px)').matches;
+  let taskNoteEnabled = true;
+  let taskNotePip = null;
+  let taskNoteUi = {min:false,left:null,top:null};
+  function taskNoteUiKey(){ return 'estoque_task_note_ui:' + String(currentSession.id || currentSession.username || 'usuario'); }
+  function saveTaskNoteUi(){
+    try{ localStorage.setItem(taskNoteUiKey(), JSON.stringify(taskNoteUi)); }catch{ /* vale só nesta visita */ }
+  }
+  function syncTaskNoteSwitches(){
+    el('taskNoteEnabled').checked = taskNoteEnabled;
+    el('btnTaskNoteToggle').textContent = 'NOTA DE TAREFAS: ' + (taskNoteEnabled ? 'LIGADA' : 'DESLIGADA');
+    el('btnTaskNoteToggle').hidden = !canAccess('tasks');
+  }
+  async function loadTaskNoteSettings(){
+    try{ taskNoteUi = {...taskNoteUi, ...JSON.parse(localStorage.getItem(taskNoteUiKey()) || '{}')}; }catch{ /* padrão */ }
+    if(matchMedia('(max-width:680px)').matches) taskNoteUi.min = true;
+    try{
+      const result = await storage.get(TASK_NOTE_STATE_KEY);
+      taskNoteEnabled = !(result && result.value && JSON.parse(result.value).enabled === false);
+    }catch{ /* fica ligada */ }
+    syncTaskNoteSwitches();
+    renderTaskNote();
+  }
+  async function setTaskNoteEnabled(enabled){
+    taskNoteEnabled = enabled;
+    syncTaskNoteSwitches();
+    renderTaskNote();
+    try{ await storage.set(TASK_NOTE_STATE_KEY, JSON.stringify({enabled})); }
+    catch{ showError('NÃO FOI POSSÍVEL SALVAR A PREFERÊNCIA DA NOTA DE TAREFAS.'); }
+  }
+  async function setTaskNoteHidden(ids, hidden){
+    const dateKey = todayDateKey();
+    homeTodayTasks.forEach(task => { if(ids.includes(task.id)) task.noteHidden = hidden; });
+    renderTaskNote();
+    const result = await storage.get('tarefas:' + dateKey);
+    const data = normalizeTaskData(result && result.value ? JSON.parse(result.value) : {});
+    data.tasks.forEach(task => { if(ids.includes(task.id)) task.noteHidden = hidden; });
+    await storage.set('tarefas:' + dateKey, JSON.stringify(data));
+    if(el('taskDate').value === dateKey) renderTasks(data);
+    renderHomeTasks();
+  }
+  function taskNoteHtml(inPip){
+    const tasks = homeTodayTasks.slice().sort((a,b) => (a.time || '').localeCompare(b.time || ''));
+    const shown = tasks.filter(task => !task.noteHidden);
+    const hiddenCount = tasks.length - shown.length;
+    const pending = shown.filter(task => !task.done).length;
+    const now = Date.now();
+    const head = '<div class="task-note-head"'+(inPip ? '' : ' data-task-note-drag')+'>'+
+      '<strong class="task-note-title">HOJE · '+escapeHtml(formatDateBR(todayDateKey()).slice(0,5))+'</strong>'+
+      '<span class="task-note-count">'+pending+' PENDENTE'+(pending === 1 ? '' : 'S')+'</span>'+
+      (inPip ? '' :
+        '<button class="task-note-btn" type="button" data-task-note-action="min" aria-label="'+(taskNoteUi.min ? 'ABRIR NOTA' : 'MINIMIZAR NOTA')+'" title="'+(taskNoteUi.min ? 'ABRIR' : 'MINIMIZAR')+'">'+(taskNoteUi.min ? '+' : '–')+'</button>'+
+        (taskNotePipSupported() ? '<button class="task-note-btn" type="button" data-task-note-action="pip" aria-label="ABRIR FORA DO SITE" title="ABRIR FORA DO SITE">⧉</button>' : ''))+
+    '</div>';
+    if(taskNoteUi.min && !inPip) return head;
+    return head+
+      '<div class="task-note-list">'+(shown.length ? shown.map(task => {
+        const due = taskDueAt(task);
+        const late = !task.done && due && now > due.getTime();
+        return '<div class="task-note-item'+(task.done ? ' done' : '')+'">'+
+          '<input class="task-note-check" type="checkbox" data-task-note-done="'+escapeHtml(task.id)+'" '+(task.done ? 'checked' : '')+' aria-label="CONCLUIR TAREFA">'+
+          '<span class="task-note-text">'+(task.time ? '<b>'+escapeHtml(task.time)+'</b> ' : '')+escapeHtml(task.text || '')+
+            (late ? '<span class="task-note-late">ATRASADA</span>' : '')+'</span>'+
+          '<button class="task-note-hide" type="button" data-task-note-hide="'+escapeHtml(task.id)+'" aria-label="TIRAR DA NOTA" title="TIRAR DA NOTA">×</button>'+
+        '</div>';
+      }).join('') : '<div class="task-note-empty">NENHUMA TAREFA NA NOTA.</div>')+'</div>'+
+      (hiddenCount ? '<div class="task-note-foot">'+hiddenCount+' ESCONDIDA'+(hiddenCount === 1 ? '' : 'S')+' · <button type="button" data-task-note-action="show">MOSTRAR TODAS</button></div>' : '');
+  }
+  function placeTaskNote(){
+    const note = el('taskNote');
+    if(taskNoteUi.left === null || taskNoteUi.top === null){
+      note.style.left = note.style.top = note.style.right = note.style.bottom = '';
+      return;
+    }
+    taskNoteUi.left = Math.min(Math.max(4, taskNoteUi.left), Math.max(4, innerWidth - note.offsetWidth - 4));
+    taskNoteUi.top = Math.min(Math.max(4, taskNoteUi.top), Math.max(4, innerHeight - note.offsetHeight - 4));
+    note.style.left = taskNoteUi.left + 'px';
+    note.style.top = taskNoteUi.top + 'px';
+    note.style.right = note.style.bottom = 'auto';
+  }
+  function renderTaskNote(){
+    const note = el('taskNote');
+    const enabled = taskNoteEnabled && canAccess('tasks');
+    if(taskNotePip){
+      if(enabled) taskNotePip.document.querySelector('.task-note').innerHTML = taskNoteHtml(true);
+      else taskNotePip.close();
+    }
+    note.hidden = !enabled || Boolean(taskNotePip) || !homeTodayTasks.length;
+    document.body.classList.toggle('task-note-on', !note.hidden);
+    if(note.hidden) return;
+    note.classList.toggle('is-min', taskNoteUi.min);
+    note.innerHTML = taskNoteHtml(false);
+    placeTaskNote();
+  }
+  async function openTaskNotePip(){
+    if(!taskNotePipSupported() || taskNotePip) return;
+    try{
+      const pip = await window.documentPictureInPicture.requestWindow({width:260,height:320});
+      const style = pip.document.createElement('style');
+      style.textContent = el('taskNoteStyles').textContent + 'body{margin:0;background:#fff2a1;}';
+      pip.document.head.appendChild(style);
+      pip.document.title = 'TAREFAS DE HOJE';
+      const box = pip.document.createElement('div');
+      box.className = 'task-note in-pip';
+      box.addEventListener('click', onTaskNoteClick);
+      box.addEventListener('change', onTaskNoteChange);
+      pip.document.body.appendChild(box);
+      pip.addEventListener('pagehide', () => { taskNotePip = null; renderTaskNote(); });
+      taskNotePip = pip;
+      renderTaskNote();
+    }catch{ showError('NÃO FOI POSSÍVEL ABRIR A NOTA FORA DO SITE.'); }
+  }
+  async function onTaskNoteChange(event){
+    const id = event.target.dataset.taskNoteDone;
+    if(!id) return;
+    const item = event.target.closest('.task-note-item');
+    item.classList.toggle('done', event.target.checked);
+    try{ await setTaskDone(todayDateKey(), id, event.target.checked); }
+    catch{
+      event.target.checked = !event.target.checked;
+      item.classList.toggle('done', event.target.checked);
+      showError('Não foi possível atualizar a tarefa. Tente novamente.');
+    }
+  }
+  function onTaskNoteClick(event){
+    const hide = event.target.closest('[data-task-note-hide]');
+    const action = event.target.closest('[data-task-note-action]');
+    const name = action ? action.dataset.taskNoteAction : '';
+    const failed = () => { showError('NÃO FOI POSSÍVEL ATUALIZAR A NOTA DE TAREFAS.'); renderHomeTasks(); };
+    if(hide) setTaskNoteHidden([hide.dataset.taskNoteHide], true).catch(failed);
+    if(name === 'show') setTaskNoteHidden(homeTodayTasks.filter(task => task.noteHidden).map(task => task.id), false).catch(failed);
+    if(name === 'pip') openTaskNotePip();
+    if(name === 'min'){
+      taskNoteUi.min = !taskNoteUi.min;
+      saveTaskNoteUi();
+      renderTaskNote();
+    }
+  }
+  el('taskNote').addEventListener('click', onTaskNoteClick);
+  el('taskNote').addEventListener('change', onTaskNoteChange);
+  el('taskNote').addEventListener('pointerdown', event => {
+    const head = event.target.closest('[data-task-note-drag]');
+    if(!head || event.button !== 0 || event.target.closest('button')) return;
+    const rect = el('taskNote').getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    head.setPointerCapture(event.pointerId);
+    const move = moveEvent => {
+      taskNoteUi.left = moveEvent.clientX - offsetX;
+      taskNoteUi.top = moveEvent.clientY - offsetY;
+      placeTaskNote();
+    };
+    const stop = () => {
+      head.removeEventListener('pointermove', move);
+      head.removeEventListener('pointerup', stop);
+      head.removeEventListener('pointercancel', stop);
+      saveTaskNoteUi();
+    };
+    head.addEventListener('pointermove', move);
+    head.addEventListener('pointerup', stop);
+    head.addEventListener('pointercancel', stop);
+  });
+  window.addEventListener('resize', () => { if(!el('taskNote').hidden) placeTaskNote(); });
+  el('taskNoteEnabled').addEventListener('change', event => setTaskNoteEnabled(event.target.checked));
+  el('btnTaskNoteToggle').addEventListener('click', () => setTaskNoteEnabled(!taskNoteEnabled));
+  // Fora da aba Tarefas não há canal ao vivo de tarefas: relê o dia a cada
+  // minuto (também atualiza o selo ATRASADA) e ao voltar para a página.
+  function refreshTaskNote(){
+    if(taskNoteEnabled && canAccess('tasks') && (document.visibilityState === 'visible' || taskNotePip)) renderHomeTasks();
+  }
+  setInterval(refreshTaskNote, 60000);
+  document.addEventListener('visibilitychange', refreshTaskNote);
 
   const missionFrequencyLabels = {once:'SOMENTE NO DIA',daily:'DIÁRIA',weekly:'SEMANAL'};
   let missionMonthLoading = false;
@@ -60882,7 +61121,7 @@ function renderHomeTasks(){
     if(canAccess('database') || canAccess('report41')) loaders.push(() => loadCompanyStock());
     if(canAccess('report41')) loaders.push(() => loadReport41StoreData());
     if(canAccess('tasks')) loaders.push(() => (async () => {
-      await Promise.all([loadTasks(),loadTaskAgenda()]);
+      await Promise.all([loadTasks(),loadTaskAgenda(),loadTaskNoteSettings()]);
       renderHomeTasks();
       startTaskReminderMonitor();
     })());
