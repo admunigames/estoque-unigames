@@ -115,28 +115,7 @@ export async function GET(request: Request) {
         stateKey: `tarefas:${String(item.stateKey || "").slice(prefix.length)}`,
       }));
 
-      // A conta principal mantém acesso às tarefas criadas antes da separação
-      // por usuário. Quando um dia antigo for salvo novamente, ele passa
-      // automaticamente para a chave privada da conta principal.
-      if (userId === "env-admin") {
-        const legacy = await database
-          .prepare(
-            `SELECT state_key AS stateKey, value_json AS value
-             FROM shared_state
-             WHERE length(state_key) = 18
-               AND state_key LIKE 'tarefas:____-__-__'
-               AND state_key > ?1
-             ORDER BY state_key ASC`,
-          )
-          .bind(`tarefas:${from}`)
-          .all<{ stateKey: string; value: string }>();
-        const existingDates = new Set(items.map((item) => String(item.stateKey)));
-        for (const item of legacy.results ?? []) {
-          if (!existingDates.has(String(item.stateKey))) items.push(item);
-        }
-        items.sort((left, right) => String(left.stateKey).localeCompare(String(right.stateKey)));
-      }
-
+      // Lista antiga sem usuário (antes da separação) não é mais lida (16/11/2026).
       return jsonResponse({ items });
     } catch {
       return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR A AGENDA." }, 500);
@@ -148,10 +127,7 @@ export async function GET(request: Request) {
 
   try {
     const resolvedKey = scopedStateKey(request, key);
-    let row = await readState(resolvedKey);
-    if (!row && authenticatedUserId(request) === "env-admin" && TASK_KEY_PATTERN.test(key)) {
-      row = await readState(key);
-    }
+    const row = await readState(resolvedKey);
     return jsonResponse({
       value: row?.value ?? null,
       version: row?.version ?? 0,

@@ -16048,9 +16048,6 @@
       if(value === null && scopedKey === key){
         value = readLocalStorage(LEGACY_STORAGE_PREFIX + key);
       }
-      if(value === null && currentSession.id === 'env-admin' && scopedKey !== key){
-        value = readLocalStorage(STORAGE_PREFIX + key) || readLocalStorage(LEGACY_STORAGE_PREFIX + key);
-      }
       if(value !== null){
         try{ await iosDbSet(fullKey, value); } catch{ /* mantém no localStorage */ }
         try{ localStorage.setItem(fullKey, value); } catch{ /* IndexedDB já recebeu */ }

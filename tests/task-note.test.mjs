@@ -51,3 +51,19 @@ test("shared-state guarda 'tarefas-nota' separado por usuário", async () => {
   assert.equal(await read(ana), '{"enabled":false}');
   assert.equal(await read(bia), null);
 });
+
+test("conta principal não lê mais a lista antiga sem usuário (tarefas:DATA)", async () => {
+  const route = await import("../app/api/shared-state/route.ts");
+  const legacy = JSON.stringify({ tasks: [{ id: "x", text: "TAREFA ANTIGA DA LOJA" }], notes: "" });
+  await globalThis.__routeTestDb.prepare("INSERT INTO shared_state (state_key, value_json, version, updated_at) VALUES (?1, ?2, 1, ?3)")
+    .bind("tarefas:2099-05-05", legacy, "2099-05-05").run();
+  const saved = await globalThis.__routeTestDb.prepare("SELECT value_json AS v FROM shared_state WHERE state_key=?1").bind("tarefas:2099-05-05").first();
+  assert.equal(saved.v, legacy, "lista antiga existe no banco");
+  const main = { id: "env-admin", role: "admin", permissions: [] };
+  const day = await (await callRoute(route.GET, main, "GET", "/api/shared-state?key=tarefas:2099-05-05")).json();
+  assert.equal(day.value, null);
+  const agenda = await (await callRoute(route.GET, main, "GET", "/api/shared-state?scope=task-agenda&from=2099-01-01")).json();
+  assert.deepEqual(agenda.items, []);
+  assert.doesNotMatch(html, /currentSession\.id === 'env-admin' && scopedKey !== key/);
+  assert.doesNotMatch(worker, /\? "env-admin"\s*: row\.stateKey/);
+});

@@ -2460,16 +2460,14 @@ async function dispatchDueTaskNotifications(env: Env) {
     .prepare(
       `SELECT state_key AS stateKey, value_json AS value
        FROM shared_state
-       WHERE state_key = ?1 OR state_key LIKE ?2`,
+       WHERE state_key LIKE ?1`,
     )
-    .bind(`tarefas:${now.date}`, `tarefas:%:${now.date}`)
+    .bind(`tarefas:%:${now.date}`)
     .all<{ stateKey: string; value: string }>();
 
   webPush.setVapidDetails(subject, publicKey, privateKey);
   for (const row of result.results ?? []) {
-    const userId = row.stateKey === `tarefas:${now.date}`
-      ? "env-admin"
-      : row.stateKey.slice("tarefas:".length, -(now.date.length + 1));
+    const userId = row.stateKey.slice("tarefas:".length, -(now.date.length + 1));
     if (!userId) continue;
     let tasks: Array<Record<string, unknown>> = [];
     try {
