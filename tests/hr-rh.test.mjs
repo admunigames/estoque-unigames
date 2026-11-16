@@ -327,3 +327,13 @@ test("recrutamento: STAND BY e REPROVADO gravam histórico e filtram; tela com a
   assert.match(html, /CONTRATADO \/ INTEGRAÇÃO · '\+pending\.length\+' PENDÊNCIA'/);
   assert.match(html, /data-rec-pending-list/);
 });
+
+test("avisos do RH não entram automaticamente na lista do admin/conta principal (16/11/2026)", async () => {
+  const { usersWithPermission } = await import("../app/lib/hr-notify.ts");
+  db.insert("app_users", { id: "adm9", username: "adm9", display_name: "ADM", password_hash: "x", password_salt: "x", role: "admin", access_group: "admin", permissions_json: "[]", active: 1 });
+  const ids = await usersWithPermission(globalThis.__routeTestDb, ["rh_recrutamento:manage"]);
+  assert.ok(ids.includes("rh1"));
+  assert.ok(!ids.includes("adm9"), "admin sem a permissão não recebe");
+  assert.ok(!ids.includes("env-admin"), "conta principal não é incluída à força");
+  assert.deepEqual(await usersWithPermission(globalThis.__routeTestDb, []), []);
+});

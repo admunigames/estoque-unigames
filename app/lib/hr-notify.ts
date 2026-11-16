@@ -17,14 +17,19 @@ export function vapidFromEnv(source: Record<string, string | undefined>): Vapid 
   return publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null;
 }
 
-/** Logins ativos com alguma das permissões (ou admin) + a conta principal. */
+/**
+ * Logins ativos com alguma das permissões marcadas no cadastro. Admin e conta
+ * principal NÃO entram automaticamente (16/11/2026: enchiam a lista de Tarefas
+ * do admin com avisos do RH); recebem só se tiverem a permissão.
+ */
 export async function usersWithPermission(db: Db, permissions: string[]): Promise<string[]> {
+  if (!permissions.length) return [];
   const likes = permissions.map((_, index) => `permissions_json LIKE ?${index + 1}`).join(" OR ");
   const result = await db
-    .prepare(`SELECT id FROM app_users WHERE active=1 AND (role='admin'${likes ? ` OR ${likes}` : ""})`)
+    .prepare(`SELECT id FROM app_users WHERE active=1 AND (${likes})`)
     .bind(...permissions.map((permission) => `%"${permission}"%`))
     .all<{ id: string }>();
-  return [...new Set(["env-admin", ...(result.results ?? []).map((row) => row.id)])];
+  return [...new Set((result.results ?? []).map((row) => row.id))];
 }
 
 export type TaskInput = { id: string; text: string; time?: string; priority?: "low" | "medium" | "high" | "urgent" };
