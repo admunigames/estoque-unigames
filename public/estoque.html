@@ -4300,6 +4300,18 @@
     .com-print-table tr.sum td{font-weight:800; background:#e8eef6 !important; border-top:2px solid #1f3a5f !important;}
     .com-print-table .neg{color:#b42318 !important;}
     .com-print-resume{width:auto; min-width:50%; margin:6px 0 2px; font-size:9px;}
+    .com-print-kpis{display:grid !important; grid-template-columns:repeat(5,1fr); gap:6px; margin:4px 0 6px;}
+    .com-print-kpi{padding:6px 8px; border:1px solid #c9d3df; border-left:4px solid #1f3a5f; background:#f6f8fb !important; break-inside:avoid;}
+    .com-print-kpi span{display:block; font:800 7px/1.3 var(--mono); color:#475569 !important;}
+    .com-print-kpi strong{display:block; margin-top:2px; font:800 13px/1.2 var(--sans); color:#111827 !important;}
+    .com-print-kpi small{display:block; font-size:7px; color:#475569 !important;}
+    .com-print-metas td{font-size:8.5px;}
+    .com-print-metas tr.group td{background:#e8eef6 !important; font:800 8px/1.3 var(--mono); border-top:2px solid #1f3a5f !important;}
+    .com-print-metas small{font:800 6.5px/1 var(--mono); color:#475569 !important;}
+    .com-print-tier.tier-green{color:#15803d !important;} .com-print-tier.tier-yellow{color:#a16207 !important;} .com-print-tier.tier-red{color:#b42318 !important;}
+    .com-print-bar{display:block; width:100%; min-width:90px; height:7px; border-radius:4px; background:#e2e8f0 !important; overflow:hidden;}
+    .com-print-bar i{display:block; height:100%; border-radius:4px;}
+    .com-print-bar i.tier-green{background:#16a34a !important;} .com-print-bar i.tier-yellow{background:#d97706 !important;} .com-print-bar i.tier-red{background:#dc2626 !important;} .com-print-bar i.tier-none{background:#94a3b8 !important;}
     /* RELATÓRIO DE BENEFÍCIOS (RH): paisagem, um bloco por loja atuante. */
     @page benefreport{size:A4 landscape; margin:9mm;}
     body.rh-benef-printing > :not(.shell),
@@ -8480,6 +8492,10 @@
 
       <!-- METAS (comercial:metas): só leitura — meta × feito em R$ das lojas e dos vendedores. -->
       <div class="com-view-panel" id="comViewMetas" hidden>
+        <div class="com-report-actions no-print">
+          <span>ANÁLISE DAS METAS DO MÊS (LOJAS E VENDEDORES)</span>
+          <button class="btn-outline" type="button" id="btnComMetasPdf">BAIXAR PDF</button>
+        </div>
         <div class="com-total" id="comMetasTotal" hidden></div>
         <div class="com-chart-head"><h3 class="com-section-title">METAS DAS LOJAS</h3><button class="btn-accent" type="button" id="btnComMetasStoresImage">GERAR IMAGEM</button></div>
         <div class="table-panel responsive-table com-metas-table">
@@ -58801,15 +58817,72 @@ function renderHomeTasks(){
   }
 
   let comPrintTitleBefore = '';
+  // PDF do Acompanhamento (paisagem): monta #comPrintBody e abre a impressão; o título vira o nome do arquivo.
+  function comPrintPdf(html, title){
+    el('comPrintBody').innerHTML = html;
+    if(!comPrintTitleBefore) comPrintTitleBefore = document.title;
+    document.title = title;
+    document.body.classList.add('pdf-export', 'com-printing');
+    window.print();
+  }
+
+  // PDF da aba METAS (pedido de 17/11/2026, para análise): resumo em números,
+  // lojas do maior para o menor % e vendedores agrupados por loja, com barra.
+  function comMetasPdfHtml(){
+    const m = comMetas;
+    const money = cents => escapeHtml(formatCentsBRL(cents));
+    const pct = value => '<b class="com-print-tier tier-'+comTier(value)+'">'+escapeHtml(comFormatPct(value))+'</b>';
+    const bar = value => '<span class="com-print-bar"><i class="tier-'+comTier(value)+'" style="width:'+Math.min(100, Math.max(0, Number(value) || 0))+'%"></i></span>';
+    const falta = row => row.revenueCents >= row.targetCents ? 'META BATIDA' : money(row.targetCents - row.revenueCents);
+    const byPct = (a, b) => (b.percent ?? -1) - (a.percent ?? -1) || a.name.localeCompare(b.name, 'pt-BR');
+    const hit = rows => rows.filter(row => row.percent !== null && row.percent >= 100).length;
+    const below = rows => rows.filter(row => row.percent !== null && row.percent < 80).length;
+    const kpi = (label, value, note) => '<div class="com-print-kpi"><span>'+escapeHtml(label)+'</span><strong>'+value+'</strong>'+(note ? '<small>'+escapeHtml(note)+'</small>' : '')+'</div>';
+    const stores = m.stores.slice().sort(byPct);
+    const kpis = [
+      m.allStores && stores.length > 1 ? kpi('META DAS LOJAS', money(m.total.targetCents)) : '',
+      m.allStores && stores.length > 1 ? kpi('FEITO DAS LOJAS', money(m.total.revenueCents), m.total.revenueCents >= m.total.targetCents ? 'META BATIDA' : 'FALTA '+formatCentsBRL(m.total.targetCents - m.total.revenueCents)) : '',
+      m.allStores && stores.length > 1 ? kpi('% DA REDE', pct(m.total.percent)) : '',
+      kpi('LOJAS NA META', hit(stores)+' DE '+stores.length, below(stores)+' ABAIXO DE 80%'),
+      kpi('VENDEDORES NA META', hit(m.sellers)+' DE '+m.sellers.length, below(m.sellers)+' ABAIXO DE 80%')
+    ].join('');
+    const storeRows = stores.map((row, index) => '<tr><td class="num">'+(index + 1)+'º</td><td><b>'+escapeHtml(row.name)+'</b></td><td class="num">'+money(row.targetCents)+'</td><td class="num">'+money(row.revenueCents)+'</td>'+
+      '<td class="num">'+pct(row.percent)+'</td><td>'+bar(row.percent)+'</td><td class="num">'+falta(row)+'</td></tr>').join('');
+    // Vendedores por loja (na ordem das lojas acima; loja sem meta no fim), do maior para o menor %.
+    const order = new Map(stores.map((row, index) => [row.name, index]));
+    const groups = new Map();
+    m.sellers.forEach(row => { const key = row.companyName || 'SEM LOJA'; groups.set(key, (groups.get(key) || []).concat(row)); });
+    const sellerRows = Array.from(groups.entries())
+      .sort((a, b) => (order.get(a[0]) ?? 999) - (order.get(b[0]) ?? 999) || a[0].localeCompare(b[0], 'pt-BR'))
+      .map(([store, rows]) => {
+        const target = rows.reduce((acc, row) => acc + row.targetCents, 0);
+        const done = rows.reduce((acc, row) => acc + row.revenueCents, 0);
+        return '<tr class="group"><td colspan="6">'+escapeHtml(store)+' · '+rows.length+(rows.length === 1 ? ' VENDEDOR' : ' VENDEDORES')+' · '+hit(rows)+' NA META · SOMA '+money(done)+' DE '+money(target)+'</td></tr>'+
+          rows.slice().sort(byPct).map(row => '<tr><td><b>'+escapeHtml(row.name)+'</b>'+(row.role === 'lider' ? ' <small>LÍDER</small>' : '')+(row.inactive ? ' <small>INATIVO</small>' : '')+'</td>'+
+            '<td class="num">'+money(row.targetCents)+'</td><td class="num">'+money(row.revenueCents)+'</td><td class="num">'+pct(row.percent)+'</td><td>'+bar(row.percent)+'</td><td class="num">'+falta(row)+'</td></tr>').join('');
+      }).join('');
+    return '<header class="print-report-header gd-print-header"><img class="gd-print-logo" src="'+LOGO_DATA_URI+'" alt="">'+
+        '<div><div class="print-report-kicker">COMERCIAL · ACOMPANHAMENTO METAS</div>'+
+        '<h1>ANÁLISE DAS METAS — '+escapeHtml(comMonthLong(m.month))+'</h1>'+
+        '<div class="print-report-meta">GERADO EM '+escapeHtml(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+escapeHtml(currentSession.displayName || '')+
+        ' · LOJA = VENDAS + ASSISTÊNCIA · % VERDE A PARTIR DE 100%, AMARELO DE 80% A 99,9%, VERMELHO ABAIXO DE 80%</div></div></header>'+
+      '<div class="com-print-kpis">'+kpis+'</div>'+
+      '<section class="com-print-group"><h2>METAS DAS LOJAS <small>DO MAIOR PARA O MENOR %</small></h2>'+
+        '<table class="com-print-table com-print-metas"><thead><tr><th class="num">#</th><th>Loja</th><th class="num">Meta</th><th class="num">Feito</th><th class="num">% da meta</th><th>Progresso</th><th class="num">Falta</th></tr></thead><tbody>'+
+        (storeRows || '<tr><td colspan="7">NENHUMA META DE LOJA NO MÊS.</td></tr>')+'</tbody></table></section>'+
+      '<section class="com-print-group"><h2>METAS DOS VENDEDORES <small>POR LOJA, DO MAIOR PARA O MENOR %</small></h2>'+
+        '<table class="com-print-table com-print-metas"><thead><tr><th>Vendedor</th><th class="num">Meta</th><th class="num">Feito</th><th class="num">% da meta</th><th>Progresso</th><th class="num">Falta</th></tr></thead><tbody>'+
+        (sellerRows || '<tr><td colspan="6">NENHUMA META DE VENDEDOR NO MÊS.</td></tr>')+'</tbody></table></section>';
+  }
+  if(el('btnComMetasPdf')) el('btnComMetasPdf').addEventListener('click', () => {
+    if(!comMetas){ showPurchaseToast('AS METAS AINDA ESTÃO CARREGANDO.', 'error'); return; }
+    comPrintPdf(comMetasPdfHtml(), 'METAS-'+comMonthLong(comMetas.month).replace('/', '-'));
+  });
   async function comDownloadReport(kind){
     const groups = comReportGroups();
     if(!groups.length){ showPurchaseToast('Nenhum colaborador com comissão neste mês.', 'error'); return; }
     if(kind === 'pdf'){
-      el('comPrintBody').innerHTML = comReportPdfHtml(groups);
-      if(!comPrintTitleBefore) comPrintTitleBefore = document.title;
-      document.title = comReportFileName('pdf').replace(/\.pdf$/, '');
-      document.body.classList.add('pdf-export', 'com-printing');
-      window.print();
+      comPrintPdf(comReportPdfHtml(groups), comReportFileName('pdf').replace(/\.pdf$/, ''));
       return;
     }
     const button = el('btnComReportExcel');

@@ -4603,6 +4603,10 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /id="btnComMetasStoresImage">GERAR IMAGEM<\/button>/);
   assert.match(html, /id="btnComMetasSellersImage">GERAR IMAGEM<\/button>/);
   assert.match(html, /async function comBuildMetasImage\(kind\)\{[\s\S]*?await comDrawImageFrame\(ctx, W, H, \{/);
+  // PDF de análise da aba METAS (17/11/2026): resumo, lojas por %, vendedores por loja.
+  assert.match(html, /id="btnComMetasPdf">BAIXAR PDF<\/button>/);
+  assert.match(html, /function comMetasPdfHtml\(\)\{[\s\S]*?METAS DOS VENDEDORES <small>POR LOJA, DO MAIOR PARA O MENOR %/);
+  assert.match(html.slice(html.lastIndexOf("@media print")), /\.com-print-bar i\.tier-green\{background:#16a34a !important;\}/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission", "comercial:ranking"\],/);
   assert.match(workerSource, /"comercial:manage": \["comercial:goals"\],/);
