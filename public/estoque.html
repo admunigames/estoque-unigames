@@ -3025,6 +3025,8 @@
   .aop-item-row-actions{display:flex; flex:none; gap:4px;}
   .aop-icon-btn{width:34px; min-height:32px; padding:0; font-size:15px; line-height:1;}
   .aop-icon-btn:disabled{visibility:hidden;}
+  /* Botão EDITAR das listas = ícone ✎ (mesmo da Auditoria Operacional); altura e fonte seguem o botão de cada página. */
+  [data-edit-icon]{padding-left:0; padding-right:0; min-width:2.4em; font-size:17px; line-height:1;}
   @media(max-width:680px){
     .aop-item{grid-template-columns:1fr;}
     .aop-choice{min-height:52px;font-size:14px;}
@@ -17772,7 +17774,7 @@
     documentsById = new Map(documents.map(document => [document.id, document]));
     list.innerHTML = documents.map(document => {
       const editButton = canAccess('documents:edit')
-        ? '<button class="btn-outline" type="button" data-document-edit="'+escapeHtml(document.id)+'">EDITAR</button>'
+        ? '<button class="btn-outline" type="button" data-document-edit="'+escapeHtml(document.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'
         : '';
       const deleteButton = canAccess('documents:delete')
         ? '<button class="btn-danger-outline" type="button" data-document-delete="'+escapeHtml(document.id)+'">EXCLUIR</button>'
@@ -20730,7 +20732,7 @@
         '<div class="purchase-card-section"><span>ENTREGAS PARCIAIS</span>'+purchaseDeliveriesHtml(item)+'</div>'+
         '<footer class="purchase-card-footer"><div class="purchase-card-actions">'+
           '<button class="btn-outline" type="button" data-partial-purchase="'+escapeHtml(item.id)+'">ENTREGA PARCIAL</button>'+
-          '<button class="btn-outline" type="button" data-edit-purchase="'+escapeHtml(item.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-edit-purchase="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           '<a class="btn-outline" href="'+escapeHtml(safeExternalUrl(item.url))+'" target="_blank" rel="noopener noreferrer">NOTION ↗</a>'+
         '</div></footer>'+
       '</article>';
@@ -25153,7 +25155,7 @@ function renderHomeTasks(){
         '<td data-label="VALOR"><strong>'+formatCentsBRL(quote.totalCents)+'</strong></td>'+
         '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
           '<button class="btn-outline" type="button" data-assist-history="pdf" data-quote="'+escapeHtml(quote.id)+'">VER/IMPRIMIR PDF</button>'+
-          '<button class="btn-outline" type="button" data-assist-history="edit" data-quote="'+escapeHtml(quote.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-assist-history="edit" data-quote="'+escapeHtml(quote.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           '<button class="btn-danger-outline" type="button" data-assist-history="delete" data-quote="'+escapeHtml(quote.id)+'">EXCLUIR</button>'+
         '</div></td>'+
       '</tr>'
@@ -27950,7 +27952,7 @@ function renderHomeTasks(){
         '</div>';
       }
       return '<div class="supply-category-row"><span>'+escapeHtml(cat.name)+'</span>'+
-        '<button type="button" data-category-edit="'+escapeHtml(cat.id)+'">EDITAR</button>'+
+        '<button type="button" data-category-edit="'+escapeHtml(cat.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button type="button" class="delete" data-category-delete="'+escapeHtml(cat.id)+'">EXCLUIR</button>'+
       '</div>';
     }).join('');
@@ -27997,7 +27999,7 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(product.categoryName)+'</td>'+
       '<td>'+supplyProductStatusHtml(product)+'</td>'+
       '<td class="supply-product-actions">'+
-        (canAccess('supplies:manage_catalog') ? '<button type="button" data-product-edit="'+escapeHtml(product.id)+'">EDITAR</button>' : '')+
+        (canAccess('supplies:manage_catalog') ? '<button type="button" data-product-edit="'+escapeHtml(product.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
         (canAccess('supplies:delete') ? '<button type="button" class="delete" data-product-delete="'+escapeHtml(product.id)+'">EXCLUIR</button>' : '')+
       '</td>'+
     '</tr>';
@@ -28942,7 +28944,7 @@ function renderHomeTasks(){
       const currentCompany = device.status === 'loaned'
         ? '<span class="loan-cell-inline">'+escapeHtml(device.currentCompanyName || '—')+(dayBadge ? ' '+dayBadge : '')+'</span>'
         : '—';
-      const actions = (canAccess('loans:edit') ? '<button class="btn-outline" type="button" data-loan-device-edit="'+escapeHtml(device.id)+'">EDITAR</button>' : '')+
+      const actions = (canAccess('loans:edit') ? '<button class="btn-outline" type="button" data-loan-device-edit="'+escapeHtml(device.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
         (canAccess('loans:delete') ? '<button class="btn-danger-outline" type="button" data-loan-device-delete="'+escapeHtml(device.id)+'">EXCLUIR</button>' : '');
       return '<tr>'+
         '<td class="nome" data-label="Aparelho">'+escapeHtml(device.name)+'</td>'+
@@ -30790,7 +30792,7 @@ function renderHomeTasks(){
       '<tr>'+
         '<td data-label="Código">'+escapeHtml(item.code || '—')+'</td>'+
         '<td data-label="Produto"><strong>'+escapeHtml(item.product)+'</strong>'+(allCats ? '<small class="os-update-meta">'+escapeHtml(item.category)+'</small>' : '')+
-          (item.source === 'manual' ? ' <span class="status-pill waiting">FORA DA LISTA · CUSTO '+escapeHtml(invMoney(item.costCents))+'</span>'+(canCount ? ' <button class="btn-outline btn-sm" type="button" data-inv-edit-item="'+escapeHtml(item.id)+'">EDITAR</button>' : '') : '')+'</td>'+
+          (item.source === 'manual' ? ' <span class="status-pill waiting">FORA DA LISTA · CUSTO '+escapeHtml(invMoney(item.costCents))+'</span>'+(canCount ? ' <button class="btn-outline btn-sm" type="button" data-inv-edit-item="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '') : '')+'</td>'+
         '<td data-label="Em estoque"><strong>'+item.systemQty+'</strong></td>'+
         '<td data-label="Contado"><input class="inv-count-input" type="number" min="0" step="1" inputmode="numeric" data-inv-item="'+escapeHtml(item.id)+'" value="'+(item.countedQty === null ? '' : item.countedQty)+'"'+(canCount ? '' : ' disabled')+'></td>'+
         '<td data-label="Diferença" class="'+gdMoneyClass(invDiff(item) || 0)+'" data-inv-diff="'+escapeHtml(item.id)+'"><strong>'+invDiffLabel(invDiff(item))+'</strong></td>'+
@@ -31691,7 +31693,7 @@ function renderHomeTasks(){
     el('fpgBody').innerHTML = rows.length ? rows.map(item => {
       const id = escapeHtml(item.id), cur = fpgCur(item);
       const buttons = '<button class="btn-accent btn-sm" type="button" data-fpg-order="'+id+'">PAGAMENTOS</button> '+
-        (can.create ? '<button class="btn-outline btn-sm" type="button" data-fpg-edit="'+id+'">EDITAR</button> ' : '')+
+        (can.create ? '<button class="btn-outline btn-sm" type="button" data-fpg-edit="'+id+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> ' : '')+
         (can.delete ? '<button class="btn-outline btn-sm" type="button" data-fpg-del="'+id+'">EXCLUIR</button>' : '');
       return '<tr><td>'+(bulkable ? '<input class="bulk-check" type="checkbox" data-fpg-check="'+id+'"'+(fpgSelected.has(item.id) ? ' checked' : '')+' aria-label="Selecionar">' : '')+'</td>'+
         '<td data-label="Data do pedido">'+escapeHtml(gdDateLabel(item.orderDate))+'</td>'+
@@ -32162,7 +32164,7 @@ function renderHomeTasks(){
         '<div class="table-panel responsive-table"><div class="table-scroll"><table style="table-layout:fixed"><colgroup><col style="width:110px"><col style="width:15%"><col><col style="width:17%"><col style="width:16%"><col style="width:170px"></colgroup><thead><tr><th>Data</th><th>Quem cometeu</th><th>O que houve</th><th>Peso / tipo de erro</th><th>Lançado por</th><th></th></tr></thead><tbody>'+
         items.map(item => {
           const id = escapeHtml(item.id);
-          const buttons = (avopData.can.edit ? '<button class="btn-outline btn-sm" type="button" data-avop-edit="'+id+'">EDITAR</button> ' : '')+
+          const buttons = (avopData.can.edit ? '<button class="btn-outline btn-sm" type="button" data-avop-edit="'+id+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> ' : '')+
             (avopData.can.delete ? '<button class="btn-outline btn-sm" type="button" data-avop-del="'+id+'">EXCLUIR</button>' : '');
           return '<tr><td data-label="Data">'+escapeHtml(gdDateLabel(item.eventDate))+'</td>'+
             '<td data-label="Quem cometeu">'+escapeHtml(item.responsible || '—')+'</td>'+
@@ -32624,7 +32626,7 @@ function renderHomeTasks(){
           (canIn ? '<button class="btn-outline btn-sm ast-in" type="button" data-ast-move="entrada" data-ast-key="'+escapeHtml(item.id)+'">+ ENTRADA</button> ' : '')+
           (canOut ? '<button class="btn-outline btn-sm ast-out" type="button" data-ast-move="baixa" data-ast-key="'+escapeHtml(item.id)+'"'+(item.quantity === 0 ? ' disabled' : '')+'>− BAIXA</button> ' : '')+
           '<button class="btn-outline btn-sm" type="button" data-ast-history="'+escapeHtml(item.id)+'">HISTÓRICO</button> '+
-          (canManage ? '<button class="btn-outline btn-sm" type="button" data-ast-edit="'+escapeHtml(item.id)+'">EDITAR</button> ' : '')+
+          (canManage ? '<button class="btn-outline btn-sm" type="button" data-ast-edit="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> ' : '')+
           (canDelete ? '<button class="btn-outline btn-sm" type="button" data-ast-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>' : '')+
         '</td>'+
       '</tr>'
@@ -33325,7 +33327,7 @@ function renderHomeTasks(){
         '<td data-label="Valor" style="white-space:nowrap;font-weight:800;">'+escapeHtml(prcValue(row.priceCents))+'</td>'+
         '<td data-label="Atualizado"><small class="os-update-meta">'+escapeHtml((row.updatedByName || row.createdByName || '')+' · '+(formatDateTimeBR(row.updatedAt || row.createdAt) || ''))+'</small></td>'+
         '<td style="white-space:nowrap">'+
-          (canEdit ? '<button class="btn-outline btn-sm" type="button" data-prc-edit="'+escapeHtml(row.id)+'">EDITAR</button> ' : '')+
+          (canEdit ? '<button class="btn-outline btn-sm" type="button" data-prc-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> ' : '')+
           (canDelete ? '<button class="btn-outline btn-sm" type="button" data-prc-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
         '</td>'+
       '</tr>'
@@ -33528,7 +33530,7 @@ function renderHomeTasks(){
           ? '<button class="btn-accent btn-sm" type="button" data-os-quote-new="'+escapeHtml(row.id)+'">FAZER ORÇAMENTO</button> '
           : '';
       const actions = storeTest+quote+'<button class="btn-outline btn-sm" type="button" data-os-updates="'+escapeHtml(row.id)+'">'+(canEdit && !row.closed ? 'ATUALIZAR' : 'HISTÓRICO')+'</button> '+
-        (canEdit ? '<button class="btn-outline btn-sm" type="button" data-os-edit="'+escapeHtml(row.id)+'">EDITAR</button> ' : '')+
+        (canEdit ? '<button class="btn-outline btn-sm" type="button" data-os-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> ' : '')+
         (canDelete ? '<button class="btn-outline btn-sm" type="button" data-os-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '');
       return '<tr class="os-row os-'+escapeHtml(level)+'">'+
         '<td data-label="O.S."><strong>'+escapeHtml(row.osNumber)+'</strong></td>'+
@@ -34004,7 +34006,7 @@ function renderHomeTasks(){
       '<td data-label="Uso">'+escapeHtml(item.usageType || '—')+(item.usageDate ? '<small class="os-update-meta">'+rmaDate(item.usageDate)+'</small>' : '')+'</td>'+
       '<td data-label="Documento">'+escapeHtml(item.documentNumber || '—')+(item.attachments || []).map(file => '<br><a href="'+RMA_API+'/file?id='+encodeURIComponent(file.id)+'" target="_blank" rel="noopener">'+escapeHtml(file.fileName)+'</a>').join('')+'</td>'+
       '<td data-label="RMA">'+escapeHtml(item.rmaCode || '—')+'</td>'+
-      '<td style="white-space:nowrap"><button class="btn-outline btn-sm" type="button" data-rma-edit-credit="'+escapeHtml(item.id)+'">EDITAR</button> <button class="btn-outline btn-sm" type="button" data-rma-attach-credit="'+escapeHtml(item.id)+'">ANEXAR</button> <button class="btn-outline btn-sm" type="button" data-rma-delete-credit="'+escapeHtml(item.id)+'">EXCLUIR</button></td></tr>').join('')
+      '<td style="white-space:nowrap"><button class="btn-outline btn-sm" type="button" data-rma-edit-credit="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> <button class="btn-outline btn-sm" type="button" data-rma-attach-credit="'+escapeHtml(item.id)+'">ANEXAR</button> <button class="btn-outline btn-sm" type="button" data-rma-delete-credit="'+escapeHtml(item.id)+'">EXCLUIR</button></td></tr>').join('')
       : '<tr><td colspan="10" class="responsive-empty">'+(situation ? 'Nenhum crédito nesta situação.' : 'Nenhum crédito cadastrado.')+'</td></tr>';
   }
 
@@ -34029,7 +34031,7 @@ function renderHomeTasks(){
       '<td data-label="Total"><strong>'+formatCentsBRL(item.totalCostCents)+'</strong></td>'+
       '<td data-label="Motivo">'+escapeHtml(item.reason || '—')+(item.notes ? '<small class="os-update-meta">'+escapeHtml(item.notes)+'</small>' : '')+'</td>'+
       '<td data-label="Autorizado por">'+escapeHtml(item.authorizedBy || '—')+'</td>'+
-      '<td style="white-space:nowrap"><button class="btn-outline btn-sm" type="button" data-rma-edit-disposal="'+escapeHtml(item.id)+'">EDITAR</button> <button class="btn-outline btn-sm" type="button" data-rma-delete-disposal="'+escapeHtml(item.id)+'">EXCLUIR</button></td></tr>').join('')
+      '<td style="white-space:nowrap"><button class="btn-outline btn-sm" type="button" data-rma-edit-disposal="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> <button class="btn-outline btn-sm" type="button" data-rma-delete-disposal="'+escapeHtml(item.id)+'">EXCLUIR</button></td></tr>').join('')
       : '<tr><td colspan="11" class="responsive-empty">Nenhum descarte com esse filtro.</td></tr>';
   }
 
@@ -34043,7 +34045,7 @@ function renderHomeTasks(){
       '<td data-label="E-mail">'+(item.email ? link(item.email) : '—')+'</td>'+
       '<td data-label="Como trata o RMA">'+(item.treatmentModel ? link(item.treatmentModel) : '—')+(item.notes ? '<small class="os-update-meta">'+escapeHtml(item.notes)+'</small>' : '')+'</td>'+
       '<td data-label="Ativo">'+(Number(item.active) ? 'SIM' : 'NÃO')+'</td>'+
-      '<td><button class="btn-outline btn-sm" type="button" data-rma-edit-supplier="'+escapeHtml(item.id)+'">EDITAR</button></td></tr>').join('')
+      '<td><button class="btn-outline btn-sm" type="button" data-rma-edit-supplier="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button></td></tr>').join('')
       : '<tr><td colspan="7" class="responsive-empty">Nenhum fornecedor cadastrado.</td></tr>';
   }
 
@@ -34362,7 +34364,7 @@ function renderHomeTasks(){
     el('rmaDetailActions').innerHTML = rmaCan('edit')
       ? '<button class="btn-outline btn-sm" type="button" data-rma-action="update">+ ATUALIZAÇÃO</button>'+
         (rma.finalized ? '' : '<button class="btn-outline btn-sm" type="button" data-rma-action="finalize">FINALIZAR</button>')+
-        '<button class="btn-outline btn-sm" type="button" data-rma-action="edit">EDITAR</button>'+
+        '<button class="btn-outline btn-sm" type="button" data-rma-action="edit" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         (finance ? '<button class="btn-outline btn-sm" type="button" data-rma-action="credit">CRÉDITO</button><button class="btn-outline btn-sm" type="button" data-rma-action="disposal">DESCARTE</button>' : '')+
         (rmaCan('delete') ? '<button class="btn-outline btn-sm rma-danger" type="button" data-rma-action="delete">EXCLUIR</button>' : '')
       : '';
@@ -34484,7 +34486,7 @@ function renderHomeTasks(){
             (isLocked && !days ? ' <span class="status-pill">USADA PELO SISTEMA</span>' : '')+(Number(option.active) ? '' : ' <span class="status-pill alert">INATIVA</span>')+
             (!days && option.description ? '<small class="os-update-meta">'+escapeHtml(option.description)+'</small>' : '')+'</div>'+
           '<span class="rma-config-order">'+escapeHtml(String(option.sortOrder))+'</span>'+
-          '<span class="rma-config-actions"><button class="btn-outline btn-sm" type="button" data-rma-config-edit="'+index+'">EDITAR</button>'+
+          '<span class="rma-config-actions"><button class="btn-outline btn-sm" type="button" data-rma-config-edit="'+index+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
             (days || isLocked ? '' : ' <button class="btn-outline btn-sm" type="button" data-rma-config-toggle="'+index+'">'+(Number(option.active) ? 'DESATIVAR' : 'ATIVAR')+'</button> <button class="btn-outline btn-sm rma-danger" type="button" data-rma-config-delete="'+index+'">EXCLUIR</button>')+'</span>'+
         '</div>';
       }).join('');
@@ -34877,7 +34879,7 @@ function renderHomeTasks(){
     body.innerHTML = rows.map(row => {
       const edited = row.updatedByName ? 'Alterado por '+row.updatedByName : (row.createdByName ? 'Lançado por '+row.createdByName : '');
       const actions = canEdit
-        ? '<button class="btn-outline btn-sm" type="button" data-gd-edit="'+escapeHtml(row.id)+'">EDITAR</button> '+
+        ? '<button class="btn-outline btn-sm" type="button" data-gd-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
           '<button class="btn-outline btn-sm" type="button" data-gd-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
         : '';
       return '<tr title="'+escapeHtml(edited)+'">'+
@@ -36591,7 +36593,7 @@ function renderHomeTasks(){
         '<td data-label="Parcela/Recorrência">'+escapeHtml(payableInstallmentBadge(row))+'</td>'+
         '<td data-label="Ações" style="display:flex;gap:6px;flex-wrap:wrap;">'+
           '<button class="btn-outline" type="button" data-payable-open="'+escapeHtml(row.id)+'">ABRIR</button>'+
-          (row.status !== 'canceled' ? '<button class="btn-outline" type="button" data-payable-edit="'+escapeHtml(row.id)+'">EDITAR</button>' : '')+
+          (row.status !== 'canceled' ? '<button class="btn-outline" type="button" data-payable-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
           (canCancel ? '<button class="btn-outline" type="button" data-payable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
           (row.status === 'canceled' ? '<button class="btn-danger-outline" type="button" data-payable-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>' : '')+
         '</td>'+
@@ -37345,7 +37347,7 @@ function renderHomeTasks(){
         '<td data-label="Status">'+payablesStatusPillHtml(row.displayStatus)+'</td>'+
         '<td data-label="Ações" style="display:flex;gap:6px;flex-wrap:wrap;">'+
           (canPay ? '<button class="btn-outline" type="button" data-supplier-debt-pay="'+escapeHtml(row.accountsPayableId)+'">REGISTRAR PAGAMENTO</button>' : '')+
-          '<button class="btn-outline" type="button" data-supplier-debt-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-supplier-debt-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           (canCancel ? '<button class="btn-outline" type="button" data-supplier-debt-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>' : '')+
         '</td>'+
       '</tr>';
@@ -37779,7 +37781,7 @@ function renderHomeTasks(){
     const noBudget = row.hasBudget === false;
     const actions = (settings.readOnly || noBudget) ? '' :
       '<span style="display:flex;gap:6px;">'+
-        '<button class="btn-outline" type="button" data-budget-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-budget-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline" type="button" data-budget-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span>';
     const statusCell = noBudget
@@ -38024,7 +38026,7 @@ function renderHomeTasks(){
         '<td data-label="Valor">'+formatCentsBRL(row.expectedAmountCents)+'</td>'+
         '<td data-label="Situação">'+(situation[0] ? '<span class="status-pill '+situation[0]+'">'+escapeHtml(situation[1])+'</span>' : escapeHtml(situation[1]))+'</td>'+
         '<td data-label="Ações">'+
-          (canceled ? '' : '<button class="btn-outline" type="button" data-receivable-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+          (canceled ? '' : '<button class="btn-outline" type="button" data-receivable-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           ' <button class="btn-outline" type="button" data-receivable-cancel="'+escapeHtml(row.id)+'">CANCELAR</button>')+
         '</td>'+
       '</tr>';
@@ -39725,7 +39727,7 @@ function renderHomeTasks(){
         '<td data-label="Abrangência">'+escapeHtml(a.companyId ? machineCompanyName(a.companyId) : 'Todas as lojas')+'</td>'+
         '<td data-label="Recebimento">'+escapeHtml('DÉBITO D+'+(a.debitDays ?? 1)+' · CRÉDITO '+(Number(a.anticipated) ? 'D+1 (ANTECIPADO)' : 'D+'+(a.creditDays ?? 30)+'/PARCELA')+(a.bankKeyword ? ' · EXTRATO: '+a.bankKeyword : ' · SEM TEXTO NO EXTRATO'))+'</td>'+
         '<td data-label="Situação">'+escapeHtml(a.status === 'inactive' ? 'INATIVA' : 'ATIVA')+'</td>'+
-        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-acquirer-edit="'+escapeHtml(a.id)+'">EDITAR</button></td>'+
+        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-acquirer-edit="'+escapeHtml(a.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button></td>'+
       '</tr>').join('');
   }
 
@@ -39759,7 +39761,7 @@ function renderHomeTasks(){
         '<td data-label="Ações">'+
           '<button class="btn-outline btn-sm" type="button" data-machine-fees="'+escapeHtml(m.id)+'">TAXAS</button> '+
           '<button class="btn-outline btn-sm" type="button" data-machine-history="'+escapeHtml(m.id)+'">HISTÓRICO</button> '+
-          '<button class="btn-outline btn-sm" type="button" data-machine-edit="'+escapeHtml(m.id)+'">EDITAR</button>'+
+          '<button class="btn-outline btn-sm" type="button" data-machine-edit="'+escapeHtml(m.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '</td>'+
       '</tr>';
     }).join('');
@@ -40185,7 +40187,7 @@ function renderHomeTasks(){
         '<td data-label="Parcelas">'+(f.modality === 'credit' ? escapeHtml(String(f.installments)) : '—')+'</td>'+
         '<td data-label="Taxa">'+taxPct(f.feeBps)+'</td>'+
         '<td data-label="Antecipação">'+(Number(f.anticipationBps) ? taxPct(f.anticipationBps) : '—')+'</td>'+
-        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-card-fee-edit="'+escapeHtml(f.id)+'">EDITAR</button></td>'+
+        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-card-fee-edit="'+escapeHtml(f.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button></td>'+
       '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma taxa para os filtros.</td></tr>';
     cardFeesBulk.sync();
   }
@@ -41082,7 +41084,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(CORP_STATUS_LABELS[c.status] || c.status)+'</td>'+
         '<td>'+
           '<button class="btn-outline btn-sm" type="button" data-corp-open="'+escapeHtml(c.id)+'">ABRIR</button> '+
-          '<button class="btn-outline btn-sm" type="button" data-corp-edit="'+escapeHtml(c.id)+'">EDITAR</button>'+
+          '<button class="btn-outline btn-sm" type="button" data-corp-edit="'+escapeHtml(c.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '</td>'+
       '</tr>').join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum cartão cadastrado.</td></tr>';
   }
@@ -41403,7 +41405,7 @@ function renderHomeTasks(){
         '<td data-label="CATEGORIA">'+escapeHtml(e.categoryItemId ? (corpItemLabel(e.categoryItemId) || 'CATEGORIA REMOVIDA') : 'SEM CATEGORIA')+'</td>'+
         '<td data-label="SITUAÇÃO"><span class="status-pill '+(CORP_ENTRY_STATUS_PILLS[e.status] || '')+'">'+escapeHtml(CORP_ENTRY_STATUS_LABELS[e.status] || e.status)+'</span></td>'+
         '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
-          '<button class="btn-outline btn-sm" type="button" data-corp-entry-edit="'+escapeHtml(e.id)+'">EDITAR</button>'+
+          '<button class="btn-outline btn-sm" type="button" data-corp-entry-edit="'+escapeHtml(e.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           (e.status === 'expensed' || e.status === 'not_expense' ? '' : '<button class="btn-outline btn-sm" type="button" data-corp-entry-expense="'+escapeHtml(e.id)+'">LANÇAR DESPESA</button>')+
         '</div></td>'+
       '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">'+(all.length ? 'Nenhum lançamento com esses filtros.' : 'Nenhum lançamento nesse mês.')+'</td></tr>';
@@ -41674,7 +41676,7 @@ function renderHomeTasks(){
   function renderPartnerCards(){
     const who = el('pcResponsibleFilter').value;
     const keep = r => !who || r.responsibleName === who;
-    const actions = e => '<div class="loan-cell-actions assist-row-actions"><button class="btn-outline btn-sm" type="button" data-pc-edit="'+escapeHtml(e.id)+'">EDITAR</button><button class="btn-outline btn-sm" type="button" data-pc-del="'+escapeHtml(e.id)+'">EXCLUIR</button></div>';
+    const actions = e => '<div class="loan-cell-actions assist-row-actions"><button class="btn-outline btn-sm" type="button" data-pc-edit="'+escapeHtml(e.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button><button class="btn-outline btn-sm" type="button" data-pc-del="'+escapeHtml(e.id)+'">EXCLUIR</button></div>';
     el('pcSummaryBody').innerHTML = pcData.summary.filter(keep).map(s => {
       const payable = s.payableId
         ? '<span class="status-pill '+(s.payableStatus === 'paid' ? 'ok' : (s.outdated ? 'danger' : 'warn'))+'">'+(s.payableStatus === 'paid' ? 'PAGA' : (s.outdated ? 'DESATUALIZADA ('+formatCentsBRL(s.payableAmountCents)+')' : 'GERADA'))+'</span>'
@@ -42436,7 +42438,7 @@ function renderHomeTasks(){
         '<td data-label="Sem taxa"><strong>'+formatCentsBRL(r.netCents)+'</strong></td>'+
         '<td data-label="Situação"><span>'+crStatusPill(r)+'</span></td>'+
         '<td data-label="Recebido em"><span>'+(r.receivedDate ? escapeHtml(formatDateBR(r.receivedDate))+' <small>'+(r.bankEntryId ? 'EXTRATO' : 'MANUAL')+'</small>' : (r.expectedDate ? '<small>PREVISTO '+escapeHtml(formatDateBR(r.expectedDate))+'</small>' : '—'))+'</span></td>'+
-        '<td><button class="btn-outline btn-sm" type="button" data-cr-edit="'+escapeHtml(r.id)+'">EDITAR</button></td>'+
+        '<td><button class="btn-outline btn-sm" type="button" data-cr-edit="'+escapeHtml(r.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button></td>'+
       '</tr>').join('') : '<tr><td colspan="13" class="responsive-empty">Nenhum crediário para os filtros.</td></tr>';
     crBulk.sync();
   }
@@ -42790,7 +42792,7 @@ function renderHomeTasks(){
         '<td data-label="Texto no extrato">'+escapeHtml(p.bankKeyword || '—')+'</td>'+
         '<td data-label="Situação"><span class="status-pill '+(p.status === 'active' ? 'done' : 'progress')+'">'+(p.status === 'active' ? 'ATIVA' : 'INATIVA')+'</span></td>'+
         '<td data-label="Crediários">'+Number(p.creditSales || 0)+'</td>'+
-        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-cr-provider-edit="'+escapeHtml(p.id)+'">EDITAR</button></td>'+
+        '<td data-label="Ações"><button class="btn-outline btn-sm" type="button" data-cr-provider-edit="'+escapeHtml(p.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button></td>'+
       '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Nenhuma financeira cadastrada.</td></tr>';
   }
   function openCrProviderDialog(row){
@@ -43803,7 +43805,7 @@ function renderHomeTasks(){
         '<td data-label="Valor">'+formatCentsBRL(r.amountCents)+'</td>'+
         '<td data-label="Despesa">'+despesaCell+'</td>'+
         '<td data-label="Ações" style="white-space:nowrap">'+
-          '<button class="btn-outline btn-sm" type="button" data-reposicao-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-reposicao-edit="'+escapeHtml(r.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
           '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</td>'+
       '</tr>';
@@ -44305,7 +44307,7 @@ function renderHomeTasks(){
         '<td data-label="Ações" style="white-space:nowrap">'+
           '<button class="btn-outline btn-sm" type="button" data-recarga-event="'+escapeHtml(r.id)+'">REGISTRAR RECARGA</button> '+
           '<button class="btn-outline btn-sm" type="button" data-recarga-history="'+escapeHtml(r.id)+'">HISTÓRICO</button> '+
-          '<button class="btn-outline btn-sm" type="button" data-recarga-edit="'+escapeHtml(r.id)+'">EDITAR</button> '+
+          '<button class="btn-outline btn-sm" type="button" data-recarga-edit="'+escapeHtml(r.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
           '<button class="btn-outline btn-sm" type="button" data-recarga-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</td>'+
       '</tr>';
@@ -44411,7 +44413,7 @@ function renderHomeTasks(){
           '<td data-label="Despesa">'+(e.expenseId ? 'LANÇADA' : '—')+'</td>'+
           '<td data-label="Situação"><span class="status-pill'+(paid ? ' ok' : '')+'">'+situation+'</span></td>'+
           '<td data-label="Ações" style="white-space:nowrap">'+
-            '<button class="btn-outline btn-sm" type="button" data-recarga-history-edit="'+escapeHtml(e.id)+'">EDITAR</button> '+
+            '<button class="btn-outline btn-sm" type="button" data-recarga-history-edit="'+escapeHtml(e.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
             (paid ? '' : '<button class="btn-outline btn-sm" type="button" data-recarga-history-del="'+escapeHtml(e.id)+'">EXCLUIR</button>')+
           '</td>'+
         '</tr>';
@@ -44682,7 +44684,7 @@ function renderHomeTasks(){
       list.innerHTML = filtered.length
         ? filtered.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+(s.active ? '' : ' (INATIVO)')+'</span>'+
             '<span style="display:flex;gap:6px;">'+
-              '<button class="btn-outline" type="button" data-supplier-edit="'+escapeHtml(s.id)+'">EDITAR</button>'+
+              '<button class="btn-outline" type="button" data-supplier-edit="'+escapeHtml(s.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
               '<button class="btn-outline" type="button" data-supplier-toggle="'+escapeHtml(s.id)+'">'+(s.active ? 'DESATIVAR' : 'REATIVAR')+'</button>'+
             '</span></div>').join('')
         : '<div class="dre-empty">Nenhum fornecedor encontrado.</div>';
@@ -45290,7 +45292,7 @@ function renderHomeTasks(){
           '<input type="text" inputmode="decimal" placeholder="TOTAL" class="compras-quote-total" data-compras-total="'+escapeHtml(key)+'" aria-label="'+escapeHtml('Valor total (quantidade × preço) de '+comprasSupplierName(supplierId))+'" title="Valor total do produto: digite e o preço unitário é calculado">'+
           '<small data-compras-line-total="'+escapeHtml(key)+'"></small></td>';
       }).join('')+
-      '<td data-label="" class="compras-quote-actions"><button class="btn-outline btn-sm" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'">EDITAR</button> '+
+      '<td data-label="" class="compras-quote-actions"><button class="btn-outline btn-sm" type="button" data-compras-item-edit="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
         '<button class="btn-outline btn-sm" type="button" data-compras-item-delete="'+escapeHtml(item.id)+'">EXCLUIR</button></td>'+
     '</tr>').join('')+'</tbody>';
     const foot = '<tfoot><tr><th>TOTAL</th><th>'+items.length+(items.length === 1 ? ' ITEM' : ' ITENS')+'</th>'+
@@ -46627,7 +46629,7 @@ function renderHomeTasks(){
       '<td data-label="Status">'+escapeHtml(OBRA_STATUS_LABELS[row.status] || row.status)+'</td>'+
       '<td class="no-print" data-label="Ações"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
         '<button class="btn-outline" type="button" data-obra-open="'+escapeHtml(row.id)+'">LANÇAMENTOS</button>'+
-        '<button class="btn-outline" type="button" data-obra-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-obra-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline" type="button" data-obra-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span></td>'+
     '</tr>').join('');
@@ -47282,7 +47284,7 @@ function renderHomeTasks(){
         '<td data-label="ALUGUEL PERCENTUAL">'+declShoppingRentCell(r, hasPct)+'</td>'+
         '<td data-label="ALERTA">'+(d.alertLevel && d.alertLevel !== 'none' ? '<span class="status-pill '+(d.alertLevel === 'declared' ? 'danger' : 'warn')+'">'+(d.alertLevel === 'declared' ? 'DECLARADO' : 'RISCO')+'</span>' : '—')+'</td>'+
         '<td data-label="AÇÕES"><div class="loan-cell-actions assist-row-actions">'+
-          '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'">EDITAR</button>'+
+          '<button class="btn-outline btn-sm" type="button" data-decl-edit="'+escapeHtml(r.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           '<button class="btn-outline btn-sm" type="button" data-decl-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
         '</div></td>'+
       '</tr>';
@@ -48808,7 +48810,7 @@ function renderHomeTasks(){
     el('payableSuppliersList').innerHTML = filtered.length
       ? filtered.map(s => '<div class="dre-catalog-row"><span>'+escapeHtml(s.name)+(s.document ? ' — '+escapeHtml(s.document) : '')+(s.active ? '' : ' (INATIVO)')+'</span>'+
           '<span style="display:flex;gap:6px;">'+
-            '<button class="btn-outline" type="button" data-payable-edit-supplier="'+escapeHtml(s.id)+'">EDITAR</button>'+
+            '<button class="btn-outline" type="button" data-payable-edit-supplier="'+escapeHtml(s.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
             '<button class="btn-outline" type="button" data-payable-toggle-supplier="'+escapeHtml(s.id)+'">'+(s.active ? 'DESATIVAR' : 'REATIVAR')+'</button>'+
           '</span></div>').join('')
       : '<div class="dre-empty">Nenhum fornecedor encontrado.</div>';
@@ -48844,7 +48846,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(agencyAccount)+'</td>'+
         '<td>'+(a.active ? '<span class="status-pill done">ATIVA</span>' : '<span class="status-pill">INATIVA</span>')+'</td>'+
         '<td style="display:flex;gap:6px;">'+
-          '<button class="btn-outline" type="button" data-payable-edit-account="'+escapeHtml(a.id)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-payable-edit-account="'+escapeHtml(a.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           '<button class="btn-outline" type="button" data-payable-toggle-account="'+escapeHtml(a.id)+'">'+(a.active ? 'INATIVAR' : 'REATIVAR')+'</button>'+
           '<button class="btn-outline" type="button" data-account-invest="'+escapeHtml(a.id)+'">INVESTIMENTOS</button>'+
         '</td>'+
@@ -48967,7 +48969,7 @@ function renderHomeTasks(){
     el('costCentersList').innerHTML = financeCostCenters.length
       ? financeCostCenters.map(c => '<div class="dre-catalog-row"><span>'+escapeHtml(c.name)+'</span>'+
           '<span style="display:flex;gap:6px;">'+
-            '<button class="btn-outline" type="button" data-cost-center-edit="'+escapeHtml(c.id)+'">EDITAR</button>'+
+            '<button class="btn-outline" type="button" data-cost-center-edit="'+escapeHtml(c.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
             '<button class="btn-outline" type="button" data-cost-center-delete="'+escapeHtml(c.id)+'">EXCLUIR</button>'+
           '</span></div>').join('')
       : '<div class="dre-empty">Nenhum centro de custo cadastrado.</div>';
@@ -49609,7 +49611,7 @@ function renderHomeTasks(){
       '<td><span class="status-pill">'+escapeHtml(INSTALLMENT_STATUS_LABELS[installment.status] || installment.status)+'</span></td>'+
       '<td style="display:flex;gap:6px;flex-wrap:wrap;">'+
         (canAct ? '<button class="btn-outline" type="button" data-installment-pay="'+escapeHtml(installment.id)+'" data-balance="'+balance+'">PAGAR</button>' : '')+
-        (canEdit ? '<button class="btn-outline" type="button" data-installment-edit="'+escapeHtml(installment.id)+'" data-due="'+escapeHtml(installment.dueDate)+'" data-amount="'+installment.originalAmountCents+'">EDITAR</button>' : '')+
+        (canEdit ? '<button class="btn-outline" type="button" data-installment-edit="'+escapeHtml(installment.id)+'" data-due="'+escapeHtml(installment.dueDate)+'" data-amount="'+installment.originalAmountCents+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
         (canEdit ? '<button class="btn-outline" type="button" data-installment-delete="'+escapeHtml(installment.id)+'">EXCLUIR</button>' : '')+
       '</td>'+
     '</tr>';
@@ -51019,7 +51021,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(payment)+'</td>'+
         '<td>'+statusPill+'</td>'+
         '<td class="no-print"><span style="display:flex;gap:6px;">'+
-          (rhEmployeeCan('edit') ? '<button class="btn-outline" type="button" data-rh-employee-edit="'+escapeHtml(employee.id)+'">EDITAR</button>' : '')+
+          (rhEmployeeCan('edit') ? '<button class="btn-outline" type="button" data-rh-employee-edit="'+escapeHtml(employee.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
           (canAccess('payroll') ? '<button class="btn-outline" type="button" data-rh-employee-desligar="'+escapeHtml(employee.id)+'">DESLIGAMENTO</button>' : '')+
           (rhEmployeeCan('delete') ? '<button class="btn-outline" type="button" data-rh-employee-delete="'+escapeHtml(employee.id)+'">EXCLUIR</button>' : '')+
         '</span></td>'+
@@ -51270,7 +51272,7 @@ function renderHomeTasks(){
       '<td data-label="Pagamento">'+(row.paymentDate ? escapeHtml(rhFormatDate(row.paymentDate)) : '<span class="status-pill waiting">SEM DATA</span>')+'</td>'+
       '<td data-label="Valor líquido">'+formatCentsBRL(row.netCents)+'</td>'+
       '<td data-label="Observações">'+escapeHtml(row.notes || '—')+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;"><button class="btn-outline btn-sm" type="button" data-rh-ferias-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+      '<td class="no-print"><span style="display:flex;gap:6px;"><button class="btn-outline btn-sm" type="button" data-rh-ferias-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline btn-sm" type="button" data-rh-ferias-delete="'+escapeHtml(row.id)+'">EXCLUIR</button></span></td>'+
     '</tr>').join('') : '<tr><td colspan="9" class="responsive-empty">Nenhuma férias registrada.</td></tr>';
   }
@@ -51588,7 +51590,7 @@ function renderHomeTasks(){
         '<td data-label="Observações">'+escapeHtml(row.notes || '—')+'</td>'+
         '<td data-label="Pagamento">'+paymentCell+'</td>'+
         '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
-          '<button class="btn-outline" type="button" data-rh-folha-edit="'+escapeHtml(row.employeeId)+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-rh-folha-edit="'+escapeHtml(row.employeeId)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           paymentButton+deleteButton+
         '</span></td>'+
       '</tr>';
@@ -52100,7 +52102,7 @@ function renderHomeTasks(){
         group.rows.map(row => '<tr><td>'+escapeHtml(row.employeeName)+'</td><td>'+escapeHtml(String(row.companyName || '—').toUpperCase())+(row.cnpj ? '<br><small>'+escapeHtml(rhFormatCnpj(row.cnpj))+'</small>' : '')+'</td>'+
           '<td class="num">'+formatCentsBRL(row.inssBaseCents)+'</td><td class="num">'+rhPctText(row.inssPctBps)+'%</td><td class="num">'+formatCentsBRL(row.inssCents)+'</td>'+
           '<td class="num">'+formatCentsBRL(row.fgtsBaseCents)+'</td><td class="num">'+formatCentsBRL(row.fgtsCents)+'</td><td class="num"><strong>'+formatCentsBRL(row.totalCents)+'</strong></td>'+
-          '<td class="no-print"><button class="btn-outline" type="button" data-rh-inss-edit="'+escapeHtml(row.employeeId)+'">EDITAR</button></td></tr>').join('')+
+          '<td class="no-print"><button class="btn-outline" type="button" data-rh-inss-edit="'+escapeHtml(row.employeeId)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button></td></tr>').join('')+
         totals('SOMA DOS FUNCIONÁRIOS DO CNPJ', group)+'</tbody></table></div></div>';
     }).join('')+(groups.length ? '<div class="table-panel rh-print-block" style="padding:12px 14px;"><div class="table-scroll"><table class="rh-print-table">'+head+
       '<tbody>'+totals('TOTAL GERAL (NA DRE)', t)+'</tbody></table></div></div>' : '<div class="dre-empty">Nenhum funcionário nesta competência.</div>');
@@ -52549,7 +52551,7 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(row.notes || '—')+'</td>'+
       '<td><span style="display:flex;gap:6px;">'+
         '<button class="btn-outline" type="button" data-rh-beneficio-pago="'+escapeHtml(row.id)+'" data-paid="'+(paid ? '0' : '1')+'">'+(paid ? 'DESMARCAR' : 'PAGAR')+'</button>'+
-        '<button class="btn-outline" type="button" data-rh-beneficio-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-beneficio-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline" type="button" data-rh-beneficio-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span></td>'+
     '</tr>';
@@ -52802,7 +52804,7 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(row.name || '—')+'</td>'+
       '<td>'+escapeHtml((RH_HOLIDAY_SCOPE_LABELS[row.scope] || row.scope) + (row.scope === 'local' && row.companyName ? ' · '+row.companyName : ''))+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;">'+
-        '<button class="btn-outline" type="button" data-rh-feriado-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-feriado-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline" type="button" data-rh-feriado-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span></td>'+
     '</tr>').join('');
@@ -53486,7 +53488,7 @@ function renderHomeTasks(){
       '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
       '<td>'+escapeHtml(row.notes || '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;">'+
-        '<button class="btn-outline" type="button" data-rh-aso-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-aso-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline" type="button" data-rh-aso-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span></td>'+
     '</tr>').join('');
@@ -53813,7 +53815,7 @@ function renderHomeTasks(){
       (item.title ? '<strong>'+escapeHtml(item.title)+'</strong>' : '')+body+
       '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">'+
         '<button class="btn-outline btn-sm" type="button" data-info-copy="'+escapeHtml(item.id)+'">COPIAR CONTATO</button>'+
-        (can.edit ? '<button class="btn-outline btn-sm" type="button" data-info-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
+        (can.edit ? '<button class="btn-outline btn-sm" type="button" data-info-edit="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           (index > 0 ? '<button class="btn-outline btn-sm" type="button" data-info-move="up" data-info-target="'+escapeHtml(item.id)+'" aria-label="Subir">↑</button>' : '')+
           (index < list.length - 1 ? '<button class="btn-outline btn-sm" type="button" data-info-move="down" data-info-target="'+escapeHtml(item.id)+'" aria-label="Descer">↓</button>' : '') : '')+
         (can.delete ? '<button class="btn-outline btn-sm" type="button" data-info-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>' : '')+
@@ -54141,7 +54143,7 @@ function renderHomeTasks(){
       '<td>'+formatCentsBRL(row.adjustmentsCents)+'</td>'+
       '<td><strong>'+formatCentsBRL(row.netCents)+'</strong></td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
-        '<button class="btn-outline" type="button" data-rh-comissao-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-comissao-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline" type="button" data-rh-comissao-recibo="'+escapeHtml(row.id)+'">RECIBO</button>'+
         '<button class="btn-outline" type="button" data-rh-comissao-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span></td>'+
@@ -54170,7 +54172,7 @@ function renderHomeTasks(){
       '<td>'+formatCentsBRL(preset.defaultAmountCents)+'</td>'+
       '<td>'+(preset.active ? '<span class="status-pill done">ATIVO</span>' : '<span class="status-pill alert">INATIVO</span>')+'</td>'+
       '<td><span style="display:flex;gap:6px;">'+
-        '<button class="btn-outline" type="button" data-rh-preset-edit="'+escapeHtml(preset.id)+'">EDITAR</button>'+
+        '<button class="btn-outline" type="button" data-rh-preset-edit="'+escapeHtml(preset.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
         '<button class="btn-outline" type="button" data-rh-preset-delete="'+escapeHtml(preset.id)+'">EXCLUIR</button>'+
       '</span></td>'+
     '</tr>').join('');
@@ -54692,7 +54694,7 @@ function renderHomeTasks(){
       '<td>'+(row.attendanceSigned ? 'SIM' : 'NÃO')+'</td>'+
       '<td>'+rhStoreTrackAttachmentCell(row,'leader')+'</td>'+
       '<td>'+(manage ?
-        '<button class="btn-outline" type="button" data-rh-leader-pdi-edit="'+row.id+'">EDITAR</button> '+
+        '<button class="btn-outline" type="button" data-rh-leader-pdi-edit="'+row.id+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
         '<button class="btn-outline" type="button" data-rh-leader-pdi-delete="'+row.id+'">EXCLUIR</button>'
         : '')+'</td>'+
       '</tr>'
@@ -54714,7 +54716,7 @@ function renderHomeTasks(){
       '<td>'+(row.attendanceSigned ? 'SIM' : 'NÃO')+'</td>'+
       '<td>'+rhStoreTrackAttachmentCell(row,'store')+'</td>'+
       '<td>'+(manage ?
-        '<button class="btn-outline" type="button" data-rh-store-track-edit="'+row.id+'">EDITAR</button> '+
+        '<button class="btn-outline" type="button" data-rh-store-track-edit="'+row.id+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
         '<button class="btn-outline" type="button" data-rh-store-track-delete="'+row.id+'">EXCLUIR</button>'
         : '')+'</td>'+
       '</tr>'
@@ -55295,7 +55297,7 @@ function renderHomeTasks(){
           '<td class="no-print">'+(wa ? '<a class="btn-outline" href="'+wa+'" target="_blank" rel="noopener">WHATSAPP</a>' : '—')+'</td>'+
           '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
             '<button class="btn-outline" type="button" data-rec-contact-details="'+escapeHtml(row.id)+'">DETALHES</button>'+
-            (manage ? '<button class="btn-outline" type="button" data-rec-contact-edit="'+escapeHtml(row.id)+'">EDITAR</button>' : '')+
+            (manage ? '<button class="btn-outline" type="button" data-rec-contact-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
           '</span></td></tr>';
       }).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhum candidato selecionado para entrevista.</td></tr>';
     }catch(error){
@@ -55373,7 +55375,7 @@ function renderHomeTasks(){
       '<td><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
         '<button class="btn-outline" type="button" data-rec-candidate-details="'+row.id+'">DETALHES</button>'+
         (manage ?
-          '<button class="btn-outline" type="button" data-rec-candidate-edit="'+row.id+'">EDITAR</button>'+
+          '<button class="btn-outline" type="button" data-rec-candidate-edit="'+row.id+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
           '<button class="btn-outline" type="button" data-rec-candidate-delete="'+row.id+'">EXCLUIR</button>' : '')+
       '</span></td>'+
       '</tr>';
@@ -56026,7 +56028,7 @@ function renderHomeTasks(){
         '<td>'+(Number(video.active) ? '<span class="status-pill done">ATIVO</span>' : '<span class="status-pill alert">INATIVO</span>')+'</td>'+
         '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
           (video.fileName ? '<button class="btn-outline" type="button" data-rh-onb-preview="'+escapeHtml(video.id)+'">ASSISTIR</button>' : '')+
-          (manage ? '<button class="btn-outline" type="button" data-rh-onb-video-edit="'+escapeHtml(video.id)+'">EDITAR</button>' : '')+
+          (manage ? '<button class="btn-outline" type="button" data-rh-onb-video-edit="'+escapeHtml(video.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
         '</span></td></tr>'
       ).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum vídeo cadastrado. Use NOVO VÍDEO para montar a trilha.</td></tr>';
     }catch(error){
@@ -56647,7 +56649,7 @@ function renderHomeTasks(){
       '<td>'+
         '<button class="btn-outline" type="button" data-rec-sponsor-updates="'+row.id+'">ATUALIZAÇÕES</button> '+
         (manage ?
-          '<button class="btn-outline" type="button" data-rec-sponsor-edit="'+row.id+'">EDITAR</button> '+
+          '<button class="btn-outline" type="button" data-rec-sponsor-edit="'+row.id+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
           '<button class="btn-outline" type="button" data-rec-sponsor-delete="'+row.id+'">EXCLUIR</button>'
           : '')+
       '</td>'+
@@ -57531,7 +57533,7 @@ function renderHomeTasks(){
 
     body.innerHTML = rows.map(row => {
       const actions = canManage
-        ? '<button class="btn-outline btn-sm" type="button" data-dental-edit="'+escapeHtml(row.id)+'">EDITAR</button> '+
+        ? '<button class="btn-outline btn-sm" type="button" data-dental-edit="'+escapeHtml(row.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
           '<button class="btn-outline btn-sm" type="button" data-dental-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'
         : '';
       return '<tr>'+
@@ -60271,7 +60273,7 @@ function renderHomeTasks(){
         : 'NÃO PAGA')+'</td>'+
       '<td data-label="Quem alterou">'+escapeHtml(isDefault ? 'REGRA DO CÓDIGO' : (rule.updatedByName || '—'))+'</td>'+
       '<td data-label="Quando">'+escapeHtml(isDefault || !rule.updatedAt ? '—' : formatDateTimeBR(rule.updatedAt))+'</td>'+
-      '<td data-label="Ações">'+(canManage && !isDefault ? '<button class="btn-outline" type="button" data-com-rule-edit="'+escapeHtml(rule.id)+'">EDITAR</button>' : '')+'</td></tr>';
+      '<td data-label="Ações">'+(canManage && !isDefault ? '<button class="btn-outline" type="button" data-com-rule-edit="'+escapeHtml(rule.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+'</td></tr>';
     body.innerHTML = comRulesData.items.map(rule => rowHtml(rule, false)).join('')+rowHtml(comRulesData.defaults, true);
   }
 
@@ -61084,7 +61086,7 @@ function renderHomeTasks(){
           ? day.deFolga.map(employee => rhSchedChip(employee.employeeName, '', true)).join('')
           : '—';
         const editButton = manage
-          ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-day-note-edit="1" data-company-id="'+escapeHtml(store.companyId)+'" data-company-name="'+escapeHtml(store.companyName)+'" data-date="'+escapeHtml(day.date)+'" data-notes="'+escapeHtml(day.obs || '')+'">EDITAR</button>'
+          ? '<button class="btn-outline btn-sm" type="button" data-rh-sched-day-note-edit="1" data-company-id="'+escapeHtml(store.companyId)+'" data-company-name="'+escapeHtml(store.companyName)+'" data-date="'+escapeHtml(day.date)+'" data-notes="'+escapeHtml(day.obs || '')+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'
           : '';
         return '<tr>'+
           '<td>'+escapeHtml(day.weekday)+' '+rhFormatDate(day.date)+'</td>'+
@@ -61299,7 +61301,7 @@ function renderHomeTasks(){
       '<td>'+rhTimeTrackFormatMinutes(row.targetMinutes)+'</td>'+
       '<td>'+rhTimeTrackFormatMinutes(row.balanceMinutes)+'</td>'+
       '<td>'+(manage ?
-        '<button class="btn-outline" type="button" data-rh-time-track-entry-edit="'+row.id+'">EDITAR</button> '+
+        '<button class="btn-outline" type="button" data-rh-time-track-entry-edit="'+row.id+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
         '<button class="btn-outline" type="button" data-rh-time-track-entry-delete="'+row.id+'">EXCLUIR</button>'
         : '')+'</td>'+
       '</tr>'
@@ -61321,7 +61323,7 @@ function renderHomeTasks(){
       '<td>'+rhTimeTrackFormatMinutes(month.targetMinutes)+'</td>'+
       '<td>'+rhTimeTrackFormatMinutes(month.overtimeMinutes)+'</td>'+
       '<td>'+rhTimeTrackFormatMinutes(month.paidMinutes)+
-        (manage ? ' <button class="btn-outline" type="button" data-rh-time-track-payout="'+month.yearMonth+'">EDITAR</button>' : '')+
+        (manage ? ' <button class="btn-outline" type="button" data-rh-time-track-payout="'+month.yearMonth+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>' : '')+
       '</td>'+
       '<td>'+rhTimeTrackFormatMinutes(month.cumulativeBalanceMinutes)+'</td>'+
       '</tr>'
