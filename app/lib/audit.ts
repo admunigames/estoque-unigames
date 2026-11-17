@@ -29,7 +29,7 @@ const MODULE_LABELS: [string, string][] = [
   ["/api/assistencia", "ASSISTÊNCIA"],
   ["/api/captures", "CAPTAÇÃO"],
   ["/api/auditoria-operacional", "AUDITORIA OPERACIONAL"],
-  ["/api/avaliacao-operacional", "AVALIAÇÃO OPERACIONAL"],
+  ["/api/avaliacao-operacional", "AVALIAÇÃO DE DESEMPENHO"],
   ["/api/checklists", "MISSÕES"],
   ["/api/routines", "MISSÕES"],
   ["/api/missions", "MISSÕES"],

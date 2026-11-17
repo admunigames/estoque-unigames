@@ -5,7 +5,7 @@ import { recifeDate } from "../../lib/ordens-servico";
 import { actingStoresForMonth } from "../../lib/acting-store";
 import { identity, jsonResponse, safeText, sameOrigin } from "../divergences/shared";
 
-// Avaliação Operacional (permissões avaliacao_operacional:view/create/edit/
+// Avaliação de Desempenho (permissões avaliacao_operacional:view/create/edit/
 // delete). Situações por unidade com peso 1–5; total do mês = soma dos pesos;
 // a(s) unidade(s) com o MENOR total (0 inclusive, empate = todas) são LOJA
 // PREMIUM. Login sem loja (com a permissão) ou admin vê e age em todas as
@@ -63,7 +63,7 @@ function guard(request: Request, action: string) {
   if (unauthorized) return { error: unauthorized };
   const actor = identity(request);
   const allowed = action === "view" ? ACTIONS.some((item) => can(actor, item)) : can(actor, action);
-  if (!allowed) return { error: jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA A AVALIAÇÃO OPERACIONAL." }, 403) };
+  if (!allowed) return { error: jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA A AVALIAÇÃO DE DESEMPENHO." }, 403) };
   if (request.method !== "GET" && !sameOrigin(request)) return { error: jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403) };
   return { actor, units: allowedUnits(actor) };
 }

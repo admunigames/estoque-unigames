@@ -281,7 +281,7 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "fornecedores_pagar:view", "fornecedores_pagar:create", "fornecedores_pagar:pay", "fornecedores_pagar:delete",
   // Auditoria Operacional (checklist de loja) — loja só lê as finalizadas da própria loja (a rota confere).
   "auditoria_operacional:view", "auditoria_operacional:audit", "auditoria_operacional:manage", "auditoria_operacional:delete",
-  // Avaliação Operacional — loja só vê/age na própria unidade (a rota confere).
+  // Avaliação de Desempenho — loja só vê/age na própria unidade (a rota confere).
   "avaliacao_operacional:view", "avaliacao_operacional:create", "avaliacao_operacional:edit", "avaliacao_operacional:delete",
   // Comercial > Treinamento (Unigames Academy) — permissão própria,
   // independente de comercial:* (ver MODULE_VIEW_PERMISSIONS.treinamento).
@@ -1556,7 +1556,7 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path.startsWith("/api/checklists"), "missions"],
     // Auditoria Operacional — permissão própria (auditoria_operacional:*).
     [path === "/auditoria-operacional" || path.startsWith("/api/auditoria-operacional"), "auditoriaOperacional"],
-    // Avaliação Operacional — permissão própria (avaliacao_operacional:*).
+    // Avaliação de Desempenho — permissão própria (avaliacao_operacional:*).
     [path === "/avaliacao-operacional" || path.startsWith("/api/avaliacao-operacional"), "avaliacaoOperacional"],
     [path === "/captacao" || path.startsWith("/api/captures"), "captures"],
     [path === "/saidas" || path.startsWith("/api/outputs"), "outputs"],

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 
-// Avaliação Operacional: situações por unidade com peso 1–5; menor total do
+// Avaliação de Desempenho: situações por unidade com peso 1–5; menor total do
 // mês (0 inclusive, empate = todas) é LOJA PREMIUM. Loja só vê/age na própria.
 
 const db = await setupRouteDb(["ops_evaluations", "hr_employees", "hr_schedule_assignments"]);
