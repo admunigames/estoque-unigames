@@ -43915,7 +43915,7 @@ function renderHomeTasks(){
   });
 
   // IMPORTAR PDF (EXTRATO) — 17/11/2026: extrato da conta do responsável
-  // (modelo Banco Inter: "16 de Outubro de 2026 Saldo do dia…" e uma linha por
+  // (qualquer banco; abaixo o modelo Banco Inter, que tem leitura própria: "16 de Outubro de 2026 Saldo do dia…" e uma linha por
   // transação "Pix enviado: "Cp :… - FAVORECIDO" (ANOTAÇÃO) - R$ 27,00 R$ 105,70").
   // Valor com "-" = SAÍDA; sem = REPOSIÇÃO (dinheiro reposto ao responsável).
   // MOTIVO = anotação entre parênteses (pode continuar na linha de baixo);
@@ -43923,6 +43923,61 @@ function renderHomeTasks(){
   // "CPF/CNPJ:"). Tudo vai para a grade do CADASTRAR EM LOTE para conferir;
   // repetidas NÃO são puladas (decisão do usuário).
   const RP_PDF_MONTHS = {janeiro:1, fevereiro:2, marco:3, abril:4, maio:5, junho:6, julho:7, agosto:8, setembro:9, outubro:10, novembro:11, dezembro:12};
+  // OUTROS BANCOS (17/11/2026): quando o modelo Inter não acha nada, leitura
+  // genérica. Linha começando por data (DD/MM/AAAA, DD/MM, DD-MM-AA, "01 OUT
+  // 2026", "1 de outubro de 2026") ou abaixo de uma data, com valor "1.234,56".
+  // Com 2+ valores, o 1º é a transação (o último costuma ser o saldo).
+  // SAÍDA × REPOSIÇÃO: sinal (-/+ ou D/C) → seção "Total de saídas/entradas" →
+  // palavras (ENVIADO/PAGAMENTO… = saída; RECEBIDO/CRÉDITO/DEPÓSITO… = reposição)
+  // → saída. Linhas de SALDO/TOTAL/LIMITE são ignoradas.
+  // ponytail: heurística sem modelo por banco; tudo cai na grade para conferir.
+  // PDF escaneado (foto) não tem texto — precisaria de OCR.
+  function rpParseGenericStatement(lines, holderHint){
+    const plain = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const upper = text => String(text || '').replace(/\s+/g,' ').trim().toLocaleUpperCase('pt-BR');
+    const money = text => Math.round(Number(String(text).replace(/\./g,'').replace(',','.')) * 100);
+    const monthOf = word => { const w = plain(word); const key = Object.keys(RP_PDF_MONTHS).find(name => name === w || name.slice(0, 3) === w); return key ? RP_PDF_MONTHS[key] : 0; };
+    const anyYear = lines.join(' ').match(/\b\d{1,2}[\/.-]\d{1,2}[\/.-](\d{4})\b/);
+    const fallbackYear = anyYear ? Number(anyYear[1]) : new Date().getFullYear();
+    const amountRe = /(?<![\d.,])([-+\u2212]\s*)?(?:R\$\s*)?([-+\u2212]\s*)?(\d+(?:\.\d{3})*,\d{2})(?!\d)(-(?!\s*\d)|\s*[CD](?![A-Za-zÀ-ÿ]))?/g;
+    let holder = holderHint || '', date = '', section = '', previous = '';
+    const rows = [];
+    lines.forEach((raw, index) => {
+      let line = String(raw || '').replace(/\s+/g,' ').trim();
+      const named = line.match(/^(?:nome|titular|cliente|correntista)\s*:\s*([A-Za-zÀ-ÿ' ]+?)(?:\s+(?:cpf|cnpj|ag[eê]ncia|conta)\b.*)?$/i);
+      if(named && !holder) holder = upper(named[1]);
+      if(/^(CPF|CNPJ|CPF\/CNPJ)\s*:/i.test(line) && !holder && /^[A-Za-zÀ-ÿ' ]{5,}$/.test(lines[index - 1] || '')) holder = upper(lines[index - 1]);
+      let d = line.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{4}|\d{2}))?(?![\d,])\s*/);
+      let day = 0, month = 0, year = 0;
+      if(d){ day = +d[1]; month = +d[2]; year = d[3] ? (d[3].length === 2 ? 2000 + +d[3] : +d[3]) : fallbackYear; }
+      else {
+        d = line.match(/^(\d{1,2})\s*(?:de\s+)?([A-Za-zÀ-ÿ]{3,})\.?(?:\s*(?:de\s+)?(\d{4}))?(?![\d,])\s*/i);
+        if(d && monthOf(d[2])){ day = +d[1]; month = monthOf(d[2]); year = d[3] ? +d[3] : fallbackYear; }
+      }
+      if(day >= 1 && day <= 31 && month >= 1 && month <= 12){
+        date = year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        line = line.slice(d[0].length).trim();
+      }
+      const p = plain(line);
+      if(/total de (saidas|debitos)/.test(p)){ section = 'saida'; previous = ''; return; }
+      if(/total de (entradas|creditos)/.test(p)){ section = 'reposicao'; previous = ''; return; }
+      if(/saldo|total|limite/.test(p.replace(/\s+/g,''))){ previous = ''; return; }
+      const amounts = [...line.matchAll(amountRe)];
+      if(!amounts.length){ previous = line; return; }
+      if(!date) return;
+      const first = amounts[0];
+      let desc = line.slice(0, first.index).replace(/^\d+\s+/,'').replace(/(\s+\d{4,})+\s*$/,'').replace(/[\s-]+$/,'').trim();
+      if(!/[A-Za-zÀ-ÿ]{3}/.test(desc) && previous) desc = previous;
+      previous = '';
+      const sign = ((first[1] || first[2] || '') + (first[4] || '')).replace(/\s/g,'').toUpperCase();
+      const words = plain(desc);
+      const kind = /[-\u2212D]/.test(sign) ? 'saida' : /[+C]/.test(sign) ? 'reposicao' : section ||
+        (/envi|pag|compra|debit|saque|tarifa|boleto/.test(words) ? 'saida' : /receb|credit|deposit|estorno|devolu|entrada|resgate|reembols/.test(words) ? 'reposicao' : 'saida');
+      const amountCents = money(first[3]);
+      if(amountCents > 0) rows.push({entryDate: date, kind, amountCents, payee: '', reason: upper(desc) || 'TRANSAÇÃO DO EXTRATO', notes: upper(desc)});
+    });
+    return {holder, rows};
+  }
   function rpParseStatementPdf(lines){
     const money = text => Math.round(Number(String(text).replace(/\./g,'').replace(',','.')) * 100);
     const upper = text => String(text || '').replace(/\s+/g,' ').trim().toLocaleUpperCase('pt-BR');
@@ -43954,7 +44009,9 @@ function renderHomeTasks(){
       if(open && open.note.includes('(') && !open.note.includes(')')) open.note += ' '+line;
       else open = null;
     });
-    return {holder, rows: rows.filter(row => row.amountCents > 0).map(row => {
+    const interRows = rows.filter(row => row.amountCents > 0);
+    if(!interRows.length) return rpParseGenericStatement(lines, holder);
+    return {holder, rows: interRows.map(row => {
       const note = upper(row.note.replace(/^\(\s*/,'').replace(/\s*\)$/,''));
       return {
         entryDate: row.entryDate, kind: row.kind, amountCents: row.amountCents, payee: row.payee,
@@ -43969,7 +44026,7 @@ function renderHomeTasks(){
     if(!file) return;
     try{
       const parsed = rpParseStatementPdf(await extractPdfLines(file, {sorted:true}));
-      if(!parsed.rows.length) throw new Error('NENHUMA TRANSAÇÃO ENCONTRADA NO PDF. CONFIRA SE É O EXTRATO NO MODELO DO BANCO INTER.');
+      if(!parsed.rows.length) throw new Error('NENHUMA TRANSAÇÃO ENCONTRADA NO PDF. CONFIRA SE É UM EXTRATO COM DATA E VALOR EM CADA LINHA (PDF ESCANEADO/FOTO NÃO É LIDO).');
       el('reposicaoBatchBody').innerHTML = '';
       reposicaoBatchAddRows(parsed.rows.length);
       Array.from(el('reposicaoBatchBody').rows).forEach((tr, index) => {

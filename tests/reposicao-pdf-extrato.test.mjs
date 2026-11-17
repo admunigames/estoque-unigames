@@ -16,7 +16,7 @@ const grab = (marker) => {
   }
   return html.slice(start, end + 1);
 };
-const parse = new Function(`${grab("const RP_PDF_MONTHS =")};\n${grab("function rpParseStatementPdf(")}; return rpParseStatementPdf;`)();
+const parse = new Function(`${grab("const RP_PDF_MONTHS =")};\n${grab("function rpParseGenericStatement(")};\n${grab("function rpParseStatementPdf(")}; return rpParseStatementPdf;`)();
 
 const lines = [
   "Solicitado em: 16/11/2026 - 16h59",
@@ -50,6 +50,51 @@ test("extrato em PDF: titular, data do dia, saída × reposição, motivo pela a
       ["2026-03-03", "reposicao", 100_000, "REPOSIÇÃO", "PIX RECEBIDO — BELTRANA SOUZA"],
     ],
   );
+});
+
+test("outros bancos: leitura genérica por data + valor (sinal, D/C, seção, palavras)", () => {
+  const rows = (lines) => parse(lines).rows.map((row) => [row.entryDate, row.kind, row.amountCents, row.reason]);
+  // BB / Caixa: DD/MM/AAAA, documento, valor com D/C e saldo.
+  assert.deepEqual(rows([
+    "Nome: FULANA DE TAL Agência: 1234-5",
+    "Período: 01/10/2026 a 31/10/2026",
+    "01/10/2026 Saldo Anterior 500,00 C",
+    "02/10/2026 000123 PIX - ENVIADO LOJA EXEMPLO 150,00 D 350,00 C",
+    "03/10/2026 PIX - RECEBIDO BELTRANA 1.000,00 C 1.350,00 C",
+    "04/10/2026 S A L D O 1.350,00 C",
+  ]), [
+    ["2026-10-02", "saida", 15_000, "PIX - ENVIADO LOJA EXEMPLO"],
+    ["2026-10-03", "reposicao", 100_000, "PIX - RECEBIDO BELTRANA"],
+  ]);
+  assert.equal(parse(["Nome: FULANA DE TAL Agência: 1", "01/10/2026 PIX X 1,00 D"]).holder, "FULANA DE TAL");
+  // Itaú: DD/MM sem ano (ano do período) e "-" depois do valor.
+  assert.deepEqual(rows([
+    "período de 01/10/2026 a 31/10/2026",
+    "05/10 PIX TRANSF FULANO05/10 89,90-",
+    "06/10 TED 237.0001 BELTRANA 300,00",
+  ]), [
+    ["2026-10-05", "saida", 8_990, "PIX TRANSF FULANO05/10"],
+    ["2026-10-06", "saida", 30_000, "TED 237.0001 BELTRANA"],
+  ]);
+  // Nubank: "07 OUT 2026", seções Total de entradas/saídas, valor sem sinal.
+  assert.deepEqual(rows([
+    "07 OUT 2026 Total de entradas + 1.000,00",
+    "Transferência recebida pelo Pix BELTRANA 1.000,00",
+    "Total de saídas - 45,00",
+    "Transferência enviada pelo Pix PADARIA 45,00",
+  ]), [
+    ["2026-10-07", "reposicao", 100_000, "TRANSFERÊNCIA RECEBIDA PELO PIX BELTRANA"],
+    ["2026-10-07", "saida", 4_500, "TRANSFERÊNCIA ENVIADA PELO PIX PADARIA"],
+  ]);
+  // Mercado Pago / PagBank: DD-MM-AAAA e "R$ -"; descrição na linha de cima.
+  assert.deepEqual(rows([
+    "08-10-2026 Pagamento com QR Pix MERCADINHO 123456789 R$ -12,50 R$ 987,50",
+    "Depósito em conta",
+    "09-10-2026 R$ 200,00 R$ 1.187,50",
+  ]), [
+    ["2026-10-08", "saida", 1_250, "PAGAMENTO COM QR PIX MERCADINHO"],
+    ["2026-10-09", "reposicao", 20_000, "DEPÓSITO EM CONTA"],
+  ]);
 });
 
 test("tela: botão IMPORTAR PDF (EXTRATO), setor para todas as linhas e notas vão no lote", () => {
