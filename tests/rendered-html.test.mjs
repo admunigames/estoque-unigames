@@ -4602,10 +4602,14 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   // Imagens da aba METAS (lojas e vendedores) na moldura comum do Comercial.
   assert.match(html, /id="btnComMetasStoresImage">GERAR IMAGEM<\/button>/);
   assert.match(html, /id="btnComMetasSellersImage">GERAR IMAGEM<\/button>/);
-  assert.match(html, /async function comBuildMetasImage\(kind\)\{[\s\S]*?await comDrawImageFrame\(ctx, W, H, \{/);
+  assert.match(html, /async function comBuildMetasImage\(kind, m\)\{[\s\S]*?await comDrawImageFrame\(ctx, W, H, \{/);
   // PDF de análise da aba METAS (17/11/2026): resumo, lojas por %, vendedores por loja.
   assert.match(html, /id="btnComMetasPdf">BAIXAR PDF<\/button>/);
-  assert.match(html, /function comMetasPdfHtml\(\)\{[\s\S]*?METAS DOS VENDEDORES <small>POR LOJA, DO MAIOR PARA O MENOR %/);
+  // Também nas abas METAS LOJA e METAS VENDEDORES (dados da própria aba).
+  for (const id of ["btnComLojasImage", "btnComLojasPdf", "btnComVendedoresImage", "btnComVendedoresPdf"]) assert.match(html, new RegExp('id="' + id + '"'));
+  assert.match(html, /comPrintPdf\(comMetasPdfHtml\(m, \{stores:true\}\)/);
+  assert.match(html, /comPrintPdf\(comMetasPdfHtml\(m, \{sellers:true\}\)/);
+  assert.match(html, /function comMetasPdfHtml\(m, parts\)\{[\s\S]*?METAS DOS VENDEDORES <small>POR LOJA, DO MAIOR PARA O MENOR %/);
   assert.match(html.slice(html.lastIndexOf("@media print")), /\.com-print-bar i\.tier-green\{background:#16a34a !important;\}/);
   // As antigas viram as novas na leitura (ninguém perde acesso).
   assert.match(workerSource, /"comercial:view": \["comercial:dashboard", "comercial:commission", "comercial:ranking"\],/);
