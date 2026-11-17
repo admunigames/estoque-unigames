@@ -71,7 +71,7 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   hr_payroll_entries: ["employee_name", "company_name", "notes", "created_by_name", "updated_by_name"],
   hr_thirteenth_salary: ["employee_name", "company_name", "notes", "created_by_name", "updated_by_name"],
   hr_payroll_settings: ["commission_rule_text", "updated_by_name"],
-  hr_benefits: ["employee_name", "company_name", "notes", "created_by_name", "updated_by_name"],
+  hr_benefits: ["employee_name", "company_name", "notes", "created_by_name", "updated_by_name", "paid_by_name"],
   hr_holidays: ["name", "company_name", "created_by_name", "updated_by_name"],
   hr_commission_presets: ["name", "created_by_name", "updated_by_name"],
   hr_commissions: ["employee_name", "company_name", "notes", "created_by_name", "updated_by_name"],

@@ -1,5 +1,8 @@
 import { getD1 } from "../../../../db";
+import { hasCompany } from "../../../lib/access-scope";
+import { actingStoreResolver } from "../../../lib/acting-store";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { loadCompanyList } from "../../finance/shared";
 import {
   benefitTotalsFromItems,
   headerBenefitType,
@@ -30,6 +33,23 @@ import {
 // batch. Vários lançamentos do mesmo funcionário no mesmo mês continuam
 // permitidos (sem índice único). A Folha lê o total líquido do mês
 // (loadMonthBenefits: netCents = Σ amount_cents).
+// Status PAGO / A PAGAR (migration 0141): paid_at vazio = A PAGAR; o PATCH
+// marca/desmarca em lote gravando quem e quando. Interno do RH: login com
+// loja vinculada não acessa (mesmo com payroll:manage).
+
+// Lojas do lançamento vistas pela lista: ATUANTE no mês da competência
+// (calculada na hora, mesma regra do Comissionamento) e de ADMISSÃO.
+function payrollGuard(request: Request, deniedMessage: string) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return { error: unauthorized };
+  const actor = identity(request);
+  const storeLogin = actor.role !== "admin" && hasCompany(request.headers.get("x-unigames-company-id") || "");
+  if (!canManagePayroll(actor) || storeLogin) return { error: jsonResponse({ error: deniedMessage }, 403) };
+  if (request.method !== "GET" && !sameOrigin(request)) {
+    return { error: jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403) };
+  }
+  return { actor };
+}
 
 type BenefitRow = {
   id: string;
@@ -46,6 +66,9 @@ type BenefitRow = {
   paymentDate: string;
   origin: string;
   notes: string;
+  paidAt: string;
+  paidBy: string;
+  paidByName: string;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -69,7 +92,7 @@ const BENEFIT_COLUMNS = `id, employee_id AS employeeId, employee_name AS employe
   company_id AS companyId, company_name AS companyName, month, type,
   payment_method AS paymentMethod, amount_cents AS amountCents, gross_cents AS grossCents,
   discount_cents AS discountCents, payment_date AS paymentDate, origin,
-  notes, created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
+  notes, paid_at AS paidAt, paid_by AS paidBy, paid_by_name AS paidByName, created_by AS createdBy, created_by_name AS createdByName, created_at AS createdAt,
   updated_by AS updatedBy, updated_by_name AS updatedByName, updated_at AS updatedAt`;
 
 const BENEFIT_ITEM_COLUMNS = `id, benefit_id AS benefitId, type, amount_mode AS amountMode,
@@ -77,23 +100,30 @@ const BENEFIT_ITEM_COLUMNS = `id, benefit_id AS benefitId, type, amount_mode AS 
   amount_cents AS amountCents, discount_cents AS discountCents`;
 
 export async function GET(request: Request) {
-  const unauthorized = unauthorizedResponse(request);
-  if (unauthorized) return unauthorized;
-  const actor = identity(request);
-  if (!canManagePayroll(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR OS BENEFÍCIOS." }, 403);
-  }
+  const guard = payrollGuard(request, "VOCÊ NÃO TEM PERMISSÃO PARA ACESSAR OS BENEFÍCIOS.");
+  if (guard.error) return guard.error;
 
   const url = new URL(request.url);
   const month = safeText(url.searchParams.get("month"), 7);
   const employeeId = safeText(url.searchParams.get("employeeId"), 80);
   const companyId = safeText(url.searchParams.get("companyId"), 80);
+  const actingCompanyId = safeText(url.searchParams.get("actingCompanyId"), 80);
+  const admissionCompanyId = safeText(url.searchParams.get("admissionCompanyId"), 80);
   const type = safeText(url.searchParams.get("type"), 20);
+  const paidFrom = safeText(url.searchParams.get("paymentFrom"), 10);
+  const paidTo = safeText(url.searchParams.get("paymentTo"), 10);
+  const status = safeText(url.searchParams.get("status"), 10);
   if (month && !MONTH_PATTERN.test(month)) {
     return jsonResponse({ error: "INFORME UM MÊS VÁLIDO (AAAA-MM)." }, 400);
   }
   if (type && !isOneOf(BENEFIT_TYPES, type)) {
     return jsonResponse({ error: "TIPO DE BENEFÍCIO INVÁLIDO." }, 400);
+  }
+  if ((paidFrom && !DATE_PATTERN.test(paidFrom)) || (paidTo && !DATE_PATTERN.test(paidTo))) {
+    return jsonResponse({ error: "INFORME DATAS DE PAGAMENTO VÁLIDAS (AAAA-MM-DD)." }, 400);
+  }
+  if (status && status !== "pago" && status !== "a_pagar") {
+    return jsonResponse({ error: "STATUS INVÁLIDO." }, 400);
   }
 
   try {
@@ -116,6 +146,17 @@ export async function GET(request: Request) {
         `EXISTS (SELECT 1 FROM hr_benefit_items bi WHERE bi.benefit_id = hr_benefits.id AND bi.type = ?${params.length})`,
       );
     }
+    // Data de pagamento DE/ATÉ: lançamento sem data fica de fora.
+    if (paidFrom || paidTo) conditions.push("payment_date <> ''");
+    if (paidFrom) {
+      params.push(paidFrom);
+      conditions.push(`payment_date >= ?${params.length}`);
+    }
+    if (paidTo) {
+      params.push(paidTo);
+      conditions.push(`payment_date <= ?${params.length}`);
+    }
+    if (status) conditions.push(status === "pago" ? "paid_at <> ''" : "paid_at = ''");
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const result = await database
       .prepare(
@@ -143,10 +184,30 @@ export async function GET(request: Request) {
       }
     }
 
-    const rows = benefits.map((row) => ({
-      ...row,
-      items: itemsByBenefit.get(row.id) ?? [],
-    }));
+    const [stores, companies] = benefits.length
+      ? await Promise.all([actingStoreResolver(database), loadCompanyList(database)])
+      : [null, []];
+    const nameOf = (store: { companyId: string; companyName: string } | null | undefined, fallback: string) =>
+      (store && (companies.find((company) => company.id === store.companyId)?.name ?? store.companyName)) || fallback;
+    const rows = benefits
+      .map((row) => {
+        const acting = stores?.acting(row.employeeId, row.month);
+        const admission = stores?.admission(row.employeeId);
+        return {
+          ...row,
+          // Funcionário excluído do cadastro: fica a loja gravada no lançamento.
+          actingCompanyId: acting?.companyId || row.companyId,
+          actingCompanyName: nameOf(acting, row.companyName),
+          admissionCompanyId: admission?.companyId || row.companyId,
+          admissionCompanyName: nameOf(admission, row.companyName),
+          items: itemsByBenefit.get(row.id) ?? [],
+        };
+      })
+      .filter(
+        (row) =>
+          (!actingCompanyId || row.actingCompanyId === actingCompanyId) &&
+          (!admissionCompanyId || row.admissionCompanyId === admissionCompanyId),
+      );
     const totalCents = rows.reduce((sum, row) => sum + Number(row.amountCents || 0), 0);
     const totalGrossCents = rows.reduce((sum, row) => sum + Number(row.grossCents || 0), 0);
     const totalDiscountCents = rows.reduce((sum, row) => sum + Number(row.discountCents || 0), 0);
@@ -158,15 +219,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const unauthorized = unauthorizedResponse(request);
-  if (unauthorized) return unauthorized;
-  const actor = identity(request);
-  if (!canManagePayroll(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA LANÇAR BENEFÍCIOS." }, 403);
-  }
-  if (!sameOrigin(request)) {
-    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
-  }
+  const guard = payrollGuard(request, "VOCÊ NÃO TEM PERMISSÃO PARA LANÇAR BENEFÍCIOS.");
+  if (guard.error) return guard.error;
+  const { actor } = guard;
 
   try {
     const body = (await request.json()) as JsonMap;
@@ -313,15 +368,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const unauthorized = unauthorizedResponse(request);
-  if (unauthorized) return unauthorized;
-  const actor = identity(request);
-  if (!canManagePayroll(actor)) {
-    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR BENEFÍCIOS." }, 403);
-  }
-  if (!sameOrigin(request)) {
-    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
-  }
+  const guard = payrollGuard(request, "VOCÊ NÃO TEM PERMISSÃO PARA EXCLUIR BENEFÍCIOS.");
+  if (guard.error) return guard.error;
   const id = safeText(new URL(request.url).searchParams.get("id"), 80);
   if (!id) return jsonResponse({ error: "BENEFÍCIO INVÁLIDO." }, 400);
 
@@ -336,5 +384,39 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error("Não foi possível excluir o benefício.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL EXCLUIR O BENEFÍCIO." }, 500);
+  }
+}
+
+// MARCAR COMO PAGO / DESMARCAR, um ou vários: { ids: [...], paid: true|false }.
+// Marcar não sobrescreve quem já tinha pago (guarda o primeiro registro).
+export async function PATCH(request: Request) {
+  const guard = payrollGuard(request, "VOCÊ NÃO TEM PERMISSÃO PARA ALTERAR BENEFÍCIOS.");
+  if (guard.error) return guard.error;
+  const { actor } = guard;
+  try {
+    const body = (await request.json()) as JsonMap;
+    const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map((id) => safeText(id, 80)).filter(Boolean))];
+    if (!ids.length) return jsonResponse({ error: "SELECIONE AO MENOS UM LANÇAMENTO." }, 400);
+    if (ids.length > 500) return jsonResponse({ error: "SELECIONE NO MÁXIMO 500 LANÇAMENTOS POR VEZ." }, 400);
+    if (typeof body.paid !== "boolean") return jsonResponse({ error: "INFORME SE É PARA MARCAR OU DESMARCAR." }, 400);
+    const database = await getD1();
+    const placeholders = ids.map((_id, index) => `?${index + 4}`).join(",");
+    await (body.paid
+      ? database
+          .prepare(
+            `UPDATE hr_benefits SET paid_at=?1, paid_by=?2, paid_by_name=?3
+             WHERE paid_at = '' AND id IN (${placeholders})`,
+          )
+          .bind(new Date().toISOString(), actor.id, actorName(actor), ...ids)
+      : database
+          .prepare(
+            `UPDATE hr_benefits SET paid_at=?1, paid_by=?2, paid_by_name=?3 WHERE id IN (${placeholders})`,
+          )
+          .bind("", "", "", ...ids)
+    ).run();
+    return jsonResponse({ updated: ids.length, paid: body.paid });
+  } catch (error) {
+    console.error("Não foi possível alterar o status dos benefícios.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL ALTERAR O STATUS DOS BENEFÍCIOS." }, 500);
   }
 }

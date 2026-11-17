@@ -4282,6 +4282,21 @@
     .com-print-table tr.sum td{font-weight:800; background:#e8eef6 !important; border-top:2px solid #1f3a5f !important;}
     .com-print-table .neg{color:#b42318 !important;}
     .com-print-resume{width:auto; min-width:50%; margin:6px 0 2px; font-size:9px;}
+    /* RELATÓRIO DE BENEFÍCIOS (RH): paisagem, um bloco por loja atuante. */
+    @page benefreport{size:A4 landscape; margin:9mm;}
+    body.rh-benef-printing > :not(.shell),
+    body.rh-benef-printing .shell > :not(.content),
+    body.rh-benef-printing .content > :not(#pageRhBeneficios),
+    body.rh-benef-printing #pageRhBeneficios > :not(#rhBeneficiosPrintBody){display:none !important;}
+    body.rh-benef-printing .shell,body.rh-benef-printing .content,body.rh-benef-printing #pageRhBeneficios{
+      display:block !important; width:100% !important; max-width:none !important; min-height:0 !important; margin:0 !important; padding:0 !important;
+    }
+    body.rh-benef-printing #rhBeneficiosPrintBody{display:block !important; width:100%; color:#111827; page:benefreport;}
+    .rh-benef-print-table{table-layout:fixed; font-size:7.5px;}
+    .rh-benef-print-table td{overflow-wrap:anywhere;}
+    .rh-benef-print-resume{margin:6px 0 4px;}
+    .rh-benef-print-grand{margin-top:8px;}
+    .rh-benef-print-grand td{font-size:8.5px;}
     .gd-print-header{display:flex !important; align-items:center; gap:12px;}
     .gd-print-logo{width:44px; height:auto;}
     .gd-print-opening{margin:4px 0 8px; font:800 10px/1.4 var(--mono);}
@@ -7535,12 +7550,6 @@
         </div>
       </header>
 
-      <div class="print-report-header" id="rhBeneficiosPrintHeader">
-        <div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div>
-        <h1>Benefícios</h1>
-        <div class="print-report-meta" id="rhBeneficiosPrintMeta"></div>
-      </div>
-
       <div class="output-tabs no-print" role="tablist" aria-label="Visão dos benefícios" style="margin-bottom:12px;">
         <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rh-beneficio-tab="lancamentos">LANÇAMENTOS</button>
         <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh-beneficio-tab="ciclo">CICLO 20→19 (GERAÇÃO)</button>
@@ -7548,14 +7557,19 @@
       </div>
 
       <div class="dre-toolbar no-print">
-        <div class="field"><label for="rhBeneficioFiltroLoja">LOJA</label><select id="rhBeneficioFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
-        <div class="field" id="rhBeneficioFiltroFuncionarioField"><label for="rhBeneficioFiltroFuncionario">FUNCIONÁRIO</label><select id="rhBeneficioFiltroFuncionario"><option value="">TODOS</option></select></div>
-        <div class="field" id="rhBeneficioFiltroTipoField"><label for="rhBeneficioFiltroTipo">BENEFÍCIO</label><select id="rhBeneficioFiltroTipo"><option value="">TODOS</option><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
-        <div class="field"><label for="rhBeneficioFiltroMes">COMPETÊNCIA</label><input type="month" id="rhBeneficioFiltroMes"></div>
+        <div class="field"><label for="rhBeneficioFiltroLoja">LOJA ATUANTE</label><select id="rhBeneficioFiltroLoja"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field" data-rh-beneficio-lanc><label for="rhBeneficioFiltroAdmissao">LOJA ADMISSÃO</label><select id="rhBeneficioFiltroAdmissao"><option value="">TODAS AS LOJAS</option></select></div>
+        <div class="field" data-rh-beneficio-lanc><label for="rhBeneficioFiltroFuncionario">FUNCIONÁRIO</label><select id="rhBeneficioFiltroFuncionario"><option value="">TODOS</option></select></div>
+        <div class="field" data-rh-beneficio-lanc><label for="rhBeneficioFiltroTipo">BENEFÍCIO</label><select id="rhBeneficioFiltroTipo"><option value="">TODOS</option><option value="alimentacao">ALIMENTAÇÃO</option><option value="mobilidade">MOBILIDADE</option><option value="premiacao">PREMIAÇÃO</option><option value="saldo_livre">SALDO LIVRE</option><option value="outros">OUTROS</option></select></div>
+        <div class="field"><label for="rhBeneficioFiltroMes">COMPETÊNCIA</label><input type="month" id="rhBeneficioFiltroMes" title="VAZIO = TODAS AS COMPETÊNCIAS"></div>
+        <div class="field" data-rh-beneficio-lanc><label for="rhBeneficioFiltroDe">PAGAMENTO DE</label><input type="date" id="rhBeneficioFiltroDe"></div>
+        <div class="field" data-rh-beneficio-lanc><label for="rhBeneficioFiltroAte">PAGAMENTO ATÉ</label><input type="date" id="rhBeneficioFiltroAte"></div>
+        <div class="field" data-rh-beneficio-lanc><label for="rhBeneficioFiltroStatus">STATUS</label><select id="rhBeneficioFiltroStatus"><option value="">TODOS</option><option value="a_pagar">A PAGAR</option><option value="pago">PAGO</option></select></div>
         <div class="dre-toolbar-actions">
           <button class="btn-accent" id="btnNewRhBeneficio" type="button">NOVO BENEFÍCIO</button>
           <button class="btn-outline" id="btnRhFeriados" type="button">FERIADOS</button>
-          <button class="btn-outline" id="btnRhBeneficiosPrint" type="button">RELATÓRIO / PDF</button>
+          <button class="btn-outline" id="btnRhBeneficiosPrint" type="button" data-rh-beneficio-lanc>RELATÓRIO / PDF</button>
+          <button class="btn-outline" id="btnRhBeneficiosExcel" type="button" data-rh-beneficio-lanc>BAIXAR EXCEL</button>
         </div>
       </div>
 
@@ -7593,19 +7607,32 @@
       </div>
 
       <div id="rhBeneficioTabLancamentos">
+      <!-- TOTAL DA EMPRESA: só aparece com LOJA ATUANTE ou LOJA ADMISSÃO filtrada. -->
+      <div class="table-panel" id="rhBeneficiosEmpresa" style="padding:12px 14px;margin-bottom:12px;" hidden></div>
       <div class="table-panel" id="rhBeneficiosResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
+
+      <div class="bulk-bar no-print" id="rhBeneficiosBulkBar">
+        <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+        <div class="bulk-bar-actions" data-bulk-actions hidden>
+          <strong class="bulk-bar-count" data-bulk-count></strong>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="unpay">DESMARCAR</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+        </div>
+      </div>
 
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="rhBeneficiosTable">
-            <thead><tr><th>Funcionário</th><th>Loja</th><th>Competência</th><th>Benefício</th><th>Forma</th><th>Data</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th>Observações</th><th class="no-print"></th></tr></thead>
-            <tbody id="rhBeneficiosTableBody"><tr><td colspan="11" class="responsive-empty">Selecione a competência para ver os benefícios.</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Funcionário</th><th>Loja atuante</th><th>Loja admissão</th><th>Competência</th><th>Alimentação</th><th>Transporte</th><th>Outros</th><th>Forma</th><th>Data</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th>Status</th><th>Observações</th><th></th></tr></thead>
+            <tbody id="rhBeneficiosTableBody"><tr><td colspan="16" class="responsive-empty">Selecione a competência para ver os benefícios.</td></tr></tbody>
           </table>
         </div>
       </div>
       </div>
 
-      <div class="print-only" id="rhBeneficiosPrintPorLoja"></div>
+      <!-- RELATÓRIO / PDF: só aparece na impressão (body.rh-benef-printing). -->
+      <div id="rhBeneficiosPrintBody" hidden></div>
     </section>
 
     <!-- ================= RH / DRE FUNCIONÁRIO ================= -->
@@ -50733,6 +50760,7 @@ function renderHomeTasks(){
     rhFillSelect('rhFolhaAdmissao','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhFolgasCompany','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhBeneficioFiltroLoja','TODAS AS LOJAS',rhCompanyOptions());
+    rhFillSelect('rhBeneficioFiltroAdmissao','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhComissaoLoja','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rhComissaoAdmissao','TODAS AS EMPRESAS',rhCompanyOptions());
     rhFillSelect('rhDreFuncLoja','TODAS AS LOJAS',rhCompanyOptions());
@@ -50773,6 +50801,7 @@ function renderHomeTasks(){
   window.addEventListener('afterprint', () => {
     document.body.classList.remove('rh-recibo-only');
     document.body.classList.remove('rh-custo-only');
+    document.body.classList.remove('rh-benef-printing');
     const recibo = el('rhComissaoRecibo');
     if(recibo) recibo.hidden = true;
     if(rhPrintTitleBefore){
@@ -52286,54 +52315,121 @@ function renderHomeTasks(){
 
   // ---------------------- BENEFÍCIOS ----------------------
 
+  // Quebra do lançamento por tipo (valores BRUTOS das linhas de
+  // hr_benefit_items): ALIMENTAÇÃO, TRANSPORTE (mobilidade) e OUTROS (o resto).
+  function rhBenefitSplit(row){
+    const items = Array.isArray(row.items) && row.items.length ? row.items
+      : [{type: row.type, amountCents: row.grossCents != null ? row.grossCents : row.amountCents}];
+    const split = {food:0, transport:0, other:0, otherLabels:[]};
+    items.forEach(item => {
+      const cents = Number(item.amountCents || 0);
+      if(item.type === 'alimentacao') split.food += cents;
+      else if(item.type === 'mobilidade') split.transport += cents;
+      else {
+        split.other += cents;
+        const label = RH_BENEFIT_TYPE_LABELS[item.type] || String(item.type || '').toLocaleUpperCase('pt-BR');
+        if(!split.otherLabels.includes(label)) split.otherLabels.push(label);
+      }
+    });
+    return split;
+  }
+  function rhBenefitTotals(rows){
+    const totals = {count:rows.length, food:0, transport:0, other:0, gross:0, discount:0, net:0, paid:0, open:0};
+    rows.forEach(row => {
+      const split = rhBenefitSplit(row);
+      const net = Number(row.amountCents || 0);
+      totals.food += split.food;
+      totals.transport += split.transport;
+      totals.other += split.other;
+      totals.gross += Number(row.grossCents != null ? row.grossCents : row.amountCents) || 0;
+      totals.discount += Number(row.discountCents || 0);
+      totals.net += net;
+      if(row.paidAt) totals.paid += net; else totals.open += net;
+    });
+    return totals;
+  }
+  function rhBenefitPaidInfo(row){
+    return row.paidAt ? 'PAGO EM '+formatDateTimeBR(row.paidAt)+(row.paidByName ? ' POR '+row.paidByName : '') : 'A PAGAR';
+  }
+  // Filtros aplicados, em texto (cabeçalho do PDF e do Excel).
+  function rhBeneficiosFiltroTexto(){
+    const companyName = id => (companies.find(company => company.id === id) || {name:'—'}).name;
+    const selectedLabel = id => { const select = el(id); return select && select.value ? select.options[select.selectedIndex].text : ''; };
+    const parts = [el('rhBeneficioFiltroMes').value ? 'COMPETÊNCIA '+rhFormatMonth(el('rhBeneficioFiltroMes').value) : 'TODAS AS COMPETÊNCIAS'];
+    parts.push('LOJA ATUANTE: '+(el('rhBeneficioFiltroLoja').value ? companyName(el('rhBeneficioFiltroLoja').value) : 'TODAS'));
+    parts.push('LOJA ADMISSÃO: '+(el('rhBeneficioFiltroAdmissao').value ? companyName(el('rhBeneficioFiltroAdmissao').value) : 'TODAS'));
+    const from = el('rhBeneficioFiltroDe').value, to = el('rhBeneficioFiltroAte').value;
+    if(from || to) parts.push('PAGAMENTO '+(from ? 'DE '+rhFormatDate(from)+' ' : '')+(to ? 'ATÉ '+rhFormatDate(to) : '').trim());
+    if(selectedLabel('rhBeneficioFiltroStatus')) parts.push('STATUS: '+selectedLabel('rhBeneficioFiltroStatus'));
+    if(selectedLabel('rhBeneficioFiltroFuncionario')) parts.push('FUNCIONÁRIO: '+selectedLabel('rhBeneficioFiltroFuncionario'));
+    if(selectedLabel('rhBeneficioFiltroTipo')) parts.push('BENEFÍCIO: '+selectedLabel('rhBeneficioFiltroTipo'));
+    return parts.join(' · ').toLocaleUpperCase('pt-BR');
+  }
+
   function renderRhBeneficiosTable(){
     const body = el('rhBeneficiosTableBody');
     if(!body) return;
+    const money = cents => formatCentsBRL(cents);
+    const dash = cents => Number(cents) ? money(cents) : '—';
     if(!rhBeneficiosRows.length){
-      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Nenhum benefício lançado para o filtro atual.</td></tr>';
+      body.innerHTML = '<tr><td colspan="16" class="responsive-empty">Nenhum benefício lançado para o filtro atual.</td></tr>';
       el('rhBeneficiosResumo').textContent = '';
-      el('rhBeneficiosPrintPorLoja').innerHTML = '';
+      el('rhBeneficiosEmpresa').hidden = true;
+      rhBeneficiosBulk.sync();
       return;
     }
     body.innerHTML = rhBeneficiosRows.map(row => {
-      const items = Array.isArray(row.items) ? row.items : [];
-      const detail = items.length
-        ? items.map(item => (RH_BENEFIT_TYPE_LABELS[item.type] || item.type)
-            + ' ' + formatCentsBRL(item.amountCents)
-            + (Number(item.discountCents) > 0 ? ' (−'+formatCentsBRL(item.discountCents)+')' : '')).join(' · ')
-        : (RH_BENEFIT_TYPE_LABELS[row.type] || row.type);
-      const label = items.length > 1
-        ? items.map(item => RH_BENEFIT_TYPE_LABELS[item.type] || item.type).join(', ')
-        : (RH_BENEFIT_TYPE_LABELS[items[0] ? items[0].type : row.type] || row.type);
+      const split = rhBenefitSplit(row);
+      const paid = Boolean(row.paidAt);
       return '<tr>'+
+      '<td class="bulk-col">'+bulkRowCheckbox(row.id, 'Selecionar '+row.employeeName)+'</td>'+
       '<td>'+escapeHtml(row.employeeName)+'</td>'+
-      '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.actingCompanyName || row.companyName || '—')+'</td>'+
+      '<td>'+escapeHtml(row.admissionCompanyName || '—')+'</td>'+
       '<td>'+escapeHtml(rhFormatMonth(row.month))+'</td>'+
-      '<td title="'+escapeHtml(detail)+'">'+escapeHtml(label)+'</td>'+
+      '<td>'+dash(split.food)+'</td>'+
+      '<td>'+dash(split.transport)+'</td>'+
+      '<td title="'+escapeHtml(split.otherLabels.join(', '))+'">'+dash(split.other)+'</td>'+
       '<td>'+escapeHtml(RH_BENEFIT_METHOD_LABELS[row.paymentMethod] || row.paymentMethod)+'</td>'+
       '<td>'+escapeHtml(rhFormatDate(row.paymentDate))+'</td>'+
-      '<td>'+formatCentsBRL(row.grossCents != null ? row.grossCents : row.amountCents)+'</td>'+
-      '<td>'+(Number(row.discountCents) > 0 ? '−'+formatCentsBRL(row.discountCents) : '—')+'</td>'+
-      '<td>'+formatCentsBRL(row.amountCents)+'</td>'+
+      '<td>'+money(row.grossCents != null ? row.grossCents : row.amountCents)+'</td>'+
+      '<td>'+(Number(row.discountCents) > 0 ? '−'+money(row.discountCents) : '—')+'</td>'+
+      '<td><strong>'+money(row.amountCents)+'</strong></td>'+
+      '<td title="'+escapeHtml(rhBenefitPaidInfo(row))+'"><span class="status-pill '+(paid ? 'done' : 'waiting')+'">'+(paid ? 'PAGO' : 'A PAGAR')+'</span>'+
+        (paid ? '<small style="display:block;margin-top:3px;font:700 8px/1.3 var(--mono);color:var(--ink-faint);">'+escapeHtml(formatDateTimeBR(row.paidAt).slice(0,10)+(row.paidByName ? ' · '+row.paidByName : ''))+'</small>' : '')+'</td>'+
       '<td>'+escapeHtml(row.notes || '—')+'</td>'+
-      '<td class="no-print"><span style="display:flex;gap:6px;">'+
+      '<td><span style="display:flex;gap:6px;">'+
+        '<button class="btn-outline" type="button" data-rh-beneficio-pago="'+escapeHtml(row.id)+'" data-paid="'+(paid ? '0' : '1')+'">'+(paid ? 'DESMARCAR' : 'PAGAR')+'</button>'+
         '<button class="btn-outline" type="button" data-rh-beneficio-edit="'+escapeHtml(row.id)+'">EDITAR</button>'+
         '<button class="btn-outline" type="button" data-rh-beneficio-delete="'+escapeHtml(row.id)+'">EXCLUIR</button>'+
       '</span></td>'+
     '</tr>';
     }).join('');
+    rhBeneficiosBulk.sync();
 
-    const total = rhBeneficiosRows.reduce((sum, row) => sum + Number(row.amountCents || 0), 0);
-    const totalDesc = rhBeneficiosRows.reduce((sum, row) => sum + Number(row.discountCents || 0), 0);
-    el('rhBeneficiosResumo').innerHTML = '<strong>'+rhBeneficiosRows.length+'</strong> lançamento(s) · Descontos: <strong>'+formatCentsBRL(totalDesc)+'</strong> · Líquido: <strong>'+formatCentsBRL(total)+'</strong>';
-    el('rhBeneficiosPrintPorLoja').innerHTML = rhPrintByStoreHtml(
-      'Benefícios por loja',
-      rhBeneficiosRows,
-      row => row.amountCents,
-      row => row.companyName
-    );
+    const t = rhBenefitTotals(rhBeneficiosRows);
+    const strong = (label, cents) => label+': <strong>'+money(cents)+'</strong>';
+    el('rhBeneficiosResumo').innerHTML = '<strong>'+t.count+'</strong> LANÇAMENTO(S) · '+[
+      strong('ALIMENTAÇÃO', t.food), strong('TRANSPORTE', t.transport), strong('OUTROS', t.other), strong('BRUTO', t.gross),
+      strong('DESCONTOS', t.discount), strong('LÍQUIDO', t.net), strong('PAGO', t.paid), strong('A PAGAR', t.open)
+    ].join(' · ');
+
+    // TOTAL DA EMPRESA em destaque quando há loja filtrada.
+    const acting = el('rhBeneficioFiltroLoja').value, admission = el('rhBeneficioFiltroAdmissao').value;
+    const box = el('rhBeneficiosEmpresa');
+    box.hidden = !acting && !admission;
+    if(!box.hidden){
+      const companyName = id => (companies.find(company => company.id === id) || {name:'—'}).name;
+      const title = [acting ? 'LOJA ATUANTE: '+companyName(acting) : '', admission ? 'LOJA ADMISSÃO: '+companyName(admission) : ''].filter(Boolean).join(' · ');
+      const card = (label, cents) => '<div class="supply-dashboard-card"><span>'+label+'</span><strong>'+money(cents)+'</strong></div>';
+      box.innerHTML = '<div style="margin:0 0 10px;font:800 11px/1.4 var(--mono);letter-spacing:.04em;">VALOR TOTAL DA EMPRESA · '+escapeHtml(title.toLocaleUpperCase('pt-BR'))+'</div>'+
+        '<div class="supply-dashboard-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));">'+
+        card('ALIMENTAÇÃO', t.food)+card('TRANSPORTE', t.transport)+(t.other ? card('OUTROS', t.other) : '')+card('DESCONTOS', t.discount)+
+        card('LÍQUIDO', t.net)+card('PAGO', t.paid)+card('A PAGAR', t.open)+'</div>';
+    }
   }
 
+  let rhBeneficioMesIniciado = false;
   async function loadRhBeneficios(){
     if(!canAccess('payroll')) return;
     try{
@@ -52342,7 +52438,12 @@ function renderHomeTasks(){
       showPurchaseToast(error.message,'error');
       return;
     }
-    if(!el('rhBeneficioFiltroMes').value) el('rhBeneficioFiltroMes').value = financeCurrentMonthKey();
+    // Competência começa no mês atual; nos LANÇAMENTOS pode ficar vazia
+    // (= todas). CICLO e REGRAS sempre precisam de um mês.
+    if(!rhBeneficioMesIniciado || rhBeneficioTab !== 'lancamentos'){
+      rhBeneficioMesIniciado = true;
+      if(!el('rhBeneficioFiltroMes').value) el('rhBeneficioFiltroMes').value = financeCurrentMonthKey();
+    }
     if(rhBeneficioTab === 'ciclo'){
       await loadRhBeneficioCiclo();
       return;
@@ -52352,27 +52453,37 @@ function renderHomeTasks(){
       return;
     }
     const params = new URLSearchParams();
-    const month = el('rhBeneficioFiltroMes').value;
-    if(month) params.set('month', month);
-    if(el('rhBeneficioFiltroLoja').value) params.set('companyId', el('rhBeneficioFiltroLoja').value);
-    if(el('rhBeneficioFiltroFuncionario').value) params.set('employeeId', el('rhBeneficioFiltroFuncionario').value);
-    if(el('rhBeneficioFiltroTipo').value) params.set('type', el('rhBeneficioFiltroTipo').value);
-    el('rhBeneficiosTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">Carregando…</td></tr>';
+    [['month','rhBeneficioFiltroMes'],['actingCompanyId','rhBeneficioFiltroLoja'],['admissionCompanyId','rhBeneficioFiltroAdmissao'],
+      ['employeeId','rhBeneficioFiltroFuncionario'],['type','rhBeneficioFiltroTipo'],['paymentFrom','rhBeneficioFiltroDe'],
+      ['paymentTo','rhBeneficioFiltroAte'],['status','rhBeneficioFiltroStatus']].forEach(([key, id]) => {
+      if(el(id).value) params.set(key, el(id).value);
+    });
+    el('rhBeneficiosTableBody').innerHTML = '<tr><td colspan="16" class="responsive-empty">Carregando…</td></tr>';
     try{
       const data = await rhApiRequest('/benefits?'+params.toString());
       rhBeneficiosRows = Array.isArray(data.benefits) ? data.benefits : [];
-      rhBeneficiosRows.sort((x, y) => String(x.employeeName || '').localeCompare(String(y.employeeName || ''), 'pt-BR'));
-      el('rhBeneficiosPrintMeta').textContent = 'Competência '+rhFormatMonth(month)+
-        ' · '+(el('rhBeneficioFiltroLoja').value ? (companies.find(company => company.id === el('rhBeneficioFiltroLoja').value) || {name:'—'}).name : 'Todas as lojas');
+      rhBeneficiosRows.sort((x, y) => String(x.employeeName || '').localeCompare(String(y.employeeName || ''), 'pt-BR') || String(y.month).localeCompare(String(x.month)));
       renderRhBeneficiosTable();
     }catch(error){
       rhBeneficiosRows = [];
-      el('rhBeneficiosTableBody').innerHTML = '<tr><td colspan="9" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rhBeneficiosEmpresa').hidden = true;
+      el('rhBeneficiosTableBody').innerHTML = '<tr><td colspan="16" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
-  ['rhBeneficioFiltroLoja','rhBeneficioFiltroFuncionario','rhBeneficioFiltroTipo','rhBeneficioFiltroMes'].forEach(id => {
+  ['rhBeneficioFiltroLoja','rhBeneficioFiltroAdmissao','rhBeneficioFiltroFuncionario','rhBeneficioFiltroTipo','rhBeneficioFiltroMes',
+    'rhBeneficioFiltroDe','rhBeneficioFiltroAte','rhBeneficioFiltroStatus'].forEach(id => {
     if(el(id)) el(id).addEventListener('change', loadRhBeneficios);
+  });
+
+  async function rhSetBenefitsPaid(ids, paid){
+    await rhApiRequest('/benefits', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ids, paid})});
+    await loadRhBeneficios();
+    showPurchaseToast(ids.length+(paid ? ' MARCADO(S) COMO PAGO.' : ' DESMARCADO(S).'));
+  }
+  const rhBeneficiosBulk = setupBulkSelection(el('rhBeneficiosBulkBar'), el('rhBeneficiosTableBody'), async (action, ids) => {
+    if(!await askConfirm((action === 'pay' ? 'MARCAR COMO PAGO ' : 'DESMARCAR O PAGAMENTO DE ')+ids.length+' LANÇAMENTO(S)?', {danger:false})) return false;
+    await rhSetBenefitsPaid(ids, action === 'pay');
   });
 
   let rhBeneficioWorkingDays = 0;
@@ -52643,6 +52754,17 @@ function renderHomeTasks(){
   if(el('rhBeneficiosTableBody')) el('rhBeneficiosTableBody').addEventListener('click', async event => {
     const editButton = event.target.closest('[data-rh-beneficio-edit]');
     const deleteButton = event.target.closest('[data-rh-beneficio-delete]');
+    const paidButton = event.target.closest('[data-rh-beneficio-pago]');
+    if(paidButton){
+      paidButton.disabled = true;
+      try{
+        await rhSetBenefitsPaid([paidButton.dataset.rhBeneficioPago], paidButton.dataset.paid === '1');
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+        paidButton.disabled = false;
+      }
+      return;
+    }
     if(editButton){
       const row = rhBeneficiosRows.find(item => item.id === editButton.dataset.rhBeneficioEdit);
       if(row) openRhBeneficioDialog(row);
@@ -52892,8 +53014,7 @@ function renderHomeTasks(){
       el('rhBeneficioTabCiclo').hidden = rhBeneficioTab !== 'ciclo';
       el('rhBeneficioTabRegras').hidden = rhBeneficioTab !== 'regras';
       el('rhBeneficioTabLancamentos').hidden = rhBeneficioTab !== 'lancamentos';
-      el('rhBeneficioFiltroFuncionarioField').hidden = rhBeneficioTab !== 'lancamentos';
-      el('rhBeneficioFiltroTipoField').hidden = rhBeneficioTab !== 'lancamentos';
+      document.querySelectorAll('[data-rh-beneficio-lanc]').forEach(node => { node.hidden = rhBeneficioTab !== 'lancamentos'; });
       loadRhBeneficios();
     });
   });
@@ -52957,12 +53078,159 @@ function renderHomeTasks(){
     }
   });
 
+  // Colunas do relatório (PDF e Excel) — exatamente as linhas filtradas na tela.
+  function rhBeneficiosReportColumns(){
+    return [
+      {label:'Funcionário', get:row => row.employeeName},
+      {label:'Loja atuante', get:row => row.actingCompanyName || row.companyName},
+      {label:'Loja admissão', get:row => row.admissionCompanyName},
+      {label:'Competência', get:row => rhFormatMonth(row.month)},
+      {label:'Alimentação', money:true, get:row => rhBenefitSplit(row).food},
+      {label:'Transporte', money:true, get:row => rhBenefitSplit(row).transport},
+      {label:'Outros', money:true, get:row => rhBenefitSplit(row).other},
+      {label:'Forma', get:row => RH_BENEFIT_METHOD_LABELS[row.paymentMethod] || row.paymentMethod},
+      {label:'Data pgto.', get:row => row.paymentDate ? rhFormatDate(row.paymentDate) : ''},
+      {label:'Bruto', money:true, get:row => Number(row.grossCents != null ? row.grossCents : row.amountCents)},
+      {label:'Desconto', money:true, get:row => Number(row.discountCents || 0)},
+      {label:'Líquido', money:true, get:row => Number(row.amountCents || 0)},
+      {label:'Status', get:row => row.paidAt ? 'PAGO' : 'A PAGAR'},
+      {label:'Pago em', get:row => row.paidAt ? formatDateTimeBR(row.paidAt).slice(0,10) : ''},
+      {label:'Pago por', get:row => row.paidByName || ''},
+      {label:'Observações', get:row => row.notes || ''}
+    ];
+  }
+  function rhBeneficiosFileName(ext){
+    return 'beneficios-'+(el('rhBeneficioFiltroMes').value || 'todas-competencias')+'.'+ext;
+  }
+
+  // PDF: A4 paisagem, um bloco por LOJA ATUANTE com total da loja, resumo
+  // por loja com TOTAL GERAL; linhas nunca partidas e cabeçalho repetido.
+  function rhBeneficiosPdfHtml(){
+    const columns = rhBeneficiosReportColumns().filter(column => column.label !== 'Loja atuante' && column.label !== 'Pago por');
+    // Larguras fixas (%) iguais em todas as tabelas: total geral alinha com os blocos.
+    const widths = {'Funcionário':14, 'Loja admissão':10, 'Competência':6.5, 'Forma':5, 'Data pgto.':6, 'Status':5, 'Pago em':5.5, 'Outros':5.5, 'Desconto':6};
+    const colgroup = '<colgroup>'+columns.map(column => '<col style="width:'+(column.label === 'Observações' ? 10.5 : widths[column.label] || 6.5)+'%">').join('')+'</colgroup>';
+    const cell = (column, row) => {
+      const value = column.get(row);
+      if(column.money) return '<td class="num">'+(Number(value) ? escapeHtml(formatCentsBRL(value)) : '—')+'</td>';
+      return '<td>'+escapeHtml(String(value || '—').toLocaleUpperCase('pt-BR'))+'</td>';
+    };
+    const sumRow = (label, rows) => '<tr class="sum">'+columns.map((column, i) =>
+      i === 0 ? '<td>'+escapeHtml(label)+'</td>'
+        : column.money ? '<td class="num">'+escapeHtml(formatCentsBRL(rows.reduce((acc, row) => acc + (Number(column.get(row)) || 0), 0)))+'</td>' : '<td></td>').join('')+'</tr>';
+    const groups = new Map();
+    rhBeneficiosRows.forEach(row => {
+      const store = (row.actingCompanyName || row.companyName || 'SEM LOJA DEFINIDA').toLocaleUpperCase('pt-BR');
+      if(!groups.has(store)) groups.set(store, []);
+      groups.get(store).push(row);
+    });
+    const ordered = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+    const money = cents => escapeHtml(formatCentsBRL(cents));
+    const grand = rhBenefitTotals(rhBeneficiosRows);
+    const resumeRow = (label, t, cls) => '<tr'+(cls ? ' class="'+cls+'"' : '')+'><td>'+escapeHtml(label)+'</td><td class="num">'+t.count+'</td>'+
+      [t.food, t.transport, t.other, t.gross, t.discount, t.net, t.paid, t.open].map(v => '<td class="num">'+money(v)+'</td>').join('')+'</tr>';
+    return '<header class="print-report-header gd-print-header"><img class="gd-print-logo" src="'+LOGO_DATA_URI+'" alt="">'+
+        '<div><div class="print-report-kicker">UNIGAMES · RH FINANCEIRO</div><h1>BENEFÍCIOS — LANÇAMENTOS</h1>'+
+        '<div class="print-report-meta">'+escapeHtml(rhBeneficiosFiltroTexto())+'<br>'+escapeHtml(('GERADO EM '+(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+(currentSession.displayName || '')).toLocaleUpperCase('pt-BR'))+'</div></div></header>'+
+      '<table class="com-print-table rh-benef-print-resume"><thead><tr><th>Loja atuante</th><th class="num">Lanç.</th><th class="num">Alimentação</th><th class="num">Transporte</th><th class="num">Outros</th><th class="num">Bruto</th><th class="num">Desconto</th><th class="num">Líquido</th><th class="num">Pago</th><th class="num">A pagar</th></tr></thead><tbody>'+
+        ordered.map(([store, rows]) => resumeRow(store, rhBenefitTotals(rows))).join('')+resumeRow('TOTAL GERAL', grand, 'sum')+'</tbody></table>'+
+      ordered.map(([store, rows]) => '<section class="com-print-group">'+
+        '<h2>'+escapeHtml(store)+' <small>'+rows.length+' LANÇAMENTO(S) · LÍQUIDO '+money(rhBenefitTotals(rows).net)+'</small></h2>'+
+        '<table class="com-print-table rh-benef-print-table">'+colgroup+'<thead><tr>'+columns.map(column => '<th'+(column.money ? ' class="num"' : '')+'>'+escapeHtml(column.label)+'</th>').join('')+'</tr></thead><tbody>'+
+        rows.map(row => '<tr>'+columns.map(column => cell(column, row)).join('')+'</tr>').join('')+
+        sumRow('TOTAL DA LOJA', rows)+'</tbody></table></section>').join('')+
+      '<table class="com-print-table rh-benef-print-table rh-benef-print-grand">'+colgroup+'<tbody>'+sumRow('TOTAL GERAL', rhBeneficiosRows)+'</tbody></table>';
+  }
+
   if(el('btnRhBeneficiosPrint')) el('btnRhBeneficiosPrint').addEventListener('click', () => {
     if(!rhBeneficiosRows.length){
       showPurchaseToast('Nada para imprimir com este filtro.','error');
       return;
     }
-    rhStartPrint('beneficios-'+(el('rhBeneficioFiltroMes').value || ''));
+    el('rhBeneficiosPrintBody').innerHTML = rhBeneficiosPdfHtml();
+    rhStartPrint(rhBeneficiosFileName('pdf').replace(/\.pdf$/, ''), 'rh-benef-printing');
+  });
+
+  // Excel: as mesmas linhas e colunas da tela, linha de TOTAL com fórmulas.
+  if(el('btnRhBeneficiosExcel')) el('btnRhBeneficiosExcel').addEventListener('click', async event => {
+    if(!rhBeneficiosRows.length){
+      showPurchaseToast('Nada para exportar com este filtro.','error');
+      return;
+    }
+    const button = event.currentTarget;
+    button.disabled = true;
+    try{
+      const ExcelJS = await ensureExcelJs();
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'UNIGAMES';
+      wb.calcProperties.fullCalcOnLoad = true;
+      const NAVY = 'FF1F3A5F', ZEBRA = 'FFF6F8FB', LINE = 'FFC9D3DF';
+      const MONEY = '"R$" #,##0.00;[Red]-"R$" #,##0.00';
+      const fill = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
+      const border = {top:{style:'thin', color:{argb:LINE}}, left:{style:'thin', color:{argb:LINE}}, bottom:{style:'thin', color:{argb:LINE}}, right:{style:'thin', color:{argb:LINE}}};
+      const letter = n => { let out = ''; for(; n > 0; n = Math.floor((n - 1) / 26)) out = String.fromCharCode(65 + (n - 1) % 26) + out; return out; };
+      const columns = rhBeneficiosReportColumns();
+      const width = columns.length;
+      const ws = wb.addWorksheet('BENEFÍCIOS', {views:[{showGridLines:false}], pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, paperSize:9}});
+      ws.mergeCells(1, 1, 1, width);
+      ws.getCell(1, 1).value = 'BENEFÍCIOS — LANÇAMENTOS';
+      ws.getCell(1, 1).font = {bold:true, size:15, color:{argb:'FFFFFFFF'}};
+      ws.getCell(1, 1).fill = fill(NAVY);
+      ws.getCell(1, 1).alignment = {vertical:'middle', indent:1};
+      ws.getRow(1).height = 30;
+      ws.mergeCells(2, 1, 2, width);
+      ws.getCell(2, 1).value = (rhBeneficiosFiltroTexto()+' · GERADO EM '+(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+String(currentSession.displayName || '')).toLocaleUpperCase('pt-BR');
+      ws.getCell(2, 1).font = {size:9, color:{argb:'FF475569'}};
+      ws.getCell(2, 1).alignment = {indent:1, wrapText:true};
+      ws.getRow(2).height = 28;
+      const head = 4;
+      columns.forEach((column, i) => {
+        const cell = ws.getRow(head).getCell(i + 1);
+        cell.value = column.label.toLocaleUpperCase('pt-BR');
+        cell.font = {bold:true, size:9, color:{argb:'FFFFFFFF'}};
+        cell.fill = fill(NAVY);
+        cell.alignment = {vertical:'middle', horizontal:'center', wrapText:true};
+        cell.border = border;
+        ws.getColumn(i + 1).width = column.money ? 15 : column.label === 'Funcionário' ? 32 : column.label.startsWith('Loja') ? 28 : column.label === 'Observações' ? 46 : column.label === 'Pago por' ? 20 : 13;
+      });
+      ws.getRow(head).height = 26;
+      rhBeneficiosRows.forEach((row, index) => {
+        const line = ws.getRow(head + 1 + index);
+        columns.forEach((column, i) => {
+          const cell = line.getCell(i + 1);
+          const value = column.get(row);
+          cell.value = column.money ? (Number(value) || 0) / 100 : String(value || '').toLocaleUpperCase('pt-BR');
+          if(column.money) cell.numFmt = MONEY;
+          cell.border = border;
+          cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left', wrapText:column.label === 'Observações'};
+          if(index % 2) cell.fill = fill(ZEBRA);
+        });
+      });
+      const first = head + 1, last = head + rhBeneficiosRows.length;
+      const total = ws.getRow(last + 1);
+      columns.forEach((column, i) => {
+        const cell = total.getCell(i + 1);
+        if(i === 0) cell.value = 'TOTAL ('+rhBeneficiosRows.length+' LANÇAMENTOS)';
+        else if(column.money){
+          cell.value = {formula:'SUM('+letter(i + 1)+first+':'+letter(i + 1)+last+')', result:rhBeneficiosRows.reduce((acc, row) => acc + (Number(column.get(row)) || 0), 0) / 100};
+          cell.numFmt = MONEY;
+        }
+        cell.font = {bold:true, color:{argb:'FFFFFFFF'}};
+        cell.fill = fill(NAVY);
+        cell.border = border;
+        cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left'};
+      });
+      total.height = 22;
+      ws.views = [{state:'frozen', xSplit:1, ySplit:head, showGridLines:false}];
+      ws.autoFilter = {from:{row:head, column:1}, to:{row:last, column:width}};
+      ws.pageSetup.printTitlesRow = head+':'+head;
+      const buffer = await wb.xlsx.writeBuffer();
+      downloadBlobFile(new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), rhBeneficiosFileName('xlsx'));
+    }catch(error){
+      showPurchaseToast(error.message || 'NÃO FOI POSSÍVEL GERAR O EXCEL.','error');
+    }finally{
+      button.disabled = false;
+    }
   });
 
   // ---------------------- DRE FUNCIONÁRIO ----------------------

@@ -55,8 +55,11 @@ function fallbackOf(employee: EmployeeStoreRow): StoreRef {
     : { companyId: employee.companyId, companyName: employee.companyName };
 }
 
-/** Loja atuante de TODOS os funcionários no mês (uma ida ao banco por tabela). */
-export async function actingStoresForMonth(database: Database, month: string): Promise<Map<string, StoreRef>> {
+/**
+ * Carrega cadastro + Escalas UMA vez e resolve a loja atuante de qualquer
+ * funcionário em qualquer mês (listas com várias competências).
+ */
+export async function actingStoreResolver(database: Database) {
   const [employees, assignments] = await Promise.all([
     database
       .prepare(
@@ -78,10 +81,29 @@ export async function actingStoresForMonth(database: Database, month: string): P
     list.push(row);
     byEmployee.set(row.employeeId, list);
   }
+  const employeeList = employees.results ?? [];
+  const byId = new Map(employeeList.map((employee) => [employee.id, employee]));
+  return {
+    employeeIds: employeeList.map((employee) => employee.id),
+    /** Loja atuante no mês (null se o funcionário não existe). */
+    acting(employeeId: string, month: string): StoreRef | null {
+      const employee = byId.get(employeeId);
+      if (!employee) return null;
+      return resolveActingStore(byEmployee.get(employeeId) ?? [], month, fallbackOf(employee), currentOf(employee));
+    },
+    /** Loja de ADMISSÃO; sem ela, a loja do cadastro (mesma regra do Comissionamento). */
+    admission(employeeId: string): StoreRef | null {
+      const employee = byId.get(employeeId);
+      return employee ? fallbackOf(employee) : null;
+    },
+  };
+}
+
+/** Loja atuante de TODOS os funcionários no mês (uma ida ao banco por tabela). */
+export async function actingStoresForMonth(database: Database, month: string): Promise<Map<string, StoreRef>> {
+  const resolver = await actingStoreResolver(database);
   const result = new Map<string, StoreRef>();
-  for (const employee of employees.results ?? []) {
-    result.set(employee.id, resolveActingStore(byEmployee.get(employee.id) ?? [], month, fallbackOf(employee), currentOf(employee)));
-  }
+  for (const id of resolver.employeeIds) result.set(id, resolver.acting(id, month)!);
   return result;
 }
 

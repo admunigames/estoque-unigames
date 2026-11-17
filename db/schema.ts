@@ -1740,6 +1740,11 @@ export const hrBenefits = pgTable(
     // 'manual' | 'ciclo' — 'ciclo' = criado pela geração automática do
     // ciclo 20→19 (no máximo um por funcionário/competência).
     origin: text("origin").notNull().default("manual"),
+    // Status de pagamento (migration 0141): paid_at vazio = A PAGAR; senão
+    // PAGO, com quem marcou (paid_by/paid_by_name) e quando (ISO).
+    paidAt: text("paid_at").notNull().default(""),
+    paidBy: text("paid_by").notNull().default(""),
+    paidByName: text("paid_by_name").notNull().default(""),
     createdBy: text("created_by").notNull(),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
