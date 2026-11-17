@@ -3873,6 +3873,8 @@
   .decl-batch-table input:not([type="checkbox"]){width:120px;}
   .decl-batch-table input[data-batch-field="pct"]{width:72px;}
   .decl-batch-table input[data-batch-field="notes"]{width:170px;}
+  .decl-batch-table input[data-rp-batch="reason"]{width:320px;}
+  .decl-batch-table input[data-rp-batch="responsibleName"]{width:200px;}
   .decl-batch-table tr.is-registered td{opacity:.6;}
   .decl-plan-table input[data-plan-month]{width:104px;}
   .cr-batch-table select{width:140px;}
@@ -10705,6 +10707,8 @@
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnFiltrarReposicao" type="button">FILTRAR</button>
           <button class="btn-outline" id="btnBatchReposicao" type="button">+ CADASTRAR EM LOTE</button>
+          <button class="btn-outline" id="btnReposicaoPdf" type="button">IMPORTAR PDF (EXTRATO)</button>
+          <input type="file" id="fileReposicaoPdf" accept=".pdf,application/pdf" hidden>
           <button class="btn-accent" id="btnNewReposicao" type="button">NOVO LANÇAMENTO</button>
         </div>
       </div>
@@ -13089,6 +13093,10 @@
   </div>
   <form class="purchase-form" id="reposicaoBatchForm">
     <p class="purchase-field-help">LINHAS SEM MOTIVO E SEM VALOR SÃO IGNORADAS. AS PULADAS FICAM NA GRADE COM O MOTIVO DO ERRO.</p>
+    <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="reposicaoBatchSector">SETOR (TODAS AS LINHAS)</label>
+        <select id="reposicaoBatchSector"><option value="">SEM SETOR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
+    </div>
     <div class="table-panel responsive-table decl-batch-table cr-batch-table">
       <div class="table-scroll">
         <table>
@@ -43762,14 +43770,18 @@ function renderHomeTasks(){
     if(!box) return;
     const bySector = {};
     breakdown.forEach(b => {
-      const s = bySector[b.sector] || (bySector[b.sector] = {inflow:0, outflow:0});
+      const s = bySector[b.sector] || (bySector[b.sector] = {inflow:0, outflow:0, replenished:0});
       const cents = Number(b.totalCents) || 0;
-      if(b.kind === 'entrada' || b.kind === 'recuperacao') s.inflow += cents; else s.outflow += cents;
+      // REPOSIÇÃO (dinheiro reposto ao responsável, ex.: Pix recebido do
+      // extrato) fica à parte das saídas (o que foi gasto).
+      if(b.kind === 'entrada' || b.kind === 'recuperacao') s.inflow += cents;
+      else if(b.kind === 'reposicao') s.replenished += cents;
+      else s.outflow += cents;
     });
     const keys = Object.keys(bySector);
     box.innerHTML = keys.length ? keys.map(s =>
       '<div class="stat"><strong>'+escapeHtml(REPOSICAO_SECTOR_LABELS[s] || s)+'</strong>'+
-      '<span>Saídas '+formatCentsBRL(bySector[s].outflow)+' · Entradas '+formatCentsBRL(bySector[s].inflow)+'</span></div>'
+      '<span>Reposições '+formatCentsBRL(bySector[s].replenished)+' · Saídas '+formatCentsBRL(bySector[s].outflow)+' · Entradas '+formatCentsBRL(bySector[s].inflow)+'</span></div>'
     ).join('') : '<div class="dre-empty">Nenhum lançamento no filtro atual.</div>';
   }
   function renderReposicaoTable(){
@@ -43879,8 +43891,86 @@ function renderHomeTasks(){
     if(!companies.length) await loadCompanies();
     el('reposicaoBatchBody').innerHTML = '';
     el('reposicaoBatchStatus').textContent = '';
+    el('reposicaoBatchSector').value = '';
     reposicaoBatchAddRows(5);
     el('reposicaoBatchDialog').showModal();
+  });
+
+  // IMPORTAR PDF (EXTRATO) — 17/11/2026: extrato da conta do responsável
+  // (modelo Banco Inter: "16 de Outubro de 2026 Saldo do dia…" e uma linha por
+  // transação "Pix enviado: "Cp :… - FAVORECIDO" (ANOTAÇÃO) - R$ 27,00 R$ 105,70").
+  // Valor com "-" = SAÍDA; sem = REPOSIÇÃO (dinheiro reposto ao responsável).
+  // MOTIVO = anotação entre parênteses (pode continuar na linha de baixo);
+  // sem anotação, "TIPO — FAVORECIDO". RESPONSÁVEL = titular (linha antes de
+  // "CPF/CNPJ:"). Tudo vai para a grade do CADASTRAR EM LOTE para conferir;
+  // repetidas NÃO são puladas (decisão do usuário).
+  const RP_PDF_MONTHS = {janeiro:1, fevereiro:2, marco:3, abril:4, maio:5, junho:6, julho:7, agosto:8, setembro:9, outubro:10, novembro:11, dezembro:12};
+  function rpParseStatementPdf(lines){
+    const money = text => Math.round(Number(String(text).replace(/\./g,'').replace(',','.')) * 100);
+    const upper = text => String(text || '').replace(/\s+/g,' ').trim().toLocaleUpperCase('pt-BR');
+    let holder = '';
+    let date = '';
+    const rows = [];
+    let open = null;
+    lines.forEach((line, index) => {
+      if(/^CPF\/CNPJ:/i.test(line) && !holder) holder = upper(lines[index - 1] || '');
+      const day = line.match(/^(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]+)\s+de\s+(\d{4})\b/i);
+      if(day){
+        const month = RP_PDF_MONTHS[day[2].normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()];
+        if(month) date = day[3]+'-'+String(month).padStart(2,'0')+'-'+day[1].padStart(2,'0');
+        open = null;
+        return;
+      }
+      const tx = date && line.match(/^(.+?)\s+(-\s*)?R\$\s*([\d.]+,\d{2})\s+-?\s*R\$\s*[\d.]+,\d{2}$/);
+      if(tx){
+        const text = tx[1];
+        const quoted = text.match(/"([^"]*)"/);
+        const typeLabel = upper((text.split(/[:"]/)[0]) || 'TRANSAÇÃO');
+        const payee = quoted ? upper(quoted[1].replace(/^\s*Cp\s*:\s*\d+\s*-\s*/i,'').replace(/^\d+\s+/,'')) : upper(text.replace(/^[^:]*:/,''));
+        const note = quoted ? text.slice(text.indexOf(quoted[0]) + quoted[0].length).trim() : '';
+        open = {entryDate: date, kind: tx[2] ? 'saida' : 'reposicao', typeLabel, payee, note, amountCents: money(tx[3])};
+        rows.push(open);
+        return;
+      }
+      // Continuação da anotação "(… " que não fechou na linha da transação.
+      if(open && open.note.includes('(') && !open.note.includes(')')) open.note += ' '+line;
+      else open = null;
+    });
+    return {holder, rows: rows.filter(row => row.amountCents > 0).map(row => {
+      const note = upper(row.note.replace(/^\(\s*/,'').replace(/\s*\)$/,''));
+      return {
+        entryDate: row.entryDate, kind: row.kind, amountCents: row.amountCents, payee: row.payee,
+        reason: note || (row.typeLabel+(row.payee ? ' — '+row.payee : '')),
+        notes: row.typeLabel+(row.payee ? ' — '+row.payee : '')
+      };
+    })};
+  }
+  el('btnReposicaoPdf').addEventListener('click', () => { el('fileReposicaoPdf').value = ''; el('fileReposicaoPdf').click(); });
+  el('fileReposicaoPdf').addEventListener('change', async () => {
+    const file = el('fileReposicaoPdf').files[0];
+    if(!file) return;
+    try{
+      const parsed = rpParseStatementPdf(await extractPdfLines(file, {sorted:true}));
+      if(!parsed.rows.length) throw new Error('NENHUMA TRANSAÇÃO ENCONTRADA NO PDF. CONFIRA SE É O EXTRATO NO MODELO DO BANCO INTER.');
+      el('reposicaoBatchBody').innerHTML = '';
+      reposicaoBatchAddRows(parsed.rows.length);
+      Array.from(el('reposicaoBatchBody').rows).forEach((tr, index) => {
+        const row = parsed.rows[index];
+        const field = name => tr.querySelector('[data-rp-batch="'+name+'"]');
+        field('entryDate').value = row.entryDate;
+        field('reason').value = row.reason;
+        field('responsibleName').value = parsed.holder;
+        field('kind').value = row.kind;
+        setCurrencyValue(field('amount'), row.amountCents / 100);
+        tr.dataset.notes = 'EXTRATO '+file.name.replace(/\.pdf$/i,'').toLocaleUpperCase('pt-BR')+' · '+row.notes;
+      });
+      el('reposicaoBatchSector').value = /ASSIST/i.test(file.name) ? 'assistencia' : /LOG[IÍ]STICA/i.test(file.name) ? 'logistica' : '';
+      const sum = kind => parsed.rows.filter(row => row.kind === kind).reduce((total, row) => total + row.amountCents, 0);
+      const count = kind => parsed.rows.filter(row => row.kind === kind).length;
+      el('reposicaoBatchStatus').textContent = parsed.rows.length+' LINHA(S) LIDA(S) DO PDF · '+count('saida')+' SAÍDA(S) '+formatCentsBRL(sum('saida'))+
+        ' · '+count('reposicao')+' REPOSIÇÃO(ÕES) '+formatCentsBRL(sum('reposicao'))+'. CONFIRA E CLIQUE EM SALVAR TUDO.';
+      el('reposicaoBatchDialog').showModal();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
   el('btnReposicaoBatchAddRows').addEventListener('click', () => reposicaoBatchAddRows(5));
   el('btnCloseReposicaoBatch').addEventListener('click', () => el('reposicaoBatchDialog').close());
@@ -43896,7 +43986,8 @@ function renderHomeTasks(){
       return {
         entryDate: field('entryDate').value, reason: field('reason').value.trim(),
         responsibleName: field('responsibleName').value.trim(), kind: field('kind').value,
-        amountCents: Math.round(Number(getCurrencyValue(field('amount')) || 0) * 100)
+        amountCents: Math.round(Number(getCurrencyValue(field('amount')) || 0) * 100),
+        sector: el('reposicaoBatchSector').value, notes: tr.dataset.notes || ''
       };
     });
     const button = el('btnSaveReposicaoBatch');
