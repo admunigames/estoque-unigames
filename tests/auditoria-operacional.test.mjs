@@ -123,3 +123,21 @@ test("fluxo completo: criar, marcar, finalizar, resumo, escopo de loja e itens",
   assert.equal((await call(ADMIN, "DELETE", { id: next.id })).status, 200);
   assert.equal((await json(await call(ADMIN, "GET"))).audits.length, 1);
 });
+
+test("tela ITENS DO CHECKLIST: só a lista rola, formulário recolhido, setas ↑ ↓", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  // O .purchase-dialog corta o que passa da altura (overflow:hidden): o diálogo
+  // vira coluna e a lista é o único trecho rolável.
+  assert.match(html, /\.aop-items-dialog\[open\]\{display:flex; flex-direction:column;\}/);
+  assert.match(html, /\.aop-items-list\{flex:1 1 auto; min-height:0; overflow-y:auto;/);
+  assert.match(html, /<form class="aop-item-form" id="aopItemForm" hidden>/);
+  assert.match(html, /id="btnAopItemNew" type="button">\+ NOVO ITEM<\/button>/);
+  assert.match(html, /data-aop-move="-1" data-aop-item="[^"]+" aria-label="Subir" title="Subir"'\+\(position > 0 \? '' : ' disabled'\)\+'>↑<\/button>/);
+  assert.match(html, /data-aop-move="1" data-aop-item="[^"]+" aria-label="Descer" title="Descer"'[^\n]*>↓<\/button>/);
+  const itemsScript = html.slice(html.indexOf("// Itens do checklist (quem gerencia)"), html.indexOf("// ---------- ASSISTÊNCIA · CONSULTA DE PREÇOS"));
+  assert.ok(itemsScript.length > 1000);
+  assert.doesNotMatch(itemsScript, />SUBIR<\/button>|>DESCER<\/button>/);
+  // Setas trocam só com o vizinho do mesmo grupo (o subtítulo do grupo não se repete).
+  assert.match(html, /row\.section === item\.section && row\.groupName === item\.groupName/);
+});

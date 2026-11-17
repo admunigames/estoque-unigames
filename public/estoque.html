@@ -3005,17 +3005,31 @@
   .aop-delta.up{color:#54c48a;}
   .aop-delta.down{color:#ef817b;}
   .aop-summary-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px;}
-  .aop-items-list{padding:0 20px 20px;}
-  .aop-item-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--inset-border);}
-  .aop-item-row.off{opacity:.55;}
-  .aop-item-row small{display:block;margin-top:2px;color:var(--ink-faint);font:700 9px/1.3 var(--mono);}
-  .aop-item-row-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;}
+  /* Itens do checklist: cabeçalho e formulário fixos, só a lista rola (inclusive no iPhone). */
+  .aop-items-dialog{width:min(720px,calc(100vw - 20px)); max-height:calc(100vh - 24px); max-height:calc(100dvh - 24px);}
+  .aop-items-dialog[open]{display:flex; flex-direction:column;}
+  .aop-items-dialog > .purchase-dialog-head,.aop-items-top{flex:none;}
+  .aop-items-top{padding:12px 16px; border-bottom:1px solid var(--border);}
+  .aop-items-bar{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .aop-items-hint{margin:0; color:var(--ink-faint); font:700 9px/1.4 var(--mono);}
+  .aop-item-form{margin-top:12px;}
+  .aop-items-list{flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:4px 16px 16px;}
+  .aop-items-section{border-bottom:1px solid var(--border);}
+  .aop-items-section > summary{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; cursor:pointer; font:800 12px/1.3 var(--mono); letter-spacing:.04em;}
+  .aop-items-section > summary small{color:var(--ink-faint); font:700 9px/1.3 var(--mono);}
+  .aop-items-group{margin:8px 0 2px; color:var(--accent); font:800 9px/1.3 var(--mono); letter-spacing:.06em;}
+  .aop-item-row{display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--inset-border);}
+  .aop-item-row.off .aop-item-row-text{opacity:.5;}
+  .aop-item-row-text{flex:1 1 auto; min-width:0; font:600 12px/1.35 var(--sans); overflow-wrap:anywhere;}
+  .aop-off-tag{display:inline-block; margin-left:6px; padding:1px 6px; border:1px solid var(--inset-border); border-radius:99px; color:var(--ink-faint); font:700 8px/1.4 var(--mono); vertical-align:middle;}
+  .aop-item-row-actions{display:flex; flex:none; gap:4px;}
+  .aop-icon-btn{width:34px; min-height:32px; padding:0; font-size:15px; line-height:1;}
+  .aop-icon-btn:disabled{visibility:hidden;}
   @media(max-width:680px){
     .aop-item{grid-template-columns:1fr;}
     .aop-choice{min-height:52px;font-size:14px;}
     .aop-chip{font-size:9px;}
-    .aop-item-row{flex-direction:column;align-items:stretch;}
-    .aop-item-row-actions{justify-content:flex-start;}
+    .aop-icon-btn{width:38px;}
   }
   .supply-admin-tabs{margin-bottom:16px;}
   .supply-admin-tab-panel{display:grid;gap:12px;}
@@ -13412,25 +13426,31 @@
   </form>
 </dialog>
 
-<dialog class="purchase-dialog" id="aopItemsDialog" aria-labelledby="aopItemsDialogTitle">
+<dialog class="purchase-dialog aop-items-dialog" id="aopItemsDialog" aria-labelledby="aopItemsDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="aopItemsDialogTitle">ITENS DO CHECKLIST</h3>
     <button class="purchase-dialog-close" type="button" data-aop-close aria-label="Fechar">×</button>
   </div>
-  <form class="purchase-form" id="aopItemForm">
-    <p class="gd-opening-hint">Auditorias já feitas guardam o texto da época: editar, desativar ou reordenar aqui só vale para as próximas.</p>
-    <input type="hidden" id="aopItemId">
-    <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="aopItemSection">SEÇÃO *</label><select id="aopItemSection" required></select></div>
-      <div class="purchase-field"><label for="aopItemGroup">GRUPO (OPCIONAL)</label><input type="text" id="aopItemGroup" maxlength="60" autocomplete="off" placeholder="Ex.: LIMPEZA"></div>
-      <div class="purchase-field full"><label for="aopItemText">ITEM *</label><input type="text" id="aopItemText" maxlength="300" autocomplete="off" required></div>
+  <div class="aop-items-top">
+    <div class="aop-items-bar">
+      <p class="aop-items-hint">MUDANÇAS SÓ VALEM PARA AS PRÓXIMAS AUDITORIAS.</p>
+      <button class="btn-accent btn-sm" id="btnAopItemNew" type="button">+ NOVO ITEM</button>
     </div>
-    <div class="user-form-status" id="aopItemStatus" role="status" aria-live="polite"></div>
-    <div class="purchase-form-actions">
-      <button class="btn-outline" id="btnAopItemCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
-      <button class="btn-accent" id="btnAopItemSave" type="submit">ADICIONAR ITEM</button>
-    </div>
-  </form>
+    <form class="aop-item-form" id="aopItemForm" hidden>
+      <input type="hidden" id="aopItemId">
+      <div class="purchase-form-grid">
+        <div class="purchase-field"><label for="aopItemSection">SEÇÃO *</label><select id="aopItemSection" required></select></div>
+        <div class="purchase-field"><label for="aopItemGroup">GRUPO (OPCIONAL)</label><input type="text" id="aopItemGroup" list="aopItemGroupOptions" maxlength="60" autocomplete="off" placeholder="EX.: LIMPEZA"><datalist id="aopItemGroupOptions"></datalist></div>
+        <div class="purchase-field full"><label for="aopItemText">ITEM *</label><input type="text" id="aopItemText" maxlength="300" autocomplete="off" required></div>
+      </div>
+      <div class="user-form-status" id="aopItemStatus" role="status" aria-live="polite"></div>
+      <div class="purchase-form-actions">
+        <button class="btn-outline" id="btnAopItemToggle" type="button" hidden>DESATIVAR ITEM</button>
+        <button class="btn-outline" id="btnAopItemCancel" type="button">CANCELAR</button>
+        <button class="btn-accent" id="btnAopItemSave" type="submit">ADICIONAR ITEM</button>
+      </div>
+    </form>
+  </div>
   <div class="aop-items-list" id="aopItemsList"></div>
 </dialog>
 
@@ -33132,82 +33152,120 @@ function renderHomeTasks(){
   });
 
   // Itens do checklist (quem gerencia): adicionar, editar, desativar, reordenar.
-  async function loadAopItems(){
-    aopItems = await aopApi('GET', null, '?items=1');
+  // Seções recolhíveis (o estado sobrevive ao recarregar a lista) e setas que
+  // trocam o item com o vizinho do mesmo grupo, sem tirar a lista do lugar.
+  const aopCollapsed = new Set();
+  function renderAopItems(){
     el('aopItemsList').innerHTML = aopItems.sections.map(section => {
       const rows = aopItems.items.filter(item => item.section === section);
-      return '<h4 class="aop-group-title">'+escapeHtml(section)+' ('+rows.filter(item => item.active).length+' ATIVOS)</h4>'+
-        rows.map((item, index) =>
-          '<div class="aop-item-row'+(item.active ? '' : ' off')+'"><div><strong>'+escapeHtml(item.text)+'</strong>'+
-          '<small>'+escapeHtml((item.groupName ? item.groupName+' · ' : '')+(item.active ? 'ATIVO' : 'DESATIVADO'))+'</small></div>'+
-          '<div class="aop-item-row-actions">'+
-            '<button class="btn-outline btn-sm" type="button" data-aop-move="-1" data-aop-item="'+escapeHtml(item.id)+'"'+(index ? '' : ' disabled')+'>SUBIR</button>'+
-            '<button class="btn-outline btn-sm" type="button" data-aop-move="1" data-aop-item="'+escapeHtml(item.id)+'"'+(index < rows.length - 1 ? '' : ' disabled')+'>DESCER</button>'+
-            '<button class="btn-outline btn-sm" type="button" data-aop-edit="'+escapeHtml(item.id)+'">EDITAR</button>'+
-            '<button class="btn-outline btn-sm" type="button" data-aop-toggle="'+escapeHtml(item.id)+'">'+(item.active ? 'DESATIVAR' : 'ATIVAR')+'</button>'+
-          '</div></div>').join('');
+      let group = null;
+      return '<details class="aop-items-section" data-aop-section="'+escapeHtml(section)+'"'+(aopCollapsed.has(section) ? '' : ' open')+'>'+
+        '<summary><span>'+escapeHtml(section)+'</span><small>'+rows.filter(item => item.active).length+' ATIVOS</small></summary>'+
+        rows.map(item => {
+          const siblings = rows.filter(row => row.groupName === item.groupName);
+          const position = siblings.indexOf(item);
+          const heading = item.groupName !== group && item.groupName ? '<h5 class="aop-items-group">'+escapeHtml(item.groupName)+'</h5>' : '';
+          group = item.groupName;
+          return heading+'<div class="aop-item-row'+(item.active ? '' : ' off')+'">'+
+            '<span class="aop-item-row-text">'+escapeHtml(item.text)+(item.active ? '' : '<span class="aop-off-tag">DESATIVADO</span>')+'</span>'+
+            '<span class="aop-item-row-actions">'+
+              '<button class="btn-outline btn-sm aop-icon-btn" type="button" data-aop-move="-1" data-aop-item="'+escapeHtml(item.id)+'" aria-label="Subir" title="Subir"'+(position > 0 ? '' : ' disabled')+'>↑</button>'+
+              '<button class="btn-outline btn-sm aop-icon-btn" type="button" data-aop-move="1" data-aop-item="'+escapeHtml(item.id)+'" aria-label="Descer" title="Descer"'+(position < siblings.length - 1 ? '' : ' disabled')+'>↓</button>'+
+              '<button class="btn-outline btn-sm aop-icon-btn" type="button" data-aop-edit="'+escapeHtml(item.id)+'" aria-label="Editar ou desativar" title="Editar ou desativar">✎</button>'+
+            '</span></div>';
+        }).join('')+
+      '</details>';
     }).join('');
+    el('aopItemGroupOptions').innerHTML = [...new Set(aopItems.items.map(item => item.groupName).filter(Boolean))]
+      .map(groupName => '<option value="'+escapeHtml(groupName)+'">').join('');
   }
-  function aopResetItemForm(){
+  async function loadAopItems(){
+    aopItems = await aopApi('GET', null, '?items=1');
+    renderAopItems();
+  }
+  function aopCloseItemForm(){
     el('aopItemForm').reset();
+    el('aopItemForm').hidden = true;
+    el('btnAopItemNew').hidden = false;
     el('aopItemId').value = '';
+  }
+  function aopOpenItemForm(item){
+    el('aopItemForm').reset();
     el('aopItemSection').innerHTML = ((aopItems && aopItems.sections) || []).map(section => '<option>'+escapeHtml(section)+'</option>').join('');
-    el('btnAopItemSave').textContent = 'ADICIONAR ITEM';
-    el('btnAopItemCancel').hidden = true;
+    el('aopItemId').value = item ? item.id : '';
+    if(item){
+      el('aopItemSection').value = item.section;
+      el('aopItemGroup').value = item.groupName;
+      el('aopItemText').value = item.text;
+    }
+    el('btnAopItemSave').textContent = item ? 'SALVAR ALTERAÇÃO' : 'ADICIONAR ITEM';
+    el('btnAopItemToggle').hidden = !item;
+    el('btnAopItemToggle').textContent = item && !item.active ? 'ATIVAR ITEM' : 'DESATIVAR ITEM';
     el('aopItemStatus').textContent = '';
+    el('btnAopItemNew').hidden = true;
+    el('aopItemForm').hidden = false;
+    el('aopItemText').focus();
   }
   el('btnAopItems') && el('btnAopItems').addEventListener('click', async () => {
-    el('aopItemsList').innerHTML = '<p class="os-muted">Carregando…</p>';
+    aopCloseItemForm();
+    el('aopItemsList').innerHTML = '<p class="os-muted">CARREGANDO…</p>';
     el('aopItemsDialog').showModal();
-    try{ await loadAopItems(); aopResetItemForm(); }
+    try{ await loadAopItems(); }
     catch(error){ el('aopItemsList').innerHTML = '<p class="os-muted">'+escapeHtml(error.message)+'</p>'; }
   });
-  el('btnAopItemCancel') && el('btnAopItemCancel').addEventListener('click', aopResetItemForm);
+  el('btnAopItemNew') && el('btnAopItemNew').addEventListener('click', () => aopOpenItemForm(null));
+  el('btnAopItemCancel') && el('btnAopItemCancel').addEventListener('click', aopCloseItemForm);
+  async function aopSaveItem(id, body, message){
+    try{
+      await aopApi(id ? 'PATCH' : 'POST', {kind:'item', id, ...body});
+      showPurchaseToast(message);
+      await loadAopItems();
+      aopCloseItemForm();
+    }catch(error){ el('aopItemStatus').textContent = error.message; }
+  }
   el('aopItemForm') && el('aopItemForm').addEventListener('submit', async event => {
     event.preventDefault();
     const id = el('aopItemId').value;
     const current = id && aopItems.items.find(item => item.id === id);
     const button = el('btnAopItemSave');
     button.disabled = true;
-    try{
-      await aopApi(id ? 'PATCH' : 'POST', {kind:'item', id, section: el('aopItemSection').value, groupName: el('aopItemGroup').value,
-        text: el('aopItemText').value, active: current ? current.active : true});
-      showPurchaseToast(id ? 'Item alterado.' : 'Item adicionado.');
-      await loadAopItems();
-      aopResetItemForm();
-    }catch(error){ el('aopItemStatus').textContent = error.message; }
-    finally{ button.disabled = false; }
+    await aopSaveItem(id, {section: el('aopItemSection').value, groupName: el('aopItemGroup').value,
+      text: el('aopItemText').value, active: current ? current.active : true}, id ? 'Item alterado.' : 'Item adicionado.');
+    button.disabled = false;
   });
-  el('aopItemsList') && el('aopItemsList').addEventListener('click', async event => {
-    const button = event.target.closest('[data-aop-move],[data-aop-edit],[data-aop-toggle]');
-    if(!button || !aopItems) return;
-    const item = aopItems.items.find(row => row.id === (button.dataset.aopItem || button.dataset.aopEdit || button.dataset.aopToggle));
+  el('btnAopItemToggle') && el('btnAopItemToggle').addEventListener('click', async () => {
+    const item = aopItems && aopItems.items.find(row => row.id === el('aopItemId').value);
     if(!item) return;
-    if(button.dataset.aopEdit){
-      el('aopItemId').value = item.id;
-      el('aopItemSection').value = item.section;
-      el('aopItemGroup').value = item.groupName;
-      el('aopItemText').value = item.text;
-      el('btnAopItemSave').textContent = 'SALVAR ALTERAÇÃO';
-      el('btnAopItemCancel').hidden = false;
-      el('aopItemText').focus();
-      return;
-    }
-    try{
-      if(button.dataset.aopToggle){
-        await aopApi('PATCH', {kind:'item', id: item.id, section: item.section, groupName: item.groupName, text: item.text, active: !item.active});
-      }else{
-        // Troca com o vizinho da mesma seção e grava a ordem completa.
-        const order = aopItems.items.slice();
-        const sameSection = order.filter(row => row.section === item.section);
-        const neighbor = sameSection[sameSection.indexOf(item) + Number(button.dataset.aopMove)];
-        if(!neighbor) return;
-        const a = order.indexOf(item), b = order.indexOf(neighbor);
-        [order[a], order[b]] = [order[b], order[a]];
-        await aopApi('PATCH', {kind:'item-order', ids: order.map(row => row.id)});
-      }
-      await loadAopItems();
-    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    await aopSaveItem(item.id, {section: item.section, groupName: item.groupName, text: item.text, active: !item.active},
+      item.active ? 'Item desativado.' : 'Item ativado.');
+  });
+  el('aopItemsList') && el('aopItemsList').addEventListener('toggle', event => {
+    const section = event.target.dataset && event.target.dataset.aopSection;
+    if(section) event.target.open ? aopCollapsed.delete(section) : aopCollapsed.add(section);
+  }, true);
+  el('aopItemsList') && el('aopItemsList').addEventListener('click', async event => {
+    const button = event.target.closest('[data-aop-move],[data-aop-edit]');
+    if(!button || !aopItems) return;
+    const item = aopItems.items.find(row => row.id === (button.dataset.aopItem || button.dataset.aopEdit));
+    if(!item) return;
+    if(button.dataset.aopEdit){ aopOpenItemForm(item); return; }
+    // Troca com o vizinho do mesmo grupo e grava a ordem completa; a lista é
+    // redesenhada no mesmo elemento rolável, então a rolagem fica onde estava.
+    const order = aopItems.items.slice();
+    const siblings = order.filter(row => row.section === item.section && row.groupName === item.groupName);
+    const neighbor = siblings[siblings.indexOf(item) + Number(button.dataset.aopMove)];
+    if(!neighbor) return;
+    const a = order.indexOf(item), b = order.indexOf(neighbor);
+    [order[a], order[b]] = [order[b], order[a]];
+    const list = el('aopItemsList');
+    const scrollTop = list.scrollTop;
+    aopItems.items = order;
+    renderAopItems();
+    list.scrollTop = scrollTop;
+    const again = list.querySelector('[data-aop-move="'+button.dataset.aopMove+'"][data-aop-item="'+CSS.escape(item.id)+'"]');
+    if(again && !again.disabled) again.focus({preventScroll:true});
+    try{ await aopApi('PATCH', {kind:'item-order', ids: order.map(row => row.id)}); }
+    catch(error){ showPurchaseToast(error.message, 'error'); await loadAopItems().catch(() => {}); list.scrollTop = scrollTop; }
   });
   document.querySelectorAll('#aopNewDialog [data-aop-close],#aopItemsDialog [data-aop-close]').forEach(button =>
     button.addEventListener('click', () => { const dialog = button.closest('dialog'); if(dialog.open) dialog.close(); }));
