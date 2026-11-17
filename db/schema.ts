@@ -5390,9 +5390,28 @@ export const fidelizaContacts = pgTable(
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
     deleted: integer("deleted").notNull().default(0),
+    campaignId: text("campaign_id").notNull().default(""),
   },
-  (table) => [index("fideliza_contacts_customer_idx").on(table.companyId, table.customerKey, table.createdAt)],
+  (table) => [
+    index("fideliza_contacts_customer_idx").on(table.companyId, table.customerKey, table.createdAt),
+    index("fideliza_contacts_campaign_idx").on(table.campaignId),
+  ],
 );
+
+// FIDELIZA (0142): campanha = segmento + loja ('' = todas) + mensagem própria + período.
+export const fidelizaCampaigns = pgTable("fideliza_campaigns", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  message: text("message").notNull().default(""),
+  segment: text("segment").notNull().default(""),
+  companyId: text("company_id").notNull().default(""),
+  startsOn: text("starts_on").notNull().default(""),
+  endsOn: text("ends_on").notNull().default(""),
+  createdBy: text("created_by").notNull().default(""),
+  createdByName: text("created_by_name").notNull().default(""),
+  createdAt: text("created_at").notNull().default(sql`now()::text`),
+  deleted: integer("deleted").notNull().default(0),
+});
 
 export const fidelizaImports = pgTable("fideliza_imports", {
   id: text("id").primaryKey(),

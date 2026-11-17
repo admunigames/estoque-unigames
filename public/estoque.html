@@ -9574,6 +9574,7 @@
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="geral">VISÃO GERAL</button>
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-fid-view="clientes">CLIENTES</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="agenda">AGENDA E CONTATOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="campanhas">CAMPANHAS</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="importar" hidden>IMPORTAR RELATÓRIO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-fid-view="config" hidden>CONFIGURAÇÃO</button>
       </div>
@@ -9633,6 +9634,37 @@
         </div></div>
       </div>
 
+      <div id="fidCampanhasView" hidden>
+        <form class="table-panel" id="fidCampForm" novalidate hidden style="padding:14px;margin-bottom:14px;">
+          <h3 class="supply-section-title" style="margin-top:0" id="fidCampFormTitle">NOVA CAMPANHA</h3>
+          <input type="hidden" id="fidCampId">
+          <div class="purchase-form-grid assist-grid-3">
+            <div class="purchase-field"><label for="fidCampTitle">NOME DA CAMPANHA *</label><input id="fidCampTitle" maxlength="120" autocomplete="off"></div>
+            <div class="purchase-field"><label for="fidCampSegment">CLIENTES DA LISTA *</label><select id="fidCampSegment"><option value="inativos">INATIVOS</option><option value="recorrentes">RECORRENTES (2+ COMPRAS)</option><option value="unica">COMPRA ÚNICA</option><option value="">TODOS</option></select></div>
+            <div class="purchase-field"><label for="fidCampStore">LOJA</label><select id="fidCampStore"></select></div>
+            <div class="purchase-field"><label for="fidCampStart">INÍCIO *</label><input id="fidCampStart" type="date"></div>
+            <div class="purchase-field"><label for="fidCampEnd">FIM *</label><input id="fidCampEnd" type="date"></div>
+            <div class="purchase-field full"><label for="fidCampMessage">MENSAGEM DO WHATSAPP * ({NOME} = PRIMEIRO NOME, {LOJA} = LOJA)</label><textarea id="fidCampMessage" rows="3" maxlength="600"></textarea></div>
+          </div>
+          <button class="btn-accent" id="btnFidCampSave" type="submit">SALVAR CAMPANHA</button>
+          <button class="btn-outline" id="btnFidCampCancel" type="button" hidden>CANCELAR EDIÇÃO</button>
+        </form>
+        <div class="table-panel responsive-table"><div class="table-scroll">
+          <table><thead><tr><th>Campanha</th><th>Clientes</th><th>Loja</th><th>Período</th><th>Situação</th><th>Contatados</th><th>Reativados</th><th></th></tr></thead>
+          <tbody id="fidCampBody"></tbody></table>
+        </div></div>
+        <div id="fidCampListBox" hidden style="margin-top:14px;">
+          <h3 class="supply-section-title" id="fidCampListTitle"></h3>
+          <p class="purchase-field-help" id="fidCampListMessage"></p>
+          <div class="supply-dashboard-grid gd-summary" id="fidCampListSummary"></div>
+          <div class="table-panel responsive-table"><div class="table-scroll">
+            <table><thead><tr><th>Cliente</th><th>Telefone (WhatsApp)</th><th>Compras</th><th>Última</th><th>Contato nesta campanha</th><th></th></tr></thead>
+            <tbody id="fidCampListBody"></tbody></table>
+          </div></div>
+          <p class="purchase-field-help" id="fidCampListNote"></p>
+        </div>
+      </div>
+
       <div id="fidImportarView" hidden>
         <form class="table-panel" id="fidImportForm" novalidate style="padding:14px;margin-bottom:14px;">
           <h3 class="supply-section-title" style="margin-top:0">IMPORTAR RELATÓRIO DE PDV</h3>
@@ -9646,7 +9678,7 @@
         </form>
         <h3 class="supply-section-title">IMPORTAÇÕES</h3>
         <div class="table-panel responsive-table"><div class="table-scroll">
-          <table><thead><tr><th>Quando</th><th>Loja</th><th>Período</th><th>Vendas no arquivo</th><th>De clientes</th><th>Novas</th><th>Apagadas (histórico)</th><th>Por</th></tr></thead>
+          <table><thead><tr><th>Quando</th><th>Loja</th><th>Período</th><th>Vendas no arquivo</th><th>De clientes</th><th>Novas</th><th>Apagadas (histórico)</th><th>Por</th><th></th></tr></thead>
           <tbody id="fidImportsBody"></tbody></table>
         </div></div>
       </div>
@@ -10947,6 +10979,7 @@
     <div id="fidClientInfo"></div>
     <form id="fidContactForm" novalidate hidden>
       <h3 class="supply-section-title">REGISTRAR CONTATO</h3>
+      <p class="purchase-field-help" id="fidContactCampaignInfo" hidden></p>
       <div class="purchase-form-grid">
         <div class="purchase-field"><label for="fidContactResult">RESULTADO *</label><select id="fidContactResult"></select></div>
         <div class="purchase-field" id="fidContactDateField" hidden><label for="fidContactDate">DATA DO RETORNO *</label><input id="fidContactDate" type="date"></div>
@@ -32309,19 +32342,23 @@ function renderHomeTasks(){
   // com loja só recebe a própria; o front só reflete (can/stores).
   const FID_API = '/api/fideliza';
   let fidHome = null, fidView = '', fidClients = null, fidClientKey = '', fidSearchTimer = 0, fidImportText = '';
+  let fidCampaignId = '', fidContactCampaign = '';
+  const FID_SEGMENTS = {'':'TODOS', recorrentes:'RECORRENTES (2+ COMPRAS)', unica:'COMPRA ÚNICA', inativos:'INATIVOS'};
+  const fidCampaign = id => ((fidHome && fidHome.campaigns) || []).find(campaign => campaign.id === id);
+  const fidCampaignStatus = campaign => campaign.startsOn > fidHome.today ? 'AGENDADA' : campaign.endsOn < fidHome.today ? 'ENCERRADA' : 'ATIVA';
 
   const fidStoreId = () => el('fidStore').value;
   const fidStoreName = () => ((fidHome && fidHome.stores.find(store => store.id === fidStoreId())) || {}).name || '';
   const fidResult = key => (fidHome && fidHome.results[key]) || key;
   const fidPhone = key => key.length === 11 ? '('+key.slice(0,2)+') '+key.slice(2,7)+'-'+key.slice(7) : '('+key.slice(0,2)+') '+key.slice(2,6)+'-'+key.slice(6);
 
-  function fidWhatsLink(key, name){
+  function fidWhatsLink(key, name, message){
     const first = String(name || '').trim().split(/\s+/)[0] || '';
-    const text = String(fidHome.settings.message || '').replace(/\{NOME\}/gi, first).replace(/\{LOJA\}/gi, fidStoreName());
+    const text = String(message || fidHome.settings.message || '').replace(/\{NOME\}/gi, first).replace(/\{LOJA\}/gi, fidStoreName());
     return 'https://wa.me/55'+encodeURIComponent(key)+'?text='+encodeURIComponent(text);
   }
   // O número do cliente é o próprio link do WhatsApp (pedido de 14/11/2026).
-  const fidPhoneLink = (key, name) => '<a class="fid-phone" target="_blank" rel="noopener noreferrer" title="ABRIR NO WHATSAPP" href="'+escapeHtml(fidWhatsLink(key, name))+'">'+escapeHtml(fidPhone(key))+'</a>';
+  const fidPhoneLink = (key, name, message) => '<a class="fid-phone" target="_blank" rel="noopener noreferrer" title="ABRIR NO WHATSAPP" href="'+escapeHtml(fidWhatsLink(key, name, message))+'">'+escapeHtml(fidPhone(key))+'</a>';
 
   async function loadFidelizaPage(){
     try{
@@ -32338,6 +32375,9 @@ function renderHomeTasks(){
       el('fidCfgInactive').value = fidHome.settings.inactiveDays;
       el('fidCfgHistory').value = fidHome.settings.historyMonths;
       el('fidExportForm').hidden = !fidHome.can.export;
+      el('fidCampForm').hidden = !fidHome.can.manage;
+      el('fidCampStore').innerHTML = (canActAcrossStores('fideliza:manage') ? '<option value="">TODAS AS LOJAS</option>' : '')+fidHome.stores.map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(store.name)+'</option>').join('');
+      if(!el('fidCampId').value && !el('fidCampTitle').value) resetFidCampForm();
       el('fidExportStore').innerHTML = (fidHome.stores.length > 1 ? '<option value="">TODAS</option>' : '')+fidHome.stores.map(store => '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(store.name)+'</option>').join('');
       if(!el('fidExportFrom').value){ el('fidExportTo').value = todayDateKeyRecife(); el('fidExportFrom').value = todayDateKeyRecife().slice(0, 8)+'01'; }
       // Gestão (várias lojas) abre na Visão Geral; a loja abre nos clientes.
@@ -32363,6 +32403,7 @@ function renderHomeTasks(){
     });
     el('fidGeralView').hidden = fidView !== 'geral';
     el('fidStoreBar').hidden = fidView === 'geral' || fidView === 'importar' || fidView === 'config';
+    el('fidCampanhasView').hidden = fidView !== 'campanhas';
     el('fidClientesView').hidden = fidView !== 'clientes';
     el('fidAgendaView').hidden = fidView !== 'agenda';
     el('fidImportarView').hidden = fidView !== 'importar';
@@ -32370,6 +32411,58 @@ function renderHomeTasks(){
     if(fidView === 'geral') loadFidOverview();
     if(fidView === 'clientes') loadFidClients();
     if(fidView === 'agenda') loadFidAgenda();
+    if(fidView === 'campanhas') renderFidCampaigns();
+  }
+
+  // ----- Campanhas: lista filtrada (segmento + loja) com mensagem própria.
+  function renderFidCampaigns(){
+    const rows = fidHome.campaigns || [];
+    const storeLabel = id => id ? (((fidHome.stores.find(store => store.id === id)) || {}).name || '—') : 'TODAS';
+    el('fidCampBody').innerHTML = rows.length ? rows.map(campaign => {
+      const id = escapeHtml(campaign.id), status = fidCampaignStatus(campaign);
+      return '<tr><td data-label="Campanha"><strong>'+escapeHtml(campaign.title)+'</strong><small class="os-update-meta">'+escapeHtml(campaign.message)+'</small></td>'+
+        '<td data-label="Clientes">'+escapeHtml(FID_SEGMENTS[campaign.segment] || campaign.segment)+'</td><td data-label="Loja">'+escapeHtml(storeLabel(campaign.companyId))+'</td>'+
+        '<td data-label="Período">'+escapeHtml(gdDateLabel(campaign.startsOn)+' A '+gdDateLabel(campaign.endsOn))+'</td>'+
+        '<td data-label="Situação">'+(status === 'ATIVA' ? '<strong>ATIVA</strong>' : status)+'</td>'+
+        '<td data-label="Contatados">'+campaign.contacted+'</td><td data-label="Reativados">'+campaign.reactivated+'</td>'+
+        '<td style="white-space:nowrap"><button class="btn-accent btn-sm" type="button" data-fid-camp-list="'+id+'">ABRIR LISTA</button>'+
+        (fidHome.can.manage ? ' <button class="btn-outline btn-sm" type="button" data-fid-camp-edit="'+id+'">EDITAR</button> <button class="btn-outline btn-sm" type="button" data-fid-camp-del="'+id+'">EXCLUIR</button>' : '')+'</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="responsive-empty">NENHUMA CAMPANHA'+(fidHome.can.manage ? ' — CRIE A PRIMEIRA ACIMA.' : '.')+'</td></tr>';
+    if(fidCampaignId && fidCampaign(fidCampaignId)) loadFidCampaignList(); else { fidCampaignId = ''; el('fidCampListBox').hidden = true; }
+  }
+
+  async function loadFidCampaignList(){
+    const campaign = fidCampaign(fidCampaignId);
+    if(!campaign || !fidStoreId()) return;
+    try{
+      const data = await invApi('GET', null, '?view=clients&companyId='+encodeURIComponent(fidStoreId())+'&campaignId='+encodeURIComponent(campaign.id), FID_API);
+      const status = fidCampaignStatus(campaign), done = data.clients.filter(client => client.campaignContact).length;
+      el('fidCampListBox').hidden = false;
+      el('fidCampListTitle').textContent = 'LISTA: '+campaign.title+' · '+fidStoreName()+' · '+status;
+      el('fidCampListMessage').textContent = 'MENSAGEM: '+campaign.message;
+      el('fidCampListSummary').innerHTML =
+        '<article class="supply-dashboard-card"><span>CLIENTES NA LISTA</span><strong>'+data.clients.length+(data.truncated ? '+' : '')+'</strong><small>'+escapeHtml(FID_SEGMENTS[campaign.segment] || '')+'</small></article>'+
+        '<article class="supply-dashboard-card'+(done < data.clients.length ? ' warning' : '')+'"><span>FALTAM CONTATAR</span><strong>'+(data.clients.length - done)+'</strong><small>'+done+' JÁ CONTATADOS NESTA CAMPANHA</small></article>';
+      el('fidCampListBody').innerHTML = data.clients.length ? data.clients.map(client => {
+        const contact = client.campaignContact;
+        return '<tr><td data-label="Cliente"><strong>'+escapeHtml(client.name)+'</strong></td>'+
+          '<td data-label="Telefone (WhatsApp)">'+fidPhoneLink(client.key, client.name, campaign.message)+'</td>'+
+          '<td data-label="Compras">'+client.purchases+'</td><td data-label="Última">'+escapeHtml(gdDateLabel(client.lastDate))+'</td>'+
+          '<td data-label="Contato nesta campanha">'+(contact ? fidContactLabel(contact) : '<span class="os-update-meta">PENDENTE</span>')+'</td>'+
+          '<td><button class="btn-accent btn-sm" type="button" data-fid-open="'+escapeHtml(client.key)+'" data-fid-campaign="'+escapeHtml(campaign.id)+'">'+(fidHome.can.contact ? 'CONTATO' : 'VER')+'</button></td></tr>';
+      }).join('') : '<tr><td colspan="6" class="responsive-empty">NENHUM CLIENTE DESTA LOJA ENTRA NESTA CAMPANHA.</td></tr>';
+      el('fidCampListNote').textContent = data.truncated ? 'MOSTRANDO OS PRIMEIROS '+data.clients.length+' CLIENTES DA LISTA.' : '';
+      el('fidCampListBox').scrollIntoView({behavior:'smooth', block:'start'});
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  }
+
+  function resetFidCampForm(){
+    el('fidCampForm').reset();
+    el('fidCampId').value = '';
+    el('fidCampFormTitle').textContent = 'NOVA CAMPANHA';
+    el('btnFidCampCancel').hidden = true;
+    el('fidCampStart').value = fidHome.today;
+    el('fidCampMessage').value = fidHome.settings.message || '';
   }
 
   async function loadFidOverview(){
@@ -32458,20 +32551,27 @@ function renderHomeTasks(){
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   }
 
-  async function openFidClient(key){
+  async function openFidClient(key, campaignId){
     try{
       const data = await invApi('GET', null, '?view=client&companyId='+encodeURIComponent(fidStoreId())+'&key='+encodeURIComponent(key), FID_API);
       fidClientKey = key;
       const name = data.sales[0].customerName;
+      const campaign = fidCampaign(campaignId || '');
+      // Contato pela lista da campanha conta para ela (só enquanto ATIVA).
+      fidContactCampaign = campaign && fidCampaignStatus(campaign) === 'ATIVA' ? campaign.id : '';
+      el('fidContactCampaignInfo').hidden = !fidContactCampaign;
+      el('fidContactCampaignInfo').textContent = campaign ? 'ESTE CONTATO CONTA PARA A CAMPANHA: '+campaign.title : '';
       el('fidClientDialogTitle').textContent = name;
       el('fidClientInfo').innerHTML = '<p>'+escapeHtml(fidStoreName())+' · '+data.sales.length+' COMPRA(S) · ÚLTIMA EM '+escapeHtml(gdDateLabel(data.sales[0].saleDate))+'</p>'+
-        '<p>WHATSAPP: '+fidPhoneLink(key, name)+'</p>';
+        '<p>WHATSAPP: '+fidPhoneLink(key, name, campaign && campaign.message)+'</p>';
       el('fidContactForm').hidden = !fidHome.can.contact;
       el('fidContactForm').reset();
       el('fidContactDateField').hidden = true;
       el('fidContactDate').min = todayDateKeyRecife();
       el('fidClientContacts').innerHTML = data.contacts.length ? '<ul>'+data.contacts.map(contact =>
         '<li><strong>'+escapeHtml(fidResult(contact.result))+'</strong>'+(contact.scheduledFor ? ' · RETORNO '+escapeHtml(gdDateLabel(contact.scheduledFor)) : '')+(contact.note ? ' — '+escapeHtml(contact.note) : '')+
+        (contact.campaignTitle ? ' · CAMPANHA '+escapeHtml(contact.campaignTitle) : '')+
+        ((fidHome.can.manage || (fidHome.can.contact && contact.createdBy === fidHome.userId)) ? ' <button class="btn-outline btn-sm" type="button" data-fid-del-contact="'+escapeHtml(contact.id)+'">EXCLUIR</button>' : '')+
         '<small class="os-update-meta">'+escapeHtml((formatDateTimeBR(contact.createdAt) || '')+' · '+contact.createdByName)+'</small></li>').join('')+'</ul>'
         : '<p class="purchase-field-help">NENHUM CONTATO REGISTRADO.</p>';
       el('fidClientSales').innerHTML = '<ul>'+data.sales.map(sale =>
@@ -32487,8 +32587,9 @@ function renderHomeTasks(){
       '<tr><td data-label="Quando">'+escapeHtml(formatDateTimeBR(item.createdAt) || '')+'</td><td data-label="Loja">'+escapeHtml(item.companyName)+'</td>'+
       '<td data-label="Período">'+escapeHtml(gdDateLabel(item.periodStart)+' A '+gdDateLabel(item.periodEnd))+'</td>'+
       '<td data-label="Vendas no arquivo">'+item.salesTotal+'</td><td data-label="De clientes">'+item.salesKept+'</td><td data-label="Novas">'+item.salesNew+'</td>'+
-      '<td data-label="Apagadas (histórico)">'+item.salesPurged+'</td><td data-label="Por">'+escapeHtml(item.createdByName)+'</td></tr>').join('')
-      : '<tr><td colspan="8" class="responsive-empty">NENHUMA IMPORTAÇÃO AINDA.</td></tr>';
+      '<td data-label="Apagadas (histórico)">'+item.salesPurged+'</td><td data-label="Por">'+escapeHtml(item.createdByName)+'</td>'+
+      '<td>'+(fidHome.can.manage ? '<button class="btn-outline btn-sm" type="button" data-fid-del-import="'+escapeHtml(item.id)+'" data-new="'+item.salesNew+'">EXCLUIR</button>' : '')+'</td></tr>').join('')
+      : '<tr><td colspan="9" class="responsive-empty">NENHUMA IMPORTAÇÃO AINDA.</td></tr>';
   }
 
   async function fidReadFile(file){
@@ -32553,12 +32654,12 @@ function renderHomeTasks(){
     }catch(error){ showPurchaseToast(error.message, 'error'); }
     finally{ button.disabled = false; }
   });
-  el('fidStore') && el('fidStore').addEventListener('change', () => setFidView(fidView));
+  el('fidStore') && el('fidStore').addEventListener('change', () => setFidView(fidView));  // campanhas: recarrega a lista aberta
   el('fidSegment') && el('fidSegment').addEventListener('change', loadFidClients);
   el('fidSearch') && el('fidSearch').addEventListener('input', () => { clearTimeout(fidSearchTimer); fidSearchTimer = setTimeout(loadFidClients, 350); });
   document.addEventListener('click', event => {
     const open = event.target.closest('[data-fid-open]');
-    if(open) openFidClient(open.dataset.fidOpen);
+    if(open) openFidClient(open.dataset.fidOpen, open.dataset.fidCampaign || '');
   });
   el('btnCloseFidClientDialog') && el('btnCloseFidClientDialog').addEventListener('click', () => el('fidClientDialog').close());
   el('fidContactResult') && el('fidContactResult').addEventListener('change', () => {
@@ -32570,10 +32671,81 @@ function renderHomeTasks(){
     button.disabled = true;
     try{
       await invApi('POST', {action:'contact', companyId: fidStoreId(), customerKey: fidClientKey, result: el('fidContactResult').value,
-        scheduledFor: el('fidContactDate').value, note: el('fidContactNote').value}, '', FID_API);
+        scheduledFor: el('fidContactDate').value, note: el('fidContactNote').value, campaignId: fidContactCampaign}, '', FID_API);
       showPurchaseToast('CONTATO REGISTRADO.');
-      await openFidClient(fidClientKey);
-      if(fidView === 'agenda') loadFidAgenda(); else loadFidClients();
+      await fidAfterContactChange();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+    finally{ button.disabled = false; }
+  });
+  async function fidAfterContactChange(){
+    await openFidClient(fidClientKey, fidContactCampaign);
+    if(fidView === 'agenda') return loadFidAgenda();
+    if(fidView === 'campanhas'){
+      fidHome = await invApi('GET', null, '', FID_API);  // contadores das campanhas
+      return renderFidCampaigns();
+    }
+    return loadFidClients();
+  }
+  el('fidClientContacts') && el('fidClientContacts').addEventListener('click', async event => {
+    const button = event.target.closest('[data-fid-del-contact]');
+    if(!button || !await askConfirm('EXCLUIR ESTE CONTATO REGISTRADO?', {okText:'EXCLUIR', danger:true})) return;
+    try{
+      await invApi('DELETE', {kind:'contact', id: button.dataset.fidDelContact}, '', FID_API);
+      showPurchaseToast('CONTATO EXCLUÍDO.');
+      await fidAfterContactChange();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('fidImportsBody') && el('fidImportsBody').addEventListener('click', async event => {
+    const button = event.target.closest('[data-fid-del-import]');
+    if(!button) return;
+    if(!await askConfirm('EXCLUIR ESTA IMPORTAÇÃO? AS '+button.dataset.new+' VENDAS QUE ENTRARAM POR ELA SERÃO APAGADAS (AS JÁ IMPORTADAS ANTES CONTINUAM). NÃO DÁ PARA DESFAZER — SÓ IMPORTANDO O ARQUIVO DE NOVO.', {okText:'EXCLUIR', danger:true})) return;
+    try{
+      const done = await invApi('DELETE', {kind:'import', id: button.dataset.fidDelImport}, '', FID_API);
+      showPurchaseToast('IMPORTAÇÃO EXCLUÍDA ('+done.removed+' VENDAS).');
+      await loadFidelizaPage();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('fidCampBody') && el('fidCampBody').addEventListener('click', async event => {
+    const list = event.target.closest('[data-fid-camp-list]'), edit = event.target.closest('[data-fid-camp-edit]'), del = event.target.closest('[data-fid-camp-del]');
+    if(list){
+      const campaign = fidCampaign(list.dataset.fidCampList);
+      if(campaign.companyId && fidHome.stores.some(store => store.id === campaign.companyId)) el('fidStore').value = campaign.companyId;
+      fidCampaignId = campaign.id;
+      return loadFidCampaignList();
+    }
+    if(edit){
+      const campaign = fidCampaign(edit.dataset.fidCampEdit);
+      el('fidCampId').value = campaign.id;
+      el('fidCampTitle').value = campaign.title;
+      el('fidCampSegment').value = campaign.segment;
+      el('fidCampStore').value = campaign.companyId;
+      el('fidCampStart').value = campaign.startsOn;
+      el('fidCampEnd').value = campaign.endsOn;
+      el('fidCampMessage').value = campaign.message;
+      el('fidCampFormTitle').textContent = 'EDITAR CAMPANHA';
+      el('btnFidCampCancel').hidden = false;
+      return el('fidCampForm').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+    if(del){
+      if(!await askConfirm('EXCLUIR ESTA CAMPANHA? OS CONTATOS JÁ REGISTRADOS CONTINUAM NO HISTÓRICO DOS CLIENTES.', {okText:'EXCLUIR', danger:true})) return;
+      try{
+        await invApi('DELETE', {kind:'campaign', id: del.dataset.fidCampDel}, '', FID_API);
+        showPurchaseToast('CAMPANHA EXCLUÍDA.');
+        await loadFidelizaPage();
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }
+  });
+  el('btnFidCampCancel') && el('btnFidCampCancel').addEventListener('click', resetFidCampForm);
+  el('fidCampForm') && el('fidCampForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = el('btnFidCampSave');
+    button.disabled = true;
+    try{
+      await invApi('POST', {action:'campaign', id: el('fidCampId').value, title: el('fidCampTitle').value, message: el('fidCampMessage').value,
+        segment: el('fidCampSegment').value, companyId: el('fidCampStore').value, startsOn: el('fidCampStart').value, endsOn: el('fidCampEnd').value}, '', FID_API);
+      showPurchaseToast('CAMPANHA SALVA.');
+      resetFidCampForm();
+      await loadFidelizaPage();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
     finally{ button.disabled = false; }
   });

@@ -15,18 +15,23 @@ import { loadStores } from "../inventario/shared";
 //   import     subir o Relatório de PDV (ADM responsável)
 //   all_stores ver todas as lojas (só login SEM loja — access-scope.ts)
 //   export     baixar CSV de clientes/contatos (POST → fica na auditoria)
-//   manage     mensagem do WhatsApp, histórico, inatividade
+//   manage     mensagem do WhatsApp, histórico, inatividade, campanhas,
+//              excluir importação e qualquer contato
 // Login com loja fica SEMPRE na própria loja. Loja de outro escopo responde
 // o mesmo 404 de "não encontrada".
 //   GET                                     → {can, stores, settings, results, imports}
 //   GET ?view=clients&companyId&segment&q   → {summary, clients, truncated}
+//       (&campaignId → segmento da campanha + contato de cada cliente nela)
 //   GET ?view=client&companyId&key          → {sales, contacts}
 //   GET ?view=agenda&companyId              → {pending, recent, today, reactivatedMonth}
 //   GET ?view=overview                      → {stores (do escopo), podium (todas, só contagens)}
 //   POST {action:"import", companyId, fileName, text, preview}
 //   POST {action:"contact", companyId, customerKey, result, note, scheduledFor}
 //   POST {action:"export", kind:"clientes"|"contatos", companyId ('' = todas do escopo), segment, q, from, to} → CSV
+//   POST {action:"campaign", id?, title, message, segment, companyId ('' = todas), startsOn, endsOn}  (manage)
 //   PUT  {message, inactiveDays, historyMonths}   (manage)
+//   DELETE {kind:"import"|"contact"|"campaign", id}
+//          import/campaign: manage · contact: quem registrou (com contact) ou manage
 
 type Actor = ReturnType<typeof identity>;
 type Database = Awaited<ReturnType<typeof getD1>>;
@@ -36,6 +41,7 @@ const ACTIONS = ["view", "contact", "import", "all_stores", "export", "manage"] 
 const SETTINGS_KEY = "fideliza_settings";
 const NOT_FOUND = "LOJA NÃO ENCONTRADA.";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const SEGMENTS = ["", "recorrentes", "unica", "inativos"];
 const LIST_LIMIT = 300;
 const INSERT_CHUNK = 200;
 
@@ -77,6 +83,21 @@ const storeName = (store: Store) => String(store.name).toLocaleUpperCase("pt-BR"
 const placeholders = (count: number, from = 1) => Array.from({ length: count }, (_, index) => `?${index + from}`).join(",");
 
 type ClientRow = { companyId: string; key: string; name: string; purchases: number; firstDate: string; lastDate: string; totalCents: number };
+type Campaign = {
+  id: string; title: string; message: string; segment: string; companyId: string;
+  startsOn: string; endsOn: string; createdByName: string; createdAt: string;
+};
+
+async function loadCampaigns(database: Database) {
+  return (await database
+    .prepare(`SELECT id, title, message, segment, company_id AS companyId, starts_on AS startsOn, ends_on AS endsOn,
+      created_by_name AS createdByName, created_at AS createdAt FROM fideliza_campaigns WHERE deleted=0 ORDER BY created_at DESC`)
+    .all<Campaign>()).results;
+}
+/** Campanha de todas as lojas ('') vale para qualquer loja do escopo. */
+const campaignFits = (campaign: Campaign, storeIds: string[]) => !campaign.companyId || storeIds.includes(campaign.companyId);
+const campaignOpen = (campaign: Campaign, today: string) =>
+  (!campaign.startsOn || campaign.startsOn <= today) && (!campaign.endsOn || campaign.endsOn >= today);
 
 // Um cliente por loja + telefone. Os aliases camelCase são referenciados
 // citados ("lastDate") fora da subconsulta — no Postgres o adaptador cita o
@@ -265,8 +286,26 @@ export async function GET(request: Request) {
         .bind(...ids)
         .all()).results
       : [];
+    const storeIds = stores.map((store) => store.id);
+    const campaigns = (await loadCampaigns(database)).filter((campaign) => campaignFits(campaign, storeIds));
+    const tagged = campaigns.length && storeIds.length
+      ? (await database
+        .prepare(`SELECT campaign_id AS campaignId, customer_key AS key, company_id AS companyId, result FROM fideliza_contacts
+          WHERE deleted=0 AND campaign_id <> '' AND company_id IN (${placeholders(storeIds.length)})`)
+        .bind(...storeIds)
+        .all<{ campaignId: string; key: string; companyId: string; result: string }>()).results
+      : [];
     return jsonResponse({
       can: Object.fromEntries(ACTIONS.map((action) => [action, can(actor, action)])),
+      userId: actor.id,
+      campaigns: campaigns.map((campaign) => {
+        const mine = tagged.filter((contact) => contact.campaignId === campaign.id);
+        return {
+          ...campaign,
+          contacted: new Set(mine.map((contact) => `${contact.companyId}:${contact.key}`)).size,
+          reactivated: mine.filter((contact) => contact.result === "cliente_reativado").length,
+        };
+      }),
       stores: stores.map((store) => ({ id: store.id, name: storeName(store) })),
       importStores: can(actor, "import") ? importStores.map((store) => ({ id: store.id, name: storeName(store) })) : [],
       settings: await loadSettings(database),
@@ -289,7 +328,10 @@ export async function GET(request: Request) {
         sum(CASE WHEN "lastDate" < ?2 THEN 1 ELSE 0 END) AS inactive FROM (${groupedClients([store.id])}) AS g`)
       .bind(store.id, cutoff)
       .first<{ clients: number; recurring: number; inactive: number }>();
-    const filter = clientFilter([store.id], url.searchParams.get("segment") || "", url.searchParams.get("q"), cutoff);
+    const campaignId = safeText(url.searchParams.get("campaignId"), 80);
+    const campaign = campaignId ? (await loadCampaigns(database)).find((item) => item.id === campaignId && campaignFits(item, [store.id])) : undefined;
+    if (campaignId && !campaign) return jsonResponse({ error: "CAMPANHA NÃO ENCONTRADA." }, 404);
+    const filter = clientFilter([store.id], campaign ? campaign.segment : url.searchParams.get("segment") || "", url.searchParams.get("q"), cutoff);
     const { results } = await database
       .prepare(`${filter.sql} LIMIT ${LIST_LIMIT + 1}`)
       .bind(...filter.params)
@@ -297,19 +339,27 @@ export async function GET(request: Request) {
     const clients = results.slice(0, LIST_LIMIT);
     const keys = clients.map((client) => client.key);
     const last = new Map<string, Record<string, unknown>>();
+    const inCampaign = new Map<string, Record<string, unknown>>();
     if (keys.length) {
       const contacts = await database
-        .prepare(`SELECT customer_key AS key, result, scheduled_for AS scheduledFor, created_by_name AS createdByName, created_at AS createdAt
-          FROM fideliza_contacts WHERE company_id=?1 AND deleted=0 AND customer_key IN (${keys.map((_, index) => `?${index + 2}`).join(",")})
+        .prepare(`SELECT customer_key AS key, result, scheduled_for AS scheduledFor, created_by_name AS createdByName, created_at AS createdAt,
+          campaign_id AS campaignId
+          FROM fideliza_contacts WHERE company_id=?1 AND deleted=0 AND customer_key IN (${placeholders(keys.length, 2)})
           ORDER BY created_at`)
         .bind(store.id, ...keys)
-        .all<{ key: string }>();
-      for (const contact of contacts.results) last.set(contact.key, contact);
+        .all<{ key: string; campaignId: string }>();
+      for (const contact of contacts.results) {
+        last.set(contact.key, contact);
+        if (campaign && contact.campaignId === campaign.id) inCampaign.set(contact.key, contact);
+      }
     }
     return jsonResponse({
       summary: { clients: Number(summary?.clients) || 0, recurring: Number(summary?.recurring) || 0, inactive: Number(summary?.inactive) || 0 },
       cutoff,
-      clients: clients.map((client) => ({ ...client, purchases: Number(client.purchases), totalCents: Number(client.totalCents), lastContact: last.get(client.key) || null })),
+      clients: clients.map((client) => ({
+        ...client, purchases: Number(client.purchases), totalCents: Number(client.totalCents),
+        lastContact: last.get(client.key) || null, campaignContact: inCampaign.get(client.key) || null,
+      })),
       truncated: results.length > LIST_LIMIT,
     });
   }
@@ -323,8 +373,10 @@ export async function GET(request: Request) {
         .bind(store.id, key)
         .all<{ itemsJson: string }>(),
       await database
-        .prepare(`SELECT id, result, note, scheduled_for AS scheduledFor, created_by_name AS createdByName, created_at AS createdAt
-          FROM fideliza_contacts WHERE company_id=?1 AND customer_key=?2 AND deleted=0 ORDER BY created_at DESC LIMIT 200`)
+        .prepare(`SELECT c.id, c.result, c.note, c.scheduled_for AS scheduledFor, c.created_by AS createdBy, c.created_by_name AS createdByName,
+          c.created_at AS createdAt, COALESCE(k.title, '') AS campaignTitle
+          FROM fideliza_contacts c LEFT JOIN fideliza_campaigns k ON k.id = c.campaign_id
+          WHERE c.company_id=?1 AND c.customer_key=?2 AND c.deleted=0 ORDER BY c.created_at DESC LIMIT 200`)
         .bind(store.id, key)
         .all(),
     ];
@@ -442,21 +494,68 @@ async function registerContact(actor: Actor, database: Database, payload: Record
     .bind(store.id, key)
     .first<{ name: string | null }>();
   if (!customer?.name) return jsonResponse({ error: "CLIENTE NÃO ENCONTRADO." }, 404);
+  // Contato feito pela lista da campanha: só enquanto ela está no período.
+  const campaignId = safeText(payload.campaignId, 80);
+  if (campaignId) {
+    const campaign = (await loadCampaigns(database)).find((item) => item.id === campaignId && campaignFits(item, [store.id]));
+    if (!campaign) return jsonResponse({ error: "CAMPANHA NÃO ENCONTRADA." }, 404);
+    if (!campaignOpen(campaign, recifeDate())) return jsonResponse({ error: "ESTA CAMPANHA ESTÁ FORA DO PERÍODO." }, 409);
+  }
   const id = crypto.randomUUID();
   await database
-    .prepare(`INSERT INTO fideliza_contacts (id, company_id, customer_key, customer_name, result, note, scheduled_for, created_by, created_by_name, created_at)
-      VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)`)
-    .bind(id, store.id, key, customer.name, result, safeText(payload.note, 500), scheduledFor, actor.id, actor.displayName || actor.id, new Date().toISOString())
+    .prepare(`INSERT INTO fideliza_contacts (id, company_id, customer_key, customer_name, result, note, scheduled_for, created_by, created_by_name, created_at, campaign_id)
+      VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)`)
+    .bind(id, store.id, key, customer.name, result, safeText(payload.note, 500), scheduledFor, actor.id, actor.displayName || actor.id, new Date().toISOString(), campaignId)
     .run();
   return jsonResponse({ id }, 201);
 }
 
+/** Lojas em que o GERENCIAR vale (login com loja → só a própria). */
+const manageStores = async (actor: Actor, database: Database) => storesFor(actor, await loadStores(database), "fideliza:manage");
+
+async function saveCampaign(actor: Actor, database: Database, payload: Record<string, unknown>) {
+  const stores = await manageStores(actor, database);
+  const companyId = safeText(payload.companyId, 80);
+  // "Todas as lojas" só para quem gerencia sem loja vinculada (ou admin).
+  if (companyId ? !stores.some((store) => store.id === companyId) : !canSeeAllStores(actor, "fideliza:manage")) {
+    return jsonResponse({ error: NOT_FOUND }, 404);
+  }
+  const title = safeText(payload.title, 120);
+  const message = safeText(payload.message, 600);
+  const segment = safeText(payload.segment, 20);
+  const startsOn = safeText(payload.startsOn, 10);
+  const endsOn = safeText(payload.endsOn, 10);
+  if (!title) return jsonResponse({ error: "INFORME O NOME DA CAMPANHA." }, 400);
+  if (!message) return jsonResponse({ error: "INFORME A MENSAGEM DO WHATSAPP DA CAMPANHA." }, 400);
+  if (!SEGMENTS.includes(segment)) return jsonResponse({ error: "SELECIONE QUAIS CLIENTES ENTRAM NA CAMPANHA." }, 400);
+  if (!DATE.test(startsOn) || !DATE.test(endsOn) || endsOn < startsOn) return jsonResponse({ error: "INFORME O PERÍODO DA CAMPANHA (INÍCIO ATÉ FIM)." }, 400);
+  const id = safeText(payload.id, 80);
+  if (id) {
+    const existing = (await loadCampaigns(database)).find((item) => item.id === id);
+    if (!existing || (existing.companyId ? !stores.some((store) => store.id === existing.companyId) : !canSeeAllStores(actor, "fideliza:manage"))) {
+      return jsonResponse({ error: "CAMPANHA NÃO ENCONTRADA." }, 404);
+    }
+    await database
+      .prepare("UPDATE fideliza_campaigns SET title=?2, message=?3, segment=?4, company_id=?5, starts_on=?6, ends_on=?7 WHERE id=?1")
+      .bind(id, title, message, segment, companyId, startsOn, endsOn)
+      .run();
+    return jsonResponse({ id });
+  }
+  const newId = crypto.randomUUID();
+  await database
+    .prepare(`INSERT INTO fideliza_campaigns (id, title, message, segment, company_id, starts_on, ends_on, created_by, created_by_name, created_at)
+      VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)`)
+    .bind(newId, title, message, segment, companyId, startsOn, endsOn, actor.id, actor.displayName || actor.id, new Date().toISOString())
+    .run();
+  return jsonResponse({ id: newId }, 201);
+}
+
 export async function POST(request: Request) {
   const payload = await body(request);
-  const handlers = { import: importReport, contact: registerContact, export: exportCsv } as const;
+  const handlers = { import: importReport, contact: registerContact, export: exportCsv, campaign: saveCampaign } as const;
   const action = String(payload.action) as keyof typeof handlers;
   if (!Object.hasOwn(handlers, action)) return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
-  const checked = guard(request, action);
+  const checked = guard(request, action === "campaign" ? "manage" : action);
   if ("error" in checked) return checked.error;
   return handlers[action](checked.actor, await getD1(), payload);
 }
@@ -478,4 +577,53 @@ export async function PUT(request: Request) {
     .bind(SETTINGS_KEY, JSON.stringify({ inactiveDays, historyMonths, message }), new Date().toISOString())
     .run();
   return jsonResponse({ ok: true });
+}
+
+export async function DELETE(request: Request) {
+  const payload = await body(request);
+  const kind = safeText(payload.kind, 20);
+  const id = safeText(payload.id, 80);
+  const checked = guard(request, kind === "contact" ? "view" : "manage");
+  if ("error" in checked) return checked.error;
+  const { actor } = checked;
+  const database = await getD1();
+
+  if (kind === "contact") {
+    const contact = await database
+      .prepare("SELECT company_id AS companyId, created_by AS createdBy, result FROM fideliza_contacts WHERE id=?1 AND deleted=0")
+      .bind(id)
+      .first<{ companyId: string; createdBy: string; result: ContactResult }>();
+    const inScope = contact && viewStores(actor, await loadStores(database)).some((store) => store.id === contact.companyId);
+    if (!contact || !inScope) return jsonResponse({ error: "CONTATO NÃO ENCONTRADO." }, 404);
+    const own = contact.createdBy === actor.id && can(actor, "contact");
+    if (!own && !can(actor, "manage")) return jsonResponse({ error: "SÓ QUEM REGISTROU (OU QUEM GERENCIA) PODE EXCLUIR ESTE CONTATO." }, 403);
+    await database.prepare("UPDATE fideliza_contacts SET deleted=1 WHERE id=?1").bind(id).run();
+    return jsonResponse({ ok: true, description: `CONTATO EXCLUÍDO (${CONTACT_RESULTS[contact.result] || contact.result})` });
+  }
+
+  const stores = await manageStores(actor, database);
+  if (kind === "import") {
+    const row = await database
+      .prepare("SELECT company_id AS companyId, company_name AS companyName, period_start AS periodStart, period_end AS periodEnd FROM fideliza_imports WHERE id=?1")
+      .bind(id)
+      .first<{ companyId: string; companyName: string; periodStart: string; periodEnd: string }>();
+    if (!row || !stores.some((store) => store.id === row.companyId)) return jsonResponse({ error: "IMPORTAÇÃO NÃO ENCONTRADA." }, 404);
+    const removed = Number((await database.prepare("SELECT count(*) AS total FROM fideliza_sales WHERE import_id=?1").bind(id).first<{ total: number }>())?.total) || 0;
+    // Só saem as vendas que ENTRARAM por esta importação (as que já existiam
+    // de uma importação anterior continuam com a importação original).
+    await database.batch([
+      database.prepare("DELETE FROM fideliza_sales WHERE import_id=?1 AND company_id=?2").bind(id, row.companyId),
+      database.prepare("DELETE FROM fideliza_imports WHERE id=?1").bind(id),
+    ]);
+    return jsonResponse({ ok: true, removed, description: `IMPORTAÇÃO ${row.companyName} ${row.periodStart} A ${row.periodEnd} (${removed} VENDAS)` });
+  }
+
+  if (kind === "campaign") {
+    const campaign = (await loadCampaigns(database)).find((item) => item.id === id);
+    const allowed = campaign && (campaign.companyId ? stores.some((store) => store.id === campaign.companyId) : canSeeAllStores(actor, "fideliza:manage"));
+    if (!campaign || !allowed) return jsonResponse({ error: "CAMPANHA NÃO ENCONTRADA." }, 404);
+    await database.prepare("UPDATE fideliza_campaigns SET deleted=1 WHERE id=?1").bind(id).run();
+    return jsonResponse({ ok: true, description: `CAMPANHA ${campaign.title}` });
+  }
+  return jsonResponse({ error: "AÇÃO INVÁLIDA." }, 400);
 }

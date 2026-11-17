@@ -6,7 +6,7 @@ import { parsePdvReport, phoneKey, matchStore } from "../app/lib/fideliza.ts";
 // Comercial > FIDELIZA: importação do Relatório de PDV (dados fictícios),
 // clientes/recorrência/inativos, contatos e escopo por loja.
 
-const db = await setupRouteDb(["shared_state", "fideliza_sales", "fideliza_contacts", "fideliza_imports"]);
+const db = await setupRouteDb(["shared_state", "fideliza_sales", "fideliza_contacts", "fideliza_imports", "fideliza_campaigns"]);
 const route = await import("../app/api/fideliza/route.ts");
 
 const A = "clojaalfa1";
@@ -156,4 +156,58 @@ test("visão geral: indicadores do escopo + pódio de todas as lojas; exportar C
   const contacts = (await (await call(EXPORT, "POST", { action: "export", kind: "contatos", companyId: A, from: "2000-01-01", to: "2099-12-31" })).text()).trim().split("\r\n");
   assert.equal(contacts.length, 3);
   assert.match(contacts[1], /"RETORNO AGENDADO";"01\/01\/2099";"LIGAR À TARDE";"VENDEDOR A"/);
+});
+
+test("campanhas (lista filtrada + mensagem), excluir contato e excluir importação", async () => {
+  const GERENTE_B = { id: "gb", name: "GERENTE B", companyId: B, permissions: ["fideliza:view", "fideliza:manage"] };
+  const base = { action: "campaign", title: "volta às compras", message: "oi {nome}, volta!", segment: "recorrentes", startsOn: "2000-01-01", endsOn: "2099-12-31" };
+  assert.equal((await call(LOJA_A, "POST", { ...base, companyId: "" })).status, 403);
+  assert.equal((await call(GERENTE_B, "POST", { ...base, companyId: "" })).status, 404);
+  assert.equal((await call(GERENTE_B, "POST", { ...base, companyId: A })).status, 404);
+  assert.equal((await call(ADM, "POST", { ...base, segment: "xx" })).status, 400);
+  assert.equal((await call(ADM, "POST", { ...base, endsOn: "1999-01-01" })).status, 400);
+  const onlyB = await (await call(GERENTE_B, "POST", { ...base, companyId: B, title: "só tacaruna" })).json();
+  const { id } = await (await call(ADM, "POST", { ...base, companyId: "" })).json();
+  const closed = await (await call(ADM, "POST", { ...base, companyId: "", title: "antiga", endsOn: "2000-01-02" })).json();
+
+  const homeA = await (await call(LOJA_A, "GET")).json();
+  assert.deepEqual(homeA.campaigns.map((campaign) => campaign.title).sort(), ["ANTIGA", "VOLTA ÀS COMPRAS"]);
+  assert.equal(homeA.campaigns.find((campaign) => campaign.id === id).message, "OI {NOME}, VOLTA!");
+  assert.equal((await call(LOJA_A, "GET", undefined, `?view=clients&companyId=${A}&campaignId=${onlyB.id}`)).status, 404);
+
+  let list = await (await call(LOJA_A, "GET", undefined, `?view=clients&companyId=${A}&campaignId=${id}`)).json();
+  assert.deepEqual(list.clients.map((client) => client.name), ["MARIA RECORRENTE"]);
+  assert.equal(list.clients[0].campaignContact, null);
+  const contact = { action: "contact", companyId: A, customerKey: "81997772222", result: "respondeu" };
+  assert.equal((await call(LOJA_A, "POST", { ...contact, campaignId: closed.id })).status, 409);
+  assert.equal((await call(LOJA_A, "POST", { ...contact, campaignId: onlyB.id })).status, 404);
+  const created = await (await call(LOJA_A, "POST", { ...contact, campaignId: id })).json();
+  list = await (await call(LOJA_A, "GET", undefined, `?view=clients&companyId=${A}&campaignId=${id}`)).json();
+  assert.equal(list.clients[0].campaignContact.result, "respondeu");
+  assert.equal((await (await call(LOJA_A, "GET")).json()).campaigns.find((campaign) => campaign.id === id).contacted, 1);
+  const detail = await (await call(LOJA_A, "GET", undefined, `?view=client&companyId=${A}&key=81997772222`)).json();
+  assert.equal(detail.contacts[0].campaignTitle, "VOLTA ÀS COMPRAS");
+  assert.equal(detail.contacts[0].createdBy, LOJA_A.id);
+
+  // Excluir contato: outra loja não acha; colega sem ser autor não pode; o autor pode.
+  const COLEGA = { id: "colega", companyId: A, permissions: ["fideliza:view", "fideliza:contact"] };
+  assert.equal((await call(LOJA_B, "DELETE", { kind: "contact", id: created.id })).status, 404);
+  assert.equal((await call(COLEGA, "DELETE", { kind: "contact", id: created.id })).status, 403);
+  const removedContact = await call(LOJA_A, "DELETE", { kind: "contact", id: created.id });
+  assert.equal(removedContact.status, 200);
+  assert.match((await removedContact.json()).description, /RESPONDEU/);
+  assert.equal((await (await call(LOJA_A, "GET")).json()).campaigns.find((campaign) => campaign.id === id).contacted, 0);
+
+  // Excluir importação: só GERENCIAR; saem só as vendas que entraram por ela.
+  const imports = (await (await call(ADM, "GET")).json()).imports;
+  const first = imports.find((item) => item.salesNew > 0);
+  assert.equal((await call(LOJA_A, "DELETE", { kind: "import", id: first.id })).status, 403);
+  assert.equal((await call(GERENTE_B, "DELETE", { kind: "import", id: first.id })).status, 404);
+  const removed = await (await call(ADM, "DELETE", { kind: "import", id: first.id })).json();
+  assert.equal(removed.removed, 2);
+  assert.equal((await (await call(LOJA_A, "GET", undefined, `?view=clients&companyId=${A}`)).json()).summary.clients, 0);
+
+  assert.equal((await call(GERENTE_B, "DELETE", { kind: "campaign", id })).status, 404);
+  assert.equal((await call(ADM, "DELETE", { kind: "campaign", id })).status, 200);
+  assert.equal((await (await call(LOJA_A, "GET")).json()).campaigns.some((campaign) => campaign.id === id), false);
 });
