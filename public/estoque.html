@@ -4352,6 +4352,276 @@
     .assist-doc-table thead{display:table-header-group;}
     .assist-doc-table tr{break-inside:avoid; page-break-inside:avoid;}
   }
+
+  /* ===== BARRA DA MARCA + ABAS SUBLINHADAS (18/11/2026) =====
+     Barra azul fixa em todas as páginas (menos no Início): menu, logo branca com
+     CENTRAL / UNIGAMES, busca do menu (Ctrl+K), tema e usuário. O título da página
+     vai para a esquerda com o caminho em cima; as abas viram texto sublinhado. */
+  .app-bar{display:none;}
+  body:not(.home-active) .app-bar{
+    position:fixed; inset:0 0 auto 0; z-index:880; display:flex; align-items:center; gap:14px;
+    height:calc(64px + env(safe-area-inset-top));
+    padding:env(safe-area-inset-top) calc(16px + env(safe-area-inset-right)) 0 calc(72px + env(safe-area-inset-left));
+    background:var(--app-bar-bg,#14365f); color:#fff; box-shadow:0 1px 0 rgba(0,0,0,.2);
+  }
+  html:not([data-theme="light"]) .app-bar{--app-bar-bg:#0f2747;}
+  body:not(.home-active):not(.menu-open) .menu-toggle{
+    top:calc(10px + env(safe-area-inset-top)); background:transparent; border-color:transparent; box-shadow:none; color:#fff;
+  }
+  body:not(.home-active):not(.menu-open) .menu-toggle:hover{background:rgba(255,255,255,.1);}
+  .app-bar-brand{display:flex; align-items:center; gap:10px; color:#fff; text-decoration:none; flex:none;}
+  .app-bar-mark{height:30px; width:auto; filter:brightness(0) invert(1);}
+  .app-bar-word{display:flex; flex-direction:column; line-height:1;}
+  .app-bar-word small{font:600 9px/1 var(--mono); letter-spacing:.24em; color:#afc3d8;}
+  .app-bar-word b{margin-top:4px; font:800 16px/1 var(--sans); letter-spacing:.2em;}
+  .app-bar-sep{width:1px; height:24px; background:rgba(255,255,255,.18); flex:none;}
+  .app-bar-search svg{width:17px; height:17px; flex:none;}
+  .app-bar-search span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .app-bar-search kbd{font:600 10px/1 var(--mono); border:1px solid currentColor; border-radius:4px; padding:3px 5px; opacity:.8;}
+  .app-bar-spacer{flex:1;}
+  .app-bar .theme-toggle{position:static; flex:none; background:transparent; border-color:rgba(255,255,255,.2); color:#fff; box-shadow:none;}
+  .app-bar-user{display:flex; align-items:center; gap:9px; padding:4px 14px 4px 4px; border:1px solid rgba(255,255,255,.18); border-radius:999px; flex:none; max-width:240px;}
+  .app-bar-avatar{width:30px; height:30px; border-radius:50%; display:grid; place-items:center; flex:none;
+    background:linear-gradient(135deg,#4f86bd,#1d487e); color:#fff; font:700 11px/1 var(--sans);}
+  .app-bar-user-t{display:flex; flex-direction:column; gap:3px; min-width:0; line-height:1.1;}
+  .app-bar-user-t b{font:700 12px/1.1 var(--sans); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .app-bar-user-t small{font:500 10px/1.1 var(--sans); color:#afc3d8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  body:not(.home-active) .content{padding-top:calc(64px + env(safe-area-inset-top));}
+  /* Cabeçalho da página: sem a logo solta, título à esquerda, caminho em cima. */
+  body:not(.home-active) .page-logo{display:none;}
+  body:not(.home-active) .page:not(.home-page) .page-heading{display:flex; justify-content:flex-start; min-height:0; padding:0; margin-bottom:6px;}
+  body:not(.home-active) .page-title{margin:0; text-align:left; font-size:clamp(22px,2.1vw,28px); letter-spacing:-.4px;}
+  body:not(.home-active) .page-header-meta{padding-left:0;}
+  .page-crumbs{display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:0 0 10px; color:var(--ink-faint); font:600 11.5px/1.3 var(--sans); letter-spacing:.04em; text-transform:uppercase;}
+  .page-crumbs a{color:inherit; text-decoration:none;}
+  .page-crumbs a:hover{color:var(--ink);}
+  .page-crumbs .here{color:var(--ink-soft);}
+  .page-crumbs svg{width:12px; height:12px; flex:none;}
+  /* Abas: texto com traço azul embaixo da ativa (modelo LANÇAMENTOS / PROGRAMAÇÃO / CADASTROS). */
+  .supply-tabs,.output-tabs,.mission-tabs,.instruction-tabs{
+    display:flex; flex-wrap:wrap; gap:2px 24px; padding:0; border:0; border-bottom:1px solid var(--border); border-radius:0;
+    background:transparent!important; box-shadow:none;
+  }
+  .supply-tab,.output-tab,.mission-tab,.instruction-tab{
+    flex:none; min-height:0; margin-bottom:-1px; padding:10px 0 11px; border:0; border-bottom:2px solid transparent; border-radius:0;
+    background:transparent!important; box-shadow:none!important; color:var(--ink-faint); font:700 12.5px/1 var(--sans); letter-spacing:.06em;
+  }
+  .supply-tab:hover,.output-tab:hover,.mission-tab:hover,.instruction-tab:hover{color:var(--ink); transform:none;}
+  .supply-tab.active,.output-tab.active,.mission-tab.active,.instruction-tab.active{color:var(--ink)!important; border-bottom-color:var(--accent)!important;}
+  @media(max-width:800px){
+    body:not(.home-active) .app-bar{gap:8px; height:calc(56px + env(safe-area-inset-top)); padding-left:calc(62px + env(safe-area-inset-left)); padding-right:calc(10px + env(safe-area-inset-right));}
+    body:not(.home-active):not(.menu-open) .menu-toggle{top:calc(6px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left));}
+    body:not(.home-active) .content{padding-top:calc(56px + env(safe-area-inset-top));}
+    .app-bar-mark{height:26px;}
+    .app-bar-word b{font-size:14px;}
+    .app-bar-sep,.app-bar-search kbd,.app-bar-user-t{display:none;}
+    .app-bar-spacer{display:none;}
+    .app-bar-user{padding:0; border:0;}
+    body:not(.home-active) .page-header{position:static; margin:0 0 16px; padding:0; border:0; background:none; box-shadow:none; backdrop-filter:none;}
+    body:not(.home-active) .page:not(.home-page) .page-heading{display:block;}
+    body:not(.home-active) .page-title{font-size:clamp(18px,5.4vw,22px);}
+    .supply-tabs,.output-tabs,.mission-tabs,.instruction-tabs{gap:2px 18px;}
+    .supply-tab,.output-tab,.mission-tab,.instruction-tab{flex:none!important; padding-inline:0!important;}
+  }
+  @media(max-width:380px){ .app-bar-word{display:none;} }
+
+  /* Busca do cabeçalho (campo + resultados) */
+  .app-bar-search{position:relative; flex:0 1 420px; min-width:0; display:flex; align-items:center; gap:8px; height:38px; padding:0 10px;
+    border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(255,255,255,.08); color:rgba(255,255,255,.72); cursor:text;}
+  .app-bar-search:focus-within{background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.32);}
+  .app-bar-search input{flex:1; min-width:0; height:100%; padding:0; border:0; background:transparent; color:#fff; font:500 12.5px/1 var(--sans); outline:none; box-shadow:none;}
+  .app-bar-search input::placeholder{color:rgba(255,255,255,.62);}
+  .app-bar-search input::-webkit-search-cancel-button{filter:invert(1);}
+  .app-bar-search .app-bar-results{top:calc(100% + 8px); text-transform:uppercase;}
+  .app-bar-search:focus-within kbd{display:none;}
+  /* Menu lateral: sem pesquisa e sem MENU COMPACTO; marca no mesmo bloco azul da barra. */
+  .sidebar-search,.sidebar-compact-toggle{display:none!important;}
+  .sidebar .sidebar-brand{
+    flex:none; display:flex; align-items:center; gap:10px; height:calc(64px + env(safe-area-inset-top));
+    margin:calc(-22px - env(safe-area-inset-top)) -16px 16px; padding:env(safe-area-inset-top) 16px 0 72px;
+    border:0; border-radius:0; background:var(--app-bar-bg,#14365f); box-shadow:0 1px 0 rgba(0,0,0,.2);
+    position:sticky; top:calc(-22px - env(safe-area-inset-top)); z-index:3;
+  }
+  html:not([data-theme="light"]) .sidebar .sidebar-brand{--app-bar-bg:#0f2747;}
+  .sidebar .sidebar-brand .brand-logo{width:auto; height:30px; flex:none; padding:0; border:0; border-radius:0; background:none; box-shadow:none; filter:brightness(0) invert(1);}
+  .sidebar-brand .brand-copy,.home-brand-compact .brand-copy{display:flex; flex-direction:column; align-items:flex-start; text-align:left; line-height:1;}
+  .sidebar-brand .brand-copy small,.home-brand-compact .brand-copy small{font:600 9px/1 var(--mono); letter-spacing:.24em; color:#afc3d8; margin:0 0 4px;}
+  .sidebar-brand .brand-copy strong{font:800 16px/1 var(--sans); letter-spacing:.2em; color:#fff;}
+  body.menu-open .menu-toggle{top:calc(10px + env(safe-area-inset-top)); background:transparent; border-color:transparent; box-shadow:none; color:#fff;}
+  body.menu-open .menu-toggle:hover{background:rgba(255,255,255,.1);}
+  .sidebar .nav-section-label{font:600 9.5px/1 var(--mono); letter-spacing:.16em;}
+  /* Tema claro e vidro: os estilos gerais de campo, botão de tema e menu não valem dentro da barra azul. */
+  html .app-bar #appBarSearchInput{
+    height:100%; min-height:0!important; padding:0!important; border:0!important; border-radius:0!important;
+    background:transparent!important; color:#fff!important; box-shadow:none!important; outline:none!important;
+  }
+  html .app-bar #appBarSearchInput::placeholder{color:rgba(255,255,255,.62)!important;}
+  html .app-bar .theme-toggle{background:transparent!important; border-color:rgba(255,255,255,.22)!important; color:#fff!important; box-shadow:none!important; backdrop-filter:none!important;}
+  html .app-bar .theme-toggle:hover{background:rgba(255,255,255,.1)!important;}
+  html .sidebar .sidebar-brand{background:var(--app-bar-bg,#14365f)!important; backdrop-filter:none!important;}
+  html .sidebar .sidebar-brand .brand-copy strong{color:#fff!important;}
+  html body.menu-open .menu-toggle{background:transparent!important; border-color:transparent!important; color:#fff!important; box-shadow:none!important;}
+  html body:not(.home-active):not(.menu-open) .menu-toggle{background:transparent!important; border-color:transparent!important; color:#fff!important; box-shadow:none!important; backdrop-filter:none!important;}
+  /* ===== INÍCIO EM PAINEL (18/11/2026) ===== */
+  body.home-active .app-bar{position:fixed; inset:0 0 auto 0; z-index:880; display:flex; align-items:center; gap:14px;
+    height:calc(64px + env(safe-area-inset-top)); padding:env(safe-area-inset-top) calc(16px + env(safe-area-inset-right)) 0 calc(72px + env(safe-area-inset-left));
+    background:var(--app-bar-bg,#14365f); color:#fff; box-shadow:0 1px 0 rgba(0,0,0,.2);}
+  body.home-active .menu-toggle{display:grid!important;}
+  html body.home-active:not(.menu-open) .menu-toggle{top:calc(10px + env(safe-area-inset-top)); background:transparent!important; border-color:transparent!important; color:#fff!important; box-shadow:none!important;}
+  body.home-active .app-bar .theme-toggle{display:grid;}
+  body.home-active .content{padding-top:calc(64px + env(safe-area-inset-top));}
+  .page.home-page{min-height:0; padding-top:30px; align-items:stretch; justify-content:flex-start;}
+  .page.home-page.active{display:block;}
+  .home-dash{display:flex; flex-direction:column; gap:20px; width:100%; max-width:1320px; margin:0 auto; text-align:left; color:var(--ink);}
+  .home-dash > .home-account{display:none!important;}
+  .home-hello{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+  .home-hello h1{margin:0; font:700 clamp(22px,2.2vw,28px)/1.15 var(--sans); letter-spacing:-.4px; color:var(--ink);}
+  .home-hello p{margin:6px 0 0; color:var(--ink-soft); font:600 12px/1.3 var(--sans); letter-spacing:.04em;}
+  .home-scope{display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 12px; border:1px solid var(--border); border-radius:9px; background:var(--bg-card); color:var(--ink-soft); font:700 11.5px/1 var(--sans); letter-spacing:.05em;}
+  .home-scope svg{width:15px; height:15px;}
+  .home-attn{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px;}
+  .home-attn[hidden]{display:none;}
+  .home-attn-card{display:grid; gap:7px; align-content:start; min-height:0; padding:14px; border:1px solid var(--border); border-radius:12px; background:var(--bg-card); color:var(--ink); text-align:left; white-space:normal; box-shadow:none;}
+  .home-attn-card:hover{border-color:var(--accent); transform:none;}
+  .home-attn-label{display:flex; align-items:center; gap:7px; color:var(--ink-soft); font:600 10px/1.2 var(--mono); letter-spacing:.08em;}
+  .home-attn-label svg{width:15px; height:15px; flex:none;}
+  .home-attn-card strong{font:700 26px/1 var(--sans); letter-spacing:-.5px; font-variant-numeric:tabular-nums;}
+  .home-attn-card small{color:var(--ink-faint); font:600 10.5px/1.3 var(--sans); letter-spacing:.03em;}
+  .home-attn-card.warn strong{color:#d99a3a;} .home-attn-card.late strong{color:var(--neg);} .home-attn-card.ok strong{color:var(--ok);}
+  html[data-theme="light"] .home-attn-card.warn strong{color:#a2650c;}
+  .home-cols{display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:20px; align-items:start;}
+  .home-col-main,.home-col-side{display:flex; flex-direction:column; gap:16px; min-width:0;}
+  .home-panel{border:1px solid var(--border); border-radius:12px; background:var(--bg-card); overflow:hidden;}
+  .home-panel-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px 0;}
+  .home-panel-head h2{margin:0; font:800 12.5px/1 var(--sans); letter-spacing:.08em; color:var(--ink);}
+  .home-mod-tabs{display:flex; flex-wrap:wrap; gap:2px 20px; padding:6px 16px 0; border-bottom:1px solid var(--border);}
+  .home-mod-tab{min-height:0; margin-bottom:-1px; padding:10px 0 10px; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--ink-faint); font:700 11.5px/1 var(--sans); letter-spacing:.06em;}
+  .home-mod-tab:hover{color:var(--ink); transform:none;}
+  .home-mod-tab.active{color:var(--ink); border-bottom-color:var(--accent);}
+  .home-mod-filter{display:flex; align-items:center; gap:8px; margin:12px 16px 4px; height:36px; padding:0 10px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--ink-faint);}
+  .home-mod-filter svg{width:16px; height:16px; flex:none;}
+  html .home-mod-filter #homeModFilter{flex:1; min-height:0!important; height:100%; padding:0!important; border:0!important; background:transparent!important; box-shadow:none!important; color:var(--ink)!important; font:500 12.5px/1 var(--sans);}
+  /* módulos em lista (duas colunas no computador) */
+  .home-dash .home-access-grid{display:flex; flex-direction:column; gap:0; margin:0; padding:4px 0 8px;}
+  .home-dash .home-access-section{gap:0;}
+  .home-dash .home-access-section.mod-off,.home-dash .home-access-group.mod-off,.home-dash .home-access-card.mod-filtered{display:none!important;}
+  .home-dash .home-access-section-label{display:none;}
+  .home-dash .home-access-groups{gap:0;}
+  .home-dash .home-access-group{gap:0;}
+  .home-dash .home-access-group-label,.home-dash .home-access-section > .home-access-groups > .home-access-group:first-child:not(:has(.home-access-group-label))::before{
+    display:block; margin:10px 16px 2px; color:var(--ink-faint); font:600 9.5px/1 var(--mono); letter-spacing:.14em;}
+  .home-dash .home-access-grid-inner{grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 16px; padding:0 16px;}
+  .home-dash .home-access-card{min-height:0; flex-direction:row; align-items:center; justify-content:flex-start; gap:12px; padding:9px 4px; border:0; border-bottom:1px solid var(--border); border-radius:0; background:transparent; box-shadow:none; color:var(--ink);}
+  .home-dash .home-access-card:hover{transform:none; background:transparent; box-shadow:none;}
+  .home-dash .home-access-card:hover .home-access-copy strong{color:var(--accent);}
+  .home-dash .home-access-icon{width:32px; height:32px; flex:none; border-radius:9px; background:rgba(79,134,189,.14); color:var(--accent); box-shadow:none;}
+  .home-dash .home-access-icon svg{width:17px; height:17px;}
+  .home-dash .home-access-copy strong{color:var(--ink); font:700 12.5px/1.25 var(--sans);}
+  .home-dash .home-access-arrow{margin-left:auto; align-self:center; color:var(--ink-faint); font-size:14px;}
+  /* coluna da direita */
+  .home-col-side .instruction-carousel{max-width:none; width:100%; margin:0; border:1px solid var(--border); border-radius:12px;}
+  .home-dash .home-health-alert{margin:0; border-color:rgba(196,71,53,.45); background:rgba(196,71,53,.1); color:var(--ink);}
+  .home-dash .home-health-alert[hidden]{display:none;}
+  /* Tarefas na coluna do Início: uma linha por tarefa (marcar, texto, hora), no máximo 6;
+     prioridade/recorrência e a situação ficam na página Tarefas (VER TODAS). */
+  .home-col-side .home-tasks{padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--bg-card); box-shadow:none;}
+  .home-col-side .home-tasks-head{display:flex; flex-direction:row; align-items:flex-start; justify-content:space-between; gap:10px; margin:0 0 8px;}
+  .home-col-side .home-tasks-head h2{font-size:15px; margin:2px 0 0;}
+  .home-col-side .home-tasks-date{font-size:10px; margin-top:3px;}
+  .home-col-side .home-tasks-list{gap:0;}
+  .home-col-side .home-task-row{display:grid; grid-template-columns:18px minmax(0,1fr) auto; align-items:center; gap:10px; min-height:0; padding:8px 0; border:0; border-top:1px solid var(--border); border-radius:0; background:transparent; box-shadow:none; flex-wrap:nowrap;}
+  .home-col-side .home-task-row:nth-child(n+7){display:none;}
+  .home-col-side .home-task-check{grid-column:1; grid-row:1; margin:0; width:16px; height:16px;}
+  .home-col-side .home-task-text{grid-column:2; grid-row:1; min-width:0; font:600 12px/1.3 var(--sans); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; word-break:normal; overflow-wrap:anywhere;}
+  .home-col-side .home-task-time{grid-column:3; grid-row:1; font:600 10.5px/1 var(--mono); color:var(--ink-faint); background:none; border:0; padding:0;}
+  .home-col-side .home-task-row .task-badges,.home-col-side .home-task-outcome{display:none;}
+  .home-col-side .home-task-row.done .home-task-text{opacity:.5;}
+  /* Missões/rotina no Início: cores do tema; na coluna da direita, uma linha por item com botão pequeno. */
+  .home-dash .home-missions{margin:0; padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--bg-card)!important; box-shadow:none;}
+  .home-dash .home-missions-head h2{color:var(--ink); font-size:15px;}
+  .home-dash .home-missions-head > div > span{color:var(--ink-faint);}
+  .home-dash .home-missions-goto{background:transparent; border-color:var(--border); color:var(--ink-soft);}
+  .home-dash .home-mission-title{color:var(--ink);}
+  .home-dash .home-mission-meta{color:var(--ink-faint);}
+  .home-dash .home-mission-check{border-color:var(--border); color:var(--ink-faint);}
+  .home-dash .home-missions .mission-empty{background:transparent; color:var(--ink-faint);}
+  .home-dash .home-mission-check.completed{background:rgba(92,192,143,.16); border-color:rgba(92,192,143,.45); color:var(--ok);}
+  .home-col-side .home-missions-head{display:flex; flex-direction:row; align-items:flex-start; justify-content:space-between; gap:10px; margin:0 0 6px;}
+  .home-col-side .home-mission-list{gap:0;}
+  .home-col-side .home-mission-row{grid-template-columns:18px minmax(0,1fr) auto; gap:10px; padding:8px 0; border:0; border-top:1px solid var(--border); border-radius:0; background:transparent; box-shadow:none;}
+  .home-col-side .home-mission-check{width:16px; height:16px; border-radius:4px; font-size:9px;}
+  .home-col-side .home-mission-title{font:700 12px/1.3 var(--sans); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .home-col-side .home-mission-meta{font-size:8.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .home-col-side .home-mission-actions button{min-height:0!important; padding:6px 9px; border-radius:7px; font:800 9.5px/1 var(--sans); letter-spacing:.04em;}
+  /* Destaques (carrossel de instruções) em painel: título, contador, setas e ampliar — Início e Instruções. */
+  .instruction-carousel{border:1px solid var(--border)!important; border-radius:12px!important; background:var(--bg-card)!important; box-shadow:none!important;}
+  #instructionCarousel{max-width:560px; margin:0 0 18px;}
+  .carousel-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px;}
+  .carousel-head h3{margin:0; color:var(--ink); font:800 12.5px/1 var(--sans); letter-spacing:.08em;}
+  html .carousel-head-link{min-height:0!important; padding:4px 0; border:0; background:none; color:var(--accent); font:800 11px/1 var(--sans); letter-spacing:.06em;}
+  .carousel-head-link:hover{transform:none; text-decoration:underline;}
+  .instruction-carousel-slide{cursor:zoom-in;}
+  .carousel-count{position:absolute; top:10px; right:12px; padding:3px 8px; border-radius:999px; background:rgba(8,18,30,.55); color:#fff; font:700 10.5px/1.3 var(--mono); pointer-events:none;}
+  .carousel-count:empty{display:none;}
+  .instruction-carousel-viewport .instruction-carousel-dots{bottom:6px;}
+  .instruction-carousel-dot::before{box-shadow:0 0 0 1px rgba(0,0,0,.25);}
+  .instruction-carousel-dot.active::before{width:18px; border-radius:4px;}
+  .carousel-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px; color:var(--ink-faint); font:600 10.5px/1.3 var(--sans); letter-spacing:.03em;}
+  .carousel-nav{display:flex; gap:6px;}
+  html .carousel-nav button{width:28px; height:28px; min-height:0!important; padding:0; display:grid; place-items:center; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--ink-soft); font:700 16px/1 var(--sans);}
+  .carousel-nav button:hover{color:var(--ink); border-color:var(--accent); transform:none;}
+  .instruction-carousel:has(.instruction-carousel-dots:empty) .carousel-nav{visibility:hidden;}
+  .carousel-lightbox{width:min(92vw,1100px); max-height:92vh; padding:0; border:0; border-radius:14px; background:#0b1522; color:#fff; overflow:hidden;}
+  .carousel-lightbox::backdrop{background:rgba(4,9,16,.82);}
+  .carousel-lightbox img{display:block; width:100%; max-height:calc(92vh - 48px); object-fit:contain; background:#0b1522;}
+  .carousel-lightbox-bar{display:flex; align-items:center; justify-content:space-between; height:48px; padding:0 8px 0 16px; font:700 11px/1 var(--mono); letter-spacing:.08em;}
+  html .carousel-lightbox-bar button{width:36px; height:36px; min-height:0!important; padding:0; border:0; border-radius:8px; background:transparent; color:#fff; font:400 26px/1 var(--sans);}
+  html .carousel-lightbox-step{position:absolute; top:50%; width:44px; height:44px; min-height:0!important; padding:0; border:0; border-radius:50%; background:rgba(8,18,30,.6); color:#fff; font:400 30px/1 var(--sans); transform:translateY(-50%);}
+  .carousel-lightbox-step:hover{transform:translateY(-50%); background:rgba(8,18,30,.85);}
+  .carousel-lightbox-step.prev{left:12px;} .carousel-lightbox-step.next{right:12px;}
+  .carousel-lightbox-step[hidden]{display:none;}
+  /* Comunicados e tarefas do Início nas cores do tema (antes: cores fixas do cartão claro). */
+  .home-dash .home-instructions{margin:0; padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--bg-card)!important; box-shadow:none;}
+  .home-dash .home-instructions-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin:0 0 6px;}
+  .home-dash .home-instructions-head h2{color:var(--ink); font-size:15px;}
+  .home-dash .home-instructions-head > div > span,.home-dash .home-tasks-head > div > span{color:var(--ink-faint);}
+  .home-dash .home-instructions-goto,.home-dash .home-tasks-goto{min-height:0!important; padding:6px 9px; background:transparent; border-color:var(--border); color:var(--ink-soft); font-size:9px;}
+  .home-dash .home-instruction-list{gap:0;}
+  .home-dash .home-instruction-row{grid-template-columns:28px minmax(0,1fr) auto; gap:10px; padding:9px 0; border:0; border-top:1px solid var(--border); border-radius:0; background:transparent;}
+  .home-dash .home-instruction-icon{width:26px; height:26px; border-radius:7px; background:rgba(79,134,189,.16); color:var(--accent); font-size:12px;}
+  .home-dash .home-instruction-copy strong{color:var(--ink); font-size:12px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .home-dash .home-instruction-copy span:not(.instruction-badge){color:var(--ink-faint); -webkit-line-clamp:1;}
+  .home-dash .home-instruction-copy .instruction-badge{display:none;}
+  .home-dash .home-instruction-due{color:var(--ink-faint);}
+  .home-dash .home-tasks-head h2{color:var(--ink);}
+  .home-dash .home-task-text,.home-dash .home-task-row{color:var(--ink);}
+  .home-dash .home-tasks-date{color:var(--ink-faint);}
+  .home-dash .home-tasks-empty{background:transparent; color:var(--ink-faint); border-color:var(--border);}
+  /* Início sem menu lateral: a lista de módulos já faz esse papel. */
+  html body.home-active .menu-toggle{display:none!important;}
+  body.home-active .app-bar{padding-left:calc(16px + env(safe-area-inset-left))!important;}
+  @media(max-width:1100px){ .home-cols{grid-template-columns:minmax(0,1fr) 300px;} .home-dash .home-access-grid-inner{grid-template-columns:1fr;} }
+  @media(max-width:800px){
+    body.home-active .app-bar{gap:8px; height:calc(56px + env(safe-area-inset-top)); padding-left:calc(62px + env(safe-area-inset-left)); padding-right:calc(10px + env(safe-area-inset-right));}
+    html body.home-active:not(.menu-open) .menu-toggle{top:calc(6px + env(safe-area-inset-top)); left:calc(8px + env(safe-area-inset-left));}
+    body.home-active .content{padding-top:calc(56px + env(safe-area-inset-top));}
+    .page.home-page{padding-top:18px;}
+    .home-cols{grid-template-columns:1fr;}
+    .home-col-side{order:-1;}
+    .home-attn{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:4px;}
+    .home-attn-card{flex:0 0 72%; scroll-snap-align:start;}
+  }
+  /* Início: logo sem caixa, CENTRAL em cima e UNIGAMES embaixo. */
+  .home-brand-compact .brand-logo{width:auto; height:32px; flex:none; padding:0; border:0; border-radius:0; background:none; box-shadow:none;}
+  .home-brand-compact .brand-copy small{color:#5d7590;}
+  .home-brand-compact .brand-copy strong{font:800 15px/1 var(--sans); letter-spacing:.2em; color:#10233a;}
+  @media(max-width:800px){
+    .app-bar-search{flex:none; width:40px; height:40px; padding:0; justify-content:center; margin-left:auto;}
+    .app-bar-search input{width:0; flex:0 0 0;}
+    .app-bar-search:focus-within{position:absolute; left:calc(62px + env(safe-area-inset-left)); right:calc(10px + env(safe-area-inset-right)); width:auto; justify-content:flex-start; padding:0 10px; z-index:3; background:#1d4572;}
+    .app-bar-search:focus-within input{width:auto; flex:1;}
+    .home-brand-compact .brand-copy{display:flex;}
+  }
 </style>
 <!-- NOTA ADESIVA DE TAREFAS: estilo isolado (cores fixas de post-it, igual nos 3 temas)
      porque este bloco é copiado para a janela "fora do site" (Picture-in-Picture). -->
@@ -4426,6 +4696,21 @@
     </g>
   </svg>
 </button>
+<header class="app-bar no-print" id="appBar">
+  <a class="app-bar-brand" href="/inicio" id="appBarHome" aria-label="Ir para o Início" title="Ir para o Início">
+    <img class="app-bar-mark" data-logo alt="">
+    <span class="app-bar-word"><small>CENTRAL</small><b>UNIGAMES</b></span>
+  </a>
+  <span class="app-bar-sep" aria-hidden="true"></span>
+  <div class="app-bar-search" id="appBarSearch" role="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="appBarSearchInput" type="search" placeholder="BUSCAR MÓDULO OU MENU…" autocomplete="off" aria-label="Buscar módulo ou menu" aria-controls="appBarSearchResults">
+    <kbd aria-hidden="true">CTRL K</kbd>
+    <div class="home-search-results app-bar-results" id="appBarSearchResults" role="listbox" hidden></div>
+  </div>
+  <span class="app-bar-spacer"></span>
+  <div class="app-bar-user" id="appBarUser"><span class="app-bar-avatar" id="appBarAvatar" aria-hidden="true">·</span><span class="app-bar-user-t"><b id="appBarUserName"></b><small id="appBarUserGroup"></small></span></div>
+</header>
 <aside class="ios-install-hint no-print" id="iosInstallHint" hidden>
   <span><b>NO IPHONE/IPAD:</b> NO SAFARI, TOQUE EM COMPARTILHAR E DEPOIS EM “ADICIONAR À TELA DE INÍCIO”. ABRA PELO NOVO ÍCONE PARA ATIVAR AS NOTIFICAÇÕES.</span>
   <button class="btn-outline" id="btnDismissIosHint" type="button">OK</button>
@@ -4435,7 +4720,7 @@
   <nav class="sidebar no-print" id="sidebar" aria-label="Navegação principal" aria-hidden="true" inert>
     <div class="sidebar-brand">
       <img class="brand-logo" data-logo alt="LOGO UNIGAMES">
-      <span class="brand-copy"><strong>UNIGAMES</strong></span>
+      <span class="brand-copy"><small>CENTRAL</small><strong>UNIGAMES</strong></span>
     </div>
     <button class="sidebar-compact-toggle" id="btnSidebarCompact" type="button" aria-pressed="false" title="Alternar menu compacto">
       <span class="sidebar-compact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><line x1="9.5" y1="4.5" x2="9.5" y2="19.5"/><path d="m7 9.5-2.5 2.5L7 14.5"/></svg></span><span class="compact-label">MENU COMPACTO</span>
@@ -4619,11 +4904,11 @@
 
     <!-- ================= INÍCIO ================= -->
     <section id="pageInicio" class="page wrap home-page active">
-      <div class="home-lightglass">
-        <div class="home-account">
+      <div class="home-dash">
+        <div class="home-account" aria-hidden="true">
           <div class="home-brand-compact">
             <img class="brand-logo" data-logo alt="LOGO UNIGAMES">
-            <span class="brand-copy"><strong id="homeBrandTitle" aria-label="UNIGAMES">UNIGAMES</strong></span>
+            <span class="brand-copy"><small>CENTRAL</small><strong id="homeBrandTitle" aria-label="UNIGAMES">UNIGAMES</strong></span>
           </div>
           <div class="home-search" id="homeSearchWrap">
             <button type="button" class="home-search-icon-btn" id="homeSearchToggle" aria-label="Buscar módulo ou menu" aria-expanded="false" aria-controls="homeSearchBox">
@@ -4642,28 +4927,24 @@
             <span id="homeSessionName">Carregando usuário…</span><form method="post" action="/logout"><button type="submit">SAIR</button></form>
           </div>
         </div>
-        <section class="instruction-carousel" id="homeInstructionCarousel" aria-label="Comunicados em destaque" hidden>
-          <div class="instruction-carousel-viewport">
-            <div class="instruction-carousel-track" id="homeInstructionCarouselTrack"></div>
-          </div>
-          <div class="instruction-carousel-dots" id="homeInstructionCarouselDots"></div>
-        </section>
-        <section class="home-instructions" aria-labelledby="homeInstructionsTitle">
-          <div class="home-instructions-head">
-            <div><span>COMUNICADOS GERAIS</span><h2 id="homeInstructionsTitle">Instruções vigentes</h2></div>
-            <button class="home-instructions-goto" type="button" data-home-target="instrucoes">VER INSTRUÇÕES →</button>
-          </div>
-          <div class="home-instruction-list" id="homeInstructionList" aria-live="polite">
-            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
-            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
-          </div>
-        </section>
-        <div class="home-access-grid" id="homeAccessGrid" aria-label="Acessos rápidos"></div>
-        <div class="home-no-access" id="homeNoAccess" hidden><strong>NENHUM MÓDULO LIBERADO</strong><span>Solicite ao administrador a liberação das áreas necessárias.</span></div>
+        <div class="home-hello">
+          <div><h1 id="homeHello">Olá</h1><p id="homeHelloSub"></p></div>
+          <span class="home-scope" id="homeScope"></span>
+        </div>
+        <div class="home-attn" id="homeAttn" hidden></div>
         <div class="home-health-alert" id="homeHealthAlert" hidden>
           <span id="homeHealthMessage">Uma integração do sistema está indisponível.</span>
           <button class="btn-outline" id="btnRetryHealth" type="button">VERIFICAR</button>
         </div>
+        <div class="home-cols">
+          <div class="home-col-main">
+            <section class="home-panel home-modules" aria-labelledby="homeModulesTitle">
+              <div class="home-panel-head"><h2 id="homeModulesTitle">SEUS MÓDULOS</h2></div>
+              <div class="home-mod-tabs" id="homeModTabs" role="tablist" aria-label="Áreas"></div>
+              <div class="home-mod-filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="homeModFilter" type="search" placeholder="FILTRAR MÓDULOS…" autocomplete="off" aria-label="Filtrar módulos"></div>
+        <div class="home-access-grid" id="homeAccessGrid" aria-label="Acessos rápidos"></div>
+        <div class="home-no-access" id="homeNoAccess" hidden><strong>NENHUM MÓDULO LIBERADO</strong><span>Solicite ao administrador a liberação das áreas necessárias.</span></div>
+            </section>
         <section class="home-supplies-alert" id="homeSuppliesAlert" data-permission="supplies" hidden aria-labelledby="homeSuppliesTitle">
           <div class="home-supplies-head">
             <div><span>LEMBRETE DE SEGUNDA-FEIRA</span><h2 id="homeSuppliesTitle">Solicitar os insumos da loja</h2></div>
@@ -4699,17 +4980,28 @@
             <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
           </div>
         </section>
-        <section class="home-missions" id="homeRoutineSection" data-permission="missions" aria-labelledby="homeRoutinesTitle">
-          <div class="home-missions-head">
-            <div><span>ROTINA OPERACIONAL</span><h2 id="homeRoutinesTitle">Rotina do dia</h2></div>
-            <button class="home-missions-goto" type="button" data-home-target="missoes">VER ROTINA →</button>
           </div>
-          <div class="home-mission-list" id="homeRoutineList" aria-live="polite">
-            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
-            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
+          <aside class="home-col-side">
+        <section class="instruction-carousel" id="homeInstructionCarousel" aria-label="Comunicados em destaque" hidden>
+          <div class="carousel-head"><h3>DESTAQUES</h3><button class="carousel-head-link" type="button" data-home-target="instrucoes">VER TODOS</button></div>
+          <div class="instruction-carousel-viewport">
+            <div class="instruction-carousel-track" id="homeInstructionCarouselTrack"></div>
+            <span class="carousel-count" data-carousel-count aria-hidden="true"></span>
+            <div class="instruction-carousel-dots" id="homeInstructionCarouselDots"></div>
+          </div>
+          <div class="carousel-foot"><span>TROCA A CADA 10 S · TOQUE PARA AMPLIAR</span><span class="carousel-nav"><button type="button" data-carousel-step="-1" aria-label="Imagem anterior">‹</button><button type="button" data-carousel-step="1" aria-label="Próxima imagem">›</button></span></div>
+        </section>
+        <section class="home-instructions" aria-labelledby="homeInstructionsTitle">
+          <div class="home-instructions-head">
+            <div><span>COMUNICADOS GERAIS</span><h2 id="homeInstructionsTitle">Instruções vigentes</h2></div>
+            <button class="home-instructions-goto" type="button" data-home-target="instrucoes">VER INSTRUÇÕES →</button>
+          </div>
+          <div class="home-instruction-list" id="homeInstructionList" aria-live="polite">
+            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
+            <div class="home-update-skeleton skeleton" style="height:54px;border-radius:11px"></div>
           </div>
         </section>
-        <!-- TAREFAS DO DIA -->
+<!-- TAREFAS DO DIA -->
 <section class="home-tasks" data-permission="tasks" aria-labelledby="homeTasksTitle">
   <div class="home-tasks-head">
     <div>
@@ -4724,6 +5016,18 @@
     <div class="home-update-skeleton skeleton" style="height:42px; border-radius:11px;"></div>
   </div>
 </section>
+        <section class="home-missions" id="homeRoutineSection" data-permission="missions" aria-labelledby="homeRoutinesTitle">
+          <div class="home-missions-head">
+            <div><span>ROTINA OPERACIONAL</span><h2 id="homeRoutinesTitle">Rotina do dia</h2></div>
+            <button class="home-missions-goto" type="button" data-home-target="missoes">VER ROTINA →</button>
+          </div>
+          <div class="home-mission-list" id="homeRoutineList" aria-live="polite">
+            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
+            <div class="home-update-skeleton skeleton" style="height:48px;border-radius:11px"></div>
+          </div>
+        </section>
+          </aside>
+        </div>
       </div>
     </section>
 
@@ -6211,11 +6515,14 @@
       </header>
 
       <section class="instruction-carousel" id="instructionCarousel" aria-label="Comunicados em destaque" hidden>
-        <div class="instruction-carousel-viewport">
-          <div class="instruction-carousel-track" id="instructionCarouselTrack"></div>
-        </div>
-        <div class="instruction-carousel-dots" id="instructionCarouselDots"></div>
-      </section>
+          <div class="carousel-head"><h3>DESTAQUES</h3><button class="carousel-head-link" type="button" data-carousel-zoom>AMPLIAR</button></div>
+          <div class="instruction-carousel-viewport">
+            <div class="instruction-carousel-track" id="instructionCarouselTrack"></div>
+            <span class="carousel-count" data-carousel-count aria-hidden="true"></span>
+            <div class="instruction-carousel-dots" id="instructionCarouselDots"></div>
+          </div>
+          <div class="carousel-foot"><span>TROCA A CADA 10 S · TOQUE PARA AMPLIAR</span><span class="carousel-nav"><button type="button" data-carousel-step="-1" aria-label="Imagem anterior">‹</button><button type="button" data-carousel-step="1" aria-label="Próxima imagem">›</button></span></div>
+        </section>
 
       <section class="instruction-admin-panel" data-permission="instructions:manage">
         <div class="instruction-admin-head">
@@ -10955,6 +11262,12 @@
      etapa intermediária de "converter em pedido". -->
 <!-- Comercial > Regras de Comissão: nova vigência / editar. Percentuais em %
      na tela, enviados em basis points (1% = 100). -->
+<dialog class="carousel-lightbox" id="carouselLightbox" aria-label="Destaque em tamanho grande">
+  <div class="carousel-lightbox-bar"><span id="carouselLightboxCount"></span><button type="button" data-lightbox-close aria-label="Fechar">×</button></div>
+  <img id="carouselLightboxImg" alt="">
+  <button type="button" class="carousel-lightbox-step prev" data-lightbox-step="-1" aria-label="Imagem anterior">‹</button>
+  <button type="button" class="carousel-lightbox-step next" data-lightbox-step="1" aria-label="Próxima imagem">›</button>
+</dialog>
 <dialog class="purchase-dialog" id="dreOverheadDialog" aria-labelledby="dreOverheadDialogTitle">
   <div class="purchase-dialog-head">
     <h3 id="dreOverheadDialogTitle">RATEIO DO DEPÓSITO E DO ESCRITÓRIO</h3>
@@ -16819,6 +17132,96 @@
     });
   }
 
+  // ===== INÍCIO EM PAINEL (18/11/2026) =====
+  // Saudação + loja, faixa "precisa de atenção" (números que o Início já carrega)
+  // e abas/filtro dos módulos.
+  const homeAttn = {};
+  function renderHomeHello(){
+    const hour = Number(new Date().toLocaleString('en-US', {hour:'numeric', hour12:false, timeZone:'America/Recife'}));
+    // Login de loja ("LOJA GUARARAPES") usa o nome inteiro; pessoa usa o primeiro nome.
+    const fullName = String(currentSession.displayName || currentSession.username || '').trim();
+    const name = currentSession.companyId ? fullName : (fullName.split(/\s+/)[0] || '');
+    const greet = hour < 12 ? 'BOM DIA' : hour < 18 ? 'BOA TARDE' : 'BOA NOITE';
+    el('homeHello').textContent = greet + (name ? ', ' + name : '');
+    const date = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric', timeZone:'America/Recife'});
+    el('homeHelloSub').textContent = date.toUpperCase();
+    const company = currentSession.companyId ? ((companies.find(item => item.id === currentSession.companyId) || {}).name || homeAttn.companyName || (/^LOJA\b/i.test(fullName) ? fullName : '')) : '';
+    el('homeScope').innerHTML = currentSession.companyId
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'+escapeHtml(!company ? 'SUA LOJA' : /^LOJA\b/i.test(company) ? company : 'LOJA '+company)
+      : 'TODAS AS LOJAS';
+  }
+  function renderHomeAttn(){
+    const box = el('homeAttn');
+    if(!box) return;
+    const card = (target, tone, icon, label, value, sub) =>
+      '<button type="button" class="home-attn-card '+tone+'" data-home-attn="'+target+'"><span class="home-attn-label">'+icon+label+'</span>'+
+      '<strong>'+escapeHtml(String(value))+'</strong><small>'+escapeHtml(sub)+'</small></button>';
+    const svg = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>';
+    const cards = [];
+    if(homeAttn.tasks){
+      const t = homeAttn.tasks;
+      cards.push(card('tarefas', t.pending ? 'warn' : 'ok', svg('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/>'), 'TAREFAS DE HOJE', t.pending, t.total ? (t.total - t.pending)+' DE '+t.total+' CONCLUÍDAS' : 'NADA PARA HOJE'));
+    }
+    if(homeAttn.routine){
+      const r = homeAttn.routine;
+      cards.push(card('missoes', r.done < r.total ? 'warn' : 'ok', svg('<path d="M4 22V4a1 1 0 0 1 1-1h13l-3 5 3 5H5"/>'), 'ROTINA DO DIA', r.done+' DE '+r.total, 'MISSÕES FEITAS HOJE'));
+    }
+    if(homeAttn.div){
+      const d = homeAttn.div;
+      cards.push(card('divergencias', d.late ? 'late' : d.value ? 'warn' : 'ok', svg('<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>'), 'DIVERGÊNCIAS', d.value, d.sub));
+    }
+    if(homeAttn.supplies){
+      cards.push(card('insumos', 'warn', svg('<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>'), 'INSUMOS', homeAttn.supplies, 'FALTAS MARCADAS · PEDIR NA SEGUNDA'));
+    }
+    if(homeAttn.instructions !== undefined){
+      cards.push(card('instrucoes', 'info', svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/>'), 'COMUNICADOS', homeAttn.instructions, 'INSTRUÇÕES VIGENTES'));
+    }
+    box.innerHTML = cards.join('');
+    box.style.setProperty('--attn-cols', Math.max(cards.length, 1));
+    box.hidden = !cards.length;
+  }
+  el('homeAttn') && el('homeAttn').addEventListener('click', event => {
+    const button = event.target.closest('[data-home-attn]');
+    if(button) navigateToPage(button.dataset.homeAttn);
+  });
+  let homeModTab = 'todos';
+  function renderHomeModTabs(){
+    const tabs = el('homeModTabs');
+    if(!tabs) return;
+    const labels = [];
+    document.querySelectorAll('#homeAccessGrid .home-access-group').forEach(group => {
+      const section = group.closest('.home-access-section');
+      const label = (group.querySelector('.home-access-group-label') || section.querySelector('.home-access-section-label') || {}).textContent || '';
+      group.dataset.modTab = label.trim().toUpperCase();
+      if(!group.hasAttribute('data-access-hidden') && !section.hasAttribute('data-access-hidden') && label.trim() && !labels.includes(group.dataset.modTab)) labels.push(group.dataset.modTab);
+    });
+    if(homeModTab !== 'todos' && !labels.includes(homeModTab)) homeModTab = 'todos';
+    tabs.innerHTML = ['todos', ...labels].map(label =>
+      '<button type="button" role="tab" class="home-mod-tab'+(label === homeModTab ? ' active' : '')+'" aria-selected="'+(label === homeModTab)+'" data-mod-tab="'+escapeHtml(label)+'">'+escapeHtml(label === 'todos' ? 'TODOS' : label)+'</button>').join('');
+    applyHomeModFilter();
+  }
+  function applyHomeModFilter(){
+    const query = normalizeSearchText((el('homeModFilter') || {}).value || '');
+    document.querySelectorAll('#homeAccessGrid .home-access-group').forEach(group => {
+      let visible = 0;
+      group.querySelectorAll('.home-access-card').forEach(card => {
+        const show = !query || normalizeSearchText(card.textContent).includes(query);
+        card.classList.toggle('mod-filtered', !show);
+        if(show && !card.hasAttribute('data-access-hidden')) visible++;
+      });
+      group.classList.toggle('mod-off', !visible || (homeModTab !== 'todos' && !query && group.dataset.modTab !== homeModTab));
+    });
+    document.querySelectorAll('#homeAccessGrid .home-access-section').forEach(section => {
+      section.classList.toggle('mod-off', !section.querySelector('.home-access-group:not(.mod-off):not([data-access-hidden])'));
+    });
+  }
+  el('homeModTabs') && el('homeModTabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-mod-tab]');
+    if(!tab) return;
+    homeModTab = tab.dataset.modTab;
+    renderHomeModTabs();
+  });
+  el('homeModFilter') && el('homeModFilter').addEventListener('input', applyHomeModFilter);
   // Esconde clusters/seções de acesso rápido que ficaram sem nenhum card
   // visível para o usuário (as permissões são aplicadas por card via
   // data-permission em applyAccessVisibility).
@@ -16833,6 +17236,7 @@
         .some(group => !group.hasAttribute('data-access-hidden'));
       section.toggleAttribute('data-access-hidden', !hasGroup);
     });
+    renderHomeModTabs();
   }
 
   // Login de vendedor: todas as permissões são do Comercial. Ele vê só
@@ -16874,7 +17278,15 @@
     });
     el('sessionDisplayName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
     el('homeSessionName').textContent = currentSession.displayName || currentSession.username || 'Usuário';
+    renderHomeHello();
     const groupLabels = {administrator:'Administrador',purchases:'Compras',fiscal:'Fiscal',operator:'Operador',assistance:'Assistência',custom:'Personalizado'};
+    {
+      const name = currentSession.displayName || currentSession.username || 'Usuário';
+      el('appBarUserName').textContent = name;
+      el('appBarAvatar').textContent = name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '·';
+      el('appBarUserGroup').textContent = currentSession.role === 'admin' ? 'ADMINISTRADOR' : (groupLabels[currentSession.accessGroup] || 'ACESSO LIMITADO');
+      el('appBarUser').title = name;
+    }
     el('sessionAccessLabel').textContent = (groupLabels[currentSession.accessGroup] || 'Acesso limitado') + (currentSession.role === 'admin' ? ' · acesso completo' : '');
     el('homeNoAccess').hidden = true;
     pruneHomeAccessGroups();
@@ -17243,6 +17655,31 @@
   }
 
   const PRODUCT_CATALOG_PAGES = new Set(['saidas', 'entradas', 'alteracoesPdv', 'divergencias', 'comprasNovo', 'dados']);
+  // Caminho no topo da página (INÍCIO › GRUPO › PÁGINA), montado a partir do menu.
+  function updatePageCrumbs(page, navItem, isHome){
+    if(isHome) return;
+    const header = page.querySelector('.page-header');
+    if(!header) return;
+    let crumbs = header.querySelector('.page-crumbs');
+    if(!crumbs){
+      crumbs = document.createElement('nav');
+      crumbs.className = 'page-crumbs no-print';
+      crumbs.setAttribute('aria-label', 'Caminho');
+      header.prepend(crumbs);
+    }
+    const chevron = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+    const groupLabel = navItem.closest('.nav-group') && navItem.closest('.nav-group').querySelector('.nav-group-toggle .nav-label');
+    const title = (page.querySelector('.page-title') || {}).textContent || navItem.title || '';
+    crumbs.innerHTML = '<a href="/inicio" data-crumb-home>INÍCIO</a>'+
+      (groupLabel && !navItem.classList.contains('nav-group-toggle') ? chevron+'<span>'+escapeHtml(groupLabel.textContent.trim())+'</span>' : '')+
+      chevron+'<span class="here">'+escapeHtml(title.trim())+'</span>';
+  }
+  document.addEventListener('click', event => {
+    const home = event.target.closest('[data-crumb-home],#appBarHome');
+    if(!home || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    event.preventDefault();
+    navigateToPage('inicio');
+  });
   function showPage(name){
     if(!canAccessPage(name)) return false;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -17294,6 +17731,7 @@
     // grupo RH — são os mesmos destinos, com ids de link diferentes.
     setRhFinanceiroExpanded(isRhFinanceiro);
     if(isRhFinanceiro) navRhFinanceiroToggle.classList.add('active');
+    updatePageCrumbs(page, navItem, isHome);
     document.title = 'UNIGAMES';
     setLivePage(name);
     return true;
@@ -17574,6 +18012,53 @@
     el('sidebarSearchEmpty').hidden = found > 0;
   }
   const sidebarSearch = el('sidebarSearch');
+  // Barra da marca: a busca abre o menu já com o campo de pesquisa; Ctrl+K / Cmd+K faz o mesmo.
+  const appBarUser = el('appBarUser');
+  if(appBarUser && el('themeToggle')) appBarUser.before(el('themeToggle'));
+  // Busca do cabeçalho: mesmos módulos da busca do Início (itens do menu que o login vê).
+  const appBarSearchInput = el('appBarSearchInput');
+  const appBarResults = el('appBarSearchResults');
+  const closeAppBarSearch = () => { appBarResults.hidden = true; appBarResults.innerHTML = ''; };
+  const pickAppBarResult = page => { appBarSearchInput.value = ''; closeAppBarSearch(); appBarSearchInput.blur(); navigateToPage(page); };
+  const renderAppBarSearch = () => {
+    const query = normalizeSearchText(appBarSearchInput.value);
+    if(!query){ closeAppBarSearch(); return; }
+    const seen = new Set();
+    const matches = collectHomeSearchItems().filter(item => item.normalized.includes(query) && !seen.has(item.page) && seen.add(item.page)).slice(0, 12);
+    appBarResults.innerHTML = matches.length
+      ? matches.map(match => '<button type="button" class="home-search-result" role="option" data-app-search-page="'+escapeHtml(match.page)+'"><span class="nav-icon" aria-hidden="true">'+match.iconHtml+'</span><span>'+escapeHtml(match.label)+'</span></button>').join('')
+      : '<div class="home-search-empty">NENHUM MÓDULO ENCONTRADO</div>';
+    appBarResults.hidden = false;
+  };
+  if(appBarSearchInput){
+    el('appBarSearch').addEventListener('click', () => appBarSearchInput.focus());
+    appBarSearchInput.addEventListener('input', renderAppBarSearch);
+    appBarSearchInput.addEventListener('focus', renderAppBarSearch);
+    appBarSearchInput.addEventListener('keydown', event => {
+      const options = [...appBarResults.querySelectorAll('[data-app-search-page]')];
+      const index = options.indexOf(document.activeElement);
+      if(event.key === 'Enter' && options[0]){ event.preventDefault(); pickAppBarResult(options[0].dataset.appSearchPage); }
+      else if(event.key === 'ArrowDown' && options[0]){ event.preventDefault(); options[0].focus(); }
+      else if(event.key === 'Escape'){ appBarSearchInput.value = ''; closeAppBarSearch(); appBarSearchInput.blur(); }
+    });
+    appBarResults.addEventListener('keydown', event => {
+      const options = [...appBarResults.querySelectorAll('[data-app-search-page]')];
+      const index = options.indexOf(document.activeElement);
+      if(event.key === 'ArrowDown' && index < options.length - 1){ event.preventDefault(); options[index + 1].focus(); }
+      else if(event.key === 'ArrowUp'){ event.preventDefault(); (index > 0 ? options[index - 1] : appBarSearchInput).focus(); }
+      else if(event.key === 'Escape'){ appBarSearchInput.focus(); closeAppBarSearch(); }
+    });
+    appBarResults.addEventListener('click', event => {
+      const option = event.target.closest('[data-app-search-page]');
+      if(option) pickAppBarResult(option.dataset.appSearchPage);
+    });
+    document.addEventListener('click', event => { if(!el('appBarSearch').contains(event.target)) closeAppBarSearch(); });
+    document.addEventListener('keydown', event => {
+      if((event.ctrlKey || event.metaKey) && !event.altKey && String(event.key).toLowerCase() === 'k' && !document.body.classList.contains('home-active')){
+        event.preventDefault(); if(document.body.classList.contains('menu-open')) setSidebarOpen(false, false); appBarSearchInput.focus();
+      }
+    });
+  }
   if(sidebarSearch){
     const clearSidebarSearch = () => { sidebarSearch.value = ''; filterSidebarMenu(''); };
     sidebarSearch.addEventListener('input', () => filterSidebarMenu(sidebarSearch.value));
@@ -17747,7 +18232,7 @@
     setSidebarOpen(false, false);
     window.scrollTo({top:0, behavior:'auto'});
   });
-  try{ setSidebarCompact(localStorage.getItem('estoque_sidebar_compact') === '1'); } catch{ setSidebarCompact(false); }
+  setSidebarCompact(false); // MENU COMPACTO saiu do menu lateral (18/11/2026).
   try{ setTableDensity(localStorage.getItem('estoque_table_density') || 'comfortable'); } catch{ setTableDensity('comfortable'); }
   try{ setPurchaseDensity(localStorage.getItem('estoque_purchase_density') || 'comfortable'); } catch{ setPurchaseDensity('comfortable'); }
 
@@ -21973,6 +22458,8 @@ function renderHomeTasks(){
     storage.get('tarefas:' + dateKey).then(result => {
       if(!result || !result.value){
         homeTodayTasks = [];
+        homeAttn.tasks = {total:0, pending:0};
+        renderHomeAttn();
         renderTaskNote();
         list.innerHTML = '<div class="home-tasks-empty">Nenhuma tarefa cadastrada para hoje.<br>Acesse a aba Tarefas para adicionar.</div>';
         return;
@@ -21981,6 +22468,8 @@ function renderHomeTasks(){
       try{ data = JSON.parse(result.value); } catch{ data = {}; }
       const tasks = normalizeTaskData(data).tasks;
       homeTodayTasks = tasks;
+      homeAttn.tasks = {total:tasks.length, pending:tasks.filter(task => !task.done).length};
+      renderHomeAttn();
       renderTaskNote();
       checkTaskReminders();
       if(tasks.length === 0){
@@ -22591,7 +23080,7 @@ function renderHomeTasks(){
     const completed = status === 'completed';
     const dataAttribute = home ? 'data-home-routine-toggle' : 'data-routine-toggle';
     return '<button class="'+(completed ? 'btn-outline' : 'btn-accent')+'" type="button" '+dataAttribute+'="'+escapeHtml(task.id)+
-      '" data-current-status="'+status+'">'+(completed ? 'DESFAZER' : 'MARCAR COMO FEITA')+'</button>';
+      '" data-current-status="'+status+'">'+(completed ? 'DESFAZER' : home ? 'CONCLUIR' : 'MARCAR COMO FEITA')+'</button>';
   }
 
   function routinePendingLabel(task){
@@ -22714,6 +23203,9 @@ function renderHomeTasks(){
     try{
       const data = await missionApiRequest('/api/routines?'+new URLSearchParams({date:todayDateKey()}));
       const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      homeAttn.routine = {total:tasks.length, done:tasks.filter(task => routineTaskStatus(task) === 'completed').length};
+      if(tasks[0] && tasks[0].companyName && !homeAttn.companyName){ homeAttn.companyName = tasks[0].companyName; renderHomeHello(); }
+      if(tasks.length) renderHomeAttn();
       list.innerHTML = tasks.length
         ? tasks.slice(0,8).map(homeRoutineRowHtml).join('')
         : '<div class="home-tasks-empty">Nenhuma tarefa de rotina para hoje.</div>';
@@ -24388,6 +24880,8 @@ function renderHomeTasks(){
         return;
       }
       const shown = marked.slice(0,8);
+      homeAttn.supplies = marked.length;
+      renderHomeAttn();
       el('homeSuppliesList').innerHTML = shown.map(product =>
           '<div class="home-supply-row">'+
             '<span class="home-supply-quantity">'+escapeHtml(product.categoryName || '—')+'</span>'+
@@ -27263,6 +27757,8 @@ function renderHomeTasks(){
     // Login com loja: só o essencial da própria loja, num painel só.
     if(!data.allStores){
       const counts = data.counts || {};
+      homeAttn.div = {value:Number(counts.verificacao_loja) || 0, late:false, sub:'AGUARDANDO RESPOSTA DA LOJA'};
+      renderHomeAttn();
       const html = counterButtons([
         ['','PEDIDOS EM ANDAMENTO', counts.pedidos],
         ['em_verificacao','ITENS EM VERIFICAÇÃO', counts.em_verificacao],
@@ -27282,6 +27778,8 @@ function renderHomeTasks(){
     }
     if(stockView){
       const counts = data.counts || {};
+      homeAttn.div = {value:Number(counts.nao_visto) || 0, late:Number((data.overdue || {}).count) > 0, sub:Number((data.overdue || {}).count) > 0 ? (data.overdue.count)+' PASSARAM DO PRAZO' : 'NÃO VISTOS'};
+      renderHomeAttn();
       const counters = [
         ['nao_visto','NÃO VISTOS', counts.nao_visto],
         ['em_verificacao','EM VERIFICAÇÃO', counts.em_verificacao],
@@ -29416,6 +29914,8 @@ function renderHomeTasks(){
     try{
       const data = await instructionApiRequest('/api/instructions?status=active');
       const rows = Array.isArray(data.instructions) ? data.instructions : [];
+      homeAttn.instructions = rows.length;
+      renderHomeAttn();
       list.innerHTML = rows.length
         ? rows.slice(0,3).map(row => homeInstructionRowHtml(row,data.today || todayDateKey())).join('')
         : '<div class="home-tasks-empty">Nenhuma instrução vigente para as lojas.</div>';
@@ -29445,6 +29945,8 @@ function renderHomeTasks(){
       const track = el(target.track);
       if(!track) return;
       track.style.transform = 'translateX(-'+(instructionCarouselIndex * 100)+'%)';
+      const count = el(target.section) && el(target.section).querySelector('[data-carousel-count]');
+      if(count) count.textContent = instructionCarouselImages.length > 1 ? (instructionCarouselIndex + 1)+'/'+instructionCarouselImages.length : '';
       document.querySelectorAll('#'+target.dots+' [data-carousel-dot]').forEach((dot,index) => {
         dot.classList.toggle('active', index === instructionCarouselIndex);
       });
@@ -29539,6 +30041,36 @@ function renderHomeTasks(){
     if(el('instructionCarouselManageList')) renderInstructionCarouselManageList();
   }
 
+  // Destaque em tamanho grande (toque na imagem ou AMPLIAR): setas, teclado e ESC.
+  function renderCarouselLightbox(){
+    const image = instructionCarouselImages[instructionCarouselIndex];
+    if(!image) return;
+    el('carouselLightboxImg').src = image.viewUrl;
+    el('carouselLightboxCount').textContent = instructionCarouselImages.length > 1 ? (instructionCarouselIndex + 1)+' DE '+instructionCarouselImages.length : '';
+    el('carouselLightbox').querySelectorAll('[data-lightbox-step]').forEach(button => { button.hidden = instructionCarouselImages.length < 2; });
+  }
+  function openCarouselLightbox(){
+    if(!instructionCarouselImages.length) return;
+    stopInstructionCarouselAutoplay();
+    renderCarouselLightbox();
+    el('carouselLightbox').showModal();
+  }
+  if(el('carouselLightbox')){
+    const lightbox = el('carouselLightbox');
+    lightbox.addEventListener('click', event => {
+      const step = event.target.closest('[data-lightbox-step]');
+      if(step){ goToInstructionCarouselSlide(instructionCarouselIndex + Number(step.dataset.lightboxStep)); renderCarouselLightbox(); return; }
+      if(event.target.closest('[data-lightbox-close]') || event.target === lightbox) lightbox.close();
+    });
+    lightbox.addEventListener('keydown', event => {
+      if(event.key === 'ArrowRight' || event.key === 'ArrowLeft'){
+        event.preventDefault();
+        goToInstructionCarouselSlide(instructionCarouselIndex + (event.key === 'ArrowRight' ? 1 : -1));
+        renderCarouselLightbox();
+      }
+    });
+    lightbox.addEventListener('close', startInstructionCarouselAutoplay);
+  }
   INSTRUCTION_CAROUSEL_TARGETS.forEach(target => {
     const section = el(target.section);
     if(!section) return;
@@ -29548,6 +30080,11 @@ function renderHomeTasks(){
       if(!dot) return;
       goToInstructionCarouselSlide(Number(dot.dataset.carouselDot));
       startInstructionCarouselAutoplay();
+    });
+    section.addEventListener('click', event => {
+      const step = event.target.closest('[data-carousel-step]');
+      if(step){ goToInstructionCarouselSlide(instructionCarouselIndex + Number(step.dataset.carouselStep)); return; }
+      if(event.target.closest('[data-carousel-zoom]') || event.target.closest('.instruction-carousel-slide')) openCarouselLightbox();
     });
     section.addEventListener('mouseenter', stopInstructionCarouselAutoplay);
     section.addEventListener('mouseleave', startInstructionCarouselAutoplay);

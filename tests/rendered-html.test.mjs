@@ -400,7 +400,7 @@ test("mantém a interface sem referências quebradas ou identificadores duplicad
   }
 
   assert.match(html, /<title>UNIGAMES<\/title>/);
-  assert.match(html, /<span class="brand-copy"><strong>UNIGAMES<\/strong><\/span>/);
+  assert.match(html, /<span class="brand-copy"><small>CENTRAL<\/small><strong>UNIGAMES<\/strong><\/span>/);
   assert.doesNotMatch(html, /<small>RECONCILIAÇÃO DE ESTOQUE<\/small>/);
   assert.doesNotMatch(layout, /\/og\.png/);
   assert.doesNotMatch(workerSource, /"\/og\.png"/);
@@ -1773,7 +1773,7 @@ test("publica instruções para todas as lojas e preserva o histórico automáti
   assert.match(html, /id="homeInstructionCarouselDots"/);
   assert.match(
     html,
-    /id="homeInstructionCarousel"[\s\S]{0,800}?section class="home-instructions"/,
+    /id="homeInstructionCarousel"[\s\S]{0,2000}?section class="home-instructions"/,
   );
   assert.match(html, /'#homeInstructionCarousel',\s*\n\s*'\.home-instructions',/);
   assert.match(html, /INSTRUCTION_CAROUSEL_AUTOPLAY_MS = 10000/);
@@ -2128,7 +2128,14 @@ test("reclassifica o sidebar e oferece início Lightglass com acessos rápidos",
   assert.match(html, /class="nav-item sub-item" id="navPuxadas"[\s\S]*class="nav-item sub-item" id="navSaidas"/);
   assert.match(html, /id="navDados"[\s\S]*class="nav-item sub-item" id="navLojas"/);
   assert.match(html, /id="pageInicio" class="page wrap home-page active"/);
-  assert.match(html, /class="home-lightglass"/);
+  assert.match(html, /class="home-dash"/);
+  // Início em painel (18/11/2026): saudação, faixa de atenção, módulos em lista com abas e filtro.
+  assert.match(html, /id="homeHello"/);
+  assert.match(html, /id="homeAttn" hidden/);
+  assert.match(html, /id="homeModTabs" role="tablist"/);
+  assert.match(html, /id="homeModFilter" type="search"/);
+  assert.match(html, /function renderHomeAttn\(\)/);
+  assert.match(html, /function renderHomeModTabs\(\)/);
   assert.match(html, /class="home-brand-compact">[\s\S]{0,120}?class="brand-logo" data-logo alt="LOGO UNIGAMES"/);
   assert.match(html, /id="navPuxadas"[^>]*data-home-desc=/);
   assert.match(html, /id="navCompras"[^>]*data-home-desc=/);
@@ -5845,4 +5852,31 @@ test("Financeiro > Crediários: LOGIN (cadastro, lote, lista, filtro) e cards da
   for (const label of ["VALOR BRUTO TOTAL", "VALOR LÍQUIDO", "VALOR DE TAXAS", "QUANTIDADE PENDENTE", "PENDENTE HÁ MAIS DE 7 DIAS"]) {
     assert.match(html, new RegExp(`card\\('${label}'`), label);
   }
+});
+
+test("barra da marca, caminho, busca no cabeçalho, abas sublinhadas e destaques com ampliar", async () => {
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  // Barra azul fixa: marca CENTRAL / UNIGAMES, busca de módulos (Ctrl+K), tema e usuário.
+  assert.match(html, /<header class="app-bar no-print" id="appBar">/);
+  assert.match(html, /<span class="app-bar-word"><small>CENTRAL<\/small><b>UNIGAMES<\/b><\/span>/);
+  assert.match(html, /id="appBarSearchInput" type="search"/);
+  assert.match(html, /id="appBarSearchResults" role="listbox" hidden/);
+  assert.match(html, /String\(event\.key\)\.toLowerCase\(\) === 'k'/);
+  assert.match(html, /appBarUser\.before\(el\('themeToggle'\)\)/);
+  // A pesquisa e o MENU COMPACTO saíram do menu lateral; o Início não mostra o menu.
+  assert.match(html, /\.sidebar-search,\.sidebar-compact-toggle\{display:none!important;\}/);
+  assert.match(html, /html body\.home-active \.menu-toggle\{display:none!important;\}/);
+  // Caminho (INÍCIO › GRUPO › PÁGINA) montado a partir do menu.
+  assert.match(html, /function updatePageCrumbs\(page, navItem, isHome\)/);
+  assert.match(html, /updatePageCrumbs\(page, navItem, isHome\);/);
+  // Abas do site inteiro: texto com traço azul embaixo da ativa.
+  assert.match(html, /\.supply-tab\.active,\.output-tab\.active,\.mission-tab\.active,\.instruction-tab\.active\{color:var\(--ink\)!important; border-bottom-color:var\(--accent\)!important;\}/);
+  // Tema claro/vidro não pintam o campo de busca nem o botão de tema da barra.
+  assert.match(html, /html \.app-bar #appBarSearchInput\{/);
+  assert.match(html, /html \.app-bar \.theme-toggle\{background:transparent!important;/);
+  // Destaques: contador, setas e imagem grande (Início e Instruções).
+  assert.equal((html.match(/data-carousel-count/g) || []).length >= 3, true);
+  assert.match(html, /<dialog class="carousel-lightbox" id="carouselLightbox"/);
+  assert.match(html, /function openCarouselLightbox\(\)/);
+  assert.match(html, /data-carousel-zoom>AMPLIAR<\/button>/);
 });
