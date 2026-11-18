@@ -11,7 +11,7 @@ const worker = await readFile(new URL("../worker/index.ts", import.meta.url), "u
 
 test("interruptor NOTA DE TAREFAS na aba Tarefas e no menu do usuário", () => {
   assert.match(html, /<input type="checkbox" class="home-task-check" id="taskNoteEnabled"[^>]*> NOTA DE TAREFAS<\/label>/);
-  assert.match(html, /<button id="btnTaskNoteToggle" type="button" hidden>NOTA DE TAREFAS: LIGADA<\/button>/);
+  assert.match(html, /<button id="btnTaskNoteToggle" type="button" role="menuitem" hidden>NOTA DE TAREFAS: LIGADA<\/button>/);
   assert.match(html, /el\('taskNoteEnabled'\)\.addEventListener\('change', event => setTaskNoteEnabled\(event\.target\.checked\)\)/);
   assert.match(html, /storage\.set\(TASK_NOTE_STATE_KEY, JSON\.stringify\(\{enabled\}\)\)/);
   assert.match(html, /<aside class="task-note" id="taskNote"[^>]*hidden><\/aside>/);

@@ -9,6 +9,8 @@ const encoder = new TextEncoder();
 const TASK_KEY_PATTERN = /^tarefas:(\d{4}-\d{2}-\d{2})$/;
 // Nota adesiva de Tarefas ligada/desligada: uma chave por usuário (sem migration).
 const TASK_NOTE_KEY = "tarefas-nota";
+// Preferências de tela (ordem dos quadros do Início, cor da nota): uma chave por usuário.
+const SCREEN_PREFS_KEY = "tela-prefs";
 
 function asRecord(value: unknown): JsonMap {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -28,6 +30,7 @@ function validStateKey(key: string): boolean {
     /^report41:store:c[a-z0-9]{6,40}$/i.test(key) ||
     /^tarefas:\d{4}-\d{2}-\d{2}$/.test(key) ||
     key === TASK_NOTE_KEY ||
+    key === SCREEN_PREFS_KEY ||
     /^estoque:c[a-z0-9]{6,40}$/i.test(key)
   );
 }
@@ -52,10 +55,10 @@ function authenticatedUserId(request: Request): string {
 }
 
 function scopedStateKey(request: Request, key: string): string {
-  if (key === TASK_NOTE_KEY) {
+  if (key === TASK_NOTE_KEY || key === SCREEN_PREFS_KEY) {
     const userId = authenticatedUserId(request);
     if (!userId) throw new Error("USUÁRIO NÃO IDENTIFICADO");
-    return `${TASK_NOTE_KEY}:${userId}`;
+    return `${key}:${userId}`;
   }
   const taskMatch = TASK_KEY_PATTERN.exec(key);
   if (!taskMatch) return key;

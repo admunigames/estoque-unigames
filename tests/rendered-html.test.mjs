@@ -5862,7 +5862,7 @@ test("barra da marca, caminho, busca no cabeçalho, abas sublinhadas e destaques
   assert.match(html, /id="appBarSearchInput" type="search"/);
   assert.match(html, /id="appBarSearchResults" role="listbox" hidden/);
   assert.match(html, /String\(event\.key\)\.toLowerCase\(\) === 'k'/);
-  assert.match(html, /appBarUser\.before\(el\('themeToggle'\)\)/);
+  assert.match(html, /el\('appBarUserWrap'\)\.before\(el\('themeToggle'\)\)/);
   // A pesquisa e o MENU COMPACTO saíram do menu lateral; o Início não mostra o menu.
   assert.match(html, /\.sidebar-search,\.sidebar-compact-toggle\{display:none!important;\}/);
   assert.match(html, /html body\.home-active \.menu-toggle\{display:none!important;\}/);
@@ -5879,4 +5879,34 @@ test("barra da marca, caminho, busca no cabeçalho, abas sublinhadas e destaques
   assert.match(html, /<dialog class="carousel-lightbox" id="carouselLightbox"/);
   assert.match(html, /function openCarouselLightbox\(\)/);
   assert.match(html, /data-carousel-zoom>AMPLIAR<\/button>/);
+});
+
+test("menu do usuário (setor, personalizar, sair), preferências de tela, instruções, inventário e quantidades", async () => {
+  const [html, route, worker] = await Promise.all([
+    readFile(new URL("../public/estoque.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/shared-state/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+  ]);
+  // Menu do usuário na barra: setor no lugar do grupo, personalizar, nota, instalar, backup e sair.
+  assert.match(html, /id="appBarUser" type="button" aria-haspopup="menu"/);
+  assert.match(html, /id="appUserMenu" role="menu" hidden/);
+  assert.match(html, /<button id="btnAppearance" type="button" role="menuitem">PERSONALIZAR<\/button>/);
+  assert.match(html, /class="app-user-menu-logout" method="post" action="\/logout"/);
+  assert.match(html, /const sectorCode = String\(currentSession\.sector \|\| ''\)\.trim\(\);/);
+  assert.match(html, /\.sidebar \.ios-storage-box,\.sidebar \.session-user,\.sidebar \.logout-form\{display:none!important;\}/);
+  // Preferências por usuário sem migration: shared_state "tela-prefs" escopado por usuário.
+  assert.match(route, /const SCREEN_PREFS_KEY = "tela-prefs";/);
+  assert.match(route, /key === TASK_NOTE_KEY \|\| key === SCREEN_PREFS_KEY/);
+  assert.match(worker, /if \(key === "tela-prefs"\) return true;/);
+  assert.match(html, /name="appearanceNoteColor" value="lilas"/);
+  assert.match(html, /\.task-note\[data-note-color="verde"\]\{background:#d4f2c4;\}/);
+  assert.match(html, /id="appearanceWidgetOrder"/);
+  // Instruções: botão abre o cadastro (painéis começam fechados).
+  assert.match(html, /id="btnNewInstruction" type="button"[^>]*>CADASTRAR INSTRUÇÃO<\/button>/);
+  assert.match(html, /id="instructionFormPanel" data-permission="instructions:manage" hidden/);
+  // Inventário: ações no topo do detalhe; sem voltar/atualizar dentro do inventário.
+  assert.match(html, /<div id="invDetailView" hidden>\s*<div class="dre-toolbar-actions inv-detail-actions">/);
+  assert.match(html, /el\('btnInvReload'\)\.hidden = true;/);
+  // Entrada e Saída: quantidade em destaque.
+  assert.equal((html.match(/output-quantity output-qty-big/g) || []).length, 2);
 });

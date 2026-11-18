@@ -1745,6 +1745,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     // "DADOS COMPARTILHADOS" na sidebar, sem gate de módulo no HTML) — não
     // deve depender de permissão de nenhum módulo específico.
     if (key === "__shared_health__") return true;
+    // Preferências de tela de cada usuário (a rota guarda em "tela-prefs:<id>").
+    if (key === "tela-prefs") return true;
     // A LEITURA da lista de lojas (id+nome, sem dado sensível) é usada por
     // vários módulos pra deixar quem não tem loja escolher a loja de
     // destino (Saídas, Captação, Missões, Insumos...) — gateá-la atrás de

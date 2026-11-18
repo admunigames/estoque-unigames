@@ -4597,6 +4597,46 @@
   .home-dash .home-task-text,.home-dash .home-task-row{color:var(--ink);}
   .home-dash .home-tasks-date{color:var(--ink-faint);}
   .home-dash .home-tasks-empty{background:transparent; color:var(--ink-faint); border-color:var(--border);}
+  /* Menu do usuário (nome + setor) com personalizar, nota, instalar, backup e sair. */
+  .app-bar-user-wrap{position:relative; flex:none;}
+  html .app-bar .app-bar-user{display:flex; align-items:center; gap:9px; min-height:0!important; padding:4px 10px 4px 4px; border:1px solid rgba(255,255,255,.18); border-radius:999px; background:transparent; color:#fff; cursor:pointer; max-width:260px; text-align:left;}
+  .app-bar .app-bar-user:hover{background:rgba(255,255,255,.08); transform:none;}
+  .app-bar-caret{width:14px; height:14px; flex:none; opacity:.75;}
+  .app-user-menu{position:absolute; right:0; top:calc(100% + 8px); z-index:960; display:flex; flex-direction:column; min-width:230px; padding:6px; border:1px solid var(--border); border-radius:12px; background:var(--bg-card); color:var(--ink); box-shadow:0 18px 40px rgba(0,0,0,.28);}
+  .app-user-menu[hidden]{display:none;}
+  .app-user-menu-head{display:flex; flex-direction:column; gap:3px; padding:8px 10px 10px; margin-bottom:4px; border-bottom:1px solid var(--border);}
+  .app-user-menu-head b{font:800 12.5px/1.2 var(--sans);}
+  .app-user-menu-head small{color:var(--ink-faint); font:600 10px/1.2 var(--sans); letter-spacing:.05em;}
+  html .app-user-menu button{display:block; width:100%; min-height:0!important; padding:10px; border:0; border-radius:8px; background:transparent; color:var(--ink); font:700 11.5px/1.2 var(--sans); letter-spacing:.04em; text-align:left;}
+  html .app-user-menu button:hover{background:rgba(79,134,189,.12); transform:none;}
+  .app-user-menu button[hidden]{display:none;}
+  .app-user-menu-logout{margin:4px 0 0; padding-top:4px; border-top:1px solid var(--border);}
+  html .app-user-menu-logout button{color:var(--neg);}
+  /* Saem do menu lateral: caixa de dados/aparência, usuário e sair (foram para o menu do usuário). */
+  .sidebar .ios-storage-box,.sidebar .session-user,.sidebar .logout-form{display:none!important;}
+  /* Selo da loja/usuário ao lado da saudação: saiu (o usuário já está na barra). */
+  .home-hello .home-scope{display:none!important;}
+  /* A cor principal escolhida em PERSONALIZAR também tinge a barra e o topo do menu. */
+  html .app-bar,html .sidebar .sidebar-brand{--app-bar-bg:color-mix(in srgb, var(--accent) 40%, #0a1628);}
+  html:not([data-theme="light"]) .app-bar,html:not([data-theme="light"]) .sidebar .sidebar-brand{--app-bar-bg:color-mix(in srgb, var(--accent) 30%, #07101c);}
+  /* Personalizar: cores da nota e ordem dos quadros */
+  .appearance-label{display:block; margin-bottom:8px; color:var(--ink-soft); font:800 10px/1 var(--mono); letter-spacing:.06em;}
+  .note-color-choices{display:flex; flex-wrap:wrap; gap:8px;}
+  .note-color-choices label{display:inline-flex; align-items:center; gap:7px; padding:6px 10px 6px 6px; border:1px solid var(--border); border-radius:999px; font:700 10.5px/1 var(--sans); cursor:pointer;}
+  .note-color-choices input{position:absolute; opacity:0; pointer-events:none;}
+  .note-color-choices span{width:20px; height:20px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);}
+  .note-color-choices label:has(input:checked){border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);}
+  .note-color-choices label:has(input:focus-visible){outline:2px solid var(--accent); outline-offset:2px;}
+  .widget-order{margin:0; padding:0; list-style:none; display:grid; gap:6px;}
+  .widget-order li{display:flex; align-items:center; gap:6px; padding:6px 6px 6px 12px; border:1px solid var(--border); border-radius:9px; font:700 11.5px/1.2 var(--sans);}
+  .widget-order li span{flex:1;}
+  /* Instruções: botões do topo abrem cadastro e imagens */
+  #pageInstrucoes .page-header .dre-toolbar-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  /* Inventário: finalizar/excluir no topo, à direita, acima dos números */
+  #invDetailView .inv-detail-actions{display:flex; justify-content:flex-end; gap:8px; margin:0 0 12px;}
+  /* Entrada e Saída: quantidade solicitada em destaque */
+  .output-quantity.output-qty-big{display:inline-flex; align-items:baseline; gap:4px; padding:7px 12px; border-radius:10px; background:var(--accent); color:var(--accent-ink,#fff); font:800 20px/1 var(--sans); letter-spacing:-.3px; font-variant-numeric:tabular-nums;}
+  .output-quantity.output-qty-big small{font:800 10px/1 var(--mono); letter-spacing:.04em; opacity:.85;}
   /* Início sem menu lateral: a lista de módulos já faz esse papel. */
   html body.home-active .menu-toggle{display:none!important;}
   /* A marca e a busca ficam no mesmo lugar com ou sem o botão do menu (o espaço do ☰ continua reservado). */
@@ -4633,6 +4673,12 @@
     font:600 11.5px/1.35 var(--sans,'Inter',system-ui,sans-serif); text-transform:uppercase;
   }
   .task-note[hidden]{display:none;}
+  /* Cor da nota escolhida em PERSONALIZAR (texto escuro igual em todas). */
+  .task-note[data-note-color="verde"]{background:#d4f2c4;}
+  .task-note[data-note-color="azul"]{background:#cfe4fb;}
+  .task-note[data-note-color="rosa"]{background:#fbd3e3;}
+  .task-note[data-note-color="laranja"]{background:#ffd9b0;}
+  .task-note[data-note-color="lilas"]{background:#e3d6fb;}
   .task-note-head{display:flex; align-items:center; gap:6px; padding:8px 8px 6px 10px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;}
   .task-note:not(.is-min) .task-note-head{border-bottom:1px dashed rgba(61,51,0,.28);}
   .task-note-head:active{cursor:grabbing;}
@@ -4709,7 +4755,19 @@
     <div class="home-search-results app-bar-results" id="appBarSearchResults" role="listbox" hidden></div>
   </div>
   <span class="app-bar-spacer"></span>
-  <div class="app-bar-user" id="appBarUser"><span class="app-bar-avatar" id="appBarAvatar" aria-hidden="true">·</span><span class="app-bar-user-t"><b id="appBarUserName"></b><small id="appBarUserGroup"></small></span></div>
+  <div class="app-bar-user-wrap" id="appBarUserWrap">
+    <button class="app-bar-user" id="appBarUser" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="appUserMenu"><span class="app-bar-avatar" id="appBarAvatar" aria-hidden="true">·</span><span class="app-bar-user-t"><b id="appBarUserName"></b><small id="appBarUserGroup"></small></span><svg class="app-bar-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="app-user-menu" id="appUserMenu" role="menu" hidden>
+      <div class="app-user-menu-head"><b id="appUserMenuName"></b><small id="appUserMenuGroup"></small></div>
+      <button id="btnAppearance" type="button" role="menuitem">PERSONALIZAR</button>
+      <button id="btnTaskNoteToggle" type="button" role="menuitem" hidden>NOTA DE TAREFAS: LIGADA</button>
+      <button id="btnUserMenuInstall" type="button" role="menuitem">INSTALAR APLICATIVO</button>
+      <button id="btnIosBackup" type="button" role="menuitem" data-env-admin-only>EXPORTAR BACKUP</button>
+      <button id="btnIosRestore" type="button" role="menuitem" data-env-admin-only>RESTAURAR BACKUP</button>
+      <input class="pull-hidden-input" id="iosRestoreInput" type="file" accept=".json,application/json">
+      <form class="app-user-menu-logout" method="post" action="/logout"><button type="submit" role="menuitem">SAIR DO SISTEMA</button></form>
+    </div>
+  </div>
 </header>
 <aside class="ios-install-hint no-print" id="iosInstallHint" hidden>
   <span><b>NO IPHONE/IPAD:</b> NO SAFARI, TOQUE EM COMPARTILHAR E DEPOIS EM “ADICIONAR À TELA DE INÍCIO”. ABRA PELO NOVO ÍCONE PARA ATIVAR AS NOTIFICAÇÕES.</span>
@@ -4886,12 +4944,7 @@
       <strong>DADOS COMPARTILHADOS</strong>
       <p id="iosStorageStatus">VERIFICANDO A CONEXÃO COM O BANCO GERAL...</p>
       <div class="ios-storage-actions">
-        <button id="btnIosBackup" type="button" data-env-admin-only>EXPORTAR BACKUP</button>
-        <button id="btnIosRestore" type="button" data-env-admin-only>RESTAURAR BACKUP</button>
-        <button id="btnAppearance" type="button">APARÊNCIA E APLICATIVO</button>
-        <button id="btnTaskNoteToggle" type="button" hidden>NOTA DE TAREFAS: LIGADA</button>
       </div>
-      <input class="pull-hidden-input" id="iosRestoreInput" type="file" accept=".json,application/json">
     </div>
     <div class="session-user"><strong id="sessionDisplayName">Carregando usuário…</strong><span id="sessionAccessLabel"></span></div>
     <form class="logout-form" method="post" action="/logout">
@@ -5591,11 +5644,11 @@
       </div>
 
       <div id="invDetailView" hidden>
-        <div class="supply-dashboard-grid gd-summary" id="invSummary"></div>
         <div class="dre-toolbar-actions inv-detail-actions">
           <button class="btn-outline" id="btnInvFinalize" type="button" hidden>FINALIZAR INVENTÁRIO</button>
           <button class="btn-outline" id="btnInvDelete" type="button" hidden>EXCLUIR INVENTÁRIO</button>
         </div>
+        <div class="supply-dashboard-grid gd-summary" id="invSummary"></div>
         <div class="supply-tabs" role="tablist" aria-label="Etapas do inventário" id="invTabs">
           <button class="supply-tab active" type="button" role="tab" data-inv-tab="categorias">CATEGORIAS</button>
           <button class="supply-tab" type="button" role="tab" data-inv-tab="contagem">CONTAGEM</button>
@@ -6512,6 +6565,10 @@
           <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
           <h2 class="page-title">Instruções</h2>
         </div>
+        <div class="dre-toolbar-actions" data-permission="instructions:manage">
+          <button class="btn-outline" id="btnInstructionImages" type="button" aria-expanded="false" aria-controls="instructionImagesPanel">IMAGENS DOS DESTAQUES</button>
+          <button class="btn-accent" id="btnNewInstruction" type="button" aria-expanded="false" aria-controls="instructionFormPanel">CADASTRAR INSTRUÇÃO</button>
+        </div>
       </header>
 
       <section class="instruction-carousel" id="instructionCarousel" aria-label="Comunicados em destaque" hidden>
@@ -6524,7 +6581,7 @@
           <div class="carousel-foot"><span>TROCA A CADA 10 S · TOQUE PARA AMPLIAR</span><span class="carousel-nav"><button type="button" data-carousel-step="-1" aria-label="Imagem anterior">‹</button><button type="button" data-carousel-step="1" aria-label="Próxima imagem">›</button></span></div>
         </section>
 
-      <section class="instruction-admin-panel" data-permission="instructions:manage">
+      <section class="instruction-admin-panel" id="instructionImagesPanel" data-permission="instructions:manage" hidden>
         <div class="instruction-admin-head">
           <div><h3>IMAGENS DO CARROSSEL</h3><p>Até 10 imagens em destaque no topo desta página, com troca automática a cada 10 segundos. Proporção recomendada: quase quadrada (ex.: 2000×1806px).</p></div>
         </div>
@@ -6542,7 +6599,7 @@
         <article class="instruction-summary-card"><span>PRÓXIMO PRAZO</span><strong class="date" id="instructionNearestDue">—</strong></article>
       </section>
 
-      <section class="instruction-admin-panel" data-permission="instructions:manage">
+      <section class="instruction-admin-panel" id="instructionFormPanel" data-permission="instructions:manage" hidden>
         <div class="instruction-admin-head">
           <div><h3>CADASTRAR NOVA INSTRUÇÃO</h3><p>A orientação será publicada imediatamente para todos os usuários e lojas.</p></div>
         </div>
@@ -15820,7 +15877,7 @@
 </dialog>
 <dialog class="purchase-dialog" id="appearanceDialog" aria-labelledby="appearanceDialogTitle">
   <div class="purchase-dialog-head">
-    <h3 id="appearanceDialogTitle">APARÊNCIA E APLICATIVO</h3>
+    <h3 id="appearanceDialogTitle">PERSONALIZAR</h3>
     <button class="purchase-dialog-close" id="btnCloseAppearance" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="appearanceForm">
@@ -15830,6 +15887,20 @@
       <div class="purchase-field full"><label for="appearanceLogo">LOGOTIPO/ÍCONE PESSOAL</label><input type="file" id="appearanceLogo" accept="image/png,image/jpeg,image/webp"><span class="purchase-field-help">A IMAGEM SERÁ REDUZIDA E SALVA APENAS PARA O SEU USUÁRIO.</span></div>
       <div class="purchase-field full appearance-preview"><img class="preference-logo-preview" id="appearanceLogoPreview" src="/favicon.svg" alt="Prévia do logotipo"><button class="btn-outline" id="btnRemoveAppearanceLogo" type="button">USAR LOGO PADRÃO</button></div>
       <label class="permission-option full"><input id="appearanceCompactMobile" type="checkbox"> Usar visual mais compacto no celular</label>
+      <div class="purchase-field full"><span class="appearance-label" id="appearanceNoteLabel">COR DA NOTA DE TAREFAS</span>
+        <div class="note-color-choices" role="radiogroup" aria-labelledby="appearanceNoteLabel">
+          <label><input type="radio" name="appearanceNoteColor" value="amarelo"><span style="background:#fff2a1"></span>AMARELO</label>
+          <label><input type="radio" name="appearanceNoteColor" value="verde"><span style="background:#d4f2c4"></span>VERDE</label>
+          <label><input type="radio" name="appearanceNoteColor" value="azul"><span style="background:#cfe4fb"></span>AZUL</label>
+          <label><input type="radio" name="appearanceNoteColor" value="rosa"><span style="background:#fbd3e3"></span>ROSA</label>
+          <label><input type="radio" name="appearanceNoteColor" value="laranja"><span style="background:#ffd9b0"></span>LARANJA</label>
+          <label><input type="radio" name="appearanceNoteColor" value="lilas"><span style="background:#e3d6fb"></span>LILÁS</label>
+        </div>
+      </div>
+      <div class="purchase-field full"><span class="appearance-label">ORDEM DOS QUADROS DO INÍCIO</span>
+        <ol class="widget-order" id="appearanceWidgetOrder"></ol>
+        <span class="purchase-field-help">VALE PARA OS NÚMEROS DO TOPO E PARA OS QUADROS DO INÍCIO. QUADROS QUE O SEU ACESSO NÃO TEM NÃO APARECEM.</span>
+      </div>
     </div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnInstallApp" type="button">INSTALAR APLICATIVO</button>
@@ -17176,8 +17247,9 @@
     if(homeAttn.instructions !== undefined){
       cards.push(card('instrucoes', 'info', svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/>'), 'COMUNICADOS', homeAttn.instructions, 'INSTRUÇÕES VIGENTES'));
     }
+    const attnRank = card => telaPrefs.widgetOrder.indexOf(({tarefas:'tarefas', missoes:'rotina', divergencias:'divergencias', insumos:'insumos', instrucoes:'comunicados'})[(card.match(/data-home-attn="([^"]+)"/) || [])[1]]);
+    cards.sort((a, b) => attnRank(a) - attnRank(b));
     box.innerHTML = cards.join('');
-    box.style.setProperty('--attn-cols', Math.max(cards.length, 1));
     box.hidden = !cards.length;
   }
   el('homeAttn') && el('homeAttn').addEventListener('click', event => {
@@ -17284,7 +17356,13 @@
       const name = currentSession.displayName || currentSession.username || 'Usuário';
       el('appBarUserName').textContent = name;
       el('appBarAvatar').textContent = name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '·';
-      el('appBarUserGroup').textContent = currentSession.role === 'admin' ? 'ADMINISTRADOR' : (groupLabels[currentSession.accessGroup] || 'ACESSO LIMITADO');
+      // Setor com o mesmo nome do cadastro de usuários (ADMINISTRATIVO, ASSISTÊNCIA, DEPÓSITO…).
+      const sectorCode = String(currentSession.sector || '').trim();
+      const sectorOption = sectorCode && Array.from(el('userSector') ? el('userSector').options : []).find(option => option.value === sectorCode);
+      const sectorLabel = (sectorOption ? sectorOption.textContent.trim() : sectorCode) || (currentSession.role === 'admin' ? 'ADMINISTRADOR' : (groupLabels[currentSession.accessGroup] || 'ACESSO LIMITADO'));
+      el('appBarUserGroup').textContent = sectorLabel;
+      el('appUserMenuName').textContent = name;
+      el('appUserMenuGroup').textContent = sectorLabel;
       el('appBarUser').title = name;
     }
     el('sessionAccessLabel').textContent = (groupLabels[currentSession.accessGroup] || 'Acesso limitado') + (currentSession.role === 'admin' ? ' · acesso completo' : '');
@@ -17383,6 +17461,60 @@
     deferredInstallPrompt = event;
   });
 
+  // ===== PREFERÊNCIAS DE TELA (por usuário, shared_state "tela-prefs", sem migration) =====
+  const TELA_PREFS_KEY = 'tela-prefs';
+  const HOME_WIDGETS = [
+    ['destaques','DESTAQUES'],['comunicados','COMUNICADOS'],['tarefas','TAREFAS DE HOJE'],
+    ['rotina','ROTINA DO DIA'],['divergencias','DIVERGÊNCIAS'],['insumos','INSUMOS'],
+  ];
+  const NOTE_COLORS = ['amarelo','verde','azul','rosa','laranja','lilas'];
+  let telaPrefs = {widgetOrder:HOME_WIDGETS.map(([key]) => key), noteColor:'amarelo'};
+  let telaPrefsDraft = null;
+  function normalizeTelaPrefs(raw){
+    const known = HOME_WIDGETS.map(([key]) => key);
+    const order = (Array.isArray(raw && raw.widgetOrder) ? raw.widgetOrder : []).filter((key, index, list) => known.includes(key) && list.indexOf(key) === index);
+    known.forEach(key => { if(!order.includes(key)) order.push(key); });
+    return {widgetOrder:order, noteColor:NOTE_COLORS.includes(raw && raw.noteColor) ? raw.noteColor : 'amarelo'};
+  }
+  function applyTelaPrefs(){
+    const rank = key => telaPrefs.widgetOrder.indexOf(key);
+    const place = (selector, key) => document.querySelectorAll(selector).forEach(node => { node.style.order = String(rank(key)); });
+    place('#homeInstructionCarousel', 'destaques');
+    place('.home-dash .home-instructions', 'comunicados');
+    place('.home-dash .home-tasks', 'tarefas');
+    place('#homeRoutineSection', 'rotina');
+    place('#homeDivergencesStore,#homeDivergencesStock', 'divergencias');
+    place('#homeSuppliesAlert', 'insumos');
+    renderHomeAttn();
+    renderTaskNote();
+  }
+  async function loadTelaPrefs(){
+    try{
+      const result = await storage.get(TELA_PREFS_KEY);
+      telaPrefs = normalizeTelaPrefs(result && result.value ? JSON.parse(result.value) : {});
+    }catch{ telaPrefs = normalizeTelaPrefs({}); }
+    applyTelaPrefs();
+  }
+  function renderWidgetOrderEditor(){
+    const list = el('appearanceWidgetOrder');
+    const order = telaPrefsDraft.widgetOrder;
+    list.innerHTML = order.map((key, index) =>
+      '<li><span>'+escapeHtml((HOME_WIDGETS.find(([k]) => k === key) || [key, key])[1])+'</span>'+
+      '<button class="btn-outline btn-sm aop-icon-btn" type="button" data-widget-move="-1" data-widget="'+key+'" aria-label="Subir" title="Subir"'+(index ? '' : ' disabled')+'>↑</button>'+
+      '<button class="btn-outline btn-sm aop-icon-btn" type="button" data-widget-move="1" data-widget="'+key+'" aria-label="Descer" title="Descer"'+(index < order.length - 1 ? '' : ' disabled')+'>↓</button></li>').join('');
+  }
+  el('appearanceWidgetOrder').addEventListener('click', event => {
+    const button = event.target.closest('[data-widget-move]');
+    if(!button) return;
+    const order = telaPrefsDraft.widgetOrder;
+    const from = order.indexOf(button.dataset.widget);
+    const to = from + Number(button.dataset.widgetMove);
+    if(from < 0 || to < 0 || to >= order.length) return;
+    order.splice(to, 0, order.splice(from, 1)[0]);
+    renderWidgetOrderEditor();
+    const again = el('appearanceWidgetOrder').querySelector('[data-widget="'+button.dataset.widget+'"][data-widget-move="'+button.dataset.widgetMove+'"]');
+    if(again && !again.disabled) again.focus();
+  });
   function openAppearanceDialog(){
     el('appearanceTheme').value = currentPreferences.theme;
     syncAppearanceAccentLabel();
@@ -17390,6 +17522,9 @@
     el('appearanceCompactMobile').checked = currentPreferences.compactMobile;
     el('appearanceLogo').value = '';
     applyUserLogo(currentPreferences.logoDataUrl);
+    telaPrefsDraft = normalizeTelaPrefs(telaPrefs);
+    document.querySelectorAll('input[name="appearanceNoteColor"]').forEach(input => { input.checked = input.value === telaPrefsDraft.noteColor; });
+    renderWidgetOrderEditor();
     el('appearanceDialog').showModal();
   }
 
@@ -17459,8 +17594,12 @@
     applyUserLogo(currentPreferences.logoDataUrl);
     document.body.classList.toggle('mobile-compact',currentPreferences.compactMobile);
     saveUserPreferences();
+    const noteChoice = document.querySelector('input[name="appearanceNoteColor"]:checked');
+    telaPrefs = normalizeTelaPrefs({...telaPrefsDraft, noteColor:noteChoice ? noteChoice.value : telaPrefsDraft.noteColor});
+    applyTelaPrefs();
+    storage.set(TELA_PREFS_KEY, JSON.stringify(telaPrefs)).catch(() => showError('NÃO FOI POSSÍVEL SALVAR A ORDEM DOS QUADROS E A COR DA NOTA.'));
     closeAppearanceDialog();
-    showPurchaseToast('Aparência salva para o seu usuário.');
+    showPurchaseToast('Personalização salva para o seu usuário.');
   });
   el('btnInstallApp').addEventListener('click',async () => {
     if(deferredInstallPrompt){
@@ -17487,6 +17626,7 @@
     currentSession.sector = String(currentSession.sector || '');
     await loadUserPreferences();
     applyAccessVisibility();
+    loadTelaPrefs();
     // Fora do boot em lotes da Início (pool do Postgres): consulta leve depois.
     setTimeout(rhCheckMyOnboarding, 4000);
   }
@@ -18014,7 +18154,15 @@
   const sidebarSearch = el('sidebarSearch');
   // Barra da marca: a busca abre o menu já com o campo de pesquisa; Ctrl+K / Cmd+K faz o mesmo.
   const appBarUser = el('appBarUser');
-  if(appBarUser && el('themeToggle')) appBarUser.before(el('themeToggle'));
+  if(el('appBarUserWrap') && el('themeToggle')) el('appBarUserWrap').before(el('themeToggle'));
+  // Menu do usuário (nome + setor): personalizar, nota de tarefas, instalar, backup (admin) e sair.
+  const appUserMenu = el('appUserMenu');
+  const setUserMenu = open => { appUserMenu.hidden = !open; appBarUser.setAttribute('aria-expanded', String(open)); };
+  appBarUser.addEventListener('click', event => { event.stopPropagation(); setUserMenu(appUserMenu.hidden); });
+  appUserMenu.addEventListener('click', event => { if(event.target.closest('button[role="menuitem"]:not([type="submit"])')) setUserMenu(false); });
+  document.addEventListener('click', event => { if(!appUserMenu.hidden && !el('appBarUserWrap').contains(event.target)) setUserMenu(false); });
+  document.addEventListener('keydown', event => { if(event.key === 'Escape' && !appUserMenu.hidden){ setUserMenu(false); appBarUser.focus(); } });
+  el('btnUserMenuInstall').addEventListener('click', () => el('btnInstallApp').click());
   // Busca do cabeçalho: mesmos módulos da busca do Início (itens do menu que o login vê).
   const appBarSearchInput = el('appBarSearchInput');
   const appBarResults = el('appBarSearchResults');
@@ -22621,13 +22769,14 @@ function renderHomeTasks(){
     const note = el('taskNote');
     const enabled = taskNoteEnabled && canAccess('tasks');
     if(taskNotePip){
-      if(enabled) taskNotePip.document.querySelector('.task-note').innerHTML = taskNoteHtml(true);
+      if(enabled){ const pipNote = taskNotePip.document.querySelector('.task-note'); pipNote.dataset.noteColor = telaPrefs.noteColor; pipNote.innerHTML = taskNoteHtml(true); }
       else taskNotePip.close();
     }
     note.hidden = !enabled || Boolean(taskNotePip) || !homeTodayTasks.length;
     document.body.classList.toggle('task-note-on', !note.hidden);
     if(note.hidden) return;
     note.classList.toggle('is-min', taskNoteUi.min);
+    note.dataset.noteColor = telaPrefs.noteColor;
     note.innerHTML = taskNoteHtml(false);
     placeTaskNote();
   }
@@ -22641,6 +22790,7 @@ function renderHomeTasks(){
       pip.document.title = 'TAREFAS DE HOJE';
       const box = pip.document.createElement('div');
       box.className = 'task-note in-pip';
+      box.dataset.noteColor = telaPrefs.noteColor;
       box.addEventListener('click', onTaskNoteClick);
       box.addEventListener('change', onTaskNoteChange);
       pip.document.body.appendChild(box);
@@ -24320,8 +24470,8 @@ function renderHomeTasks(){
         ' EM '+escapeHtml(outputDateTime(row.createdAt));
     return '<article class="output-card'+(completed ? ' completed' : '')+'">'+
       '<div class="output-card-copy">'+
-        '<div class="output-card-title"><span class="output-quantity">'+
-          escapeHtml(String(row.quantity || 0))+' UN.</span><strong>'+
+        '<div class="output-card-title"><span class="output-quantity output-qty-big">'+
+          escapeHtml(String(row.quantity || 0))+'<small>UN.</small></span><strong>'+
           escapeHtml(row.productName || 'Produto sem nome')+'</strong>'+
           '<span class="output-company-badge">'+escapeHtml(companyLabel)+'</span></div>'+
         '<div class="output-details">'+
@@ -24609,8 +24759,8 @@ function renderHomeTasks(){
         ' EM '+escapeHtml(inputDateTime(row.createdAt));
     return '<article class="output-card'+(completed ? ' completed' : '')+'">'+
       '<div class="output-card-copy">'+
-        '<div class="output-card-title"><span class="output-quantity">'+
-          escapeHtml(String(row.quantity || 0))+' UN.</span><strong>'+
+        '<div class="output-card-title"><span class="output-quantity output-qty-big">'+
+          escapeHtml(String(row.quantity || 0))+'<small>UN.</small></span><strong>'+
           escapeHtml(row.productName || 'Produto sem nome')+'</strong>'+
           '<span class="output-company-badge">'+escapeHtml(companyLabel)+'</span></div>'+
         '<div class="output-details">'+
@@ -30211,6 +30361,15 @@ function renderHomeTasks(){
     status.className = 'user-form-status'+(tone ? ' '+tone : '');
   }
 
+  // Cadastro de instrução e imagens dos destaques abrem pelos botões do topo (quem gerencia).
+  [['btnNewInstruction','instructionFormPanel','instructionTitle'],['btnInstructionImages','instructionImagesPanel','instructionCarouselFile']].forEach(([buttonId, panelId, focusId]) => {
+    el(buttonId) && el(buttonId).addEventListener('click', () => {
+      const panel = el(panelId);
+      panel.hidden = !panel.hidden;
+      el(buttonId).setAttribute('aria-expanded', String(!panel.hidden));
+      if(!panel.hidden){ panel.scrollIntoView({behavior:'smooth', block:'start'}); setTimeout(() => el(focusId) && el(focusId).focus({preventScroll:true}), 250); }
+    });
+  });
   el('instructionForm').addEventListener('submit',async event => {
     event.preventDefault();
     const button = el('btnSaveInstruction');
@@ -30232,7 +30391,9 @@ function renderHomeTasks(){
       el('instructionCategory').value = 'geral';
       el('instructionDueDate').value = '';
       instructionView = 'active';
-      setInstructionFormStatus('INSTRUÇÃO PUBLICADA PARA TODAS AS LOJAS.','success');
+      setInstructionFormStatus('','');
+      el('instructionFormPanel').hidden = true;
+      el('btnNewInstruction').setAttribute('aria-expanded','false');
       await Promise.all([loadInstructions(),loadHomeInstructions()]);
       showPurchaseToast('Instrução publicada para todas as lojas.');
     }catch(error){
@@ -31232,6 +31393,7 @@ function renderHomeTasks(){
     el('invListView').hidden = false;
     el('invDetailView').hidden = true;
     el('btnInvBack').hidden = true;
+    el('btnInvReload').hidden = false;
     el('btnInvNew').hidden = !invCan('manage');
     el('invPageTitle').textContent = 'Inventário';
     const rows = (invList && invList.inventories) || [];
@@ -31269,10 +31431,14 @@ function renderHomeTasks(){
     const items = invData.items;
     el('invListView').hidden = true;
     el('invDetailView').hidden = false;
-    el('btnInvBack').hidden = false;
+    // Dentro do inventário: sem ← INVENTÁRIOS e ATUALIZAR (volta pelo caminho; a tela já é ao vivo).
+    el('btnInvBack').hidden = true;
+    el('btnInvReload').hidden = true;
     el('btnInvNew').hidden = true;
     // No celular, título curto (loja · data) para não ocupar três linhas.
     el('invPageTitle').textContent = (window.matchMedia('(max-width:680px)').matches ? '' : 'Inventário · ')+inv.storeName+' · '+gdDateLabel(inv.inventoryDate);
+    const invCrumbHere = document.querySelector('#pageInventario .page-crumbs .here');
+    if(invCrumbHere) invCrumbHere.outerHTML = '<a href="/inventario" data-inv-crumb-back>INVENTÁRIO</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg><span class="here">'+escapeHtml(inv.storeName+' · '+gdDateLabel(inv.inventoryDate))+'</span>';
     const counted = items.filter(item => item.countedQty !== null).length;
     const divergent = invDivergent().filter(item => !item.removed && invFinalDiff(item));
     const totals = invTotals(divergent);
@@ -31646,6 +31812,11 @@ function renderHomeTasks(){
   document.querySelectorAll('[data-inv-tab]').forEach(button => button.addEventListener('click', () => invSetTab(button.dataset.invTab)));
   el('btnInvReload') && el('btnInvReload').addEventListener('click', () => loadInvPage());
   el('btnInvBack') && el('btnInvBack').addEventListener('click', () => { invId = ''; invData = null; loadInvPage(); });
+  document.addEventListener('click', event => {
+    if(!event.target.closest('[data-inv-crumb-back]') || event.metaKey || event.ctrlKey) return;
+    event.preventDefault();
+    el('btnInvBack').click();
+  });
   el('invListBody') && el('invListBody').addEventListener('click', event => {
     const button = event.target.closest('[data-inv-open]');
     if(!button) return;
