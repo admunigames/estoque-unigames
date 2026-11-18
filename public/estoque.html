@@ -4634,6 +4634,13 @@
   .widget-order li span{flex:1;}
   /* Instruções: botões do topo abrem cadastro e imagens */
   #pageInstrucoes .page-header .dre-toolbar-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  /* Cadastro e imagens em janela: a página fica só com destaques, resumo e lista. */
+  .instruction-dialog{width:min(640px,calc(100vw - 24px));}
+  .instruction-dialog .instruction-admin-head{padding:0 20px;}
+  .instruction-dialog .instruction-admin-head p{margin:0 0 12px; color:var(--ink-soft); font:600 11.5px/1.5 var(--sans);}
+  .instruction-dialog form,.instruction-dialog .instruction-carousel-manage-list{padding:0 20px;}
+  .instruction-dialog form{padding-bottom:20px;}
+  .instruction-dialog .instruction-form-grid{grid-template-columns:1fr 1fr;}
   /* Inventário: finalizar/excluir no topo, à direita, acima dos números */
   #invDetailView .inv-detail-actions{display:flex; justify-content:flex-end; gap:8px; margin:0 0 12px;}
   /* Entrada e Saída: quantidade solicitada em destaque */
@@ -6568,8 +6575,8 @@
           <h2 class="page-title">Instruções</h2>
         </div>
         <div class="dre-toolbar-actions" data-permission="instructions:manage">
-          <button class="btn-outline" id="btnInstructionImages" type="button" aria-expanded="false" aria-controls="instructionImagesPanel">IMAGENS DOS DESTAQUES</button>
-          <button class="btn-accent" id="btnNewInstruction" type="button" aria-expanded="false" aria-controls="instructionFormPanel">CADASTRAR INSTRUÇÃO</button>
+          <button class="btn-outline" id="btnInstructionImages" type="button" aria-haspopup="dialog">IMAGENS DOS DESTAQUES</button>
+          <button class="btn-accent" id="btnNewInstruction" type="button" aria-haspopup="dialog">CADASTRAR INSTRUÇÃO</button>
         </div>
       </header>
 
@@ -6583,9 +6590,10 @@
           <div class="carousel-foot"><span>TROCA A CADA 10 S · TOQUE PARA AMPLIAR</span><span class="carousel-nav"><button type="button" data-carousel-step="-1" aria-label="Imagem anterior">‹</button><button type="button" data-carousel-step="1" aria-label="Próxima imagem">›</button></span></div>
         </section>
 
-      <section class="instruction-admin-panel" id="instructionImagesPanel" data-permission="instructions:manage" hidden>
+      <dialog class="purchase-dialog instruction-dialog" id="instructionImagesPanel" data-permission="instructions:manage" aria-labelledby="instructionImagesTitle">
+        <div class="purchase-dialog-head"><h3 id="instructionImagesTitle">IMAGENS DOS DESTAQUES</h3><button class="purchase-dialog-close" type="button" data-instruction-dialog-close aria-label="Fechar">×</button></div>
         <div class="instruction-admin-head">
-          <div><h3>IMAGENS DO CARROSSEL</h3><p>Até 10 imagens em destaque no topo desta página, com troca automática a cada 10 segundos. Proporção recomendada: quase quadrada (ex.: 2000×1806px).</p></div>
+          <div><h3 hidden>IMAGENS DO CARROSSEL</h3><p>Até 10 imagens em destaque no topo desta página, com troca automática a cada 10 segundos. Proporção recomendada: quase quadrada (ex.: 2000×1806px).</p></div>
         </div>
         <div class="instruction-carousel-manage-list" id="instructionCarouselManageList"></div>
         <form id="instructionCarouselForm">
@@ -6593,7 +6601,7 @@
           <div class="instruction-form-actions"><button class="btn-accent" id="btnUploadCarouselImage" type="submit">ENVIAR IMAGEM</button></div>
           <div class="user-form-status" id="instructionCarouselStatus" role="status" aria-live="polite"></div>
         </form>
-      </section>
+      </dialog>
 
       <section class="instruction-summary" aria-label="Resumo das instruções">
         <article class="instruction-summary-card"><span>INSTRUÇÕES VIGENTES</span><strong id="instructionActiveCount">0</strong></article>
@@ -6601,9 +6609,10 @@
         <article class="instruction-summary-card"><span>PRÓXIMO PRAZO</span><strong class="date" id="instructionNearestDue">—</strong></article>
       </section>
 
-      <section class="instruction-admin-panel" id="instructionFormPanel" data-permission="instructions:manage" hidden>
+      <dialog class="purchase-dialog instruction-dialog" id="instructionFormPanel" data-permission="instructions:manage" aria-labelledby="instructionFormTitle">
+        <div class="purchase-dialog-head"><h3 id="instructionFormTitle">CADASTRAR INSTRUÇÃO</h3><button class="purchase-dialog-close" type="button" data-instruction-dialog-close aria-label="Fechar">×</button></div>
         <div class="instruction-admin-head">
-          <div><h3>CADASTRAR NOVA INSTRUÇÃO</h3><p>A orientação será publicada imediatamente para todos os usuários e lojas.</p></div>
+          <div><h3 hidden>CADASTRAR NOVA INSTRUÇÃO</h3><p>A orientação será publicada imediatamente para todos os usuários e lojas.</p></div>
         </div>
         <form id="instructionForm">
           <div class="instruction-form-grid">
@@ -6615,7 +6624,7 @@
           <div class="instruction-form-actions"><button class="btn-accent" id="btnSaveInstruction" type="submit">PUBLICAR PARA TODAS AS LOJAS</button></div>
           <div class="user-form-status" id="instructionFormStatus" role="status" aria-live="polite"></div>
         </form>
-      </section>
+      </dialog>
 
       <section class="instruction-board">
         <div class="instruction-board-head">
@@ -30369,12 +30378,13 @@ function renderHomeTasks(){
   }
 
   // Cadastro de instrução e imagens dos destaques abrem pelos botões do topo (quem gerencia).
-  [['btnNewInstruction','instructionFormPanel','instructionTitle'],['btnInstructionImages','instructionImagesPanel','instructionCarouselFile']].forEach(([buttonId, panelId, focusId]) => {
+  [['btnNewInstruction','instructionFormPanel','instructionTitle'],['btnInstructionImages','instructionImagesPanel','instructionCarouselFile']].forEach(([buttonId, dialogId, focusId]) => {
     el(buttonId) && el(buttonId).addEventListener('click', () => {
-      const panel = el(panelId);
-      panel.hidden = !panel.hidden;
-      el(buttonId).setAttribute('aria-expanded', String(!panel.hidden));
-      if(!panel.hidden){ panel.scrollIntoView({behavior:'smooth', block:'start'}); setTimeout(() => el(focusId) && el(focusId).focus({preventScroll:true}), 250); }
+      el(dialogId).showModal();
+      setTimeout(() => el(focusId) && el(focusId).focus(), 50);
+    });
+    el(dialogId).addEventListener('click', event => {
+      if(event.target === el(dialogId) || event.target.closest('[data-instruction-dialog-close]')) el(dialogId).close();
     });
   });
   el('instructionForm').addEventListener('submit',async event => {
@@ -30399,8 +30409,7 @@ function renderHomeTasks(){
       el('instructionDueDate').value = '';
       instructionView = 'active';
       setInstructionFormStatus('','');
-      el('instructionFormPanel').hidden = true;
-      el('btnNewInstruction').setAttribute('aria-expanded','false');
+      el('instructionFormPanel').close();
       await Promise.all([loadInstructions(),loadHomeInstructions()]);
       showPurchaseToast('Instrução publicada para todas as lojas.');
     }catch(error){

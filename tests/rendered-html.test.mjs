@@ -5904,7 +5904,8 @@ test("menu do usuário (setor, personalizar, sair), preferências de tela, instr
   assert.match(html, /id="btnAppearanceAccentReset" type="button">COR PADRÃO<\/button>/);
   // Instruções: botão abre o cadastro (painéis começam fechados).
   assert.match(html, /id="btnNewInstruction" type="button"[^>]*>CADASTRAR INSTRUÇÃO<\/button>/);
-  assert.match(html, /id="instructionFormPanel" data-permission="instructions:manage" hidden/);
+  assert.match(html, /<dialog class="purchase-dialog instruction-dialog" id="instructionFormPanel"/);
+  assert.match(html, /<dialog class="purchase-dialog instruction-dialog" id="instructionImagesPanel"/);
   // Inventário: ações no topo do detalhe; sem voltar/atualizar dentro do inventário.
   assert.match(html, /<div id="invDetailView" hidden>\s*<div class="dre-toolbar-actions inv-detail-actions">/);
   assert.match(html, /el\('btnInvReload'\)\.hidden = true;/);
