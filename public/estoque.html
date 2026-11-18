@@ -4627,6 +4627,8 @@
   .note-color-choices span{width:20px; height:20px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);}
   .note-color-choices label:has(input:checked){border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);}
   .note-color-choices label:has(input:focus-visible){outline:2px solid var(--accent); outline-offset:2px;}
+  .appearance-accent-row{display:flex; align-items:center; gap:8px;}
+  .appearance-accent-row input[type="color"]{flex:1; min-width:0;}
   .widget-order{margin:0; padding:0; list-style:none; display:grid; gap:6px;}
   .widget-order li{display:flex; align-items:center; gap:6px; padding:6px 6px 6px 12px; border:1px solid var(--border); border-radius:9px; font:700 11.5px/1.2 var(--sans);}
   .widget-order li span{flex:1;}
@@ -15883,7 +15885,7 @@
   <form class="purchase-form" id="appearanceForm">
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="appearanceTheme">TEMA</label><select id="appearanceTheme"><option value="dark">ESCURO</option><option value="light">CLARO</option><option value="glass">VIDRO</option></select></div>
-      <div class="purchase-field"><label for="appearanceAccent" id="appearanceAccentLabel">COR PRINCIPAL</label><input type="color" id="appearanceAccent" value="#4f86bd"></div>
+      <div class="purchase-field"><label for="appearanceAccent" id="appearanceAccentLabel">COR PRINCIPAL</label><div class="appearance-accent-row"><input type="color" id="appearanceAccent" value="#4f86bd"><button class="btn-outline btn-sm" id="btnAppearanceAccentReset" type="button">COR PADRÃO</button></div></div>
       <div class="purchase-field full"><label for="appearanceLogo">LOGOTIPO/ÍCONE PESSOAL</label><input type="file" id="appearanceLogo" accept="image/png,image/jpeg,image/webp"><span class="purchase-field-help">A IMAGEM SERÁ REDUZIDA E SALVA APENAS PARA O SEU USUÁRIO.</span></div>
       <div class="purchase-field full appearance-preview"><img class="preference-logo-preview" id="appearanceLogoPreview" src="/favicon.svg" alt="Prévia do logotipo"><button class="btn-outline" id="btnRemoveAppearanceLogo" type="button">USAR LOGO PADRÃO</button></div>
       <label class="permission-option full"><input id="appearanceCompactMobile" type="checkbox"> Usar visual mais compacto no celular</label>
@@ -17541,6 +17543,11 @@
   }
   el('appearanceTheme').addEventListener('change', () => { setUserTheme(el('appearanceTheme').value,false); syncAppearanceAccentLabel(); });
   el('appearanceAccent').addEventListener('input', () => applyAccentColor(el('appearanceAccent').value));
+  // Volta à cor padrão do sistema (prévia na hora; vale ao SALVAR).
+  el('btnAppearanceAccentReset').addEventListener('click', () => {
+    el('appearanceAccent').value = '#4f86bd';
+    applyAccentColor('#4f86bd');
+  });
 
   async function resizePreferenceLogo(file){
     if(!file || !/^image\/(?:png|jpeg|webp)$/i.test(file.type)) throw new Error('ESCOLHA UMA IMAGEM PNG, JPG OU WEBP.');

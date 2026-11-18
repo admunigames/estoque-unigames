@@ -5901,6 +5901,7 @@ test("menu do usuário (setor, personalizar, sair), preferências de tela, instr
   assert.match(html, /name="appearanceNoteColor" value="lilas"/);
   assert.match(html, /\.task-note\[data-note-color="verde"\]\{background:#d4f2c4;\}/);
   assert.match(html, /id="appearanceWidgetOrder"/);
+  assert.match(html, /id="btnAppearanceAccentReset" type="button">COR PADRÃO<\/button>/);
   // Instruções: botão abre o cadastro (painéis começam fechados).
   assert.match(html, /id="btnNewInstruction" type="button"[^>]*>CADASTRAR INSTRUÇÃO<\/button>/);
   assert.match(html, /id="instructionFormPanel" data-permission="instructions:manage" hidden/);
