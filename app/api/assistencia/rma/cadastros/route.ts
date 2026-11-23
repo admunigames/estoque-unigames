@@ -9,6 +9,7 @@ import {
   identity,
   isStoreLogin,
   jsonResponse,
+  loadCompanies,
   safeText,
   upper,
   writeGuard,
@@ -23,6 +24,8 @@ import {
 // pedem rma:finance.
 //   GET                                   → {suppliers, credits?, disposals?}
 //   POST   {entity, ...campos}            → cria   (entity: credit|disposal|supplier)
+//   POST   {entity:"credit", ...campos, splits:[{companyId, creditValue}]}
+//                                          → um crédito por empresa (mesmo RMA)
 //   PATCH  {entity, id, ...campos}        → edita
 //   DELETE {entity, id}                   → exclui (deleted=1 / fornecedor inativo)
 
@@ -46,7 +49,7 @@ export async function GET(request: Request) {
     const [credits, disposals, credited] = await Promise.all([
       database
         .prepare(
-          `SELECT id, supplier, rma_id AS rmaId, rma_code AS rmaCode, generated_date AS generatedDate, credit_cents AS creditCents,
+          `SELECT id, supplier, rma_id AS rmaId, rma_code AS rmaCode, company_id AS companyId, company_name AS companyName, generated_date AS generatedDate, credit_cents AS creditCents,
                   used_cents AS usedCents, status, usage_type AS usageType, usage_date AS usageDate,
                   document_number AS documentNumber, notes, created_by_name AS createdByName, updated_by_name AS updatedByName
            FROM rma_credits WHERE deleted=0 ORDER BY generated_date DESC`,
@@ -91,10 +94,14 @@ async function parseCredit(database: Database, actor: Actor, body: JsonMap) {
   if (!supplier) return { error: "INFORME O FORNECEDOR." };
   if (credit === null || credit <= 0) return { error: "INFORME O VALOR DO CRÉDITO." };
   if (used === null || used > credit) return { error: "O VALOR USADO NÃO PODE PASSAR DO CRÉDITO." };
+  const companyId = safeText(body.companyId, 80);
+  const company = companyId ? (await loadCompanies(database)).find((item) => item.id === companyId) : null;
+  if (companyId && !company) return { error: "EMPRESA NÃO ENCONTRADA." };
   const rma = body.rmaId ? await findCase(database, actor, safeText(body.rmaId, 80)) : null;
   return {
     values: {
-      supplier, rma_id: rma?.id || "", rma_code: rma?.code || "", generated_date: dateOrEmpty(body.generatedDate),
+      supplier, rma_id: rma?.id || "", rma_code: rma?.code || "", company_id: company?.id || "", company_name: company?.name || "",
+      generated_date: dateOrEmpty(body.generatedDate),
       credit_cents: credit, used_cents: used, status: upper(body.status, 60), usage_type: upper(body.usageType, 60),
       usage_date: dateOrEmpty(body.usageDate), document_number: upper(body.documentNumber, 80), notes: upper(body.notes, 2000),
     },
@@ -157,11 +164,22 @@ async function write(request: Request, method: "POST" | "PATCH") {
   const { actor } = guard;
   try {
     const database = await getD1();
-    const parsed = await parse(entity, database, actor, body);
-    if ("error" in parsed) return jsonResponse({ error: parsed.error }, 400);
+    // Crédito novo dividido por empresa: um registro por empresa, tudo ou nada.
+    const splits = entity === "credit" && method === "POST" && Array.isArray(body.splits) ? (body.splits as JsonMap[]) : null;
+    if (splits) {
+      const ids = splits.map((split) => safeText(split?.companyId, 80));
+      if (!splits.length || ids.some((id) => !id)) return jsonResponse({ error: "INFORME A EMPRESA DE CADA CRÉDITO." }, 400);
+      if (new Set(ids).size !== ids.length) return jsonResponse({ error: "EMPRESA REPETIDA NO CRÉDITO." }, 400);
+    }
+    const rows: Record<string, string | number>[] = [];
+    for (const item of splits ? splits.map((split) => ({ ...body, companyId: split.companyId, creditValue: split.creditValue })) : [body]) {
+      const parsed = await parse(entity, database, actor, item);
+      if ("error" in parsed) return jsonResponse({ error: parsed.error }, 400);
+      rows.push(parsed.values);
+    }
     const now = new Date().toISOString();
     const table = TABLES[entity];
-    const values = parsed.values;
+    const values = rows[0];
     const columns = Object.keys(values);
     if (method === "PATCH") {
       const id = safeText(body.id, 80);
@@ -175,17 +193,17 @@ async function write(request: Request, method: "POST" | "PATCH") {
       if (!row) return jsonResponse({ error: "REGISTRO NÃO ENCONTRADO." }, 404);
       return jsonResponse({ updated: true });
     }
-    const id = crypto.randomUUID();
     const extra: Record<string, string> = entity === "supplier"
       ? { created_by_name: actor.displayName, created_at: now }
       : { created_by: actor.id, created_by_name: actor.displayName, created_at: now };
-    const all = { id, ...values, ...extra };
-    const names = Object.keys(all);
-    const statements = [
-      database
+    const created = rows.map((row) => ({ id: crypto.randomUUID(), ...row, ...extra }));
+    const id = created[0].id;
+    const statements = created.map((all) => {
+      const names = Object.keys(all);
+      return database
         .prepare(`INSERT INTO ${table} (${names.join(", ")}) VALUES (${names.map((_, index) => `?${index + 1}`).join(", ")})`)
-        .bind(...Object.values(all)),
-    ];
+        .bind(...Object.values(all));
+    });
     // Descarte de um RMA entra na linha do tempo do RMA.
     if (entity === "disposal" && values.rma_id) {
       statements.push(
@@ -199,7 +217,7 @@ async function write(request: Request, method: "POST" | "PATCH") {
       );
     }
     await database.batch(statements);
-    return jsonResponse({ created: true, id }, 201);
+    return jsonResponse({ created: true, id, ids: created.map((row) => row.id) }, 201);
   } catch (error) {
     console.error("Não foi possível salvar o cadastro do RMA.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR." }, 500);

@@ -5034,6 +5034,8 @@ export const rmaCredits = pgTable(
     supplier: text("supplier").notNull(),
     rmaId: text("rma_id").notNull().default(""),
     rmaCode: text("rma_code").notNull().default(""),
+    companyId: text("company_id").notNull().default(""),
+    companyName: text("company_name").notNull().default(""),
     generatedDate: text("generated_date").notNull().default(""),
     creditCents: integer("credit_cents").notNull().default(0),
     usedCents: integer("used_cents").notNull().default(0),
