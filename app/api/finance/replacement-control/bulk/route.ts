@@ -1,13 +1,15 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
-import { planReplacementDelete, SECTORS } from "../shared";
+import { closedMonthError, closedReplacementMonths, planReplacementDelete, SECTORS } from "../shared";
 
 // Ações em lote do CONTROLE DE REPOSIÇÃO (Financeiro 9/9): { action, ids, fields }
-// - update: ALTERAR SETOR/MOTIVO (só o que vier em fields.sector / fields.reason);
+// - update: ALTERAR SETOR/MOTIVO/CATEGORIA/CATEGORIA FINANCEIRA (só o que vier
+//   em fields.sector / reason / category / financeItemId; vale também em mês
+//   finalizado, porque não muda o saldo);
 // - delete: EXCLUIR — mesma regra do DELETE individual: com fields.withExpense
 //   a despesa vinculada também sai (a que tem pagamento é pulada com o motivo);
-//   sem ele, a despesa fica.
+//   sem ele, a despesa fica. Lançamento de mês FINALIZADO é pulado com o motivo.
 // Mesmo escopo das rotas atuais do módulo (finance:manage). Ids conferidos
 // antes (404); uma transação.
 
@@ -28,26 +30,36 @@ export async function POST(request: Request) {
     const fields = (body.fields && typeof body.fields === "object" ? body.fields : {}) as JsonMap;
     const sector = safeText(fields.sector, 20);
     const hasReason = fields.reason !== undefined;
+    const hasCategory = fields.category !== undefined;
+    const hasFinanceItem = fields.financeItemId !== undefined;
     if (action === "update") {
-      if (!sector && !hasReason) return jsonResponse({ error: "ESCOLHA O SETOR OU INFORME O MOTIVO." }, 400);
+      if (!sector && !hasReason && !hasCategory && !hasFinanceItem) {
+        return jsonResponse({ error: "ESCOLHA O QUE ALTERAR: SETOR, MOTIVO OU CATEGORIA." }, 400);
+      }
       if (sector && !SECTORS.has(sector)) return jsonResponse({ error: "SELECIONE O SETOR RESPONSÁVEL." }, 400);
     }
 
     const database = await getD1();
     const found = await database
       .prepare(
-        `SELECT id, product, sector, reason, expense_id AS expenseId FROM finance_replacement_entries
+        `SELECT id, entry_date AS entryDate, product, sector, reason, category, finance_item_id AS financeItemId,
+                expense_id AS expenseId FROM finance_replacement_entries
          WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(",")})`,
       )
       .bind(...ids)
-      .all<{ id: string; product: string; sector: string; reason: string; expenseId: string }>();
+      .all<{ id: string; entryDate: string; product: string; sector: string; reason: string; category: string; financeItemId: string; expenseId: string }>();
     const rows = found.results ?? [];
     if (rows.length !== ids.length) return jsonResponse({ error: "ALGUM LANÇAMENTO SELECIONADO NÃO EXISTE MAIS. ATUALIZE A LISTA." }, 404);
 
     const who = actor.displayName || "Administrador";
     const statements: [string, unknown[]][] = [];
     const skipped: Array<{ id: string; description: string; reason: string }> = [];
+    const closed = action === "delete" ? await closedReplacementMonths(database) : new Set<string>();
     for (const row of rows) {
+      if (closed.has(row.entryDate.slice(0, 7))) {
+        skipped.push({ id: row.id, description: row.product || row.reason, reason: closedMonthError(row.entryDate.slice(0, 7)) });
+        continue;
+      }
       if (action === "delete") {
         const plan = await planReplacementDelete(database, row, fields.withExpense === true, { id: actor.id, name: who });
         if ("skip" in plan) skipped.push({ id: row.id, description: row.product || row.reason, reason: plan.skip });
@@ -55,8 +67,13 @@ export async function POST(request: Request) {
         continue;
       }
       statements.push([
-        `UPDATE finance_replacement_entries SET sector=?1, reason=?2, updated_by=?3, updated_by_name=?4, updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
-        [sector || row.sector, hasReason ? safeText(fields.reason, 500) : row.reason, actor.id, who, row.id],
+        `UPDATE finance_replacement_entries SET sector=?1, reason=?2, updated_by=?3, updated_by_name=?4, updated_at=CURRENT_TIMESTAMP,
+           category=?6, finance_item_id=?7 WHERE id=?5`,
+        [
+          sector || row.sector, hasReason ? safeText(fields.reason, 500) : row.reason, actor.id, who, row.id,
+          hasCategory ? safeText(fields.category, 120) : row.category,
+          hasFinanceItem ? safeText(fields.financeItemId, 80) : row.financeItemId,
+        ],
       ]);
     }
     if (statements.length) await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));

@@ -45,9 +45,9 @@ test("extrato em PDF: titular, data do dia, saída × reposição, motivo pela a
     [
       ["2026-10-16", "saida", 20_550, "PIX ENVIADO — LOJA EXEMPLO LTDA", "PIX ENVIADO — LOJA EXEMPLO LTDA"],
       ["2026-10-21", "saida", 135_000, "PIX ENVIADO — FULANO DA SILVA", "PIX ENVIADO — FULANO DA SILVA"],
-      ["2026-10-21", "reposicao", 100_000, "PIX RECEBIDO — BELTRANA SOUZA", "PIX RECEBIDO — BELTRANA SOUZA"],
+      ["2026-10-21", "entrada", 100_000, "PIX RECEBIDO — BELTRANA SOUZA", "PIX RECEBIDO — BELTRANA SOUZA"],
       ["2026-03-03", "saida", 2_700, "COMPRA DE SACOS DE LIXO", "PIX ENVIADO — CHINA EMBALAGENS"],
-      ["2026-03-03", "reposicao", 100_000, "REPOSIÇÃO", "PIX RECEBIDO — BELTRANA SOUZA"],
+      ["2026-03-03", "entrada", 100_000, "REPOSIÇÃO", "PIX RECEBIDO — BELTRANA SOUZA"],
     ],
   );
 });
@@ -64,7 +64,7 @@ test("outros bancos: leitura genérica por data + valor (sinal, D/C, seção, pa
     "04/10/2026 S A L D O 1.350,00 C",
   ]), [
     ["2026-10-02", "saida", 15_000, "PIX - ENVIADO LOJA EXEMPLO"],
-    ["2026-10-03", "reposicao", 100_000, "PIX - RECEBIDO BELTRANA"],
+    ["2026-10-03", "entrada", 100_000, "PIX - RECEBIDO BELTRANA"],
   ]);
   assert.equal(parse(["Nome: FULANA DE TAL Agência: 1", "01/10/2026 PIX X 1,00 D"]).holder, "FULANA DE TAL");
   // Itaú: DD/MM sem ano (ano do período) e "-" depois do valor.
@@ -83,7 +83,7 @@ test("outros bancos: leitura genérica por data + valor (sinal, D/C, seção, pa
     "Total de saídas - 45,00",
     "Transferência enviada pelo Pix PADARIA 45,00",
   ]), [
-    ["2026-10-07", "reposicao", 100_000, "TRANSFERÊNCIA RECEBIDA PELO PIX BELTRANA"],
+    ["2026-10-07", "entrada", 100_000, "TRANSFERÊNCIA RECEBIDA PELO PIX BELTRANA"],
     ["2026-10-07", "saida", 4_500, "TRANSFERÊNCIA ENVIADA PELO PIX PADARIA"],
   ]);
   // Mercado Pago / PagBank: DD-MM-AAAA e "R$ -"; descrição na linha de cima.
@@ -93,7 +93,7 @@ test("outros bancos: leitura genérica por data + valor (sinal, D/C, seção, pa
     "09-10-2026 R$ 200,00 R$ 1.187,50",
   ]), [
     ["2026-10-08", "saida", 1_250, "PAGAMENTO COM QR PIX MERCADINHO"],
-    ["2026-10-09", "reposicao", 20_000, "DEPÓSITO EM CONTA"],
+    ["2026-10-09", "entrada", 20_000, "DEPÓSITO EM CONTA"],
   ]);
 });
 

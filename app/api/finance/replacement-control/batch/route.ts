@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
 import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
-import { insertReplacementStatement, parseReplacementEntry } from "../shared";
+import { closedMonthError, closedReplacementMonths, insertReplacementStatement, parseReplacementEntry } from "../shared";
 
 // CADASTRAR EM LOTE no Controle de Reposição (Financeiro 9/9): { rows[] } com
 // os mesmos campos do cadastro individual (mesma validação). Tudo numa
@@ -23,13 +23,16 @@ export async function POST(request: Request) {
     const who = { id: actor.id, name: actor.displayName || "Administrador" };
     const statements: [string, unknown[]][] = [];
     const skipped: Array<{ line: number; description: string; reason: string }> = [];
+    const database = await getD1();
+    const closed = await closedReplacementMonths(database);
     rows.forEach((row, index) => {
       const parsed = parseReplacementEntry(row);
       if ("error" in parsed) skipped.push({ line: index + 1, description: safeText(row.product, 200), reason: parsed.error });
-      else statements.push(insertReplacementStatement(parsed, who));
+      else if (closed.has(parsed.entryDate.slice(0, 7))) {
+        skipped.push({ line: index + 1, description: parsed.reason, reason: closedMonthError(parsed.entryDate.slice(0, 7)) });
+      } else statements.push(insertReplacementStatement(parsed, who));
     });
     if (statements.length) {
-      const database = await getD1();
       await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
     }
     return jsonResponse({ created: statements.length, skipped }, statements.length ? 201 : 200);

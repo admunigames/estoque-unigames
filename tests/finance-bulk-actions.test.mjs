@@ -13,7 +13,7 @@ const db = await setupRouteDb([
   "accounts_payable", "accounts_payable_payments", "finance_items", "finance_categories", "finance_cost_centers",
   "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
   "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
-  "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries", "finance_budgets", "obras", "obra_entries",
+  "finance_bank_statement_entries", "finance_bank_classification_rules", "finance_replacement_entries", "finance_replacement_balances", "finance_budgets", "obras", "obra_entries",
   "expenses", "expense_rateio_shares", "expense_attachments", "accounts_payable_payment_attachments",
 ]);
 const { todayInTimezone } = await import("../app/lib/finance-status.ts");
@@ -222,7 +222,7 @@ test("Conciliação Bancária: classificar só os campos enviados, confirmar (ap
 // ---------------------------------------------------------------------------
 
 test("Reposição: cadastrar em lote sem unidade/setor/produto (só o motivo obrigatório), alterar motivo, excluir com ou sem a despesa vinculada, 404", async () => {
-  const base = { entryDate: today, kind: "reposicao", amountCents: 5000, responsibleName: "ANA" };
+  const base = { entryDate: today, kind: "saida", amountCents: 5000, responsibleName: "ANA" };
   const created = await json(await post(reposicaoBatch.POST, ADMIN, "/api/finance/replacement-control/batch", {
     rows: [{ ...base, reason: "CONTROLE QUEBRADO" }, { ...base, reason: "X" }, { ...base, reason: "CABO HDMI", amountCents: 0 }, { ...base, reason: "FONTE QUEIMADA", product: "FONTE" }],
   }));

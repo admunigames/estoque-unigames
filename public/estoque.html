@@ -11144,18 +11144,18 @@
         </div>
         <div class="field"><label for="reposicaoTipo">TIPO</label>
           <select id="reposicaoTipo">
-            <option value="">TODOS OS TIPOS</option>
+            <option value="">ENTRADAS E SAÍDAS</option>
             <option value="entrada">ENTRADA</option>
             <option value="saida">SAÍDA</option>
-            <option value="reposicao">REPOSIÇÃO</option>
-            <option value="ressarcimento">RESSARCIMENTO</option>
-            <option value="prejuizo">PREJUÍZO</option>
-            <option value="recuperacao">RECUPERAÇÃO</option>
           </select>
         </div>
+        <div class="field"><label for="reposicaoFiltroResponsavel">RESPONSÁVEL</label><input id="reposicaoFiltroResponsavel" list="reposicaoResponsaveisList" maxlength="160" placeholder="TODOS — ESCOLHA OU DIGITE"></div>
+        <datalist id="reposicaoResponsaveisList"></datalist>
+        <datalist id="reposicaoCategoriasList"></datalist>
         <div class="field"><label for="reposicaoMesDe">DE</label><input type="month" id="reposicaoMesDe"></div>
         <div class="field"><label for="reposicaoMesAte">ATÉ</label><input type="month" id="reposicaoMesAte"></div>
         <div class="field"><label for="reposicaoBusca">BUSCAR</label><input id="reposicaoBusca" maxlength="120" placeholder="Produto, motivo ou responsável"></div>
+        <label class="assist-check"><input type="checkbox" id="reposicaoSoRepetidos"> SÓ REPETIDOS (MESMA DATA E VALOR)</label>
         <div class="dre-toolbar-actions">
           <button class="btn-outline" id="btnFiltrarReposicao" type="button">FILTRAR</button>
           <button class="btn-outline" id="btnBatchReposicao" type="button">+ CADASTRAR EM LOTE</button>
@@ -11165,13 +11165,24 @@
         </div>
       </div>
 
+      <h3 class="supply-section-title" id="reposicaoSaldoTitulo">ENTRADAS E SAÍDAS DO PERÍODO</h3>
+      <section class="purchase-metrics" id="reposicaoSaldo" aria-label="Saldo do período"><div class="dre-empty">Carregando…</div></section>
+      <div class="dre-toolbar">
+        <p class="page-desc" id="reposicaoSaldoStatus" style="margin:0;flex:1 1 280px;"></p>
+        <div class="dre-toolbar-actions">
+          <button class="btn-outline" id="btnReposicaoSaldoInicial" type="button">SALDO INICIAL DA CONTA</button>
+          <button class="btn-accent" id="btnReposicaoFecharMes" type="button">FINALIZAR MÊS</button>
+        </div>
+      </div>
+      <div id="reposicaoSaldoContas"></div>
       <section class="summary" id="reposicaoSummary" aria-label="Totais por setor"><div class="dre-empty">Carregando…</div></section>
 
       <div class="bulk-bar" id="reposicaoBulkBar">
         <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
         <div class="bulk-bar-actions" data-bulk-actions hidden>
           <strong class="bulk-bar-count" data-bulk-count></strong>
-          <button class="btn-outline btn-sm" type="button" data-bulk-action="update">ALTERAR MOTIVO</button>
+          <button class="btn-accent btn-sm" type="button" data-bulk-action="expense">CLASSIFICAR COMO DESPESA</button>
+          <button class="btn-outline btn-sm" type="button" data-bulk-action="update">ALTERAR SETOR / CATEGORIA / MOTIVO</button>
           <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR SELECIONADOS</button>
           <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
         </div>
@@ -11180,8 +11191,8 @@
       <div class="table-panel responsive-table">
         <div class="table-scroll">
           <table id="reposicaoTable">
-            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Produto</th><th>Motivo</th><th>Setor</th><th>Responsável</th><th>Tipo</th><th>Valor</th><th>Despesa</th><th></th></tr></thead>
-            <tbody id="reposicaoTableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+            <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Produto</th><th>Motivo</th><th>Setor</th><th>Categoria</th><th>Responsável</th><th>Tipo</th><th>Valor</th><th>Despesa</th><th></th></tr></thead>
+            <tbody id="reposicaoTableBody"><tr><td colspan="12" class="responsive-empty">Carregando…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -11843,18 +11854,17 @@
       <div class="purchase-field"><label for="reposicaoData">DATA *</label><input type="date" id="reposicaoData" required></div>
       <div class="purchase-field full"><label for="reposicaoMotivo">MOTIVO *</label><input id="reposicaoMotivo" maxlength="500" required></div>
       <div class="purchase-field full"><label for="reposicaoProduto">PRODUTO</label><input id="reposicaoProduto" maxlength="200" placeholder="OPCIONAL"></div>
-      <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL *</label><input id="reposicaoResponsavel" maxlength="160" required></div>
-      <div class="purchase-field"><label for="reposicaoTipoForm">TIPO *</label>
+      <div class="purchase-field"><label for="reposicaoResponsavel">RESPONSÁVEL *</label><input id="reposicaoResponsavel" list="reposicaoResponsaveisList" maxlength="160" required></div>
+      <div class="purchase-field"><label for="reposicaoTipoForm">ENTRADA OU SAÍDA *</label>
         <select id="reposicaoTipoForm" required>
           <option value="">SELECIONE</option>
           <option value="entrada">ENTRADA</option>
           <option value="saida">SAÍDA</option>
-          <option value="reposicao">REPOSIÇÃO</option>
-          <option value="ressarcimento">RESSARCIMENTO</option>
-          <option value="prejuizo">PREJUÍZO</option>
-          <option value="recuperacao">RECUPERAÇÃO</option>
         </select>
       </div>
+      <div class="purchase-field"><label for="reposicaoSetorForm">SETOR</label><select id="reposicaoSetorForm"><option value="">SEM SETOR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field"><label for="reposicaoCategoria">CATEGORIA</label><input id="reposicaoCategoria" list="reposicaoCategoriasList" maxlength="120" placeholder="OPCIONAL — ESCOLHA OU DIGITE"></div>
+      <div class="purchase-field full"><label for="reposicaoItemFinanceiro">CATEGORIA FINANCEIRA</label><select id="reposicaoItemFinanceiro" data-finance-item-picker data-placeholder="SEM CATEGORIA FINANCEIRA"><option value="">SEM CATEGORIA FINANCEIRA</option></select></div>
       <div class="purchase-field"><label for="reposicaoValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="reposicaoValor" placeholder="R$ 0,00" required></div>
       <div class="purchase-field full"><label for="reposicaoObs">OBSERVAÇÕES</label><textarea id="reposicaoObs" rows="2" maxlength="2000"></textarea></div>
     </div>
@@ -12557,9 +12567,9 @@
       <div class="purchase-field full"><label for="reposicaoExpenseItem">CATEGORIA *</label><select id="reposicaoExpenseItem" data-finance-item-picker required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="reposicaoExpenseCompany">UNIDADE DA DESPESA *</label><select id="reposicaoExpenseCompany" required><option value="">SELECIONE</option></select></div>
       <div class="purchase-field"><label for="reposicaoExpenseCostCenter">CENTRO DE CUSTO</label><select id="reposicaoExpenseCostCenter"><option value="">SEM CENTRO DE CUSTO</option></select></div>
-      <div class="purchase-field"><label for="reposicaoExpenseDue">VENCIMENTO *</label><input type="date" id="reposicaoExpenseDue" required></div>
+      <div class="purchase-field" id="reposicaoExpenseDueField"><label for="reposicaoExpenseDue">VENCIMENTO *</label><input type="date" id="reposicaoExpenseDue"></div>
     </div>
-    <p class="page-desc">A despesa é criada no módulo de Despesas (avulsa, com o valor do lançamento, na unidade escolhida) e vinculada a este lançamento.</p>
+    <p class="page-desc" id="reposicaoExpenseHelp">A despesa é criada no módulo de Despesas (avulsa, com o valor do lançamento, na unidade escolhida) e vinculada a este lançamento.</p>
     <div class="user-form-status" id="reposicaoExpenseStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReposicaoExpenseDialog" type="button">CANCELAR</button>
@@ -13493,13 +13503,17 @@
 </dialog>
 <dialog class="purchase-dialog" id="reposicaoBulkDialog" aria-labelledby="reposicaoBulkTitle">
   <div class="purchase-dialog-head">
-    <h3 id="reposicaoBulkTitle">ALTERAR MOTIVO</h3>
+    <h3 id="reposicaoBulkTitle">ALTERAR SELECIONADOS</h3>
     <button class="purchase-dialog-close" id="btnCloseReposicaoBulk" type="button" aria-label="Fechar">×</button>
   </div>
   <form class="purchase-form" id="reposicaoBulkForm">
     <div class="purchase-form-grid">
+      <div class="purchase-field"><label for="reposicaoBulkSetor">SETOR</label><select id="reposicaoBulkSetor"><option value="">NÃO ALTERAR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field"><label for="reposicaoBulkCategoria">CATEGORIA</label><input id="reposicaoBulkCategoria" list="reposicaoCategoriasList" maxlength="120" placeholder="EM BRANCO = NÃO ALTERAR"></div>
+      <div class="purchase-field full"><label for="reposicaoBulkItemFinanceiro">CATEGORIA FINANCEIRA</label><select id="reposicaoBulkItemFinanceiro" data-finance-item-picker data-placeholder="NÃO ALTERAR"><option value="">NÃO ALTERAR</option></select></div>
       <div class="purchase-field full"><label for="reposicaoBulkMotivo">MOTIVO</label><input id="reposicaoBulkMotivo" maxlength="500" placeholder="EM BRANCO = NÃO ALTERAR"></div>
     </div>
+    <p class="purchase-field-help">A CATEGORIA FINANCEIRA TAMBÉM MUDA NA DESPESA DOS LANÇAMENTOS QUE JÁ VIRARAM DESPESA.</p>
     <div class="user-form-status" id="reposicaoBulkStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelReposicaoBulk" type="button">CANCELAR</button>
@@ -13545,6 +13559,27 @@
   </form>
 </dialog>
 
+<dialog class="purchase-dialog" id="reposicaoSaldoDialog" aria-labelledby="reposicaoSaldoDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="reposicaoSaldoDialogTitle">SALDO INICIAL DA CONTA</h3>
+    <button class="purchase-dialog-close" id="btnCloseReposicaoSaldo" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="reposicaoSaldoForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="reposicaoSaldoResponsavel">CONTA DO RESPONSÁVEL *</label><input id="reposicaoSaldoResponsavel" list="reposicaoResponsaveisList" maxlength="160" required></div>
+      <div class="purchase-field"><label for="reposicaoSaldoMes">VALE A PARTIR DO MÊS *</label><input type="month" id="reposicaoSaldoMes" required></div>
+      <div class="purchase-field"><label for="reposicaoSaldoValor">SALDO NO INÍCIO DO MÊS (R$) *</label><input type="text" inputmode="decimal" id="reposicaoSaldoValor" placeholder="R$ 0,00" required></div>
+      <label class="assist-check"><input type="checkbox" id="reposicaoSaldoNegativo"> SALDO NEGATIVO</label>
+    </div>
+    <p class="purchase-field-help">GRAVAR DE NOVO SUBSTITUI O SALDO INICIAL DESSA CONTA. DEPOIS DE CADA MÊS FINALIZADO, O SALDO FINAL VIRA O SALDO MÊS ANTERIOR DO MÊS SEGUINTE.</p>
+    <div id="reposicaoSaldoLista" class="page-desc"></div>
+    <div class="user-form-status" id="reposicaoSaldoFormStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelReposicaoSaldo" type="button">FECHAR</button>
+      <button class="btn-accent" type="submit">SALVAR SALDO</button>
+    </div>
+  </form>
+</dialog>
 <dialog class="purchase-dialog decl-batch-dialog" id="reposicaoBatchDialog" aria-labelledby="reposicaoBatchTitle">
   <div class="purchase-dialog-head">
     <h3 id="reposicaoBatchTitle">CADASTRAR LANÇAMENTOS EM LOTE</h3>
@@ -13559,7 +13594,7 @@
     <div class="table-panel responsive-table decl-batch-table cr-batch-table">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Data *</th><th>Motivo *</th><th>Responsável *</th><th>Tipo *</th><th>Valor *</th></tr></thead>
+          <thead><tr><th>Data *</th><th>Motivo *</th><th>Responsável *</th><th>Entrada ou saída *</th><th>Valor *</th></tr></thead>
           <tbody id="reposicaoBatchBody"></tbody>
         </table>
       </div>
@@ -44672,10 +44707,16 @@ function renderHomeTasks(){
   function pctFromBps(bps){ return (Number(bps || 0) / 100).toFixed(2).replace('.', ',') + '%'; }
 
   // ----- Controle de Reposição -----
-  const REPOSICAO_KIND_LABELS = {entrada:'ENTRADA', saida:'SAÍDA', reposicao:'REPOSIÇÃO', ressarcimento:'RESSARCIMENTO', prejuizo:'PREJUÍZO', recuperacao:'RECUPERAÇÃO'};
+  // 23/11/2026: lançamento é só ENTRADA ou SAÍDA; os tipos antigos continuam
+  // gravados e aparecem/somam no grupo (mesma regra de app/lib/replacement-balance.ts).
+  const REPOSICAO_KIND_LABELS = {entrada:'ENTRADA', saida:'SAÍDA'};
+  const REPOSICAO_KIND_GROUP = {entrada:'entrada', reposicao:'entrada', recuperacao:'entrada', saida:'saida', ressarcimento:'saida', prejuizo:'saida'};
+  const rpKindGroup = kind => REPOSICAO_KIND_GROUP[kind] || 'saida';
   const REPOSICAO_SECTOR_LABELS = {assistencia:'ASSISTÊNCIA', logistica:'LOGÍSTICA', outros:'OUTROS'};
-  const REPOSICAO_EXPENSE_KINDS = new Set(['saida','reposicao','ressarcimento','prejuizo']);
   let reposicaoRows = [];
+  let reposicaoData = null;
+  let reposicaoClosedMonths = new Set();
+  const rpMonthLabel = month => month ? month.slice(5, 7)+'/'+month.slice(0, 4) : '';
 
   async function loadReposicaoPage(){
     if(!canAccess('finance')) return;
@@ -44685,53 +44726,111 @@ function renderHomeTasks(){
       try{ const cc = await financeApiRequest('/cost-centers'); financeCostCenters = Array.isArray(cc.costCenters) ? cc.costCenters : []; }catch(_e){}
     }
     fase8CompanyOptions('reposicaoLoja', 'TODAS AS UNIDADES');
+    // Abre no mês atual (entradas, saídas e saldo do mês).
+    if(!el('reposicaoMesDe').value && !el('reposicaoMesAte').value){
+      el('reposicaoMesDe').value = el('reposicaoMesAte').value = todayDateKeyRecife().slice(0, 7);
+    }
     await reloadReposicao();
     await loadRpBank();
   }
   async function reloadReposicao(){
     const body = el('reposicaoTableBody');
     if(!body) return;
-    body.innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
+    body.innerHTML = '<tr><td colspan="12" class="responsive-empty">Carregando…</td></tr>';
     const params = new URLSearchParams();
-    const map = {companyId:'reposicaoLoja', sector:'reposicaoSetor', kind:'reposicaoTipo', search:'reposicaoBusca'};
+    const map = {companyId:'reposicaoLoja', sector:'reposicaoSetor', kind:'reposicaoTipo', search:'reposicaoBusca', responsible:'reposicaoFiltroResponsavel'};
     Object.keys(map).forEach(k => { const v = (el(map[k]).value || '').trim(); if(v) params.set(k, v); });
     if(el('reposicaoMesDe').value) params.set('monthFrom', el('reposicaoMesDe').value);
     if(el('reposicaoMesAte').value) params.set('monthTo', el('reposicaoMesAte').value);
     try{
       const data = await financeApiRequest('/replacement-control?'+params.toString());
+      reposicaoData = data;
+      // O saldo e o FINALIZAR MÊS valem para o período que foi carregado.
+      data.loadedFrom = params.get('monthFrom') || '';
+      data.loadedTo = params.get('monthTo') || '';
       reposicaoRows = Array.isArray(data.rows) ? data.rows : [];
+      reposicaoClosedMonths = new Set(data.closedMonths || []);
+      const fillList = (id, names) => { el(id).innerHTML = (names || []).map(name => '<option value="'+escapeHtml(name)+'"></option>').join(''); };
+      fillList('reposicaoResponsaveisList', data.responsibles);
+      fillList('reposicaoCategoriasList', data.categories);
+      renderReposicaoSaldo();
       renderReposicaoSummary(Array.isArray(data.breakdown) ? data.breakdown : []);
       renderReposicaoTable();
     }catch(error){
-      body.innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      body.innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
+  }
+  // Mês único escolhido no filtro (DE = ATÉ) — é ele que FINALIZAR MÊS fecha.
+  function reposicaoSingleMonth(){
+    const from = reposicaoData ? reposicaoData.loadedFrom : '';
+    return from && from === reposicaoData.loadedTo ? from : '';
+  }
+  // SALDO MÊS ANTERIOR + ENTRADAS − SAÍDAS = SALDO, por conta de responsável
+  // (segue o período e o filtro de responsável; os outros filtros não mudam o saldo).
+  function renderReposicaoSaldo(){
+    const data = reposicaoData || {};
+    const b = data.balance || {};
+    const from = data.loadedFrom || '';
+    const to = data.loadedTo || '';
+    const month = reposicaoSingleMonth();
+    const responsible = el('reposicaoFiltroResponsavel').value.trim();
+    el('reposicaoSaldoTitulo').textContent = (month ? 'MÊS '+rpMonthLabel(month) : from || to ? 'PERÍODO '+(rpMonthLabel(from) || 'INÍCIO')+' A '+(rpMonthLabel(to) || 'HOJE') : 'TODO O PERÍODO')+
+      (responsible ? ' · CONTA '+responsible.toLocaleUpperCase('pt-BR') : ' · TODAS AS CONTAS');
+    const stat = (label, cents, tone) => '<div class="purchase-metric"><small>'+label+'</small><strong'+(tone ? ' style="color:'+tone+';"' : '')+'>'+formatCentsBRL(cents || 0)+'</strong></div>';
+    el('reposicaoSaldo').innerHTML =
+      stat(month ? 'SALDO MÊS ANTERIOR' : 'SALDO ANTERIOR', b.openingCents)+
+      stat('ENTRADAS', b.inflowCents, '#54c48a')+
+      stat('SAÍDAS', b.outflowCents, '#ef6a55')+
+      stat('SALDO FINAL', b.closingCents, Number(b.closingCents) < 0 ? '#ef6a55' : '');
+    const closed = month && reposicaoClosedMonths.has(month);
+    el('reposicaoSaldoStatus').innerHTML = month
+      ? (closed ? '<span class="status-pill done">MÊS FINALIZADO</span> OS LANÇAMENTOS DE '+rpMonthLabel(month)+' ESTÃO TRAVADOS. O SALDO FINAL É O SALDO MÊS ANTERIOR DE '+rpMonthLabel(reposicaoNextMonth(month))+'.'
+        : '<span class="status-pill waiting">MÊS EM ABERTO</span> LANÇAMENTOS SALVOS PODEM SER ALTERADOS ATÉ FINALIZAR O MÊS.')
+      : 'PARA FINALIZAR, ESCOLHA UM MÊS SÓ (DE E ATÉ IGUAIS).';
+    const button = el('btnReposicaoFecharMes');
+    button.textContent = closed ? 'REABRIR MÊS' : 'FINALIZAR MÊS';
+    button.className = closed ? 'btn-outline' : 'btn-accent';
+    button.disabled = !month;
+    const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+    el('reposicaoSaldoContas').innerHTML = accounts.length > 1 ? '<div class="table-panel responsive-table"><div class="table-scroll"><table>'+
+      '<thead><tr><th>Conta</th><th>Saldo anterior</th><th>Entradas</th><th>Saídas</th><th>Saldo final</th></tr></thead><tbody>'+
+      accounts.map(a => '<tr><td data-label="Conta">'+escapeHtml(a.responsibleName || 'SEM RESPONSÁVEL')+'</td>'+
+        '<td data-label="Saldo anterior">'+formatCentsBRL(a.openingCents)+'</td><td data-label="Entradas">'+formatCentsBRL(a.inflowCents)+'</td>'+
+        '<td data-label="Saídas">'+formatCentsBRL(a.outflowCents)+'</td><td data-label="Saldo final"><strong>'+formatCentsBRL(a.closingCents)+'</strong></td></tr>').join('')+
+      '</tbody></table></div></div>' : '';
+    el('reposicaoSaldoContas').style.marginBottom = accounts.length > 1 ? '16px' : '';
+  }
+  function reposicaoNextMonth(month){
+    const [year, mon] = month.split('-').map(Number);
+    return mon === 12 ? (year + 1)+'-01' : year+'-'+String(mon + 1).padStart(2, '0');
   }
   function renderReposicaoSummary(breakdown){
     const box = el('reposicaoSummary');
     if(!box) return;
     const bySector = {};
     breakdown.forEach(b => {
-      const s = bySector[b.sector] || (bySector[b.sector] = {inflow:0, outflow:0, replenished:0});
+      const s = bySector[b.sector] || (bySector[b.sector] = {inflow:0, outflow:0});
       const cents = Number(b.totalCents) || 0;
-      // REPOSIÇÃO (dinheiro reposto ao responsável, ex.: Pix recebido do
-      // extrato) fica à parte das saídas (o que foi gasto).
-      if(b.kind === 'entrada' || b.kind === 'recuperacao') s.inflow += cents;
-      else if(b.kind === 'reposicao') s.replenished += cents;
+      if(rpKindGroup(b.kind) === 'entrada') s.inflow += cents;
       else s.outflow += cents;
     });
     const keys = Object.keys(bySector);
     box.innerHTML = keys.length ? keys.map(s =>
-      '<div class="stat"><strong>'+escapeHtml(REPOSICAO_SECTOR_LABELS[s] || s)+'</strong>'+
-      '<span>Reposições '+formatCentsBRL(bySector[s].replenished)+' · Saídas '+formatCentsBRL(bySector[s].outflow)+' · Entradas '+formatCentsBRL(bySector[s].inflow)+'</span></div>'
+      '<div class="stat"><strong>'+escapeHtml(REPOSICAO_SECTOR_LABELS[s] || (s ? s : 'SEM SETOR'))+'</strong>'+
+      '<span>&nbsp;· ENTRADAS '+formatCentsBRL(bySector[s].inflow)+' · SAÍDAS '+formatCentsBRL(bySector[s].outflow)+'</span></div>'
     ).join('') : '<div class="dre-empty">Nenhum lançamento no filtro atual.</div>';
   }
   function renderReposicaoTable(){
     const body = el('reposicaoTableBody');
-    body.innerHTML = reposicaoRows.length ? reposicaoRows.map(r => {
-      const eligible = REPOSICAO_EXPENSE_KINDS.has(r.kind);
+    const onlyRepeated = el('reposicaoSoRepetidos').checked;
+    const shown = onlyRepeated ? reposicaoRows.filter(r => r.repeated) : reposicaoRows;
+    body.innerHTML = shown.length ? shown.map(r => {
+      const eligible = rpKindGroup(r.kind) === 'saida';
       const despesaCell = r.expenseId
         ? '<span class="status-pill ok">VINCULADA</span>'
         : (eligible ? '<button class="btn-outline btn-sm" type="button" data-reposicao-expense="'+escapeHtml(r.id)+'">ADICIONAR</button>' : '—');
+      const locked = reposicaoClosedMonths.has(String(r.entryDate || '').slice(0, 7));
+      const categoryCell = [r.category, r.financeItemId ? financeItemPathLabel(r.financeItemId) : ''].filter(Boolean).map(escapeHtml).join('<br><small>')+(r.category && r.financeItemId ? '</small>' : '');
       return '<tr>'+
         '<td class="bulk-col" data-label="Selecionar">'+bulkRowCheckbox(r.id, 'Selecionar '+(r.product || r.reason || 'lançamento'))+'</td>'+
         '<td data-label="Data">'+escapeHtml(formatDateBR(r.entryDate))+'</td>'+
@@ -44739,26 +44838,33 @@ function renderHomeTasks(){
         '<td data-label="Produto">'+escapeHtml(r.product || '—')+'</td>'+
         '<td data-label="Motivo">'+escapeHtml(r.reason || '—')+'</td>'+
         '<td data-label="Setor">'+escapeHtml(REPOSICAO_SECTOR_LABELS[r.sector] || r.sector || '—')+'</td>'+
+        '<td data-label="Categoria">'+(categoryCell || '—')+'</td>'+
         '<td data-label="Responsável">'+escapeHtml(r.responsibleName || '—')+'</td>'+
-        '<td data-label="Tipo">'+escapeHtml(REPOSICAO_KIND_LABELS[r.kind] || r.kind)+'</td>'+
-        '<td data-label="Valor">'+formatCentsBRL(r.amountCents)+'</td>'+
+        '<td data-label="Tipo"><span class="status-pill'+(rpKindGroup(r.kind) === 'entrada' ? ' ok' : '')+'">'+REPOSICAO_KIND_LABELS[rpKindGroup(r.kind)]+'</span></td>'+
+        '<td data-label="Valor">'+formatCentsBRL(r.amountCents)+
+          (r.repeated ? ' <span class="status-pill alert" title="Outro lançamento com a mesma data, o mesmo valor e o mesmo tipo">REPETIDO</span>' : '')+'</td>'+
         '<td data-label="Despesa">'+despesaCell+'</td>'+
         '<td data-label="Ações" style="white-space:nowrap">'+
+          // Mês finalizado: só altera setor/categoria/motivo (pela seleção em lote); data, valor e tipo ficam travados.
+          (locked ? '<span class="status-pill done" title="Mês finalizado">FINALIZADO</span>' :
           '<button class="btn-outline btn-sm" type="button" data-reposicao-edit="'+escapeHtml(r.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
-          '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>'+
+          '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>')+
         '</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhum lançamento.</td></tr>';
+    }).join('') : '<tr><td colspan="12" class="responsive-empty">'+(onlyRepeated ? 'Nenhum lançamento repetido.' : 'Nenhum lançamento.')+'</td></tr>';
     reposicaoBulk.sync();
   }
 
   // Ações em lote e cadastro em lote (Financeiro 9/9) — replacement-control/bulk e /batch.
   let reposicaoBulkIds = [];
   const reposicaoBulk = setupBulkSelection(el('reposicaoBulkBar'), el('reposicaoTableBody'), async (action, ids) => {
+    if(action === 'expense'){ openReposicaoExpenseDialog(ids); return false; }
     if(action === 'update'){
       reposicaoBulkIds = ids;
       el('reposicaoBulkForm').reset();
-      el('reposicaoBulkTitle').textContent = 'ALTERAR MOTIVO — '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
+      renderFlatFinanceItemOptions('reposicaoBulkItemFinanceiro', 'NÃO ALTERAR');
+      setFinanceItemPickerValue('reposicaoBulkItemFinanceiro', '');
+      el('reposicaoBulkTitle').textContent = 'ALTERAR '+ids.length+(ids.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS');
       el('reposicaoBulkStatus').textContent = '';
       el('reposicaoBulkDialog').showModal();
       return false;
@@ -44804,9 +44910,15 @@ function renderHomeTasks(){
     event.preventDefault();
     const fields = {};
     if(el('reposicaoBulkMotivo').value.trim()) fields.reason = el('reposicaoBulkMotivo').value.trim();
-    if(!Object.keys(fields).length){ el('reposicaoBulkStatus').textContent = 'INFORME O MOTIVO.'; return; }
+    if(el('reposicaoBulkSetor').value) fields.sector = el('reposicaoBulkSetor').value;
+    if(el('reposicaoBulkCategoria').value.trim()) fields.category = el('reposicaoBulkCategoria').value.trim();
+    if(el('reposicaoBulkItemFinanceiro').value) fields.financeItemId = el('reposicaoBulkItemFinanceiro').value;
+    if(!Object.keys(fields).length){ el('reposicaoBulkStatus').textContent = 'ESCOLHA O QUE ALTERAR.'; return; }
     try{
       await financeBulkRequest('/replacement-control/bulk', {action:'update', ids: reposicaoBulkIds, fields});
+      // Os que já viraram despesa: a categoria financeira muda na despesa também.
+      const expenseIds = fields.financeItemId ? [...new Set(reposicaoRows.filter(r => reposicaoBulkIds.includes(r.id) && r.expenseId).map(r => r.expenseId))] : [];
+      if(expenseIds.length) await financeBulkRequest('/expenses/bulk', {action:'category', ids: expenseIds, fields:{financeItemId: fields.financeItemId}});
       el('reposicaoBulkDialog').close();
       reposicaoBulk.clear();
       await reloadReposicao();
@@ -44883,7 +44995,7 @@ function renderHomeTasks(){
       }
       const p = plain(line);
       if(/total de (saidas|debitos)/.test(p)){ section = 'saida'; previous = ''; return; }
-      if(/total de (entradas|creditos)/.test(p)){ section = 'reposicao'; previous = ''; return; }
+      if(/total de (entradas|creditos)/.test(p)){ section = 'entrada'; previous = ''; return; }
       if(/saldo|total|limite/.test(p.replace(/\s+/g,''))){ previous = ''; return; }
       const amounts = [...line.matchAll(amountRe)];
       if(!amounts.length){ previous = line; return; }
@@ -44894,8 +45006,8 @@ function renderHomeTasks(){
       previous = '';
       const sign = ((first[1] || first[2] || '') + (first[4] || '')).replace(/\s/g,'').toUpperCase();
       const words = plain(desc);
-      const kind = /[-\u2212D]/.test(sign) ? 'saida' : /[+C]/.test(sign) ? 'reposicao' : section ||
-        (/envi|pag|compra|debit|saque|tarifa|boleto/.test(words) ? 'saida' : /receb|credit|deposit|estorno|devolu|entrada|resgate|reembols/.test(words) ? 'reposicao' : 'saida');
+      const kind = /[-\u2212D]/.test(sign) ? 'saida' : /[+C]/.test(sign) ? 'entrada' : section ||
+        (/envi|pag|compra|debit|saque|tarifa|boleto/.test(words) ? 'saida' : /receb|credit|deposit|estorno|devolu|entrada|resgate|reembols/.test(words) ? 'entrada' : 'saida');
       const amountCents = money(first[3]);
       if(amountCents > 0) rows.push({entryDate: date, kind, amountCents, payee: '', reason: upper(desc) || 'TRANSAÇÃO DO EXTRATO', notes: upper(desc)});
     });
@@ -44924,7 +45036,7 @@ function renderHomeTasks(){
         const typeLabel = upper((text.split(/[:"]/)[0]) || 'TRANSAÇÃO');
         const payee = quoted ? upper(quoted[1].replace(/^\s*Cp\s*:\s*\d+\s*-\s*/i,'').replace(/^\d+\s+/,'')) : upper(text.replace(/^[^:]*:/,''));
         const note = quoted ? text.slice(text.indexOf(quoted[0]) + quoted[0].length).trim() : '';
-        open = {entryDate: date, kind: tx[2] ? 'saida' : 'reposicao', typeLabel, payee, note, amountCents: money(tx[3])};
+        open = {entryDate: date, kind: tx[2] ? 'saida' : 'entrada', typeLabel, payee, note, amountCents: money(tx[3])};
         rows.push(open);
         return;
       }
@@ -44966,7 +45078,7 @@ function renderHomeTasks(){
       const sum = kind => parsed.rows.filter(row => row.kind === kind).reduce((total, row) => total + row.amountCents, 0);
       const count = kind => parsed.rows.filter(row => row.kind === kind).length;
       el('reposicaoBatchStatus').textContent = parsed.rows.length+' LINHA(S) LIDA(S) DO PDF · '+count('saida')+' SAÍDA(S) '+formatCentsBRL(sum('saida'))+
-        ' · '+count('reposicao')+' REPOSIÇÃO(ÕES) '+formatCentsBRL(sum('reposicao'))+'. CONFIRA E CLIQUE EM SALVAR TUDO.';
+        ' · '+count('entrada')+' ENTRADA(S) '+formatCentsBRL(sum('entrada'))+'. CONFIRA E CLIQUE EM SALVAR TUDO.';
       el('reposicaoBatchDialog').showModal();
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
@@ -45124,20 +45236,73 @@ function renderHomeTasks(){
     // Sem unidade e sem setor no formulário (02/11/2026): o antigo mantém os que tem.
     el('reposicaoForm').dataset.companyId = row ? (row.companyId || '') : '';
     el('reposicaoForm').dataset.companyName = row ? (row.companyName || '') : '';
-    el('reposicaoForm').dataset.sector = row ? (row.sector || '') : '';
     el('reposicaoId').value = row ? row.id : '';
     el('reposicaoDialogTitle').textContent = row ? 'EDITAR LANÇAMENTO' : 'NOVO LANÇAMENTO';
     el('reposicaoData').value = row ? row.entryDate : todayDateKeyRecife();
     el('reposicaoProduto').value = row ? (row.product || '') : '';
     el('reposicaoMotivo').value = row ? (row.reason || '') : '';
     el('reposicaoResponsavel').value = row ? (row.responsibleName || '') : '';
-    el('reposicaoTipoForm').value = row ? row.kind : '';
+    el('reposicaoTipoForm').value = row ? rpKindGroup(row.kind) : '';
+    el('reposicaoSetorForm').value = row ? (row.sector || '') : '';
+    el('reposicaoCategoria').value = row ? (row.category || '') : '';
+    renderFlatFinanceItemOptions('reposicaoItemFinanceiro', 'SEM CATEGORIA FINANCEIRA');
+    setFinanceItemPickerValue('reposicaoItemFinanceiro', row ? (row.financeItemId || '') : '');
     setCurrencyValue(el('reposicaoValor'), row && row.amountCents ? row.amountCents/100 : '');
     el('reposicaoObs').value = row ? (row.notes || '') : '';
     el('reposicaoFormStatus').textContent = '';
     el('reposicaoDialog').showModal();
   }
   el('reposicaoValor') && attachCurrencyMask(el('reposicaoValor'));
+  el('reposicaoSaldoValor') && attachCurrencyMask(el('reposicaoSaldoValor'));
+  el('reposicaoSoRepetidos') && el('reposicaoSoRepetidos').addEventListener('change', () => { reposicaoBulk.clear(); renderReposicaoTable(); });
+  ['reposicaoFiltroResponsavel', 'reposicaoMesDe', 'reposicaoMesAte'].forEach(id => el(id) && el(id).addEventListener('change', reloadReposicao));
+  function renderReposicaoSaldoLista(){
+    const initials = (reposicaoData && Array.isArray(reposicaoData.initialBalances)) ? reposicaoData.initialBalances : [];
+    el('reposicaoSaldoLista').innerHTML = initials.length
+      ? '<strong>SALDOS INICIAIS GRAVADOS:</strong><br>'+initials.map(b => escapeHtml(b.responsibleName)+' — '+formatCentsBRL(b.amountCents)+' A PARTIR DE '+rpMonthLabel(b.month)).join('<br>')
+      : 'NENHUM SALDO INICIAL GRAVADO AINDA.';
+  }
+  el('btnReposicaoSaldoInicial') && el('btnReposicaoSaldoInicial').addEventListener('click', () => {
+    el('reposicaoSaldoForm').reset();
+    el('reposicaoSaldoResponsavel').value = el('reposicaoFiltroResponsavel').value.trim();
+    el('reposicaoSaldoMes').value = el('reposicaoMesDe').value || todayDateKeyRecife().slice(0, 7);
+    el('reposicaoSaldoFormStatus').textContent = '';
+    renderReposicaoSaldoLista();
+    el('reposicaoSaldoDialog').showModal();
+  });
+  el('btnCloseReposicaoSaldo') && el('btnCloseReposicaoSaldo').addEventListener('click', () => el('reposicaoSaldoDialog').close());
+  el('btnCancelReposicaoSaldo') && el('btnCancelReposicaoSaldo').addEventListener('click', () => el('reposicaoSaldoDialog').close());
+  el('reposicaoSaldoForm') && el('reposicaoSaldoForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const status = el('reposicaoSaldoFormStatus');
+    const cents = Math.round(Number(getCurrencyValue(el('reposicaoSaldoValor')) || 0) * 100);
+    try{
+      await financeApiRequest('/replacement-control/balance', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        action:'initial', responsibleName: el('reposicaoSaldoResponsavel').value.trim(), month: el('reposicaoSaldoMes').value,
+        amountCents: el('reposicaoSaldoNegativo').checked ? -cents : cents
+      })});
+      await reloadReposicao();
+      renderReposicaoSaldoLista();
+      status.textContent = 'SALDO INICIAL SALVO.';
+      showPurchaseToast('Saldo inicial salvo.');
+    }catch(error){ status.textContent = error.message; }
+  });
+  el('btnReposicaoFecharMes') && el('btnReposicaoFecharMes').addEventListener('click', async () => {
+    const month = reposicaoSingleMonth();
+    if(!month) return;
+    const reopen = reposicaoClosedMonths.has(month);
+    const b = (reposicaoData && reposicaoData.balance) || {};
+    const message = reopen
+      ? 'REABRIR O MÊS '+rpMonthLabel(month)+'? OS LANÇAMENTOS VOLTAM A PODER SER ALTERADOS E O SALDO GRAVADO SAI.'
+      : 'FINALIZAR O MÊS '+rpMonthLabel(month)+'? ENTRADAS '+formatCentsBRL(b.inflowCents || 0)+' · SAÍDAS '+formatCentsBRL(b.outflowCents || 0)+
+        '. O SALDO FINAL DE CADA CONTA FICA GRAVADO COMO SALDO MÊS ANTERIOR DE '+rpMonthLabel(reposicaoNextMonth(month))+' E OS LANÇAMENTOS DO MÊS FICAM TRAVADOS.';
+    if(!await askConfirm(message, {okText: reopen ? 'REABRIR MÊS' : 'FINALIZAR MÊS', danger:false})) return;
+    try{
+      await financeApiRequest('/replacement-control/balance', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action: reopen ? 'reopen' : 'close', month})});
+      showPurchaseToast(reopen ? 'Mês reaberto.' : 'Mês finalizado.');
+      await reloadReposicao();
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
   el('btnNewReposicao') && el('btnNewReposicao').addEventListener('click', () => openReposicaoDialog(null));
   el('btnFiltrarReposicao') && el('btnFiltrarReposicao').addEventListener('click', reloadReposicao);
   el('btnCloseReposicaoDialog') && el('btnCloseReposicaoDialog').addEventListener('click', () => el('reposicaoDialog').close());
@@ -45152,7 +45317,9 @@ function renderHomeTasks(){
       companyId: form.companyId || '', companyName: form.companyName || '',
       product: el('reposicaoProduto').value.trim(),
       reason: el('reposicaoMotivo').value.trim(),
-      sector: form.sector || '',
+      sector: el('reposicaoSetorForm').value,
+      category: el('reposicaoCategoria').value.trim(),
+      financeItemId: el('reposicaoItemFinanceiro').value,
       responsibleName: el('reposicaoResponsavel').value.trim(),
       kind: el('reposicaoTipoForm').value,
       amountCents: Math.round(Number(getCurrencyValue(el('reposicaoValor'))) * 100),
@@ -45162,6 +45329,11 @@ function renderHomeTasks(){
     if(id) payload.id = id;
     try{
       const saved = await financeApiRequest('/replacement-control', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      // Já virou despesa e a categoria financeira mudou: muda na despesa também.
+      const before = id ? reposicaoRows.find(r => r.id === id) : null;
+      if(before && before.expenseId && payload.financeItemId && payload.financeItemId !== before.financeItemId){
+        await financeBulkRequest('/expenses/bulk', {action:'category', ids:[before.expenseId], fields:{financeItemId: payload.financeItemId}});
+      }
       el('reposicaoDialog').close();
       // Criado a partir de uma saída do extrato: já fica batido com ela.
       if(rpLinkAfterSave && saved && saved.id){
@@ -45181,9 +45353,41 @@ function renderHomeTasks(){
     else if(exp){ const r = reposicaoRows.find(x => x.id === exp.dataset.reposicaoExpense); if(r) openReposicaoExpenseDialog(r); }
   });
 
-  function openReposicaoExpenseDialog(row){
+  // CLASSIFICAR COMO DESPESA: um lançamento (botão ADICIONAR) ou vários
+  // selecionados com UMA classificação — cada lançamento vira a própria
+  // despesa, com vencimento na data dele.
+  let reposicaoExpenseIds = [];
+  function openReposicaoExpenseDialog(rowOrIds){
+    if(Array.isArray(rowOrIds)){
+      const rows = reposicaoRows.filter(r => rowOrIds.includes(r.id));
+      const eligible = rows.filter(r => !r.expenseId && rpKindGroup(r.kind) === 'saida');
+      if(!eligible.length){ showPurchaseToast('NENHUM SELECIONADO PODE VIRAR DESPESA (SÓ SAÍDAS AINDA SEM DESPESA).', 'error'); return; }
+      reposicaoExpenseIds = eligible.map(r => r.id);
+      el('reposicaoExpenseForm').reset();
+      renderFlatFinanceItemOptions('reposicaoExpenseItem', 'SELECIONE');
+      const items = [...new Set(eligible.map(r => r.financeItemId).filter(Boolean))];
+      setFinanceItemPickerValue('reposicaoExpenseItem', items.length === 1 ? items[0] : '');
+      const cc = el('reposicaoExpenseCostCenter');
+      cc.innerHTML = '<option value="">SEM CENTRO DE CUSTO</option>' + (financeCostCenters||[]).map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
+      fase8CompanyOptions('reposicaoExpenseCompany', '');
+      el('reposicaoExpenseEntryId').value = '';
+      el('reposicaoExpenseDueField').hidden = true;
+      el('reposicaoExpenseTitle').textContent = 'CLASSIFICAR '+eligible.length+(eligible.length === 1 ? ' LANÇAMENTO' : ' LANÇAMENTOS')+' COMO DESPESA';
+      const skippedCount = rows.length - eligible.length;
+      el('reposicaoExpenseHelp').textContent = 'CADA LANÇAMENTO VIRA A PRÓPRIA DESPESA (VALOR DELE, VENCIMENTO NA DATA DELE), TODAS COM A CLASSIFICAÇÃO ESCOLHIDA ('+formatCentsBRL(eligible.reduce((t, r) => t + Number(r.amountCents || 0), 0))+' NO TOTAL).'+
+        (skippedCount ? ' '+skippedCount+' SELECIONADO(S) FICAM DE FORA (ENTRADA OU JÁ VIROU DESPESA).' : '');
+      el('reposicaoExpenseStatus').textContent = '';
+      el('reposicaoExpenseDialog').showModal();
+      return;
+    }
+    const row = rowOrIds;
+    reposicaoExpenseIds = [];
+    el('reposicaoExpenseDueField').hidden = false;
+    el('reposicaoExpenseTitle').textContent = 'ADICIONAR COMO DESPESA';
+    el('reposicaoExpenseHelp').textContent = 'A despesa é criada no módulo de Despesas (avulsa, com o valor do lançamento, na unidade escolhida) e vinculada a este lançamento.';
     el('reposicaoExpenseForm').reset();
     renderFlatFinanceItemOptions('reposicaoExpenseItem', 'SELECIONE');
+    setFinanceItemPickerValue('reposicaoExpenseItem', row.financeItemId || '');
     const cc = el('reposicaoExpenseCostCenter');
     cc.innerHTML = '<option value="">SEM CENTRO DE CUSTO</option>' + (financeCostCenters||[]).map(c => '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name)+'</option>').join('');
     el('reposicaoExpenseEntryId').value = row.id;
@@ -45199,36 +45403,49 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('reposicaoExpenseStatus');
     status.textContent = '';
-    const entryId = el('reposicaoExpenseEntryId').value;
-    const row = reposicaoRows.find(x => x.id === entryId);
-    if(!row){ status.textContent = 'LANÇAMENTO NÃO ENCONTRADO.'; return; }
+    const bulk = reposicaoExpenseIds.length > 0;
+    const entryIds = bulk ? reposicaoExpenseIds : [el('reposicaoExpenseEntryId').value];
+    const rows = entryIds.map(id => reposicaoRows.find(x => x.id === id)).filter(Boolean);
+    if(rows.length !== entryIds.length){ status.textContent = 'LANÇAMENTO NÃO ENCONTRADO. ATUALIZE A LISTA.'; return; }
     const financeItemId = el('reposicaoExpenseItem').value;
     const dueDate = el('reposicaoExpenseDue').value;
     if(!financeItemId){ status.textContent = 'SELECIONE A CATEGORIA.'; return; }
-    if(!dueDate){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
+    if(!bulk && !dueDate){ status.textContent = 'INFORME O VENCIMENTO.'; return; }
     const expenseCompanyId = el('reposicaoExpenseCompany').value;
     if(!expenseCompanyId){ status.textContent = 'SELECIONE A UNIDADE DA DESPESA.'; return; }
+    const submit = event.submitter;
+    if(submit) submit.disabled = true;
+    let done = 0;
     try{
-      const expensePayload = {
-        idempotencyKey: 'reposicao:'+entryId,
-        companyId: expenseCompanyId,
-        companyName: fase8CompanyName(expenseCompanyId),
-        description: ('Reposição: '+(row.product || REPOSICAO_KIND_LABELS[row.kind])).slice(0,200),
-        financeItemId,
-        costCenterId: el('reposicaoExpenseCostCenter').value || '',
-        originalAmountCents: row.amountCents,
-        issueDate: row.entryDate,
-        dueDate,
-        paymentMethod: 'CONTROLE DE REPOSIÇÃO',
-        notes: [REPOSICAO_SECTOR_LABELS[row.sector], row.responsibleName, row.reason].filter(Boolean).join(' — ')
-      };
-      const created = await financeApiRequest('/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(expensePayload)});
-      const expenseId = created.id || created.expenseId || '';
-      await financeApiRequest('/replacement-control', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:entryId, expenseId})});
+      for(const row of rows){
+        status.textContent = bulk ? 'CRIANDO DESPESA '+(done + 1)+' DE '+rows.length+'…' : '';
+        const expensePayload = {
+          // Mesma chave do ADICIONAR individual: repetir não duplica a despesa.
+          idempotencyKey: 'reposicao:'+row.id,
+          companyId: expenseCompanyId,
+          companyName: fase8CompanyName(expenseCompanyId),
+          description: ('Reposição: '+(row.product || row.reason || REPOSICAO_KIND_LABELS[rpKindGroup(row.kind)])).slice(0,200),
+          financeItemId,
+          costCenterId: el('reposicaoExpenseCostCenter').value || '',
+          originalAmountCents: row.amountCents,
+          issueDate: row.entryDate,
+          dueDate: bulk ? row.entryDate : dueDate,
+          paymentMethod: 'CONTROLE DE REPOSIÇÃO',
+          notes: [REPOSICAO_SECTOR_LABELS[row.sector], row.responsibleName, row.reason].filter(Boolean).join(' — ')
+        };
+        const created = await financeApiRequest('/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(expensePayload)});
+        const expenseId = created.id || created.expenseId || '';
+        await financeApiRequest('/replacement-control', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:row.id, expenseId, financeItemId})});
+        done++;
+      }
       el('reposicaoExpenseDialog').close();
+      if(bulk) reposicaoBulk.clear();
       await reloadReposicao();
-      showPurchaseToast('Despesa criada e vinculada.');
-    }catch(error){ status.textContent = error.message; }
+      showPurchaseToast(bulk ? done+' despesa(s) criada(s) e vinculada(s).' : 'Despesa criada e vinculada.');
+    }catch(error){
+      status.textContent = (done ? done+' DESPESA(S) CRIADA(S) ANTES DO ERRO. ' : '')+error.message;
+      if(done) await reloadReposicao();
+    }finally{ if(submit) submit.disabled = false; }
   });
 
   // ----- Recargas de Celulares -----

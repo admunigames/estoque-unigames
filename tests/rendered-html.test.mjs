@@ -5522,8 +5522,9 @@ test("Financeiro 9/9 > Conciliação Bancária: barra de lote", async () => {
 
 test("Financeiro 9/9 > Controle de Reposição: barra de lote e cadastro em lote", async () => {
   const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
-  assert.match(html, /id="reposicaoBulkBar"[\s\S]*?data-bulk-action="update"(?: data-bulk-confirm="[^"]*")?>ALTERAR MOTIVO[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
-  // 02/11/2026: sem UNIDADE e sem SETOR RESPONSÁVEL no lançamento (só RESPONSÁVEL); lote sem PRODUTO;
+  // 23/11/2026: CLASSIFICAR COMO DESPESA (uma despesa por lançamento) e ALTERAR setor/categoria/motivo.
+  assert.match(html, /id="reposicaoBulkBar"[\s\S]*?data-bulk-action="expense"(?: data-bulk-confirm="[^"]*")?>CLASSIFICAR COMO DESPESA[\s\S]*?data-bulk-action="update"(?: data-bulk-confirm="[^"]*")?>ALTERAR SETOR \/ CATEGORIA \/ MOTIVO[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
+  // 02/11/2026: sem UNIDADE no lançamento (o SETOR voltou em 23/11, opcional); lote sem PRODUTO;
   // excluir (linha ou selecionados) pergunta se a despesa vinculada também sai.
   assert.doesNotMatch(html, /id="reposicaoUnidade"|id="reposicaoSetorResp"|data-rp-batch="product"|data-rp-batch="companyId"|data-rp-batch="sector"/);
   assert.match(html, /<label for="reposicaoMotivo">MOTIVO \*<\/label>/);

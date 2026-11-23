@@ -2829,6 +2829,10 @@ export const financeReplacementEntries = pgTable(
     expenseId: text("expense_id").notNull().default(""),
     // Saída do extrato bancário batida com este lançamento (BATER COM EXTRATO).
     bankEntryId: text("bank_entry_id").notNull().default(""),
+    // Categoria própria do módulo (texto livre) e categoria financeira
+    // (finance_items) — alteráveis depois de lançado (migration 0143).
+    category: text("category").notNull().default(""),
+    financeItemId: text("finance_item_id").notNull().default(""),
     createdBy: text("created_by").notNull().default(""),
     createdByName: text("created_by_name").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -2841,6 +2845,28 @@ export const financeReplacementEntries = pgTable(
     index("finance_replacement_entries_sector_idx").on(table.sector),
     index("finance_replacement_entries_kind_idx").on(table.kind),
   ],
+);
+
+// Controle de Reposição — saldos por conta de responsável (migration 0143):
+// 'initial' = SALDO INICIAL (vale a partir de month); 'closing' = fechamento
+// gravado no FINALIZAR MÊS (amount = saldo final; trava os lançamentos do mês
+// e vira o SALDO MÊS ANTERIOR do seguinte). Regra em app/lib/replacement-balance.ts.
+export const financeReplacementBalances = pgTable(
+  "finance_replacement_balances",
+  {
+    id: text("id").primaryKey(),
+    kind: text("kind").notNull(),
+    month: text("month").notNull(),
+    responsibleName: text("responsible_name").notNull().default(""),
+    amountCents: integer("amount_cents").notNull().default(0),
+    openingCents: integer("opening_cents").notNull().default(0),
+    inflowCents: integer("inflow_cents").notNull().default(0),
+    outflowCents: integer("outflow_cents").notNull().default(0),
+    createdBy: text("created_by").notNull().default(""),
+    createdByName: text("created_by_name").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [uniqueIndex("finance_replacement_balances_key_idx").on(table.kind, table.month, table.responsibleName)],
 );
 
 // Recargas de Celulares — cadastro de linhas pré-pagas por unidade.
