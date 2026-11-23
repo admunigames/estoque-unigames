@@ -11,6 +11,12 @@ export function canManageComprasDraft(actor: Identity) {
   return actor.role === "admin" || actor.permissions.includes("purchases_draft:manage");
 }
 
+// Pedido marcado "SEM NF" (não vai ter nota vinculada): uma linha de
+// shared_state por pedido — ver orders/[id]/sem-nf/route.ts.
+export function semNfKey(orderId: string) {
+  return `compras_sem_nf:${orderId}`;
+}
+
 export function newId() {
   return crypto.randomUUID();
 }

@@ -9,6 +9,7 @@ import {
   resolveProductCodes,
   safeText,
   sameOrigin,
+  semNfKey,
   type JsonMap,
 } from "../shared";
 
@@ -204,6 +205,7 @@ export async function GET(request: Request) {
     // Financeiro vinculada — mostrados no cartão e no painel da aba PEDIDOS.
     const attachmentsByOrderId = new Map<string, Array<{ id: string; attachmentType: string; fileName: string }>>();
     const linkedInvoiceOrderIds = new Set<string>();
+    const semNfOrderIds = new Set<string>();
     if (orderIds.length) {
       const placeholders = orderIds.map((_, index) => `?${index + 1}`).join(",");
       const attachmentsResult = await database
@@ -223,6 +225,11 @@ export async function GET(request: Request) {
         .bind(...orderIds)
         .all<{ orderId: string }>();
       for (const row of invoicesResult.results ?? []) linkedInvoiceOrderIds.add(row.orderId);
+      const semNfResult = await database
+        .prepare(`SELECT state_key AS stateKey FROM shared_state WHERE state_key IN (${placeholders})`)
+        .bind(...orderIds.map(semNfKey))
+        .all<{ stateKey: string }>();
+      for (const row of semNfResult.results ?? []) semNfOrderIds.add(row.stateKey.slice(semNfKey("").length));
     }
 
     const enriched = orders.map((order) => ({
@@ -234,6 +241,7 @@ export async function GET(request: Request) {
       receivedQty: unitsByOrderId.get(order.id)?.receivedQty || 0,
       attachments: attachmentsByOrderId.get(order.id) || [],
       hasLinkedInvoice: linkedInvoiceOrderIds.has(order.id),
+      noInvoice: semNfOrderIds.has(order.id),
       // Nativo: a loja que fatura (escolhida no fechamento) manda; pedidos
       // antigos sem ela continuam mostrando as "lojas destino" dos itens.
       targetStoreNames:

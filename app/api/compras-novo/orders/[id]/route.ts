@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../../db";
 import { unauthorizedResponse } from "../../../../lib/notion";
-import { canManageComprasDraft, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../../shared";
+import { canManageComprasDraft, identity, jsonResponse, safeText, sameOrigin, semNfKey, type JsonMap } from "../../shared";
 
 type OrderRow = {
   id: string;
@@ -189,7 +189,17 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       .bind(id)
       .first<LinkedInvoiceRow>();
 
-    return jsonResponse({ order: { ...order, supplierName }, items, linkedInvoice: linkedInvoice || null });
+    const semNf = await database
+      .prepare("SELECT value_json AS valueJson FROM shared_state WHERE state_key=?1")
+      .bind(semNfKey(id))
+      .first<{ valueJson: string }>();
+
+    return jsonResponse({
+      order: { ...order, supplierName },
+      items,
+      linkedInvoice: linkedInvoice || null,
+      noInvoice: semNf ? JSON.parse(semNf.valueJson) : null,
+    });
   } catch (error) {
     console.error("Não foi possível carregar o pedido de compra.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O PEDIDO." }, 500);

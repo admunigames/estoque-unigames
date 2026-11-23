@@ -6,7 +6,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // Compras > PEDIDOS (12/11/2026): cartão mostra os anexos (PEDIDO / NF) e o
 // painel conta atraso, prazo, falta vincular NF, incompletos e cancelados.
 
-const db = await setupRouteDb(["purchase_orders", "purchase_order_items", "purchase_order_attachments", "supplier_invoices", "finance_suppliers"]);
+const db = await setupRouteDb(["shared_state", "purchase_orders", "purchase_order_items", "purchase_order_attachments", "supplier_invoices", "finance_suppliers"]);
 const route = await import("../app/api/compras-novo/orders/route.ts");
 const COMPRAS = { id: "compras", permissions: ["purchases_draft:manage"] };
 db.insert("purchase_orders", { id: "po1", origin: "native", status: "aguardando_chegada", created_by: "compras" });
@@ -33,6 +33,25 @@ test("painel da aba PEDIDOS: 5 contadores clicáveis e NF só para pedidos novos
   assert.match(html, /const COMPRAS_NF_LINK_SINCE = '2026-11-12';/);
   // Pela data da conclusão (pedido antigo que chega hoje conta), não pela criação.
   assert.match(html, /const comprasOrderDoneDate = o => String\(o\.receivedDate \|\| o\.updatedAt \|\| ''\)\.slice\(0, 10\);/);
-  assert.match(html, /o\.status === 'concluido' && !o\.hasLinkedInvoice && comprasOrderDoneDate\(o\) >= COMPRAS_NF_LINK_SINCE/);
+  assert.match(html, /o\.status === 'concluido' && !o\.hasLinkedInvoice && !o\.noInvoice && comprasOrderDoneDate\(o\) >= COMPRAS_NF_LINK_SINCE/);
   assert.match(html, /'<footer class="purchase-card-footer">'\+comprasOrderFilesHtml\(order\)/);
+});
+
+test("pedido SEM NF: marca, aparece na lista e no detalhe, desmarca; permissão e 404", async () => {
+  const semNf = await import("../app/api/compras-novo/orders/[id]/sem-nf/route.ts");
+  const detail = await import("../app/api/compras-novo/orders/[id]/route.ts");
+  const call = (method, user, id) => callRoute(semNf[method], user, method, `/api/compras-novo/orders/${id}/sem-nf`, undefined, { id });
+  const listed = async () => Object.fromEntries((await (await callRoute(route.GET, COMPRAS, "GET", "/api/compras-novo/orders", undefined, {})).json()).orders.map((o) => [o.id, o.noInvoice]));
+
+  assert.equal((await call("POST", { id: "x", permissions: ["stock:view"] }, "po2")).status, 403);
+  assert.equal((await call("POST", COMPRAS, "nao-existe")).status, 404);
+  const marked = await call("POST", COMPRAS, "po2");
+  assert.equal(marked.status, 200);
+  assert.equal((await marked.json()).noInvoice.byName, "COMPRAS");
+  assert.deepEqual(await listed(), { po1: false, po2: true });
+  const opened = await (await callRoute(detail.GET, COMPRAS, "GET", "/api/compras-novo/orders/po2", undefined, { id: "po2" })).json();
+  assert.equal(opened.noInvoice.byName, "COMPRAS");
+
+  assert.equal((await call("DELETE", COMPRAS, "po2")).status, 200);
+  assert.deepEqual(await listed(), { po1: false, po2: false });
 });

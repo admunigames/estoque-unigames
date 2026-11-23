@@ -7462,12 +7462,15 @@
             <h4 style="margin:0 0 8px;">NOTA FISCAL VINCULADA</h4>
             <div id="comprasOrderInvoiceLinked" hidden></div>
             <div id="comprasOrderInvoiceUnlinked" hidden>
-              <p class="page-desc" style="margin:0 0 8px;">Nenhuma nota fiscal vinculada a este pedido ainda.</p>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <button class="btn-accent" id="btnCreateInvoiceForOrder" type="button">CRIAR NOTA FISCAL PARA ESTE PEDIDO</button>
-                <select id="comprasOrderLinkInvoiceSelect" style="min-width:260px;"><option value="">VINCULAR NF JÁ EXISTENTE…</option></select>
-                <button class="btn-outline" id="btnLinkExistingInvoice" type="button">VINCULAR</button>
+              <div id="comprasOrderInvoiceLinkControls">
+                <p class="page-desc" style="margin:0 0 8px;">Nenhuma nota fiscal vinculada a este pedido ainda.</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <button class="btn-accent" id="btnCreateInvoiceForOrder" type="button">CRIAR NOTA FISCAL PARA ESTE PEDIDO</button>
+                  <select id="comprasOrderLinkInvoiceSelect" style="min-width:260px;"><option value="">VINCULAR NF JÁ EXISTENTE…</option></select>
+                  <button class="btn-outline" id="btnLinkExistingInvoice" type="button">VINCULAR</button>
+                </div>
               </div>
+              <div id="comprasOrderNoInvoiceBox" style="margin-top:10px;"></div>
             </div>
           </div>
 
@@ -45792,6 +45795,8 @@ function renderHomeTasks(){
   let comprasCurrentOrder = null;
   let comprasCurrentOrderItems = [];
   let comprasCurrentOrderLinkedInvoice = null;
+  // Pedido marcado SEM NF (não vai ter nota): { byName, at } ou null.
+  let comprasCurrentOrderNoInvoice = null;
   // Detalhe em accordion — o mesmo nó #comprasOrderDetail é realocado
   // (appendChild, não recriado) pra dentro de uma <tr> logo após a linha
   // clicada, em vez de ficar fixo depois da tabela inteira.
@@ -45881,6 +45886,7 @@ function renderHomeTasks(){
     else if(comprasOrderIsLate(order)) html += ' <span class="status-pill alert">ATRASADO</span>';
     const partialBadge = comprasOrderPartialBadge(order);
     if(partialBadge) html += ' '+partialBadge;
+    if(order.noInvoice && !order.hasLinkedInvoice) html += ' <span class="status-pill" title="Pedido que não vai ter nota fiscal vinculada">SEM NF</span>';
     if(!(options && options.skipDivision)){
       const divisionBadge = comprasDivisionStatusBadge(order.divisionStatus);
       if(divisionBadge) html += ' '+divisionBadge;
@@ -46039,7 +46045,7 @@ function renderHomeTasks(){
   const COMPRAS_DASH = {
     atrasados: {label:'EM ATRASO', test: o => !Number(o.canceled) && comprasOrderIsLate(o)},
     prazo: {label:'DENTRO DO PRAZO', test: o => !Number(o.canceled) && comprasInTransit(o) && !comprasOrderIsLate(o)},
-    semNf: {label:'FALTA VINCULAR NF', test: o => !Number(o.canceled) && o.origin === 'native' && o.status === 'concluido' && !o.hasLinkedInvoice && comprasOrderDoneDate(o) >= COMPRAS_NF_LINK_SINCE},
+    semNf: {label:'FALTA VINCULAR NF', test: o => !Number(o.canceled) && o.origin === 'native' && o.status === 'concluido' && !o.hasLinkedInvoice && !o.noInvoice && comprasOrderDoneDate(o) >= COMPRAS_NF_LINK_SINCE},
     incompletos: {label:'CHEGARAM INCOMPLETOS', test: o => !Number(o.canceled) && o.status !== 'aberto' && Number(o.receivedQty || 0) > 0 && Number(o.receivedQty || 0) < Number(o.orderedQty || 0)},
     cancelados: {label:'CANCELADOS', test: o => Boolean(Number(o.canceled))},
   };
@@ -46996,6 +47002,8 @@ function renderHomeTasks(){
       comprasOrderDetailOpenId = orderId;
       comprasCurrentOrderItems = Array.isArray(data.items) ? data.items : [];
       comprasCurrentOrderLinkedInvoice = data.linkedInvoice || null;
+      comprasCurrentOrderNoInvoice = data.noInvoice || null;
+      data.order.noInvoice = Boolean(comprasCurrentOrderNoInvoice);
       const order = data.order;
       comprasApplyItemTotals(order, comprasCurrentOrderItems);
       comprasCurrentOrder = order;
@@ -47134,6 +47142,12 @@ function renderHomeTasks(){
     }else{
       linked.hidden = true;
       unlinked.hidden = false;
+      const noInvoice = comprasCurrentOrderNoInvoice;
+      el('comprasOrderInvoiceLinkControls').hidden = Boolean(noInvoice);
+      el('comprasOrderNoInvoiceBox').innerHTML = noInvoice
+        ? '<p class="page-desc" style="margin:0 0 8px;"><span class="status-pill">SEM NF</span> ESTE PEDIDO NÃO VAI TER NOTA FISCAL VINCULADA — MARCADO POR '+escapeHtml(noInvoice.byName || '—')+' EM '+escapeHtml(formatDateTimeBR(noInvoice.at))+'.</p>'+
+          '<button class="btn-outline" type="button" data-compras-no-invoice="0">VOLTAR A EXIGIR NF</button>'
+        : '<button class="btn-outline" type="button" data-compras-no-invoice="1">PEDIDO SEM NF (NÃO VAI TER NOTA)</button>';
       const options = invoicesForCurrentOrderSupplier();
       el('comprasOrderLinkInvoiceSelect').innerHTML = '<option value="">VINCULAR NF JÁ EXISTENTE…</option>'+
         options.map(row => '<option value="'+escapeHtml(row.id)+'">'+escapeHtml(row.invoiceNumber)+(row.series ? '/'+escapeHtml(row.series) : '')+' — '+formatCentsBRL(row.totalAmountCents)+'</option>').join('');
@@ -47201,6 +47215,22 @@ function renderHomeTasks(){
       showPurchaseToast('Nota fiscal vinculada ao pedido.');
       await refreshAfterAction(() => openComprasOrderDetail(comprasCurrentOrderId));
     }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+
+  // ----- Pedido SEM NF (não vai ter nota: sai do FALTA VINCULAR NF) -----
+  async function comprasSetOrderNoInvoice(orderId, noInvoice){
+    await comprasNovoApiRequest('/orders/'+encodeURIComponent(orderId)+'/sem-nf', {method: noInvoice ? 'POST' : 'DELETE'});
+    showPurchaseToast(noInvoice ? 'Pedido marcado como SEM NF.' : 'Pedido voltou a exigir NF.');
+    await refreshAfterAction(async () => { await openComprasOrderDetail(orderId); await loadComprasOrdersPage({silent:true}); });
+  }
+  if(el('comprasOrderNoInvoiceBox')) el('comprasOrderNoInvoiceBox').addEventListener('click', async event => {
+    const button = event.target.closest('[data-compras-no-invoice]');
+    if(!button || !comprasCurrentOrderId) return;
+    const noInvoice = button.dataset.comprasNoInvoice === '1';
+    if(noInvoice && !await askConfirm('MARCAR ESTE PEDIDO COMO SEM NF? ELE NÃO VAI CONSTAR EM FALTA VINCULAR NF.', {okText:'SEM NF'})) return;
+    button.disabled = true;
+    try{ await comprasSetOrderNoInvoice(comprasCurrentOrderId, noInvoice); }
+    catch(error){ button.disabled = false; showPurchaseToast(error.message, 'error'); }
   });
 
   // ----- Anexos (arquivo do pedido / nota fiscal) -----
@@ -47339,6 +47369,11 @@ function renderHomeTasks(){
       if(!order || (result.orderStatus && result.orderStatus !== order.status)){
         // Mudou o status (ex.: tudo chegou → concluído): recarrega tudo.
         await refreshAfterAction(async () => { await openComprasOrderDetail(comprasCurrentOrderId); await loadComprasOrdersPage({silent:true}); });
+        // Na conclusão: vai ter NF? Se não, já marca SEM NF (VAI TER NF = segue em FALTA VINCULAR NF).
+        if(result.orderStatus === 'concluido' && comprasCurrentOrderId && !comprasCurrentOrderLinkedInvoice && !comprasCurrentOrderNoInvoice &&
+          await askConfirm('PEDIDO CONCLUÍDO. ESTE PEDIDO VAI TER NOTA FISCAL VINCULADA?', {okText:'NÃO, SEM NF', cancelText:'SIM, VAI TER NF', danger:false})){
+          await comprasSetOrderNoInvoice(comprasCurrentOrderId, true);
+        }
       }else{
         // Só esta linha mudou: atualiza na hora, sem buscar o pedido de novo.
         const item = comprasCurrentOrderItems.find(row => row.id === itemId);
@@ -47930,6 +47965,7 @@ function renderHomeTasks(){
     const okButton = el('btnAppConfirmOk');
     el('appConfirmMessage').textContent = message;
     okButton.textContent = (options && options.okText) || 'CONFIRMAR';
+    el('btnAppConfirmCancel').textContent = (options && options.cancelText) || 'VOLTAR';
     const danger = options && options.danger !== undefined ? options.danger : /^(EXCLUIR|REMOVER|APAGAR|CANCELAR)/i.test(String(message).trim());
     okButton.className = danger ? 'btn-danger-outline' : 'btn-accent';
     return new Promise(resolve => {
