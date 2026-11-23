@@ -43450,6 +43450,12 @@ function renderHomeTasks(){
     crBulk.clear();
     await loadCrSales({silent:true});
   }
+  // Legenda dos selecionados: total da venda e o líquido (o que cai no extrato).
+  function crSelectedTotal(ids){
+    const rows = crRows.filter(r => ids.includes(r.id));
+    const sum = key => rows.reduce((total, r) => total + Number(r[key] || 0), 0);
+    return 'TOTAL '+formatCentsBRL(sum('grossCents'))+' · LÍQUIDO '+formatCentsBRL(sum('netCents'));
+  }
   const crBulk = setupBulkSelection(el('crBulkBar'), el('crBody'), async (action, ids) => {
     if(action === 'finish' || action === 'provider'){
       crBulkPending = {action, ids};
@@ -43463,7 +43469,7 @@ function renderHomeTasks(){
       return false;
     }
     await crBulkRun(action, ids);
-  });
+  }, crSelectedTotal);
   el('btnCloseCrBulk').addEventListener('click', () => el('crBulkDialog').close());
   el('btnCancelCrBulk').addEventListener('click', () => el('crBulkDialog').close());
   el('crBulkProvider').addEventListener('change', () => { el('crBulkFee').value = el('crBulkProvider').value ? crProviderFee(el('crBulkProvider').value) / 100 : ''; });
@@ -48208,7 +48214,8 @@ function renderHomeTasks(){
   function bulkRowCheckbox(id, label){
     return '<input type="checkbox" class="bulk-check" data-bulk-row="'+escapeHtml(id)+'" aria-label="'+escapeHtml(label || 'Selecionar')+'">';
   }
-  function setupBulkSelection(bar, body, onAction){
+  // totalOf(ids) (opcional): legenda com a soma dos selecionados ao lado da contagem.
+  function setupBulkSelection(bar, body, onAction, totalOf){
     const selected = new Set();
     const selectAll = bar.querySelector('[data-bulk-all]');
     const actions = bar.querySelector('[data-bulk-actions]');
@@ -48223,7 +48230,8 @@ function renderHomeTasks(){
       selectAll.indeterminate = selected.size > 0 && selected.size < all.length;
       selectAll.disabled = !all.length;
       actions.hidden = !selected.size;
-      count.textContent = selected.size + (selected.size === 1 ? ' ITEM SELECIONADO' : ' ITENS SELECIONADOS');
+      count.textContent = selected.size + (selected.size === 1 ? ' ITEM SELECIONADO' : ' ITENS SELECIONADOS')+
+        (totalOf && selected.size ? ' · '+totalOf(Array.from(selected)) : '');
     }
     body.addEventListener('change', event => {
       const box = event.target.closest('input[data-bulk-row]');

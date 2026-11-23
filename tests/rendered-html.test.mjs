@@ -5176,7 +5176,9 @@ test("Financeiro > Declaração de Vendas: nome novo, campos retirados, lote e a
   assert.match(html, /JÁ CADASTRADA/);
   assert.match(html, /pullStoreCompanies\(\)/);
   // Barra de ações em lote (componente reutilizável).
-  assert.match(html, /function setupBulkSelection\(bar, body, onAction\)/);
+  assert.match(html, /function setupBulkSelection\(bar, body, onAction, totalOf\)/);
+  // Crediários (23/11/2026): a barra mostra o TOTAL e o LÍQUIDO dos selecionados.
+  assert.match(html, /\}, crSelectedTotal\);/);
   assert.match(html, /id="declShoppingBulkBar"[\s\S]*?data-bulk-all> SELECIONAR TODOS[\s\S]*?data-bulk-action="delete"(?: data-bulk-confirm="[^"]*")?>EXCLUIR SELECIONADOS/);
   // 02/11/2026: VALOR EFETIVAMENTE PAGO e ALUGUEL PERCENTUAL PAGO saíram (as colunas ficam no banco);
   // aluguel % digitado aparece como MANUAL com o calculado ao lado.
