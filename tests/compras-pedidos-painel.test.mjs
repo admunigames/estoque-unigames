@@ -30,7 +30,9 @@ test("painel da aba PEDIDOS: 5 contadores clicáveis e NF só para pedidos novos
   for (const key of ["atrasados", "prazo", "semNf", "incompletos", "cancelados"]) {
     assert.match(html, new RegExp(`data-compras-dash="${key}"`));
   }
-  assert.match(html, /const COMPRAS_NF_LINK_SINCE = '2026-11-12 14:00:00';/);
-  assert.match(html, /o\.status === 'concluido' && !o\.hasLinkedInvoice && String\(o\.createdAt \|\| ''\) >= COMPRAS_NF_LINK_SINCE/);
+  assert.match(html, /const COMPRAS_NF_LINK_SINCE = '2026-11-12';/);
+  // Pela data da conclusão (pedido antigo que chega hoje conta), não pela criação.
+  assert.match(html, /const comprasOrderDoneDate = o => String\(o\.receivedDate \|\| o\.updatedAt \|\| ''\)\.slice\(0, 10\);/);
+  assert.match(html, /o\.status === 'concluido' && !o\.hasLinkedInvoice && comprasOrderDoneDate\(o\) >= COMPRAS_NF_LINK_SINCE/);
   assert.match(html, /'<footer class="purchase-card-footer">'\+comprasOrderFilesHtml\(order\)/);
 });
