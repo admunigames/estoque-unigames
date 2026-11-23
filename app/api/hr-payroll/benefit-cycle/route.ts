@@ -41,6 +41,53 @@ import {
 // PUT  = salva as regras (alimentação cheia e transporte/dia por escala). O
 //        índice único parcial hr_benefits_cycle_employee_month_idx impede
 //        gerar duas vezes o mesmo funcionário/competência.
+// PATCH = RASCUNHO da revisão (23/11/2026, pedido do usuário: "sair da página e
+//        voltar com a passagem lá"): dias de passagem, ajuste da alimentação e
+//        motivo de quem AINDA NÃO foi gerado, e a forma/data do pagamento. Uma
+//        linha de hr_settings por funcionário (sem migration, sem corrida entre
+//        dois usuários). Quem já foi gerado é salvo direto no lançamento (POST).
+//        Gerar apaga o rascunho de quem foi gerado.
+
+const DRAFT_PREFIX = "benefit_cycle_draft:";
+const draftKey = (month: string, employeeId: string) => `${DRAFT_PREFIX}${month}:${employeeId}`;
+const PAYMENT_DRAFT = "_pagamento";
+
+type CycleDraft = { transportDays: number | null; foodAdjustCents: number; reason: string };
+
+/** Rascunho válido ou null (vazio = sem ajuste nenhum = apaga). */
+function parseDraft(value: unknown): CycleDraft | null {
+  if (!value || typeof value !== "object") return null;
+  const input = value as JsonMap;
+  const days = input.transportDays === null || input.transportDays === undefined || input.transportDays === "" ? null : Number(input.transportDays);
+  const transportDays = days !== null && Number.isInteger(days) && days >= 0 && days <= 31 ? days : null;
+  const adjust = Number(input.foodAdjustCents);
+  const foodAdjustCents = Number.isInteger(adjust) && Math.abs(adjust) <= 10_000_000 ? adjust : 0;
+  const reason = safeText(input.reason, 200).toUpperCase();
+  if (transportDays === null && !foodAdjustCents && !reason) return null;
+  return { transportDays, foodAdjustCents, reason };
+}
+
+async function loadDrafts(database: Database, month: string) {
+  const result = await database
+    .prepare("SELECT key, value_json AS value FROM hr_settings WHERE key LIKE ?1")
+    .bind(`${DRAFT_PREFIX}${month}:%`)
+    .all<{ key: string; value: string }>();
+  const drafts: Record<string, CycleDraft> = {};
+  let payment: { paymentMethod: string; paymentDate: string } | null = null;
+  for (const row of result.results ?? []) {
+    const employeeId = row.key.slice(`${DRAFT_PREFIX}${month}:`.length);
+    let value: unknown = null;
+    try { value = JSON.parse(row.value); } catch { value = null; }
+    if (employeeId === PAYMENT_DRAFT) {
+      const input = (value ?? {}) as JsonMap;
+      payment = { paymentMethod: safeText(input.paymentMethod, 20), paymentDate: safeText(input.paymentDate, 10) };
+      continue;
+    }
+    const draft = parseDraft(value);
+    if (draft) drafts[employeeId] = draft;
+  }
+  return { drafts, payment };
+}
 
 type GeneratedRow = {
   id: string;
@@ -180,10 +227,15 @@ export async function GET(request: Request) {
   try {
     const database = await getD1();
     const rules = await loadBenefitRules(database);
-    const rows = await buildCycleRows(database, cycle, companyId, rules);
+    const [rows, { drafts, payment }] = await Promise.all([
+      buildCycleRows(database, cycle, companyId, rules),
+      loadDrafts(database, month),
+    ]);
     return jsonResponse({
       month,
       rules,
+      drafts,
+      draftPayment: payment,
       cycleStart: cycle.start,
       cycleEnd: cycle.end,
       rows,
@@ -321,6 +373,10 @@ export async function POST(request: Request) {
       );
       insertItems(benefitId, items);
     }
+    // Gerado/atualizado: o rascunho dele deixa de valer.
+    for (const row of [...toGenerate, ...toUpdate]) {
+      statements.push(database.prepare("DELETE FROM hr_settings WHERE key=?1").bind(draftKey(cycle.month, row.employeeId)));
+    }
     // Tudo ou nada: se outra geração simultânea já criou algum lançamento,
     // o índice único derruba o batch inteiro e nada fica pela metade.
     await database.batch(statements);
@@ -365,5 +421,61 @@ export async function PUT(request: Request) {
   } catch (error) {
     console.error("Não foi possível salvar as regras de benefícios.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR AS REGRAS DE BENEFÍCIOS." }, 500);
+  }
+}
+
+export async function PATCH(request: Request) {
+  const unauthorized = unauthorizedResponse(request);
+  if (unauthorized) return unauthorized;
+  const actor = identity(request);
+  if (!canManagePayroll(actor)) {
+    return jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA REVISAR O CICLO DE BENEFÍCIOS." }, 403);
+  }
+  if (!sameOrigin(request)) {
+    return jsonResponse({ error: "ORIGEM NÃO PERMITIDA." }, 403);
+  }
+  try {
+    const body = (await request.json()) as JsonMap;
+    const month = safeText(body.month, 7);
+    if (!MONTH_PATTERN.test(month)) return jsonResponse({ error: "INFORME UMA COMPETÊNCIA VÁLIDA (AAAA-MM)." }, 400);
+    let key = "";
+    let value: string | null = null;
+    if (body.payment && typeof body.payment === "object") {
+      const input = body.payment as JsonMap;
+      const paymentMethod = safeText(input.paymentMethod, 20);
+      const paymentDate = safeText(input.paymentDate, 10);
+      if (paymentMethod && !isOneOf(BENEFIT_PAYMENT_METHODS, paymentMethod)) {
+        return jsonResponse({ error: "SELECIONE UMA FORMA DE PAGAMENTO VÁLIDA." }, 400);
+      }
+      if (paymentDate && !DATE_PATTERN.test(paymentDate)) {
+        return jsonResponse({ error: "INFORME UMA DATA DE PAGAMENTO VÁLIDA (AAAA-MM-DD)." }, 400);
+      }
+      key = draftKey(month, PAYMENT_DRAFT);
+      value = JSON.stringify({ paymentMethod, paymentDate });
+    } else {
+      const employeeId = safeText(body.employeeId, 80);
+      if (!employeeId || employeeId === PAYMENT_DRAFT) return jsonResponse({ error: "FUNCIONÁRIO INVÁLIDO." }, 400);
+      key = draftKey(month, employeeId);
+      const draft = parseDraft(body.review);
+      value = draft ? JSON.stringify(draft) : null;
+    }
+    const database = await getD1();
+    if (value === null) {
+      await database.prepare("DELETE FROM hr_settings WHERE key=?1").bind(key).run();
+    } else {
+      await database
+        .prepare(
+          `INSERT INTO hr_settings (key, value_json, updated_by, updated_by_name, updated_at)
+           VALUES (?1, ?2, ?3, ?4, ?5)
+           ON CONFLICT (key) DO UPDATE SET value_json=excluded.value_json, updated_by=excluded.updated_by,
+             updated_by_name=excluded.updated_by_name, updated_at=excluded.updated_at`,
+        )
+        .bind(key, value, actor.id, actorName(actor), new Date().toISOString())
+        .run();
+    }
+    return jsonResponse({ saved: true });
+  } catch (error) {
+    console.error("Não foi possível salvar a revisão do ciclo de benefícios.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL SALVAR A REVISÃO DO CICLO." }, 500);
   }
 }

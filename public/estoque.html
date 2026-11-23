@@ -7999,7 +7999,7 @@
 
       <div id="rhBeneficioTabRegras" hidden>
         <div class="table-panel" style="padding:14px;margin-bottom:12px;">
-          <p style="margin:0 0 12px;font-size:11px;color:var(--ink-soft);">Ciclo do dia 20 de um mês ao dia 19 do seguinte. ALIMENTAÇÃO = valor cheio do ciclo. TRANSPORTE = valor por dia × dias exatos (5x2: segunda a sexta · 6x1: segunda a sábado). Faltas, atestados, feriados, folgas remuneradas, passagens a mais e reajustes são ajustados na revisão do ciclo, antes de gerar.</p>
+          <p style="margin:0 0 12px;font-size:11px;color:var(--ink-soft);">Ciclo do dia 20 de um mês ao dia 19 do seguinte. ALIMENTAÇÃO = valor cheio do ciclo. TRANSPORTE = valor por dia × dias exatos (5x2: segunda a sexta · 6x1: segunda a sábado). Faltas, atestados, feriados, folgas remuneradas, passagens a mais e reajustes são ajustados na revisão do ciclo, antes de gerar. AS REGRAS SÃO SALVAS SOZINHAS AO SAIR DE CADA CAMPO.</p>
           <form id="rhBeneficioRegrasForm" class="dre-toolbar" style="flex-wrap:wrap;">
             <div class="field"><label for="rhRegra5x2Food">5X2 · ALIMENTAÇÃO (CHEIO)</label><input type="text" inputmode="decimal" id="rhRegra5x2Food" data-rh-regra="5x2:foodCents" placeholder="R$ 0,00"></div>
             <div class="field"><label for="rhRegra5x2Transport">5X2 · TRANSPORTE (POR DIA)</label><input type="text" inputmode="decimal" id="rhRegra5x2Transport" data-rh-regra="5x2:transportPerDayCents" placeholder="R$ 0,00"></div>
@@ -8018,6 +8018,7 @@
             <button class="btn-accent" id="btnRhCicloGerar" type="button">GERAR / SALVAR AJUSTES</button>
           </div>
         </div>
+        <p class="purchase-field-help no-print" style="margin:-4px 0 10px;">CADA MUDANÇA É SALVA NA HORA: QUEM JÁ FOI GERADO TEM O LANÇAMENTO ATUALIZADO; QUEM AINDA NÃO FOI FICA COM A REVISÃO GUARDADA ATÉ VOCÊ GERAR — PODE SAIR DA PÁGINA E VOLTAR.</p>
         <datalist id="rhCicloMotivos"><option value="FALTA"><option value="ATESTADO"><option value="FERIADO"><option value="FOLGA REMUNERADA"><option value="AUMENTO DE PASSAGEM"><option value="REAJUSTE"><option value="ADMISSÃO NO CICLO"><option value="DESLIGAMENTO NO CICLO"></datalist>
         <div class="table-panel" id="rhCicloResumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
         <div class="table-panel responsive-table">
@@ -14662,7 +14663,7 @@
     <div id="rhBeneficioItensTotal" style="margin-top:10px;font:800 11px var(--mono);color:var(--ink);"></div>
     <div class="user-form-status" id="rhBeneficioFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
-      <button class="btn-outline" id="btnCancelRhBeneficioDialog" type="button">CANCELAR</button>
+      <button class="btn-outline" id="btnCancelRhBeneficioDialog" type="button">FECHAR</button>
       <button class="btn-accent" id="btnSaveRhBeneficio" type="submit">SALVAR</button>
     </div>
   </form>
@@ -53985,7 +53986,78 @@ function renderHomeTasks(){
     renderRhBeneficioDialogItems();
   }
 
+  // Lançamento AO VIVO (23/11/2026): com funcionário e ao menos um benefício,
+  // cada mudança grava sozinha (o primeiro salvamento cria o lançamento e os
+  // seguintes o atualizam). FECHAR não perde nada.
+  let rhBeneficioAutoTimer = null;
+  let rhBeneficioAutoQueue = Promise.resolve();
+  let rhBeneficioAutoSaved = false;
+
+  function rhBeneficioBuildPayload(){
+    if(!el('rhBeneficioFuncionario').value) return {error:'SELECIONE O FUNCIONÁRIO.'};
+    if(!rhBeneficioDialogItems.length) return {error:'ADICIONE AO MENOS UM BENEFÍCIO AO LANÇAMENTO.'};
+    const netTotal = rhBeneficioDialogItems.reduce((sum, item) => sum + (Number(item.amountCents || 0) - Number(item.discountCents || 0)), 0);
+    if(netTotal <= 0) return {error:'O VALOR LÍQUIDO DO LANÇAMENTO PRECISA SER MAIOR QUE ZERO.'};
+    return {payload:{
+      id: el('rhBeneficioId').value || undefined,
+      employeeId: el('rhBeneficioFuncionario').value,
+      month: el('rhBeneficioMes').value,
+      paymentMethod: el('rhBeneficioForma').value,
+      paymentDate: el('rhBeneficioData').value,
+      items: rhBeneficioDialogItems.map(item => ({
+        type: item.type,
+        amountMode: item.amountMode === 'per_day' ? 'per_day' : 'fixed',
+        perDayRateCents: Number(item.perDayRateCents || 0),
+        amountCents: Number(item.amountCents || 0),
+        discountCents: Number(item.discountCents || 0)
+      })),
+      notes: el('rhBeneficioObs').value
+    }};
+  }
+
+  async function rhBeneficioSaveNow(){
+    const built = rhBeneficioBuildPayload();
+    if(built.error) throw new Error(built.error);
+    const data = await rhApiRequest('/benefits', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(built.payload)});
+    if(data && data.id){
+      el('rhBeneficioId').value = data.id;
+      el('rhBeneficioDialogTitle').textContent = 'EDITAR BENEFÍCIO';
+    }
+    rhBeneficioAutoSaved = true;
+    return data;
+  }
+
+  function rhBeneficioScheduleAutosave(delay){
+    if(!el('rhBeneficioDialog').open) return;
+    clearTimeout(rhBeneficioAutoTimer);
+    rhBeneficioAutoTimer = setTimeout(rhBeneficioAutosave, delay === undefined ? 800 : delay);
+  }
+
+  function rhBeneficioAutosave(){
+    clearTimeout(rhBeneficioAutoTimer);
+    rhBeneficioAutoTimer = null;
+    rhBeneficioAutoQueue = rhBeneficioAutoQueue.then(async () => {
+      const status = el('rhBeneficioFormStatus');
+      const built = rhBeneficioBuildPayload();
+      if(built.error){
+        status.textContent = 'AINDA NÃO SALVO: '+built.error;
+        return;
+      }
+      status.textContent = 'SALVANDO…';
+      try{
+        await rhBeneficioSaveNow();
+        status.textContent = 'SALVO AUTOMATICAMENTE ÀS '+new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'America/Recife'})+'.';
+      }catch(error){
+        status.textContent = error.message;
+      }
+    });
+    return rhBeneficioAutoQueue;
+  }
+
   function openRhBeneficioDialog(row){
+    clearTimeout(rhBeneficioAutoTimer);
+    rhBeneficioAutoTimer = null;
+    rhBeneficioAutoSaved = false;
     el('rhBeneficioForm').reset();
     rhRenderEmployeeSelects();
     el('rhBeneficioId').value = row ? row.id : '';
@@ -54096,6 +54168,7 @@ function renderHomeTasks(){
     setCurrencyValue(el('rhBeneficioItemPorDia'), '');
     setCurrencyValue(el('rhBeneficioItemDesconto'), 0);
     renderRhBeneficioDialogItems();
+    rhBeneficioScheduleAutosave(0);
   });
 
   if(el('rhBeneficioItensBody')) el('rhBeneficioItensBody').addEventListener('click', event => {
@@ -54103,6 +54176,24 @@ function renderHomeTasks(){
     if(!removeButton) return;
     rhBeneficioDialogItems.splice(Number(removeButton.dataset.rhBeneficioItemRemove), 1);
     renderRhBeneficioDialogItems();
+    rhBeneficioScheduleAutosave(0);
+  });
+  ['rhBeneficioFuncionario','rhBeneficioMes','rhBeneficioForma','rhBeneficioData','rhBeneficioObs'].forEach(id => {
+    if(!el(id)) return;
+    el(id).addEventListener('input', () => rhBeneficioScheduleAutosave());
+    el(id).addEventListener('change', () => rhBeneficioScheduleAutosave(0));
+  });
+  // Fechou (botão, X ou ESC): grava o que faltava e atualiza a lista.
+  if(el('rhBeneficioDialog')) el('rhBeneficioDialog').addEventListener('close', async () => {
+    if(rhBeneficioAutoTimer){
+      rhBeneficioAutoTimer = null;
+      rhBeneficioAutoQueue = rhBeneficioAutoQueue.then(() => rhBeneficioSaveNow().catch(() => {}));
+    }
+    await rhBeneficioAutoQueue;
+    if(rhBeneficioAutoSaved){
+      rhBeneficioAutoSaved = false;
+      await loadRhBeneficios();
+    }
   });
 
   // ---------------------- FERIADOS ----------------------
@@ -54259,38 +54350,14 @@ function renderHomeTasks(){
     event.preventDefault();
     const status = el('rhBeneficioFormStatus');
     status.textContent = '';
-    if(!el('rhBeneficioFuncionario').value){
-      status.textContent = 'SELECIONE O FUNCIONÁRIO.';
-      return;
-    }
-    if(!rhBeneficioDialogItems.length){
-      status.textContent = 'ADICIONE AO MENOS UM BENEFÍCIO AO LANÇAMENTO.';
-      return;
-    }
-    const netTotal = rhBeneficioDialogItems.reduce((sum, item) => sum + (Number(item.amountCents || 0) - Number(item.discountCents || 0)), 0);
-    if(netTotal <= 0){
-      status.textContent = 'O VALOR LÍQUIDO DO LANÇAMENTO PRECISA SER MAIOR QUE ZERO.';
-      return;
-    }
-    const payload = {
-      id: el('rhBeneficioId').value || undefined,
-      employeeId: el('rhBeneficioFuncionario').value,
-      month: el('rhBeneficioMes').value,
-      paymentMethod: el('rhBeneficioForma').value,
-      paymentDate: el('rhBeneficioData').value,
-      items: rhBeneficioDialogItems.map(item => ({
-        type: item.type,
-        amountMode: item.amountMode === 'per_day' ? 'per_day' : 'fixed',
-        perDayRateCents: Number(item.perDayRateCents || 0),
-        amountCents: Number(item.amountCents || 0),
-        discountCents: Number(item.discountCents || 0)
-      })),
-      notes: el('rhBeneficioObs').value
-    };
+    clearTimeout(rhBeneficioAutoTimer);
+    rhBeneficioAutoTimer = null;
+    // Espera o salvamento automático em andamento (ele pode ter criado o
+    // lançamento — o id já está no formulário, então não duplica).
+    await rhBeneficioAutoQueue;
     try{
-      await rhApiRequest('/benefits', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      await rhBeneficioSaveNow();
       closeRhBeneficioDialog();
-      await loadRhBeneficios();
       showPurchaseToast('Benefício salvo.');
     }catch(error){
       status.textContent = error.message;
@@ -54308,6 +54375,11 @@ function renderHomeTasks(){
   let rhCicloReviewMonth = '';
   let rhCicloData = null;
   let rhCicloSaved = {};
+  // Gravação ao vivo da revisão (ver rhCicloSaveRow).
+  let rhCicloSaving = {};
+  let rhCicloErrors = {};
+  const rhCicloTimers = new Map();
+  let rhCicloQueue = Promise.resolve();
 
   // Gerado continua revisável: a linha abre com o que está gravado e
   // "SALVAR AJUSTES" atualiza o lançamento existente.
@@ -54329,7 +54401,7 @@ function renderHomeTasks(){
         reason
       };
       rhCicloSaved[row.employeeId] = saved;
-      if(!rhCicloReview[row.employeeId]) rhCicloReview[row.employeeId] = {...saved};
+      rhCicloReview[row.employeeId] = {...saved};
     });
   }
 
@@ -54358,6 +54430,8 @@ function renderHomeTasks(){
   }
 
   function rhCicloSituacaoCell(row, calc){
+    if(rhCicloSaving[row.employeeId] || rhCicloTimers.has(row.employeeId)) return '<span class="status-pill waiting">SALVANDO…</span>';
+    if(rhCicloErrors[row.employeeId]) return '<span class="status-pill alert" title="'+escapeHtml(rhCicloErrors[row.employeeId])+' — clique em GERAR / SALVAR AJUSTES para tentar de novo.">NÃO SALVO</span>';
     if(row.generated && rhCicloDirty(row)) return '<span class="status-pill warn" title="Clique em GERAR / SALVAR AJUSTES para gravar.">AJUSTE NÃO SALVO</span>';
     if(row.generated) return '<span class="status-pill done">GERADO · '+formatCentsBRL(row.generated.amountCents)+'</span>';
     if(row.status !== 'active') return '<span class="status-pill">INATIVO</span>';
@@ -54424,8 +54498,10 @@ function renderHomeTasks(){
     if(!canAccess('payroll')) return;
     const month = el('rhBeneficioFiltroMes').value || financeCurrentMonthKey();
     if(!el('rhCicloData').value) el('rhCicloData').value = financeCurrentDateKey();
-    // A revisão vale para a competência aberta; trocar de mês começa do zero.
-    if(month !== rhCicloReviewMonth){ rhCicloReview = {}; rhCicloReviewMonth = month; }
+    // A revisão fica no servidor (rascunho por competência): termina de gravar
+    // o que estiver pendente e relê tudo — sair da página não perde nada.
+    await rhCicloFlush();
+    rhCicloReviewMonth = month;
     const params = new URLSearchParams({month});
     if(el('rhBeneficioFiltroLoja').value) params.set('companyId', el('rhBeneficioFiltroLoja').value);
     el('rhCicloTableBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Calculando o ciclo…</td></tr>';
@@ -54433,6 +54509,19 @@ function renderHomeTasks(){
       const data = await rhApiRequest('/benefit-cycle?'+params.toString());
       rhCicloRows = Array.isArray(data.rows) ? data.rows : [];
       rhCicloRows.sort((x, y) => String(x.fullName || '').localeCompare(String(y.fullName || ''), 'pt-BR'));
+      rhCicloReview = {};
+      rhCicloErrors = {};
+      Object.entries(data.drafts || {}).forEach(([employeeId, draft]) => {
+        rhCicloReview[employeeId] = {
+          transportDays: Number.isInteger(draft.transportDays) ? draft.transportDays : undefined,
+          foodAdjustCents: Number(draft.foodAdjustCents || 0),
+          reason: draft.reason || ''
+        };
+      });
+      if(data.draftPayment){
+        if(data.draftPayment.paymentMethod) el('rhCicloForma').value = data.draftPayment.paymentMethod;
+        if(data.draftPayment.paymentDate) el('rhCicloData').value = data.draftPayment.paymentDate;
+      }
       rhCicloSeedGenerated();
       renderRhCicloTable(data);
     }catch(error){
@@ -54459,8 +54548,16 @@ function renderHomeTasks(){
 
   document.querySelectorAll('[data-rh-regra]').forEach(input => attachCurrencyMask(input));
 
-  if(el('rhBeneficioRegrasForm')) el('rhBeneficioRegrasForm').addEventListener('submit', async event => {
+  if(el('rhBeneficioRegrasForm')) el('rhBeneficioRegrasForm').addEventListener('submit', event => {
     event.preventDefault();
+    saveRhBeneficioRegras();
+  });
+  // Ao vivo (23/11/2026): cada campo alterado grava as regras ao sair dele.
+  if(el('rhBeneficioRegrasForm')) el('rhBeneficioRegrasForm').addEventListener('change', event => {
+    if(event.target.closest('[data-rh-regra]')) saveRhBeneficioRegras();
+  });
+
+  async function saveRhBeneficioRegras(){
     const rules = {'5x2':{}, '6x1':{}};
     for(const input of document.querySelectorAll('[data-rh-regra]')){
       const [schedule, key] = input.dataset.rhRegra.split(':');
@@ -54474,7 +54571,7 @@ function renderHomeTasks(){
     }catch(error){
       showPurchaseToast(error.message,'error');
     }
-  });
+  }
 
   document.querySelectorAll('[data-rh-beneficio-tab]').forEach(button => {
     button.addEventListener('click', () => {
@@ -54508,16 +54605,108 @@ function renderHomeTasks(){
     }else{
       review.reason = input.value;
     }
+    rhCicloScheduleSave(employeeId, 700);
+    rhCicloRefreshRow(row);
+    renderRhCicloResumo();
+  });
+  // Saiu do campo: grava na hora (sem esperar a pausa da digitação).
+  if(el('rhCicloTableBody')) el('rhCicloTableBody').addEventListener('change', event => {
+    const input = event.target.closest('[data-rh-ciclo-field]');
+    if(input && rhCicloTimers.has(input.dataset.employee)) rhCicloScheduleSave(input.dataset.employee, 0);
+  });
+  ['rhCicloForma','rhCicloData'].forEach(id => {
+    if(el(id)) el(id).addEventListener('change', async () => {
+      const month = el('rhBeneficioFiltroMes').value;
+      if(!month) return;
+      try{
+        await rhApiRequest('/benefit-cycle', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+          month, payment:{paymentMethod: el('rhCicloForma').value, paymentDate: el('rhCicloData').value}
+        })});
+      }catch(error){
+        showPurchaseToast(error.message,'error');
+      }
+    });
+  });
+
+  // Gravação AO VIVO da revisão (23/11/2026): gerado → atualiza o lançamento
+  // (POST de um funcionário só); não gerado → rascunho no servidor (PATCH).
+  // Uma fila só, para dois salvamentos do mesmo funcionário não se cruzarem.
+
+  function rhCicloRefreshRow(row){
+    const tr = document.querySelector('[data-rh-ciclo-row="'+CSS.escape(row.employeeId)+'"]');
+    if(!tr) return;
     const calc = rhCicloCalc(row);
-    const tr = input.closest('tr');
     tr.querySelector('[data-rh-ciclo-out="food"]').textContent = formatCentsBRL(calc.foodCents);
     tr.querySelector('[data-rh-ciclo-out="transport"]').textContent = formatCentsBRL(calc.transportCents);
     tr.querySelector('[data-rh-ciclo-out="total"]').innerHTML = '<strong>'+formatCentsBRL(calc.totalCents)+'</strong>';
     tr.querySelector('[data-rh-ciclo-out="situacao"]').innerHTML = rhCicloSituacaoCell(row, calc);
-    renderRhCicloResumo();
-  });
+  }
+
+  function rhCicloScheduleSave(employeeId, delay){
+    clearTimeout(rhCicloTimers.get(employeeId));
+    rhCicloTimers.set(employeeId, setTimeout(() => {
+      rhCicloTimers.delete(employeeId);
+      rhCicloSaveRow(employeeId);
+    }, delay));
+  }
+
+  function rhCicloFlush(){
+    [...rhCicloTimers.keys()].forEach(employeeId => {
+      clearTimeout(rhCicloTimers.get(employeeId));
+      rhCicloTimers.delete(employeeId);
+      rhCicloSaveRow(employeeId);
+    });
+    return rhCicloQueue;
+  }
+
+  function rhCicloSaveRow(employeeId){
+    const month = rhCicloReviewMonth;
+    const row = rhCicloRows.find(item => item.employeeId === employeeId);
+    if(!row || !month || !rhCicloEditable(row)) return rhCicloQueue;
+    rhCicloSaving[employeeId] = true;
+    rhCicloQueue = rhCicloQueue.then(async () => {
+      const calc = rhCicloCalc(row);
+      const raw = rhCicloReview[employeeId] || {};
+      try{
+        if(row.generated){
+          if(!rhCicloDirty(row)) return;
+          if(calc.totalCents <= 0) throw new Error('O TOTAL PRECISA SER MAIOR QUE ZERO PARA ATUALIZAR O LANÇAMENTO.');
+          const review = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, reason: calc.reason};
+          await rhApiRequest('/benefit-cycle', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+            month, companyId:'', paymentMethod: row.generated.paymentMethod || 'pix', paymentDate:'',
+            employeeIds:[employeeId], adjustments:{[employeeId]: review}
+          })});
+          rhCicloSaved[employeeId] = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, reason: calc.reason.trim().toUpperCase()};
+          row.generated.amountCents = calc.totalCents;
+        }else{
+          const review = {
+            transportDays: Number.isInteger(raw.transportDays) && raw.transportDays !== row.workingDays ? raw.transportDays : null,
+            foodAdjustCents: calc.foodAdjustCents,
+            reason: calc.reason
+          };
+          const empty = review.transportDays === null && !review.foodAdjustCents && !String(review.reason || '').trim();
+          await rhApiRequest('/benefit-cycle', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+            month, employeeId, review: empty ? null : review
+          })});
+        }
+        delete rhCicloErrors[employeeId];
+      }catch(error){
+        rhCicloErrors[employeeId] = error.message;
+        showPurchaseToast(row.fullName+': '+error.message,'error');
+      }finally{
+        delete rhCicloSaving[employeeId];
+        if(month === rhCicloReviewMonth){
+          rhCicloRefreshRow(row);
+          renderRhCicloResumo();
+        }
+      }
+    });
+    return rhCicloQueue;
+  }
 
   if(el('btnRhCicloGerar')) el('btnRhCicloGerar').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    await rhCicloFlush();
     const pending = rhCicloPending();
     const changed = rhCicloChanged();
     if(!pending.length && !changed.length) return;
@@ -54531,7 +54720,6 @@ function renderHomeTasks(){
       const calc = rhCicloCalc(row);
       adjustments[row.employeeId] = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, reason: calc.reason};
     });
-    const button = event.currentTarget;
     button.disabled = true;
     try{
       const data = await rhApiRequest('/benefit-cycle', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
