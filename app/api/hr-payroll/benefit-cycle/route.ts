@@ -52,7 +52,14 @@ const DRAFT_PREFIX = "benefit_cycle_draft:";
 const draftKey = (month: string, employeeId: string) => `${DRAFT_PREFIX}${month}:${employeeId}`;
 const PAYMENT_DRAFT = "_pagamento";
 
-type CycleDraft = { transportDays: number | null; foodAdjustCents: number; reason: string };
+type CycleDraft = { transportDays: number | null; foodAdjustCents: number; transportAdjustCents: number; reason: string };
+
+/** Ajuste em centavos (± R$ 100.000,00) ou 0. */
+const adjustValue = (value: unknown) => {
+  const number = Number(value);
+  return Number.isInteger(number) && Math.abs(number) <= 10_000_000 ? number : 0;
+};
+const brl = (cents: number) => `${cents > 0 ? "+" : "−"}R$ ${(Math.abs(cents) / 100).toFixed(2).replace(".", ",")}`;
 
 /** Rascunho válido ou null (vazio = sem ajuste nenhum = apaga). */
 function parseDraft(value: unknown): CycleDraft | null {
@@ -60,11 +67,11 @@ function parseDraft(value: unknown): CycleDraft | null {
   const input = value as JsonMap;
   const days = input.transportDays === null || input.transportDays === undefined || input.transportDays === "" ? null : Number(input.transportDays);
   const transportDays = days !== null && Number.isInteger(days) && days >= 0 && days <= 31 ? days : null;
-  const adjust = Number(input.foodAdjustCents);
-  const foodAdjustCents = Number.isInteger(adjust) && Math.abs(adjust) <= 10_000_000 ? adjust : 0;
+  const foodAdjustCents = adjustValue(input.foodAdjustCents);
+  const transportAdjustCents = adjustValue(input.transportAdjustCents);
   const reason = safeText(input.reason, 200).toUpperCase();
-  if (transportDays === null && !foodAdjustCents && !reason) return null;
-  return { transportDays, foodAdjustCents, reason };
+  if (transportDays === null && !foodAdjustCents && !transportAdjustCents && !reason) return null;
+  return { transportDays, foodAdjustCents, transportAdjustCents, reason };
 }
 
 async function loadDrafts(database: Database, month: string) {
@@ -100,6 +107,9 @@ type GeneratedRow = {
   /** Dias de passagem e alimentação gravados (base da revisão na tela). */
   transportDays: number | null;
   foodCents: number;
+  /** Passagem gravada e o valor do dia usado — a diferença é o AJUSTE DO TRANSPORTE. */
+  transportCents: number;
+  transportRateCents: number;
 };
 
 type CycleRow = {
@@ -117,6 +127,8 @@ type CycleRow = {
   transportTotalCents: number;
   countedDays: number;
   benefitPaymentMethod: string;
+  /** RECEBE TRANSPORTE? do cadastro — NÃO = passagem sempre 0. */
+  receivesTransport: boolean;
   foodCents: number;
   transportCents: number;
   totalCents: number;
@@ -135,7 +147,9 @@ async function buildCycleRows(
       `SELECT id, employee_id AS employeeId, amount_cents AS amountCents, gross_cents AS grossCents,
               payment_method AS paymentMethod, payment_date AS paymentDate, notes,
               (SELECT MAX(working_days) FROM hr_benefit_items i WHERE i.benefit_id=b.id AND i.type='mobilidade') AS transportDays,
-              COALESCE((SELECT SUM(amount_cents) FROM hr_benefit_items i WHERE i.benefit_id=b.id AND i.type='alimentacao'), 0) AS foodCents
+              COALESCE((SELECT SUM(amount_cents) FROM hr_benefit_items i WHERE i.benefit_id=b.id AND i.type='alimentacao'), 0) AS foodCents,
+              COALESCE((SELECT SUM(amount_cents) FROM hr_benefit_items i WHERE i.benefit_id=b.id AND i.type='mobilidade'), 0) AS transportCents,
+              COALESCE((SELECT MAX(per_day_rate_cents) FROM hr_benefit_items i WHERE i.benefit_id=b.id AND i.type='mobilidade'), 0) AS transportRateCents
        FROM hr_benefits b WHERE origin='ciclo' AND month=?1`,
     )
     .bind(cycle.month)
@@ -179,6 +193,7 @@ async function buildCycleRows(
       transportTotalCents: rule.transportTotalCents,
       countedDays: rule.countedDays,
       benefitPaymentMethod: employee.benefitPaymentMethod || "",
+      receivesTransport: rule.receivesTransport,
       foodCents: amounts.foodCents,
       transportCents: amounts.transportCents,
       totalCents: amounts.totalCents,
@@ -195,17 +210,23 @@ function reviewed(row: CycleRow, adjustments: unknown): CycleRow & { reviewNote:
   if (!input || typeof input !== "object") return { ...row, reviewNote: "" };
   const days = Number(input.transportDays);
   const transportDays = Number.isInteger(days) && days >= 0 && days <= 31 ? days : row.workingDays;
-  const adjust = Number(input.foodAdjustCents);
-  const foodAdjustCents = Number.isInteger(adjust) && Math.abs(adjust) <= 10_000_000 ? adjust : 0;
+  const foodAdjustCents = adjustValue(input.foodAdjustCents);
+  // Quem não recebe transporte não tem passagem nem ajuste de passagem.
+  const transportAdjustCents = row.receivesTransport ? adjustValue(input.transportAdjustCents) : 0;
   const reason = safeText(input.reason, 200).toUpperCase();
   const amounts = cycleBenefitAmounts(
-    { foodCents: row.ruleFoodCents, transportPerDayCents: row.transportPerDayCents, transportTotalCents: row.transportTotalCents, countedDays: row.countedDays },
+    {
+      foodCents: row.ruleFoodCents, transportPerDayCents: row.transportPerDayCents, transportTotalCents: row.transportTotalCents,
+      countedDays: row.countedDays, receivesTransport: row.receivesTransport,
+    },
     transportDays,
     foodAdjustCents,
+    transportAdjustCents,
   );
   const changes = [
-    transportDays !== row.workingDays ? `PASSAGEM ${transportDays} DE ${row.workingDays} DIAS` : "",
-    foodAdjustCents ? `ALIMENTAÇÃO ${foodAdjustCents > 0 ? "+" : "−"}R$ ${(Math.abs(foodAdjustCents) / 100).toFixed(2).replace(".", ",")}` : "",
+    row.receivesTransport && transportDays !== row.workingDays ? `PASSAGEM ${transportDays} DE ${row.workingDays} DIAS` : "",
+    transportAdjustCents ? `TRANSPORTE ${brl(transportAdjustCents)}` : "",
+    foodAdjustCents ? `ALIMENTAÇÃO ${brl(foodAdjustCents)}` : "",
   ].filter(Boolean);
   const reviewNote = changes.length || reason ? `REVISÃO: ${[...changes, reason].filter(Boolean).join(" · ")}` : "";
   return { ...row, workingDays: transportDays, ...amounts, reviewNote };

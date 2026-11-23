@@ -7,7 +7,9 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // sair da página e voltar mantém a passagem; quem já foi gerado é atualizado
 // na hora; gerar apaga o rascunho.
 
-const db = await setupRouteDb(["shared_state", "hr_employees", "hr_benefits", "hr_benefit_items", "hr_settings", "hr_payroll_settings"]);
+// Todas as tabelas: salvar o cadastro também regrava loja atuante/comissão.
+const schema = await readFile(new URL("../db/schema.ts", import.meta.url), "utf8");
+const db = await setupRouteDb([...schema.matchAll(/pgTable\(\s*"([a-z0-9_]+)"/g)].map((match) => match[1]));
 db.insert("shared_state", { state_key: "companies_list", value_json: JSON.stringify([{ id: "clojaalfa1", name: "LOJA ALFA" }]) });
 for (const [id, name] of [["e1", "ANA"], ["e2", "BRUNO"]]) {
   db.insert("hr_employees", {
@@ -27,7 +29,7 @@ test("rascunho da revisão: grava, volta na leitura e vazio apaga", async () => 
   assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
   await call("PATCH", { month: MONTH, payment: { paymentMethod: "cartao", paymentDate: "2030-11-20" } });
   let data = await load();
-  assert.deepEqual(data.drafts.e1, { transportDays: 3, foodAdjustCents: -1000, reason: "FALTA" });
+  assert.deepEqual(data.drafts.e1, { transportDays: 3, foodAdjustCents: -1000, transportAdjustCents: 0, reason: "FALTA" });
   assert.deepEqual(data.draftPayment, { paymentMethod: "cartao", paymentDate: "2030-11-20" });
   assert.equal(data.drafts.e2, undefined);
 
@@ -81,4 +83,67 @@ test("tela de Benefícios grava ao vivo (ciclo, regras e lançamento)", async ()
   assert.match(html, /el\('rhBeneficioDialog'\)\.addEventListener\('close'/);
   // Estado declarado antes de qualquer função que o lê na carga da página.
   assert.ok(html.indexOf("const rhCicloTimers = new Map();") < html.indexOf("function rhCicloSituacaoCell("));
+});
+
+test("AJUSTE TRANSPORTE: desconto na passagem depois de gerado, guardado e relido pela tela", async () => {
+  const before = await load();
+  const ana = before.rows.find((row) => row.employeeId === "e1");
+  // RENATO: 3 dias × R$ 9,00 = R$ 27,00 e desconto de R$ 2,00 → R$ 25,00.
+  const response = await call("POST", {
+    month: MONTH, companyId: "", paymentMethod: "cartao", paymentDate: "", employeeIds: ["e1"],
+    adjustments: { e1: { transportDays: 3, foodAdjustCents: 0, transportAdjustCents: -200, reason: "" } },
+  });
+  assert.equal(response.status, 201);
+  const generated = (await load()).rows.find((row) => row.employeeId === "e1").generated;
+  assert.equal(generated.transportCents, 3 * ana.transportPerDayCents - 200);
+  assert.equal(generated.transportRateCents, ana.transportPerDayCents);
+  assert.equal(generated.transportDays, 3);
+  assert.equal(generated.amountCents, ana.ruleFoodCents + 3 * ana.transportPerDayCents - 200);
+  assert.match(generated.notes, /TRANSPORTE −R\$ 2,00/);
+
+  await call("PATCH", { month: MONTH, employeeId: "e2", review: { transportAdjustCents: 150 } });
+  assert.deepEqual((await load()).drafts.e2, { transportDays: null, foodAdjustCents: 0, transportAdjustCents: 150, reason: "" });
+  await call("PATCH", { month: MONTH, employeeId: "e2", review: null });
+});
+
+test("RECEBE TRANSPORTE? = NÃO: cadastro grava, ciclo não paga passagem nem ajuste", async () => {
+  db.insert("hr_employees", {
+    id: "e3", full_name: "CARLA", company_id: "clojaalfa1", company_name: "LOJA ALFA", status: "active",
+    admission_date: "2024-01-01", work_schedule: "5x2", created_by: "x", benefit_transport_total_cents: 1200,
+  });
+  const employees = await import("../app/api/hr-payroll/employees/route.ts");
+  const saved = await callRoute(employees.POST, ADMIN, "POST", "/api/hr-payroll/employees", {
+    id: "e3", fullName: "CARLA", companyId: "clojaalfa1", status: "active", workSchedule: "5x2",
+    receivesTransport: false, benefitTransportTotalCents: 1200,
+  });
+  assert.ok(saved.status < 300, JSON.stringify(await saved.clone().json()));
+  const stored = db.sqlite.prepare("SELECT receives_transport, benefit_transport_total_cents FROM hr_employees WHERE id='e3'").get();
+  assert.deepEqual({ ...stored }, { receives_transport: 0, benefit_transport_total_cents: 0 });
+
+  const carla = (await load()).rows.find((row) => row.employeeId === "e3");
+  assert.equal(carla.receivesTransport, false);
+  assert.equal(carla.transportCents, 0);
+  assert.equal(carla.totalCents, carla.foodCents);
+  const response = await call("POST", {
+    month: MONTH, companyId: "", paymentMethod: "pix", paymentDate: "", employeeIds: ["e3"],
+    adjustments: { e3: { transportDays: 5, foodAdjustCents: 0, transportAdjustCents: 900, reason: "" } },
+  });
+  assert.equal(response.status, 201);
+  const items = db.sqlite.prepare("SELECT i.type FROM hr_benefit_items i JOIN hr_benefits b ON b.id=i.benefit_id WHERE b.employee_id='e3'").all();
+  assert.deepEqual(items.map((item) => item.type), ["alimentacao"], "sem linha de mobilidade");
+
+  // Quem já existia (sem o campo) continua recebendo.
+  assert.equal((await load()).rows.find((row) => row.employeeId === "e2").receivesTransport, true);
+});
+
+test("migration 0145 só acrescenta a coluna com SIM como padrão; tela tem o campo e a coluna de ajuste", async () => {
+  const sql = await readFile(new URL("../drizzle/0145_rh_funcionario_recebe_transporte.sql", import.meta.url), "utf8");
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS "receives_transport" integer DEFAULT 1 NOT NULL/);
+  assert.doesNotMatch(sql, /DROP|UPDATE|DELETE/i);
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="rhEmployeeReceivesTransport"><option value="1">SIM<\/option><option value="0">NÃO<\/option>/);
+  assert.match(html, /<th>Ajuste transporte \(R\$ ±\)<\/th>/);
+  assert.match(html, /data-rh-ciclo-field="transportAdjust"/);
+  // O texto "TRANSPORTE −R$ 2,00" das observações não pode voltar como MOTIVO do ajuste.
+  assert.match(html, /!\/\^\(PASSAGEM\|ALIMENTAÇÃO\|TRANSPORTE\) \[0-9\+−-\]\/\.test\(part\)/);
 });

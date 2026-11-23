@@ -123,28 +123,44 @@ export type CycleBenefitAmounts = {
  * a coluna benefit_transport_total_cents guarda o valor do dia). Vazio = regra
  * da escala. transportTotalCents fica 0 (cálculo sempre dias × valor do dia).
  */
-export type EmployeeBenefitRule = BenefitRule & { transportTotalCents: number; countedDays: number };
+export type EmployeeBenefitRule = BenefitRule & { transportTotalCents: number; countedDays: number; receivesTransport: boolean };
 export function employeeBenefitRule(
   rule: BenefitRule,
-  employee: { benefitFoodTotalCents?: number; benefitTransportTotalCents?: number },
+  employee: { benefitFoodTotalCents?: number; benefitTransportTotalCents?: number; receivesTransport?: number | boolean },
   countedDays: number,
 ): EmployeeBenefitRule {
   const food = Math.max(0, Math.round(Number(employee.benefitFoodTotalCents) || 0));
   const transport = Math.max(0, Math.round(Number(employee.benefitTransportTotalCents) || 0));
-  return { foodCents: food || rule.foodCents, transportPerDayCents: transport || rule.transportPerDayCents, transportTotalCents: 0, countedDays };
+  // RECEBE TRANSPORTE? = NÃO (23/11/2026): passagem sempre 0. Ausente = SIM.
+  const receivesTransport = employee.receivesTransport === undefined || employee.receivesTransport === null
+    ? true
+    : Boolean(Number(employee.receivesTransport));
+  return {
+    foodCents: food || rule.foodCents,
+    transportPerDayCents: receivesTransport ? transport || rule.transportPerDayCents : 0,
+    transportTotalCents: 0,
+    countedDays,
+    receivesTransport,
+  };
 }
 
-/** Alimentação cheia ± ajuste da revisão; transporte = dias × valor do dia (ou total proporcional). */
+/**
+ * Alimentação cheia ± ajuste da revisão; transporte = dias × valor do dia (ou
+ * total proporcional) ± AJUSTE DO TRANSPORTE (23/11/2026, ex.: desconto de
+ * R$ 2,00 na passagem do ciclo). Quem não recebe transporte fica com 0.
+ */
 export function cycleBenefitAmounts(
-  rule: BenefitRule & { transportTotalCents?: number; countedDays?: number },
+  rule: BenefitRule & { transportTotalCents?: number; countedDays?: number; receivesTransport?: boolean },
   transportDays: number,
   foodAdjustCents = 0,
+  transportAdjustCents = 0,
 ): CycleBenefitAmounts {
   const days = Math.max(0, Math.round(transportDays) || 0);
   const foodCents = Math.max(0, rule.foodCents + (Math.round(foodAdjustCents) || 0));
   const counted = Number(rule.countedDays) || 0;
-  const transportCents = rule.transportTotalCents
+  const baseTransport = rule.transportTotalCents
     ? (counted ? Math.round((rule.transportTotalCents * days) / counted) : 0)
     : days * rule.transportPerDayCents;
+  const transportCents = rule.receivesTransport === false ? 0 : Math.max(0, baseTransport + (Math.round(transportAdjustCents) || 0));
   return { foodCents, transportCents, totalCents: foodCents + transportCents };
 }

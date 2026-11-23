@@ -7999,7 +7999,7 @@
 
       <div id="rhBeneficioTabRegras" hidden>
         <div class="table-panel" style="padding:14px;margin-bottom:12px;">
-          <p style="margin:0 0 12px;font-size:11px;color:var(--ink-soft);">Ciclo do dia 20 de um mês ao dia 19 do seguinte. ALIMENTAÇÃO = valor cheio do ciclo. TRANSPORTE = valor por dia × dias exatos (5x2: segunda a sexta · 6x1: segunda a sábado). Faltas, atestados, feriados, folgas remuneradas, passagens a mais e reajustes são ajustados na revisão do ciclo, antes de gerar. AS REGRAS SÃO SALVAS SOZINHAS AO SAIR DE CADA CAMPO.</p>
+          <p style="margin:0 0 12px;font-size:11px;color:var(--ink-soft);">Ciclo do dia 20 de um mês ao dia 19 do seguinte. ALIMENTAÇÃO = valor cheio do ciclo. TRANSPORTE = valor por dia × dias exatos (5x2: segunda a sexta · 6x1: segunda a sábado). Faltas, atestados, feriados, folgas remuneradas, passagens a mais, descontos na passagem (AJUSTE TRANSPORTE) e reajustes são ajustados na revisão do ciclo — antes ou depois de gerar. Quem tem RECEBE TRANSPORTE? = NÃO no cadastro não recebe passagem. AS REGRAS SÃO SALVAS SOZINHAS AO SAIR DE CADA CAMPO.</p>
           <form id="rhBeneficioRegrasForm" class="dre-toolbar" style="flex-wrap:wrap;">
             <div class="field"><label for="rhRegra5x2Food">5X2 · ALIMENTAÇÃO (CHEIO)</label><input type="text" inputmode="decimal" id="rhRegra5x2Food" data-rh-regra="5x2:foodCents" placeholder="R$ 0,00"></div>
             <div class="field"><label for="rhRegra5x2Transport">5X2 · TRANSPORTE (POR DIA)</label><input type="text" inputmode="decimal" id="rhRegra5x2Transport" data-rh-regra="5x2:transportPerDayCents" placeholder="R$ 0,00"></div>
@@ -8024,8 +8024,8 @@
         <div class="table-panel responsive-table">
           <div class="table-scroll">
             <table id="rhCicloTable">
-              <thead><tr><th>Colaborador</th><th>Admissão</th><th>Unidade</th><th>Escala</th><th>Dias no ciclo</th><th>Dias de passagem</th><th>Ajuste alimentação (R$ ±)</th><th>Motivo do ajuste</th><th>Alimentação</th><th>Transporte</th><th>Total do benefício</th><th>Situação</th></tr></thead>
-              <tbody id="rhCicloTableBody"><tr><td colspan="12" class="responsive-empty">Selecione a competência para montar o ciclo.</td></tr></tbody>
+              <thead><tr><th>Colaborador</th><th>Admissão</th><th>Unidade</th><th>Escala</th><th>Dias no ciclo</th><th>Dias de passagem</th><th>Ajuste transporte (R$ ±)</th><th>Ajuste alimentação (R$ ±)</th><th>Motivo do ajuste</th><th>Alimentação</th><th>Transporte</th><th>Total do benefício</th><th>Situação</th></tr></thead>
+              <tbody id="rhCicloTableBody"><tr><td colspan="13" class="responsive-empty">Selecione a competência para montar o ciclo.</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -14309,7 +14309,8 @@
       <div class="purchase-field" data-rh-fin><label for="rhEmployeePix">CHAVE PIX</label><input id="rhEmployeePix" maxlength="160"></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeBank">BANCO</label><input id="rhEmployeeBank" maxlength="120"></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeBenefitFood">ALIMENTAÇÃO · VALOR TOTAL MÊS</label><input type="text" inputmode="decimal" id="rhEmployeeBenefitFood" placeholder="EM BRANCO = REGRA DA ESCALA"></div>
-      <div class="purchase-field" data-rh-fin><label for="rhEmployeeBenefitTransport">TRANSPORTE · VALOR POR DIA</label><input type="text" inputmode="decimal" id="rhEmployeeBenefitTransport" placeholder="EM BRANCO = REGRA DA ESCALA"></div>
+      <div class="purchase-field" data-rh-fin><label for="rhEmployeeReceivesTransport">RECEBE TRANSPORTE?</label><select id="rhEmployeeReceivesTransport"><option value="1">SIM</option><option value="0">NÃO</option></select></div>
+      <div class="purchase-field" data-rh-fin id="rhEmployeeBenefitTransportWrap"><label for="rhEmployeeBenefitTransport">TRANSPORTE · VALOR POR DIA</label><input type="text" inputmode="decimal" id="rhEmployeeBenefitTransport" placeholder="EM BRANCO = REGRA DA ESCALA"></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeBenefitMethod">FORMATO DE RECEBIMENTO DO BENEFÍCIO</label><select id="rhEmployeeBenefitMethod"><option value="">O ESCOLHIDO AO GERAR O CICLO</option><option value="pix">PIX</option><option value="cartao">CARTÃO</option><option value="plataforma">PLATAFORMA</option><option value="outros">OUTROS</option></select></div>
       <div class="purchase-field" data-rh-fin><label for="rhEmployeeFaceponto">FACEPONTO (R$ POR MÊS · OPCIONAL)</label><input type="text" inputmode="decimal" id="rhEmployeeFaceponto" placeholder="R$ 0,00"></div>
       <div class="purchase-field full" data-rh-fin><label for="rhEmployeeBenefitNotes">OBSERVAÇÕES DOS BENEFÍCIOS</label><input id="rhEmployeeBenefitNotes" maxlength="500"></div>
@@ -52681,6 +52682,7 @@ function renderHomeTasks(){
     el('rhEmployeeId').value = employee ? employee.id : '';
     el('rhEmployeeDialogTitle').textContent = employee ? 'EDITAR FUNCIONÁRIO' : 'NOVO FUNCIONÁRIO';
     document.querySelectorAll('#rhEmployeeForm [data-rh-fin]').forEach(node => { node.hidden = !canAccess('payroll'); });
+    rhSyncEmployeeTransport();
     el('rhEmployeeName').value = employee ? employee.fullName : '';
     el('rhEmployeeCpf').value = employee ? (employee.cpf || '') : '';
     el('rhEmployeeRg').value = employee ? (employee.rg || '') : '';
@@ -52705,6 +52707,8 @@ function renderHomeTasks(){
       if(cents) setCurrencyValue(el(id), cents/100); else { el(id).value = ''; el(id).dataset.rawValue = ''; }
     });
     el('rhEmployeeBenefitMethod').value = employee ? (employee.benefitPaymentMethod || '') : '';
+    el('rhEmployeeReceivesTransport').value = employee && Number(employee.receivesTransport) === 0 ? '0' : '1';
+    rhSyncEmployeeTransport();
     el('rhEmployeeUser').value = employee ? (employee.userId || '') : '';
     el('rhEmployeeNotes').value = employee ? (employee.notes || '') : '';
     el('rhEmployeeDriveLink').value = employee ? (employee.driveLink || '') : '';
@@ -52774,6 +52778,13 @@ function renderHomeTasks(){
 
   if(el('rhEmployeeSalary')) attachCurrencyMask(el('rhEmployeeSalary'));
   ['rhEmployeeBenefitFood','rhEmployeeBenefitTransport','rhEmployeeFaceponto'].forEach(id => { if(el(id)) attachCurrencyMask(el(id)); });
+  // RECEBE TRANSPORTE? (23/11/2026): SIM segue com o valor do dia; NÃO esconde
+  // o campo e o ciclo de benefícios não paga passagem.
+  function rhSyncEmployeeTransport(){
+    const wrap = el('rhEmployeeBenefitTransportWrap');
+    if(wrap) wrap.hidden = !canAccess('payroll') || el('rhEmployeeReceivesTransport').value === '0';
+  }
+  if(el('rhEmployeeReceivesTransport')) el('rhEmployeeReceivesTransport').addEventListener('change', rhSyncEmployeeTransport);
   if(el('btnNewRhEmployee')) el('btnNewRhEmployee').addEventListener('click', () => openRhEmployeeDialog(null));
   if(el('btnCloseRhEmployeeDialog')) el('btnCloseRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
   if(el('btnCancelRhEmployeeDialog')) el('btnCancelRhEmployeeDialog').addEventListener('click', closeRhEmployeeDialog);
@@ -52844,7 +52855,8 @@ function renderHomeTasks(){
       workSchedule: el('rhEmployeeSchedule').value,
       benefitNotes: el('rhEmployeeBenefitNotes').value,
       benefitFoodTotalCents: parseBRLToCents(getCurrencyValue(el('rhEmployeeBenefitFood')) || '0') || 0,
-      benefitTransportTotalCents: parseBRLToCents(getCurrencyValue(el('rhEmployeeBenefitTransport')) || '0') || 0,
+      receivesTransport: el('rhEmployeeReceivesTransport').value !== '0',
+      benefitTransportTotalCents: el('rhEmployeeReceivesTransport').value === '0' ? 0 : (parseBRLToCents(getCurrencyValue(el('rhEmployeeBenefitTransport')) || '0') || 0),
       benefitPaymentMethod: el('rhEmployeeBenefitMethod').value,
       facepontoCents: parseBRLToCents(getCurrencyValue(el('rhEmployeeFaceponto')) || '0') || 0,
       userId: el('rhEmployeeUser').disabled ? '' : el('rhEmployeeUser').value,
@@ -54394,10 +54406,14 @@ function renderHomeTasks(){
       const generated = row.generated;
       const review = String(generated.notes || '').split('REVISÃO: ')[1] || '';
       const benefitNotes = String(row.benefitNotes || '').toUpperCase();
-      const reason = review.split(' · ').find(part => part && !/^(PASSAGEM|ALIMENTAÇÃO) /.test(part) && part !== benefitNotes) || '';
+      const reason = review.split(' · ').find(part => part && !/^(PASSAGEM|ALIMENTAÇÃO|TRANSPORTE) [0-9+−-]/.test(part) && part !== benefitNotes) || '';
       const saved = {
         transportDays: generated.transportDays === null || generated.transportDays === undefined ? 0 : Number(generated.transportDays),
         foodAdjustCents: Number(generated.foodCents || 0) - Number(row.ruleFoodCents || 0),
+        // Ajuste do transporte = passagem gravada − dias × valor do dia usado.
+        transportAdjustCents: row.receivesTransport === false ? 0 : Number(generated.transportCents || 0) -
+          (generated.transportDays === null || generated.transportDays === undefined ? 0 : Number(generated.transportDays)) *
+          Number(generated.transportRateCents || row.transportPerDayCents || 0),
         reason
       };
       rhCicloSaved[row.employeeId] = saved;
@@ -54409,7 +54425,8 @@ function renderHomeTasks(){
     const saved = rhCicloSaved[row.employeeId];
     if(!row.generated || !saved) return false;
     const calc = rhCicloCalc(row);
-    return calc.transportDays !== saved.transportDays || calc.foodAdjustCents !== saved.foodAdjustCents || calc.reason.trim().toUpperCase() !== saved.reason;
+    return calc.transportDays !== saved.transportDays || calc.foodAdjustCents !== saved.foodAdjustCents ||
+      calc.transportAdjustCents !== (saved.transportAdjustCents || 0) || calc.reason.trim().toUpperCase() !== saved.reason;
   }
 
   function rhCicloChanged(){
@@ -54417,16 +54434,20 @@ function renderHomeTasks(){
   }
 
   function rhCicloCalc(row){
-    if(!rhCicloEditable(row)) return {transportDays:row.workingDays, foodAdjustCents:0, reason:'', foodCents:row.foodCents, transportCents:row.transportCents, totalCents:row.totalCents};
+    if(!rhCicloEditable(row)) return {transportDays:row.workingDays, foodAdjustCents:0, transportAdjustCents:0, reason:'', foodCents:row.foodCents, transportCents:row.transportCents, totalCents:row.totalCents};
     const review = rhCicloReview[row.employeeId] || {};
     const days = Number.isInteger(review.transportDays) && review.transportDays >= 0 ? review.transportDays : row.workingDays;
     const foodAdjustCents = Number(review.foodAdjustCents || 0);
     const foodCents = Math.max(0, Number(row.ruleFoodCents || 0) + foodAdjustCents);
     // VALOR TOTAL do cadastro: proporcional aos dias (mesma conta de app/lib/hr-benefit-cycle.ts).
-    const transportCents = Number(row.transportTotalCents) > 0
+    // Quem NÃO RECEBE TRANSPORTE (cadastro) fica sempre com passagem 0.
+    const receives = row.receivesTransport !== false;
+    const transportAdjustCents = receives ? Number(review.transportAdjustCents || 0) : 0;
+    const baseTransport = Number(row.transportTotalCents) > 0
       ? (Number(row.countedDays) ? Math.round(Number(row.transportTotalCents) * days / Number(row.countedDays)) : 0)
       : days * Number(row.transportPerDayCents || 0);
-    return {transportDays:days, foodAdjustCents, reason:review.reason || '', foodCents, transportCents, totalCents:foodCents + transportCents};
+    const transportCents = receives ? Math.max(0, baseTransport + transportAdjustCents) : 0;
+    return {transportDays:days, foodAdjustCents, transportAdjustCents, reason:review.reason || '', foodCents, transportCents, totalCents:foodCents + transportCents};
   }
 
   function rhCicloSituacaoCell(row, calc){
@@ -54436,7 +54457,7 @@ function renderHomeTasks(){
     if(row.generated) return '<span class="status-pill done">GERADO · '+formatCentsBRL(row.generated.amountCents)+'</span>';
     if(row.status !== 'active') return '<span class="status-pill">INATIVO</span>';
     if(calc.totalCents <= 0) return '<span class="status-pill alert" title="Confira os valores na aba REGRAS.">SEM VALOR</span>';
-    if(calc.transportDays !== row.workingDays || calc.foodAdjustCents) return '<span class="status-pill warn">REVISADO</span>';
+    if(calc.transportDays !== row.workingDays || calc.foodAdjustCents || calc.transportAdjustCents) return '<span class="status-pill warn">REVISADO</span>';
     return '<span class="status-pill waiting">PENDENTE</span>';
   }
 
@@ -54472,7 +54493,10 @@ function renderHomeTasks(){
       '<td>'+escapeHtml(row.companyName || '—')+'</td>'+
       '<td>'+escapeHtml(row.workSchedule)+'</td>'+
       '<td>'+row.workingDays+'</td>'+
-      '<td>'+(editable ? '<input type="number" min="0" max="31" step="1" style="width:64px;" data-rh-ciclo-field="transportDays" data-employee="'+id+'" value="'+calc.transportDays+'" aria-label="Dias de passagem">' : calc.transportDays)+'</td>'+
+      (row.receivesTransport === false
+        ? '<td colspan="2"><span class="status-pill" title="RECEBE TRANSPORTE? = NÃO no cadastro do funcionário.">NÃO RECEBE TRANSPORTE</span></td>'
+        : '<td>'+(editable ? '<input type="number" min="0" max="31" step="1" style="width:64px;" data-rh-ciclo-field="transportDays" data-employee="'+id+'" value="'+calc.transportDays+'" aria-label="Dias de passagem">' : calc.transportDays)+'</td>'+
+          '<td>'+(editable ? '<input type="number" step="0.01" style="width:96px;" data-rh-ciclo-field="transportAdjust" data-employee="'+id+'" value="'+(calc.transportAdjustCents ? (calc.transportAdjustCents/100).toFixed(2) : '')+'" placeholder="0,00" aria-label="Ajuste do transporte">' : '—')+'</td>')+
       '<td>'+(editable ? '<input type="number" step="0.01" style="width:96px;" data-rh-ciclo-field="foodAdjust" data-employee="'+id+'" value="'+(calc.foodAdjustCents ? (calc.foodAdjustCents/100).toFixed(2) : '')+'" placeholder="0,00" aria-label="Ajuste da alimentação">' : '—')+'</td>'+
       '<td>'+(editable ? '<input list="rhCicloMotivos" maxlength="200" style="min-width:150px;" data-rh-ciclo-field="reason" data-employee="'+id+'" value="'+escapeHtml(calc.reason)+'" placeholder="—" aria-label="Motivo do ajuste">' : '—')+'</td>'+
       '<td data-rh-ciclo-out="food">'+formatCentsBRL(calc.foodCents)+'</td>'+
@@ -54486,7 +54510,7 @@ function renderHomeTasks(){
     if(!body) return;
     rhCicloData = data;
     if(!rhCicloRows.length){
-      body.innerHTML = '<tr><td colspan="12" class="responsive-empty">Nenhum colaborador ativo para esta loja.</td></tr>';
+      body.innerHTML = '<tr><td colspan="13" class="responsive-empty">Nenhum colaborador ativo para esta loja.</td></tr>';
       renderRhCicloResumo();
       return;
     }
@@ -54504,7 +54528,7 @@ function renderHomeTasks(){
     rhCicloReviewMonth = month;
     const params = new URLSearchParams({month});
     if(el('rhBeneficioFiltroLoja').value) params.set('companyId', el('rhBeneficioFiltroLoja').value);
-    el('rhCicloTableBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">Calculando o ciclo…</td></tr>';
+    el('rhCicloTableBody').innerHTML = '<tr><td colspan="13" class="responsive-empty">Calculando o ciclo…</td></tr>';
     try{
       const data = await rhApiRequest('/benefit-cycle?'+params.toString());
       rhCicloRows = Array.isArray(data.rows) ? data.rows : [];
@@ -54515,6 +54539,7 @@ function renderHomeTasks(){
         rhCicloReview[employeeId] = {
           transportDays: Number.isInteger(draft.transportDays) ? draft.transportDays : undefined,
           foodAdjustCents: Number(draft.foodAdjustCents || 0),
+          transportAdjustCents: Number(draft.transportAdjustCents || 0),
           reason: draft.reason || ''
         };
       });
@@ -54528,7 +54553,7 @@ function renderHomeTasks(){
       rhCicloRows = [];
       rhCicloData = null;
       el('rhCicloResumo').textContent = '';
-      el('rhCicloTableBody').innerHTML = '<tr><td colspan="12" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rhCicloTableBody').innerHTML = '<tr><td colspan="13" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
 
@@ -54602,6 +54627,9 @@ function renderHomeTasks(){
     }else if(input.dataset.rhCicloField === 'foodAdjust'){
       const value = Number(String(input.value).replace(',', '.'));
       review.foodAdjustCents = Number.isFinite(value) ? Math.round(value*100) : 0;
+    }else if(input.dataset.rhCicloField === 'transportAdjust'){
+      const value = Number(String(input.value).replace(',', '.'));
+      review.transportAdjustCents = Number.isFinite(value) ? Math.round(value*100) : 0;
     }else{
       review.reason = input.value;
     }
@@ -54671,20 +54699,21 @@ function renderHomeTasks(){
         if(row.generated){
           if(!rhCicloDirty(row)) return;
           if(calc.totalCents <= 0) throw new Error('O TOTAL PRECISA SER MAIOR QUE ZERO PARA ATUALIZAR O LANÇAMENTO.');
-          const review = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, reason: calc.reason};
+          const review = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, transportAdjustCents: calc.transportAdjustCents, reason: calc.reason};
           await rhApiRequest('/benefit-cycle', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
             month, companyId:'', paymentMethod: row.generated.paymentMethod || 'pix', paymentDate:'',
             employeeIds:[employeeId], adjustments:{[employeeId]: review}
           })});
-          rhCicloSaved[employeeId] = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, reason: calc.reason.trim().toUpperCase()};
+          rhCicloSaved[employeeId] = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, transportAdjustCents: calc.transportAdjustCents, reason: calc.reason.trim().toUpperCase()};
           row.generated.amountCents = calc.totalCents;
         }else{
           const review = {
             transportDays: Number.isInteger(raw.transportDays) && raw.transportDays !== row.workingDays ? raw.transportDays : null,
             foodAdjustCents: calc.foodAdjustCents,
+            transportAdjustCents: calc.transportAdjustCents,
             reason: calc.reason
           };
-          const empty = review.transportDays === null && !review.foodAdjustCents && !String(review.reason || '').trim();
+          const empty = review.transportDays === null && !review.foodAdjustCents && !review.transportAdjustCents && !String(review.reason || '').trim();
           await rhApiRequest('/benefit-cycle', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
             month, employeeId, review: empty ? null : review
           })});
@@ -54718,7 +54747,7 @@ function renderHomeTasks(){
     const adjustments = {};
     [...pending, ...changed].forEach(row => {
       const calc = rhCicloCalc(row);
-      adjustments[row.employeeId] = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, reason: calc.reason};
+      adjustments[row.employeeId] = {transportDays: calc.transportDays, foodAdjustCents: calc.foodAdjustCents, transportAdjustCents: calc.transportAdjustCents, reason: calc.reason};
     });
     button.disabled = true;
     try{

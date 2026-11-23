@@ -1581,6 +1581,9 @@ export const hrEmployees = pgTable(
     // REGRAS para este funcionário no ciclo (0 = segue a regra da escala).
     benefitFoodTotalCents: integer("benefit_food_total_cents").notNull().default(0),
     benefitTransportTotalCents: integer("benefit_transport_total_cents").notNull().default(0),
+    // RECEBE TRANSPORTE? (23/11/2026, migration 0145): 1 = sim, 0 = não — o
+    // ciclo de benefícios não paga passagem para quem não recebe.
+    receivesTransport: integer("receives_transport").notNull().default(1),
     // Formato de recebimento do benefício ('' = o escolhido ao gerar o ciclo).
     benefitPaymentMethod: text("benefit_payment_method").notNull().default(""),
     // FACEPONTO: custo MENSAL enquanto ativo (DRE Funcionário, aba FACEPONTO

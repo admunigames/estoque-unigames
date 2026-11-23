@@ -137,7 +137,10 @@ export async function POST(request: Request) {
       transport: centsValue(body.benefitTransportTotalCents ?? 0),
       method: safeText(body.benefitPaymentMethod, 20),
       faceponto: centsValue(body.facepontoCents ?? 0),
+      // RECEBE TRANSPORTE? — sem o campo (cliente antigo) = SIM. NÃO zera o valor do dia.
+      receivesTransport: body.receivesTransport === false || body.receivesTransport === 0 || body.receivesTransport === "0" ? 0 : 1,
     };
+    if (!extras.receivesTransport) extras.transport = 0;
     if ([extras.food, extras.transport, extras.faceponto].some((value) => !Number.isFinite(value) || value < 0)) {
       return jsonResponse({ error: "INFORME VALORES DE BENEFÍCIO/FACEPONTO VÁLIDOS." }, 400);
     }
@@ -148,9 +151,9 @@ export async function POST(request: Request) {
       database
         .prepare(
           `UPDATE hr_employees SET benefit_food_total_cents=?1, benefit_transport_total_cents=?2,
-             benefit_payment_method=?3, faceponto_cents=?4 WHERE id=?5`,
+             benefit_payment_method=?3, faceponto_cents=?4, receives_transport=?6 WHERE id=?5`,
         )
-        .bind(extras.food, extras.transport, extras.method, extras.faceponto, employeeId);
+        .bind(extras.food, extras.transport, extras.method, extras.faceponto, employeeId, extras.receivesTransport);
 
     if (!fullName) return jsonResponse({ error: "INFORME O NOME DO FUNCIONÁRIO." }, 400);
     if (cpf && !isValidCpf(cpf)) return jsonResponse({ error: "INFORME UM CPF VÁLIDO." }, 400);

@@ -82,7 +82,7 @@ export function canSeeEmployees(actor: Identity) {
   return canManagePayroll(actor) || actor.permissions.some((permission) => permission.startsWith("rh_funcionarios:"));
 }
 export const EMPLOYEE_FINANCIAL_FIELDS = ["salaryCents", "pixKey", "bankName", "foodPerDayCents", "transportPerDayCents", "benefitNotes",
-  "benefitFoodTotalCents", "benefitTransportTotalCents", "benefitPaymentMethod", "facepontoCents"] as const;
+  "benefitFoodTotalCents", "benefitTransportTotalCents", "benefitPaymentMethod", "facepontoCents", "receivesTransport"] as const;
 
 export function actorName(actor: Identity) {
   return actor.displayName || "Usuário";
@@ -191,6 +191,8 @@ export type EmployeeRow = {
   benefitNotes: string;
   benefitFoodTotalCents: number;
   benefitTransportTotalCents: number;
+  /** 1 = recebe transporte (padrão), 0 = não recebe. */
+  receivesTransport: number;
   benefitPaymentMethod: string;
   facepontoCents: number;
   userId: string;
@@ -212,7 +214,7 @@ export const EMPLOYEE_COLUMNS = `id, full_name AS fullName, cpf, rg, telefone, a
   work_schedule AS workSchedule, food_per_day_cents AS foodPerDayCents,
   transport_per_day_cents AS transportPerDayCents, benefit_notes AS benefitNotes,
   benefit_food_total_cents AS benefitFoodTotalCents, benefit_transport_total_cents AS benefitTransportTotalCents,
-  benefit_payment_method AS benefitPaymentMethod, faceponto_cents AS facepontoCents,
+  receives_transport AS receivesTransport, benefit_payment_method AS benefitPaymentMethod, faceponto_cents AS facepontoCents,
   user_id AS userId, notes, drive_link AS driveLink, birth_date AS birthDate, created_by AS createdBy, created_by_name AS createdByName,
   created_at AS createdAt, updated_by AS updatedBy, updated_by_name AS updatedByName,
   updated_at AS updatedAt`;
