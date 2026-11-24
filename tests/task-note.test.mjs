@@ -67,3 +67,35 @@ test("conta principal não lê mais a lista antiga sem usuário (tarefas:DATA)",
   assert.doesNotMatch(html, /currentSession\.id === 'env-admin' && scopedKey !== key/);
   assert.doesNotMatch(worker, /\? "env-admin"\s*: row\.stateKey/);
 });
+
+test("trava de usuário trocado: aba de RENATO com login do admin não lê nem grava tarefas (24/11/2026)", async () => {
+  const route = await import("../app/api/shared-state/route.ts");
+  // Login atual do navegador = env-admin; a aba antiga ainda mostra "renato".
+  const call = (handler, method, path, body, expected) => handler(new Request(`http://127.0.0.1${path}`, {
+    method,
+    headers: {
+      "x-unigames-user-id": "env-admin", "x-unigames-role": "admin", "sec-fetch-site": "same-origin",
+      ...(expected ? { "x-expected-user": expected } : {}),
+      ...(body ? { "content-type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  }));
+  const day = { key: "tarefas:2099-06-01", value: JSON.stringify({ tasks: [{ id: "r1", text: "TAREFA DO RENATO" }], notes: "" }) };
+  const put = await call(route.PUT, "PUT", "/api/shared-state", day, "renato");
+  assert.equal(put.status, 409);
+  assert.equal((await put.json()).code, "SESSION_USER_CHANGED");
+  assert.equal((await call(route.GET, "GET", "/api/shared-state?key=tarefas:2099-06-01", null, "renato")).status, 409);
+  assert.equal((await call(route.GET, "GET", "/api/shared-state?scope=task-agenda&from=2099-01-01", null, "renato")).status, 409);
+  assert.equal((await call(route.DELETE, "DELETE", "/api/shared-state?key=tarefas:2099-06-01", null, "renato")).status, 409);
+  const stored = await globalThis.__routeTestDb.prepare("SELECT COUNT(*) AS n FROM shared_state WHERE state_key LIKE ?1").bind("tarefas:%2099-06-01").first();
+  assert.equal(Number(stored.n), 0, "nada gravado na lista do admin");
+  // Mesma pessoa (ou aba antiga sem cabeçalho): segue normal.
+  assert.equal((await call(route.PUT, "PUT", "/api/shared-state", day, "env-admin")).status, 200);
+
+  // Navegador: manda o usuário da aba, não enfileira o 409 (senão regravaria depois) e recarrega.
+  assert.match(html, /headers:\{'Accept':'application\/json',\.\.\.expectedUserHeaders\(\)\},\n      cache:'no-store'\n    \};\n    let url = '\/api\/shared-state\?key='/);
+  assert.match(html, /scope=task-agenda[\s\S]{0,200}\.\.\.expectedUserHeaders\(\)/);
+  assert.equal((html.match(/error\.status === 401 \|\| error\.status === 403 \|\| error\.status === 409\)\) throw error;/g) || []).length, 3);
+  assert.match(html, /if\(data\.code === 'SESSION_USER_CHANGED'\) handleSessionUserChanged\(data\.error\);/);
+  assert.match(html, /if\(session\.id && session\.id !== currentSession\.id\) handleSessionUserChanged\(\);/);
+});

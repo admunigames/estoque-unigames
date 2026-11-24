@@ -54,6 +54,24 @@ function authenticatedUserId(request: Request): string {
   return /^[a-z0-9._-]{3,80}$/i.test(value) ? value : "";
 }
 
+// Trava de usuário trocado (24/11/2026): o login vale para o navegador inteiro.
+// Se outra aba entrou com outro usuário, a aba antiga mandaria as tarefas dela
+// para a lista do novo login. A tela informa qual usuário mostra (cabeçalho
+// x-expected-user); se não bater com o login atual, nada é lido nem gravado.
+const SESSION_CHANGED = {
+  error: "VOCÊ ENTROU COM OUTRO USUÁRIO NESTE NAVEGADOR. A PÁGINA VAI RECARREGAR.",
+  code: "SESSION_USER_CHANGED",
+};
+
+function isUserScopedKey(key: string): boolean {
+  return TASK_KEY_PATTERN.test(key) || key === TASK_NOTE_KEY || key === SCREEN_PREFS_KEY;
+}
+
+function sessionUserChanged(request: Request): boolean {
+  const expected = (request.headers.get("x-expected-user") || "").trim();
+  return Boolean(expected) && expected !== authenticatedUserId(request);
+}
+
 function scopedStateKey(request: Request, key: string): string {
   if (key === TASK_NOTE_KEY || key === SCREEN_PREFS_KEY) {
     const userId = authenticatedUserId(request);
@@ -95,6 +113,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   if (url.searchParams.get("scope") === "task-agenda") {
+    if (sessionUserChanged(request)) return jsonResponse(SESSION_CHANGED, 409);
     const from = (url.searchParams.get("from") || "").trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) {
       return jsonResponse({ error: "DATA INICIAL INVÁLIDA." }, 400);
@@ -127,6 +146,7 @@ export async function GET(request: Request) {
 
   const key = stateKey(request);
   if (!validStateKey(key)) return jsonResponse({ error: "CHAVE INVÁLIDA." }, 400);
+  if (isUserScopedKey(key) && sessionUserChanged(request)) return jsonResponse(SESSION_CHANGED, 409);
 
   try {
     const resolvedKey = scopedStateKey(request, key);
@@ -151,6 +171,7 @@ export async function PUT(request: Request) {
     const value = payload.value;
     const ifAbsent = payload.ifAbsent === true;
     if (!validStateKey(key)) return jsonResponse({ error: "CHAVE INVÁLIDA." }, 400);
+    if (isUserScopedKey(key) && sessionUserChanged(request)) return jsonResponse(SESSION_CHANGED, 409);
     if (!validJsonValue(value)) {
       return jsonResponse({ error: "DADOS INVÁLIDOS OU MAIORES QUE 5 MB." }, 400);
     }
@@ -199,6 +220,7 @@ export async function DELETE(request: Request) {
 
   const key = stateKey(request);
   if (!validStateKey(key)) return jsonResponse({ error: "CHAVE INVÁLIDA." }, 400);
+  if (isUserScopedKey(key) && sessionUserChanged(request)) return jsonResponse(SESSION_CHANGED, 409);
 
   try {
     const database = await getD1();

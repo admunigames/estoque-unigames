@@ -16679,12 +16679,38 @@
     try{ localStorage.setItem(offlineQueueKey(), JSON.stringify(queue)); }catch{ /* reserva local já foi salva */ }
   }
 
+  // TRAVA DE USUÁRIO TROCADO (24/11/2026): o login vale para o navegador
+  // inteiro. Se outra aba entrou com outro usuário, esta aba gravaria as
+  // tarefas dela na lista do novo login. A aba informa quem ela mostra
+  // (X-Expected-User); o servidor recusa com 409 e a página recarrega.
+  function expectedUserHeaders(){
+    return currentSession.id ? {'X-Expected-User':String(currentSession.id)} : {};
+  }
+  let sessionUserChangedShown = false;
+  function handleSessionUserChanged(message){
+    if(sessionUserChangedShown) return;
+    sessionUserChangedShown = true;
+    alert(message || 'VOCÊ ENTROU COM OUTRO USUÁRIO NESTE NAVEGADOR. A PÁGINA VAI RECARREGAR.');
+    location.reload();
+  }
+  async function checkSessionUser(){
+    if(!currentSession.id || document.visibilityState !== 'visible') return;
+    try{
+      const response = await fetch('/api/session',{cache:'no-store',headers:{Accept:'application/json'}});
+      if(!response.ok) return;
+      const session = await response.json();
+      if(session.id && session.id !== currentSession.id) handleSessionUserChanged();
+    }catch{ /* sem rede: o servidor ainda barra a gravação */ }
+  }
+  document.addEventListener('visibilitychange', checkSessionUser);
+  window.addEventListener('focus', checkSessionUser);
+
   async function sharedStateRequest(key, options){
     const requestOptions = options || {};
     const method = requestOptions.method || 'GET';
     const fetchOptions = {
       method,
-      headers:{'Accept':'application/json'},
+      headers:{'Accept':'application/json',...expectedUserHeaders()},
       cache:'no-store'
     };
     let url = '/api/shared-state?key=' + encodeURIComponent(key);
@@ -16702,6 +16728,7 @@
     try{ data = await response.json(); } catch{ /* usa a mensagem padrão abaixo */ }
     if(!response.ok){
       if(response.status === 401) location.assign('/login?next=' + encodeURIComponent(location.pathname));
+      if(data.code === 'SESSION_USER_CHANGED') handleSessionUserChanged(data.error);
       const requestError = new Error(data.error || 'BANCO COMPARTILHADO INDISPONÍVEL');
       requestError.status = response.status;
       throw requestError;
@@ -16719,7 +16746,7 @@
           return { value:shared.value, version:shared.version || 0, updatedAt:shared.updatedAt || null };
         }
       }catch(error){
-        if(error && (error.status === 401 || error.status === 403)) throw error;
+        if(error && (error.status === 401 || error.status === 403 || error.status === 409)) throw error;
         const localOffline = await legacyStorage.get(key);
         if(localOffline) return {...localOffline, offline:true};
         throw error;
@@ -16743,7 +16770,7 @@
         const shared = await sharedStateRequest(key, {method:'PUT', value});
         return { value:shared.value, version:shared.version || 1, updatedAt:shared.updatedAt || null };
       }catch(error){
-        if(error && (error.status === 401 || error.status === 403)) throw error;
+        if(error && (error.status === 401 || error.status === 403 || error.status === 409)) throw error;
         queueOfflineMutation({method:'PUT',key,value});
         return {value,version:0,updatedAt:new Date().toISOString(),offline:true};
       }
@@ -16753,7 +16780,7 @@
       try{
         await sharedStateRequest(key, {method:'DELETE'});
       }catch(error){
-        if(error && (error.status === 401 || error.status === 403)) throw error;
+        if(error && (error.status === 401 || error.status === 403 || error.status === 409)) throw error;
         queueOfflineMutation({method:'DELETE',key});
       }
     }
@@ -22407,10 +22434,11 @@
     const agenda = el('taskAgendaFuture');
     try{
       const response = await fetch('/api/shared-state?scope=task-agenda&from='+encodeURIComponent(todayDateKey()), {
-        headers:{'Accept':'application/json'},
+        headers:{'Accept':'application/json',...expectedUserHeaders()},
         cache:'no-store'
       });
       const payload = await response.json();
+      if(payload.code === 'SESSION_USER_CHANGED') handleSessionUserChanged(payload.error);
       if(!response.ok) throw new Error(payload.error || 'AGENDA INDISPONÍVEL');
       const days = (Array.isArray(payload.items) ? payload.items : []).map(item => {
         const date = String(item.stateKey || '').replace(/^tarefas:/,'');
