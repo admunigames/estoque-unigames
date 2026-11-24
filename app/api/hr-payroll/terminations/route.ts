@@ -1,6 +1,7 @@
 import { getD1 } from "../../../../db";
 import { identity as commercialIdentity, syncHrCommissionsSince } from "../../commercial/shared";
-import { checklistPendingCount, normalizeChecklist } from "../../../lib/hr-rh";
+import { TERMINATION_REASONS, checklistPendingCount, normalizeChecklist } from "../../../lib/hr-rh";
+import { dentalPlanTerminationStatements } from "../../../lib/hr-dental-plan-auto";
 import { unauthorizedResponse } from "../../../lib/notion";
 import {
   DATE_PATTERN,
@@ -195,6 +196,12 @@ export async function POST(request: Request) {
         .bind(actor.id, actorName(actor), employeeId),
       // Desligado: o login vinculado ao funcionário é bloqueado na hora.
       deactivateLinkedLogin(database, employeeId),
+      // Plano Odontológico: desligado vira FALTANDO EXCLUIR (24/11/2026).
+      ...(await dentalPlanTerminationStatements(database, {
+        id: employeeId, fullName: employee.fullName, companyId: employee.admissionCompanyId || employee.companyId,
+        terminationDate: termination.date,
+        reasonLabel: termination.reason === "outro" ? termination.reasonOther : TERMINATION_REASONS[termination.reason] || "",
+      }, { id: actor.id, name: actorName(actor) })),
     ]);
     // Desligado sai do Comercial (operacional ativo): regrava a comissão.
     await syncHrCommissionsSince(database, "", commercialIdentity(request));

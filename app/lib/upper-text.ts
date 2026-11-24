@@ -124,7 +124,8 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   uniform_stock_items: ["size"],
   uniform_stock_movements: ["size", "employee_name", "company_name", "note", "created_by_name"],
   uniform_coat_terms: ["employee_name", "company_name", "size", "created_by_name", "updated_by_name"],
-  hr_dental_plan: ["employee_name", "unit_name", "reason", "notes", "created_by_name", "updated_by_name"],
+  // reason é código (inclusao/exclusao), não texto livre — fica minúsculo (24/11/2026).
+  hr_dental_plan: ["employee_name", "unit_name", "notes", "created_by_name", "updated_by_name"],
   hr_employee_month_values: ["employee_name", "updated_by_name"],
   hr_accounting_notes: ["notes", "updated_by_name"],
   hr_recurring_deductions: ["description", "created_by_name", "updated_by_name"],

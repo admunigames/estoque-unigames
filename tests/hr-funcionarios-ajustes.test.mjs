@@ -6,7 +6,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // no cadastro, LOJA ATUANTE em lote, desligamento na LOJA CADASTRADA com
 // rescisão e checklist, e FACEPONTO na DRE Funcionário.
 
-const db = await setupRouteDb([
+const db = await setupRouteDb(["hr_dental_plan", 
   "shared_state", "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_payroll_settings",
   "hr_terminations", "hr_aso_exams", "hr_vacations", "hr_schedule_assignments", "hr_recruitment_candidates",
   "hr_recruitment_test_payments", "hr_employee_month_values", "hr_time_tracking_payouts", "hr_settings", "app_users",

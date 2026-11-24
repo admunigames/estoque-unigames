@@ -1,7 +1,8 @@
 import { getD1 } from "../../../../db";
 import { identity as commercialIdentity, syncHrCommissionsSince } from "../../commercial/shared";
 import { unauthorizedResponse } from "../../../lib/notion";
-import { checklistPendingCount } from "../../../lib/hr-rh";
+import { TERMINATION_REASONS, checklistPendingCount } from "../../../lib/hr-rh";
+import { dentalPlanAdmissionStatements, dentalPlanTerminationStatements } from "../../../lib/hr-dental-plan-auto";
 import { loadCompanyList } from "../../finance/shared";
 import {
   BENEFIT_PAYMENT_METHODS,
@@ -294,6 +295,13 @@ export async function POST(request: Request) {
         ...(becomingInactive
           ? [insertTermination(database, { employeeId: editId, employeeName: fullName, companyId: admission.companyId || companyId, companyName: admission.companyId ? admission.companyName : companyName, ...termination }, actor).statement]
           : []),
+        // Plano Odontológico: desligado vira FALTANDO EXCLUIR (24/11/2026).
+        ...(becomingInactive
+          ? await dentalPlanTerminationStatements(database, {
+              id: editId, fullName, companyId: admission.companyId || companyId, terminationDate: termination.date,
+              reasonLabel: termination.reason === "outro" ? termination.reasonOther : TERMINATION_REASONS[termination.reason] || "",
+            }, { id: actor.id, name: actorName(actor) })
+          : []),
       ]);
       if (status === "inactive") await deactivateLinkedLogin(database, editId).run();
       // O nome do funcionário é desnormalizado nos lançamentos — mantê-lo em
@@ -380,6 +388,10 @@ export async function POST(request: Request) {
             companyId: admissionCompanyId || companyId, companyName: admissionCompanyId ? admissionCompanyName : companyName,
             ...termination,
           }, actor).statement]
+        : []),
+      // Plano Odontológico: admitido ativo nasce FALTANDO INCLUIR (24/11/2026).
+      ...(status === "active"
+        ? await dentalPlanAdmissionStatements(database, { id, fullName, admissionDate, companyId: admissionCompanyId || companyId }, { id: actor.id, name: actorName(actor) })
         : []),
     ]);
     // Cadastro (situação, admissão, cargo, loja) muda quem recebe comissão no Comercial.

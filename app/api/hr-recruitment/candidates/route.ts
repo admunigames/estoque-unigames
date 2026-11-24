@@ -3,6 +3,7 @@ import { identity as commercialIdentity, syncHrCommissionsSince } from "../../co
 import { isValidCnpj } from "../../../lib/br-documents";
 import { notifyUsers, usersWithPermission, vapidFromEnv } from "../../../lib/hr-notify";
 import { checklistValue, recifeToday, recruitmentNotice } from "../../../lib/hr-rh";
+import { dentalPlanAdmissionStatements } from "../../../lib/hr-dental-plan-auto";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { loadCompanyList } from "../../finance/shared";
 import {
@@ -346,7 +347,13 @@ export async function POST(request: Request) {
         );
 
       const statements = [];
-      if (hiredEmployeeInsert) statements.push(hiredEmployeeInsert);
+      if (hiredEmployeeInsert) {
+        statements.push(hiredEmployeeInsert);
+        // Plano Odontológico: contratado nasce FALTANDO INCLUIR (24/11/2026).
+        statements.push(...(await dentalPlanAdmissionStatements(database, {
+          id: hrEmployeeId, fullName, admissionDate: fields.admissionDate, companyId: fields.admissionCompanyId,
+        }, { id: actor.id, name: actorName(actor) })));
+      }
       statements.push(updateCandidateStatement);
       if (status !== existing.status) {
         statements.push(

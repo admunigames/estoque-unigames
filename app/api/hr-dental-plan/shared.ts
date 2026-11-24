@@ -99,10 +99,14 @@ export function uuidIsValid(value: string) {
   return /^[0-9a-f-]{36}$/i.test(value);
 }
 
+// 24/11/2026: FALTANDO e SOLICITADA separados em INCLUIR/EXCLUIR (migration
+// 0146 converteu os antigos faltando_incluir_excluir/inclusao_exclusao_solicitada).
 export const DENTAL_PLAN_STATUSES = [
   "incluso",
-  "faltando_incluir_excluir",
-  "inclusao_exclusao_solicitada",
+  "faltando_incluir",
+  "faltando_excluir",
+  "inclusao_solicitada",
+  "exclusao_solicitada",
   "desligado",
 ] as const;
 export type DentalPlanStatus = (typeof DENTAL_PLAN_STATUSES)[number];
@@ -116,12 +120,17 @@ export function isDentalPlanReason(value: string): value is DentalPlanReason {
   return value === "" || (DENTAL_PLAN_REASONS as readonly string[]).includes(value);
 }
 
+/** MOTIVO que o status já diz (vazio no formulário = este). */
+export function reasonForStatus(status: DentalPlanStatus): DentalPlanReason {
+  return status === "incluso" || status === "faltando_incluir" || status === "inclusao_solicitada" ? "inclusao" : "exclusao";
+}
+
 // Lookup ao vivo de CPF e data de nascimento — colunas de e.* vêm de LEFT
 // JOIN com hr_employees, nunca são gravadas em hr_dental_plan (ver comentário
 // no topo do arquivo).
 export const DENTAL_PLAN_COLUMNS = `
   d.id, d.employee_id AS employeeId, d.employee_name AS employeeName,
-  d.unit_name AS unitName, d.cnpj, d.status, d.reason,
+  d.unit_name AS unitName, d.cnpj, d.status, LOWER(d.reason) AS reason,
   d.process_number AS processNumber, d.notes,
   d.created_by AS createdBy, d.created_by_name AS createdByName, d.created_at AS createdAt,
   d.updated_by AS updatedBy, d.updated_by_name AS updatedByName, d.updated_at AS updatedAt,

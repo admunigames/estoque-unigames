@@ -8,7 +8,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // indicadores do Dashboard com filtros e vídeo do Onboarding que só conclui
 // assistido até o fim. Rotas reais sobre SQLite em memória.
 
-const db = await setupRouteDb([
+const db = await setupRouteDb(["hr_dental_plan", 
   "shared_state", "app_users", "push_subscriptions", "push_delivery_log", "hr_settings",
   "hr_employees", "hr_payroll_entries", "hr_benefits", "hr_commissions", "hr_terminations", "hr_aso_exams", "hr_vacations",
   "hr_recruitment_candidates", "hr_recruitment_status_history", "hr_recruitment_test_payments", "hr_leader_pdi",

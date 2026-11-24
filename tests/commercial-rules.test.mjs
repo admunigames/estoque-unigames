@@ -9,7 +9,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // (comercial:stores). Rotas reais sobre SQLite, com os seeds das migrations
 // 0085 e 0086.
 
-const db = await setupRouteDb([
+const db = await setupRouteDb(["hr_dental_plan", 
   "shared_state", "hr_employees", "commercial_monthly", "commercial_rules", "commercial_newcomers",
   "commercial_credit_entries", "commercial_store_goals", "hr_commissions", "hr_commission_items", "hr_payroll_settings",
   "commercial_roles", "commercial_indications",

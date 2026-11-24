@@ -9,6 +9,7 @@ import {
   isDentalPlanReason,
   isDentalPlanStatus,
   jsonResponse,
+  reasonForStatus,
   safeText,
   sameOrigin,
   uuidIsValid,
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
     }
     if (reason && isDentalPlanReason(reason) && reason !== "") {
       bindings.push(reason);
-      conditions.push(`d.reason=?${bindings.length}`);
+      conditions.push(`LOWER(d.reason)=?${bindings.length}`);
     }
     if (cnpj) {
       bindings.push(cnpj);
@@ -90,13 +91,15 @@ export async function POST(request: Request) {
     const unitName = safeText(body.unitName, 200);
     const cnpj = safeText(body.cnpj, 32);
     const status = safeText(body.status, 40);
-    const reason = safeText(body.reason, 20);
+    let reason = safeText(body.reason, 20).toLowerCase();
     const processNumber = safeText(body.processNumber, 80);
     const notes = safeText(body.notes, 2000);
 
     if (!employeeName) return jsonResponse({ error: "INFORME O COLABORADOR." }, 400);
     if (!isDentalPlanStatus(status)) return jsonResponse({ error: "SITUAÇÃO INVÁLIDA." }, 400);
     if (!isDentalPlanReason(reason)) return jsonResponse({ error: "MOTIVO INVÁLIDO." }, 400);
+    // MOTIVO em branco: o do status (FALTANDO INCLUIR → INCLUSÃO, etc.).
+    if (!reason) reason = reasonForStatus(status);
 
     const database = await getD1();
 

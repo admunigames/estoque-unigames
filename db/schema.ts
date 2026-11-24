@@ -3734,9 +3734,10 @@ export const hrDentalPlan = pgTable(
     employeeName: text("employee_name").notNull(),
     unitName: text("unit_name").notNull().default(""),
     cnpj: text("cnpj").notNull().default(""),
-    // 'incluso' | 'faltando_incluir_excluir' | 'inclusao_exclusao_solicitada' | 'desligado'
-    status: text("status").notNull().default("faltando_incluir_excluir"),
-    // 'inclusao' | 'exclusao' | '' (nem sempre se aplica, ex: já incluso há muito tempo)
+    // 'incluso' | 'faltando_incluir' | 'faltando_excluir' | 'inclusao_solicitada' |
+    // 'exclusao_solicitada' | 'desligado' (separados em 24/11/2026, migration 0146)
+    status: text("status").notNull().default("faltando_incluir"),
+    // 'inclusao' | 'exclusao' (código minúsculo; vazio no formulário = o do status)
     reason: text("reason").notNull().default(""),
     processNumber: text("process_number").notNull().default(""),
     notes: text("notes").notNull().default(""),

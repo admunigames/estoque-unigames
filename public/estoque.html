@@ -9366,8 +9366,10 @@
           <select id="dentalPlanStatusFilter">
             <option value="">TODOS</option>
             <option value="incluso">INCLUSO</option>
-            <option value="faltando_incluir_excluir">FALTANDO INCLUIR/EXCLUIR</option>
-            <option value="inclusao_exclusao_solicitada">INCLUSÃO/EXCLUSÃO SOLICITADA</option>
+            <option value="faltando_incluir">FALTANDO INCLUIR</option>
+            <option value="faltando_excluir">FALTANDO EXCLUIR</option>
+            <option value="inclusao_solicitada">INCLUSÃO SOLICITADA</option>
+            <option value="exclusao_solicitada">EXCLUSÃO SOLICITADA</option>
             <option value="desligado">DESLIGADO</option>
           </select>
         </div>
@@ -12441,14 +12443,15 @@
       <div class="purchase-field"><label for="dentalPlanStatus">STATUS *</label>
         <select id="dentalPlanStatus" required>
           <option value="incluso">INCLUSO</option>
-          <option value="faltando_incluir_excluir">FALTANDO INCLUIR/EXCLUIR</option>
-          <option value="inclusao_exclusao_solicitada">INCLUSÃO/EXCLUSÃO SOLICITADA</option>
+          <option value="faltando_incluir">FALTANDO INCLUIR</option>
+          <option value="faltando_excluir">FALTANDO EXCLUIR</option>
+          <option value="inclusao_solicitada">INCLUSÃO SOLICITADA</option>
+          <option value="exclusao_solicitada">EXCLUSÃO SOLICITADA</option>
           <option value="desligado">DESLIGADO</option>
         </select>
       </div>
       <div class="purchase-field"><label for="dentalPlanReason">MOTIVO</label>
         <select id="dentalPlanReason">
-          <option value="">NÃO SE APLICA</option>
           <option value="inclusao">INCLUSÃO</option>
           <option value="exclusao">EXCLUSÃO</option>
         </select>
@@ -59001,17 +59004,25 @@ function renderHomeTasks(){
   // texto livre: não existe cadastro de CNPJ jurídico no sistema hoje.
   const DENTAL_STATUS_LABELS = {
     incluso:'INCLUSO',
-    faltando_incluir_excluir:'FALTANDO INCLUIR/EXCLUIR',
-    inclusao_exclusao_solicitada:'INCLUSÃO/EXCLUSÃO SOLICITADA',
+    faltando_incluir:'FALTANDO INCLUIR',
+    faltando_excluir:'FALTANDO EXCLUIR',
+    inclusao_solicitada:'INCLUSÃO SOLICITADA',
+    exclusao_solicitada:'EXCLUSÃO SOLICITADA',
     desligado:'DESLIGADO'
   };
   const DENTAL_STATUS_TONE = {
     incluso:'done',
-    faltando_incluir_excluir:'alert',
-    inclusao_exclusao_solicitada:'progress',
+    faltando_incluir:'alert',
+    faltando_excluir:'alert',
+    inclusao_solicitada:'progress',
+    exclusao_solicitada:'progress',
     desligado:'waiting'
   };
   const DENTAL_REASON_LABELS = {inclusao:'INCLUSÃO', exclusao:'EXCLUSÃO'};
+  // MOTIVO que cada status já diz (24/11/2026): o formulário preenche sozinho.
+  const DENTAL_STATUS_REASON = {incluso:'inclusao', faltando_incluir:'inclusao', inclusao_solicitada:'inclusao',
+    faltando_excluir:'exclusao', exclusao_solicitada:'exclusao', desligado:'exclusao'};
+  const dentalReasonOf = row => String(row.reason || '').toLowerCase() || DENTAL_STATUS_REASON[row.status] || '';
   let dentalPlanRows = [];
   let dentalPlanEmployees = [];
 
@@ -59089,7 +59100,7 @@ function renderHomeTasks(){
 
     let rows = dentalPlanRows.slice();
     if(status) rows = rows.filter(row => row.status === status);
-    if(reason) rows = rows.filter(row => row.reason === reason);
+    if(reason) rows = rows.filter(row => dentalReasonOf(row) === reason);
     if(cnpj) rows = rows.filter(row => row.cnpj === cnpj);
     if(search) rows = rows.filter(row => normalizeSearchText(row.employeeName).includes(search));
 
@@ -59110,7 +59121,7 @@ function renderHomeTasks(){
         '<td>'+escapeHtml(row.unitName || '—')+'</td>'+
         '<td>'+escapeHtml(row.cnpj || '—')+'</td>'+
         '<td>'+dentalPlanStatusBadge(row.status)+'</td>'+
-        '<td>'+escapeHtml(DENTAL_REASON_LABELS[row.reason] || '—')+'</td>'+
+        '<td>'+escapeHtml(DENTAL_REASON_LABELS[dentalReasonOf(row)] || '—')+'</td>'+
         '<td>'+escapeHtml(row.processNumber || '—')+'</td>'+
         '<td>'+escapeHtml(row.notes || '—')+'</td>'+
         '<td style="white-space:nowrap">'+actions+'</td>'+
@@ -59143,14 +59154,17 @@ function renderHomeTasks(){
     dentalPlanSetReadonly(row ? row.cpf : '', row ? row.birthDate : '');
     el('dentalPlanUnitName').value = row ? (row.unitName || '') : '';
     el('dentalPlanCnpj').value = row ? (row.cnpj || '') : '';
-    el('dentalPlanStatus').value = row ? row.status : 'faltando_incluir_excluir';
-    el('dentalPlanReason').value = row ? (row.reason || '') : '';
+    el('dentalPlanStatus').value = row ? row.status : 'faltando_incluir';
+    el('dentalPlanReason').value = row ? dentalReasonOf(row) : 'inclusao';
     el('dentalPlanProcessNumber').value = row ? (row.processNumber || '') : '';
     el('dentalPlanNotes').value = row ? (row.notes || '') : '';
     el('dentalPlanFormStatus').textContent = '';
     el('dentalPlanDialog').showModal();
   }
 
+  if(el('dentalPlanStatus')) el('dentalPlanStatus').addEventListener('change', () => {
+    el('dentalPlanReason').value = DENTAL_STATUS_REASON[el('dentalPlanStatus').value] || '';
+  });
   if(el('dentalPlanEmployee')) el('dentalPlanEmployee').addEventListener('change', () => {
     const employee = dentalPlanEmployees.find(item => item.id === el('dentalPlanEmployee').value);
     dentalPlanSetReadonly(employee ? employee.cpf : '', employee ? employee.birthDate : '');
