@@ -637,3 +637,27 @@ test("lib (11/2026): vendedor abaixo de 80% sem % sobre vendas (garantia/crediá
   const many = lib.leaderCommission(metrics, realized(10_000_000), 0, leader, ["V1", "V2"], null, false);
   assert.deepEqual([many.leader.sellersPremiumCents, many.leader.perSellerCents], [100_000, 50_000]);
 });
+
+test("Crediários: EDITAR corrige ID, vendedor e valor sem excluir (comissão recalculada; duplicado e outra loja recusados)", async () => {
+  const MONTH = "2027-02";
+  await putSeller(sellerBody(MONTH, "emp-v1", 5_000_000, 5_000_000));
+  await putSeller(sellerBody(MONTH, "emp-v4", 5_000_000, 5_000_000));
+  const post = (saleRef) => callRoute(entriesRoute.POST, ADMIN, "POST", "/api/commercial/entries", { month: MONTH, kind: "crefaz", saleRef, employeeId: "emp-v1", amountCents: 100_000 });
+  const put = (user, body) => callRoute(entriesRoute.PUT, user, "PUT", "/api/commercial/entries", body);
+  const credit = async (id) => (await getOverview(ADMIN, MONTH)).sellers.find((seller) => seller.employeeId === id).realized.creditSalesCents;
+  const { id } = await (await post("ED-1")).json();
+  await post("ED-2");
+  assert.equal(await credit("emp-v1"), 200_000);
+  // Valor e vendedor trocados: o crediário sai de um e vai para o outro.
+  const ok = await put(ADMIN, { id, saleRef: "ED-1B", employeeId: "emp-v4", amountCents: 300_000 });
+  assert.equal(ok.status, 200, JSON.stringify(await ok.clone().json()));
+  assert.deepEqual([await credit("emp-v1"), await credit("emp-v4")], [100_000, 300_000]);
+  const row = db.sqlite.prepare("SELECT sale_ref AS ref, employee_id AS e, amount_cents AS c, month, kind FROM commercial_credit_entries WHERE id=?").get(id);
+  assert.deepEqual({ ...row }, { ref: "ED-1B", e: "emp-v4", c: 300_000, month: MONTH, kind: "crefaz" });
+  // Mesmo ID de outra venda da tabela: recusado; o próprio ID continua aceito.
+  assert.equal((await put(ADMIN, { id, saleRef: "ED-2", employeeId: "emp-v4", amountCents: 300_000 })).status, 409);
+  assert.equal((await put(ADMIN, { id, saleRef: "ED-1B", employeeId: "emp-v4", amountCents: 250_000 })).status, 200);
+  // Login de outra loja não edita; sem comercial:credit também não.
+  assert.equal((await put({ id: "u-b", companyId: STORE_B, permissions: ["comercial:credit"] }, { id, saleRef: "X", employeeId: "emp-v5", amountCents: 1 })).status, 404);
+  assert.equal((await put({ id: "u-view", permissions: ["comercial:credit_view"] }, { id, saleRef: "X", employeeId: "emp-v4", amountCents: 1 })).status, 403);
+});

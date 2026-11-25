@@ -30,13 +30,15 @@ import {
 // NÃO se mistura com Financeiro > Crediários (finance_credit_sales).
 //   GET    ?month&kind → lançamentos da tabela no mês + total (role de cada um)
 //   POST   {month, kind, saleRef, employeeId, amountCents}
+//   PUT    {id, saleRef, employeeId, amountCents} → corrige um lançamento (mês e
+//          tabela ficam; pedido de 2026-11-25, para não excluir e lançar de novo)
 //   DELETE ?id
 
 function guard(request: Request) {
   const unauthorized = unauthorizedResponse(request);
   if (unauthorized) return { error: unauthorized };
   const actor = identity(request);
-  // Ver: comercial:credit_view; lançar e excluir: comercial:credit.
+  // Ver: comercial:credit_view; lançar, editar e excluir: comercial:credit.
   if (request.method === "GET" ? !canViewCommercialCredit(actor) : !canManageCommercialCredit(actor)) {
     return { error: jsonResponse({ error: "VOCÊ NÃO TEM PERMISSÃO PARA LANÇAR CREDIÁRIOS." }, 403) };
   }
@@ -139,6 +141,51 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Não foi possível lançar a venda.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL LANÇAR A VENDA." }, 500);
+  }
+}
+
+export async function PUT(request: Request) {
+  const checked = guard(request);
+  if (checked.error) return checked.error;
+  const { actor, scope } = checked;
+  try {
+    const body = (await request.json().catch(() => ({}))) as JsonMap;
+    const id = safeText(body.id, 80);
+    const saleRef = safeText(body.saleRef, 60);
+    const amountCents = nonNegativeInt(body.amountCents, 100_000_000);
+    if (!saleRef) return jsonResponse({ error: "INFORME O ID DA VENDA." }, 400);
+    if (!amountCents) return jsonResponse({ error: "INFORME O VALOR DA VENDA." }, 400);
+    const database = await getD1();
+    const entry = await database
+      .prepare("SELECT company_id AS companyId, month, kind FROM commercial_credit_entries WHERE id=?1")
+      .bind(id)
+      .first<{ companyId: string; month: string; kind: string }>();
+    if (!entry || !isEntryKind(entry.kind) || (!scope.allStores && entry.companyId !== scope.companyId)) {
+      return jsonResponse({ error: "LANÇAMENTO NÃO ENCONTRADO." }, 404);
+    }
+    const employee = await employeeInScope(database, scope, safeText(body.employeeId, 80));
+    if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
+    const { sellers, tabOperationals, operationals } = await loadSellers(database, entry.month);
+    if (![...sellers, ...tabOperationals, ...operationals].some((person) => person.employeeId === employee.id)) {
+      return jsonResponse({ error: "FUNCIONÁRIO NÃO É VENDEDOR NEM OPERACIONAL NESTE MÊS." }, 400);
+    }
+    const duplicate = await database
+      .prepare("SELECT month FROM commercial_credit_entries WHERE kind=?1 AND sale_ref=?2 AND id<>?3")
+      .bind(entry.kind, saleRef, id)
+      .first<{ month: string }>();
+    if (duplicate) {
+      const [year, monthNumber] = duplicate.month.split("-");
+      return jsonResponse({ error: `A VENDA ${saleRef} JÁ FOI LANÇADA EM ${ENTRY_KINDS[entry.kind].label} (${monthNumber}/${year}).` }, 409);
+    }
+    await database
+      .prepare("UPDATE commercial_credit_entries SET sale_ref=?1, employee_id=?2, employee_name=?3, company_id=?4, amount_cents=?5 WHERE id=?6")
+      .bind(saleRef, employee.id, employee.fullName, employee.companyId, amountCents, id)
+      .run();
+    await syncHrCommissions(database, entry.month, actor);
+    return jsonResponse({ id });
+  } catch (error) {
+    console.error("Não foi possível editar o lançamento.", error);
+    return jsonResponse({ error: "NÃO FOI POSSÍVEL EDITAR O LANÇAMENTO." }, 500);
   }
 }
 

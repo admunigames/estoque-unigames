@@ -4612,6 +4612,9 @@ test("Comercial: menu próprio, permissões por aba, escopo por loja, alimentaç
   assert.match(html, /async function comBuildMetasImage\(kind, m\)\{[\s\S]*?await comDrawImageFrame\(ctx, W, H, \{/);
   // PDF de análise da aba METAS (17/11/2026): resumo, lojas por %, vendedores por loja.
   assert.match(html, /id="btnComMetasPdf">BAIXAR PDF<\/button>/);
+  // Crediários: ✎ EDITAR carrega a venda no formulário e salva com PUT (25/11/2026).
+  assert.match(html, /data-com-entry-edit="'\+escapeHtml\(item\.id\)\+'" data-edit-icon aria-label="EDITAR"/);
+  assert.match(html, /comApi\('\/entries', \{method:'PUT'/);
   // Também nas abas METAS LOJA e METAS VENDEDORES (dados da própria aba).
   for (const id of ["btnComLojasImage", "btnComLojasPdf", "btnComVendedoresImage", "btnComVendedoresPdf"]) assert.match(html, new RegExp('id="' + id + '"'));
   assert.match(html, /comPrintPdf\(comMetasPdfHtml\(m, \{stores:true\}\)/);

@@ -8877,7 +8877,8 @@
           <div class="field"><label for="comEntryRef">ID da venda</label><input id="comEntryRef" maxlength="60" autocomplete="off" required></div>
           <div class="field"><label for="comEntrySeller">Vendedor / Operacional</label><select id="comEntrySeller" required><option value="">ESCOLHA O VENDEDOR OU OPERACIONAL</option></select></div>
           <div class="field"><label for="comEntryAmount">Total da venda (R$)</label><input type="text" id="comEntryAmount" inputmode="decimal" placeholder="R$ 0,00" required></div>
-          <button class="btn-accent" type="submit">LANÇAR</button>
+          <button class="btn-accent" type="submit" id="btnComEntrySubmit">LANÇAR</button>
+          <button class="btn-outline" type="button" id="btnComEntryCancelEdit" hidden>CANCELAR</button>
         </form>
         <div class="user-form-status" id="comEntryStatus" role="status" aria-live="polite"></div>
         <div class="com-total" id="comEntryTotal" hidden></div>
@@ -61450,7 +61451,8 @@ function renderHomeTasks(){
           : ' <span class="com-inactive-tag">'+(roleOf(item) === 'lider' ? 'LÍDER' : 'VENDEDOR')+'</span>')+'</td>'+
       '<td data-label="Total da venda" style="text-align:right">'+escapeHtml(formatCentsBRL(item.amountCents))+'</td>'+
       '<td data-label="Lançado por">'+escapeHtml((item.createdByName || '—')+(item.createdAt ? ' · '+formatDateTimeBR(item.createdAt) : ''))+'</td>'+
-      '<td data-label="Ações">'+(comManage && !comManage.canCredit ? '' : '<button class="btn-outline" type="button" data-com-entry-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>')+'</td></tr>'
+      '<td data-label="Ações">'+(comManage && !comManage.canCredit ? '' : '<button class="btn-outline" type="button" data-com-entry-edit="'+escapeHtml(item.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button> '+
+        '<button class="btn-outline" type="button" data-com-entry-delete="'+escapeHtml(item.id)+'">EXCLUIR</button>')+'</td></tr>'
     ).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhuma venda lançada em '+escapeHtml(comKindLabel(comEntryKind))+' neste mês.</td></tr>';
     if(total){
       total.innerHTML = '<span>Total '+escapeHtml(comKindLabel(comEntryKind))+' · '+items.length+(items.length === 1 ? ' venda' : ' vendas')+'</span>'+
@@ -61476,6 +61478,7 @@ function renderHomeTasks(){
     if(!button || button.dataset.comKind === comEntryKind) return;
     comEntryKind = button.dataset.comKind;
     comEntries = null;
+    comEntryResetEdit();
     comStatus('comEntryStatus', '');
     if(el('comEntriesBody')) el('comEntriesBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
     comRenderEntries();
@@ -61483,6 +61486,19 @@ function renderHomeTasks(){
   });
 
   if(el('comEntryAmount')) attachCurrencyMask(el('comEntryAmount'));
+  // EDITAR (pedido de 25/11/2026): o ✎ carrega a venda no formulário de cima;
+  // salvar corrige ID, vendedor e valor (mês e tabela ficam).
+  let comEntryEditing = '';
+  function comEntryResetEdit(){
+    comEntryEditing = '';
+    if(!el('btnComEntrySubmit')) return;
+    el('btnComEntrySubmit').textContent = 'LANÇAR';
+    el('btnComEntryCancelEdit').hidden = true;
+    el('comEntryRef').value = '';
+    setCurrencyValue(el('comEntryAmount'), '');
+  }
+  if(el('btnComEntryCancelEdit')) el('btnComEntryCancelEdit').addEventListener('click', () => { comEntryResetEdit(); comStatus('comEntryStatus', ''); });
+
   if(el('comEntryForm')) el('comEntryForm').addEventListener('submit', async event => {
     event.preventDefault();
     const saleRef = el('comEntryRef').value.trim();
@@ -61494,10 +61510,14 @@ function renderHomeTasks(){
     const button = el('comEntryForm').querySelector('[type="submit"]');
     button.disabled = true;
     try{
-      await comApi('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, kind: comEntryKind, saleRef, employeeId, amountCents})});
-      comStatus('comEntryStatus', '');
-      el('comEntryRef').value = '';
-      setCurrencyValue(el('comEntryAmount'), '');
+      if(comEntryEditing){
+        await comApi('/entries', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id: comEntryEditing, saleRef, employeeId, amountCents})});
+        comStatus('comEntryStatus', 'VENDA '+saleRef+' ATUALIZADA.');
+      }else{
+        await comApi('/entries', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({month: comMonth, kind: comEntryKind, saleRef, employeeId, amountCents})});
+        comStatus('comEntryStatus', '');
+      }
+      comEntryResetEdit();
       comOverview = null;
       comManage = null;
       await Promise.all([comLoadEntries(), comLoadManage()]);
@@ -61510,6 +61530,21 @@ function renderHomeTasks(){
   });
 
   if(el('comEntriesBody')) el('comEntriesBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-com-entry-edit]');
+    if(editButton){
+      const item = comEntries && comEntries.items.find(entry => entry.id === editButton.dataset.comEntryEdit);
+      if(!item) return;
+      comEntryEditing = item.id;
+      el('comEntryRef').value = item.saleRef;
+      el('comEntrySeller').value = item.employeeId;
+      setCurrencyValue(el('comEntryAmount'), item.amountCents / 100);
+      el('btnComEntrySubmit').textContent = 'SALVAR ALTERAÇÃO';
+      el('btnComEntryCancelEdit').hidden = false;
+      comStatus('comEntryStatus', 'EDITANDO A VENDA '+item.saleRef+' — ALTERE E CLIQUE EM SALVAR ALTERAÇÃO.');
+      el('comEntryForm').scrollIntoView({block:'nearest'});
+      el('comEntryRef').focus();
+      return;
+    }
     const button = event.target.closest('[data-com-entry-delete]');
     if(!button) return;
     const item = comEntries && comEntries.items.find(entry => entry.id === button.dataset.comEntryDelete);
