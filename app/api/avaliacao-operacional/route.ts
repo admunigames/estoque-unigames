@@ -34,12 +34,13 @@ const UNITS = [
   { name: "ADMINISTRATIVO", companyId: "" },
 ];
 
+// detail = legenda da planilha da avaliação (mostrada na pontuação e no PDF).
 const WEIGHTS = [
-  { weight: 1, label: "ERRO LEVE" },
-  { weight: 2, label: "ERRO OPERACIONAL PEQUENO" },
-  { weight: 3, label: "ERRO MODERADO" },
-  { weight: 4, label: "ERRO GRAVE" },
-  { weight: 5, label: "ERRO CRÍTICO OU RECORRENTE" },
+  { weight: 1, label: "ERRO LEVE", detail: "SEM IMPACTO REAL, FACILMENTE CORRIGIDO" },
+  { weight: 2, label: "ERRO OPERACIONAL PEQUENO", detail: "IMPACTA ROTINA, MAS NÃO GERA PREJUÍZO" },
+  { weight: 3, label: "ERRO MODERADO", detail: "GERA RETRABALHO" },
+  { weight: 4, label: "ERRO GRAVE", detail: "GERA PREJUÍZO OU QUEBRA DE PROCESSO" },
+  { weight: 5, label: "ERRO CRÍTICO OU RECORRENTE", detail: "DESCUMPRIMENTO DE REGRA" },
 ];
 
 const ACTIONS = ["view", "create", "edit", "delete"];

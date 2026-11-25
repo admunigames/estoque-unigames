@@ -4172,6 +4172,10 @@
   }
   /* Avaliação de Desempenho: campos do formulário na mesma altura dos selects. */
   #avopForm input{min-height:40px;}
+  /* Legenda dos pesos, compacta, logo acima da pontuação. */
+  .avop-legend{display:flex; flex-wrap:wrap; gap:4px 18px; margin:0 0 10px; font-size:11px; line-height:1.4; color:var(--ink-soft);}
+  .avop-legend b{display:inline-grid; place-items:center; min-width:18px; height:18px; margin-right:4px; border-radius:5px; background:var(--accent); color:#fff; font-size:10.5px;}
+  .avop-legend small{font-size:inherit; opacity:.8;}
   /* IMPRESSÃO EM FOLHA LIMPA (todos os PDFs com pdf-export) — fica no FIM da
      folha de estilos de propósito: as cores de cada tema (html[data-theme=…])
      e o fundo do Vidro (body::before com degradê fixo) ganhavam das regras de
@@ -9058,6 +9062,7 @@
         </div>
       </form>
       <h3 class="supply-section-title">PONTUAÇÃO DO MÊS <small id="avopRankingHint">(MENOR PONTUAÇÃO = LOJA PREMIUM)</small></h3>
+      <div class="avop-legend" id="avopLegend"></div>
       <div class="table-panel responsive-table"><div class="table-scroll">
         <table><thead id="avopRankingHead"></thead><tbody id="avopRankingBody"><tr><td class="responsive-empty">Carregando…</td></tr></tbody></table>
       </div></div>
@@ -33058,6 +33063,7 @@ function renderHomeTasks(){
     const all = avopData.allUnits;
     const weights = avopData.weights;
     el('avopRankingHint').hidden = !all;
+    el('avopLegend').innerHTML = weights.map(item => '<span><b>'+item.weight+'</b> '+escapeHtml(item.label)+(item.detail ? ' <small>— '+escapeHtml(item.detail)+'</small>' : '')+'</span>').join('');
     el('avopRankingHead').innerHTML = '<tr>'+(all ? '<th>Posição</th>' : '')+'<th>Unidade</th><th>Pontos</th><th>Situações</th>'+
       weights.map(item => '<th title="'+escapeHtml(item.label)+'">Peso '+item.weight+'</th>').join('')+'</tr>';
     el('avopRankingBody').innerHTML = avopData.ranking.length ? avopData.ranking.map(row =>
@@ -33168,7 +33174,7 @@ function renderHomeTasks(){
         weights.map(item => '<th>Peso '+item.weight+'</th>').join('')+'</tr></thead><tbody>'+
         avopData.ranking.map(row => '<tr>'+(all ? '<td>'+avopPosition(row)+'º</td>' : '')+'<td>'+escapeHtml(row.unit)+(row.premium ? ' · LOJA PREMIUM' : '')+'</td><td>'+row.total+'</td><td>'+row.count+'</td>'+
           weights.map(item => '<td>'+(row.byWeight[item.weight] || 0)+'</td>').join('')+'</tr>').join('')+
-      '</tbody></table><p class="print-report-meta">'+weights.map(item => escapeHtml(item.weight+' = '+item.label)).join(' · ')+'</p></section>'+
+      '</tbody></table><p class="print-report-meta">'+weights.map(item => escapeHtml(item.weight+' = '+item.label+(item.detail ? ' ('+item.detail+')' : ''))).join(' · ')+'</p></section>'+
       withItems.map(row =>
         '<section class="os-print-section"><h2>'+escapeHtml(row.unit)+' · '+row.total+' PONTOS</h2>'+
         '<table class="os-print-table"><thead><tr><th style="width:11%">Data</th><th style="width:16%">Quem cometeu</th><th>O que houve</th><th style="width:20%">Peso / tipo</th><th style="width:14%">Lançado por</th></tr></thead><tbody>'+
