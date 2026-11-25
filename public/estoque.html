@@ -8265,6 +8265,7 @@
           <div class="field full"><label for="recFilterSearch">BUSCAR POR NOME</label><input id="recFilterSearch" placeholder="Nome do candidato..."></div>
           <div class="dre-toolbar-actions">
             <button class="btn-outline" id="btnRecPendingTexts" type="button" data-permission="rh_recrutamento:manage">TEXTOS DAS PENDÊNCIAS</button>
+            <button class="btn-outline" id="btnRecBatch" type="button">CADASTRO EM LOTE</button>
             <button class="btn-accent" id="btnNewRecCandidate" type="button">NOVO CANDIDATO</button>
           </div>
         </div>
@@ -15021,6 +15022,43 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelFardTermDialog" type="button">CANCELAR</button>
       <button class="btn-accent" id="btnSaveFardTerm" type="submit">SALVAR</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="purchase-dialog" id="recBatchDialog" aria-labelledby="recBatchDialogTitle">
+  <div class="purchase-dialog-head">
+    <h3 id="recBatchDialogTitle">CADASTRO EM LOTE DE CANDIDATOS</h3>
+    <button class="purchase-dialog-close" id="btnCloseRecBatch" type="button" aria-label="Fechar">×</button>
+  </div>
+  <form class="purchase-form" id="recBatchForm">
+    <div class="purchase-form-grid">
+      <div class="purchase-field full"><label for="recBatchText">COLE A LISTA (UM CANDIDATO POR LINHA)</label>
+        <textarea id="recBatchText" rows="7" placeholder="MARIA DA SILVA - (81) 99999-0000&#10;JOÃO SANTOS - 81988887777&#10;Ou cole as colunas da planilha: NOME · CONTATO · CARGO · DATA · HORA"></textarea>
+        <p class="purchase-field-help">CADA LINHA: NOME E CONTATO (SEPARADOS POR " - ", ";" OU TAB). COLUNAS DE PLANILHA TAMBÉM SERVEM: CARGO, DATA (DD/MM/AAAA) E HORA (HH:MM) SÃO RECONHECIDOS SOZINHOS.</p>
+      </div>
+      <div class="purchase-field"><label for="recBatchStatus">STATUS INICIAL</label><select id="recBatchStatus">
+        <option value="selecionado_entrevista">SELECIONADO ENTREVISTA</option>
+        <option value="em_teste">EM TESTE</option>
+        <option value="em_treinamento">EM TREINAMENTO</option>
+        <option value="stand_by">STAND BY</option>
+      </select></div>
+      <div class="purchase-field"><label for="recBatchRole">CARGO PRETENDIDO (PARA TODOS SEM CARGO)</label><input id="recBatchRole" maxlength="120"></div>
+      <div class="purchase-field"><label for="recBatchDate">DATA DA ENTREVISTA (PARA TODOS SEM DATA)</label><input type="date" id="recBatchDate"></div>
+      <div class="purchase-field"><label for="recBatchTime">HORA (PARA TODOS SEM HORA)</label><input type="time" id="recBatchTime"></div>
+    </div>
+    <div class="table-panel responsive-table" style="margin-top:10px;">
+      <div class="table-scroll" style="max-height:320px;">
+        <table>
+          <thead><tr><th>Cadastrar</th><th>Nome</th><th>Contato</th><th>Cargo</th><th>Entrevista</th><th>Aviso</th></tr></thead>
+          <tbody id="recBatchPreview"><tr><td colspan="6" class="responsive-empty">Cole a lista acima.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="recBatchStatusText" role="status" aria-live="polite"></div>
+    <div class="purchase-dialog-actions">
+      <button class="btn-outline" id="btnCancelRecBatch" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRecBatch" type="submit" disabled>CADASTRAR</button>
     </div>
   </form>
 </dialog>
@@ -56960,6 +56998,7 @@ function renderHomeTasks(){
     rhFillSelect('recFixedUnitId','SELECIONE',rhCompanyOptions());
     rhFillSelect('recSponsorCompanyId','SELECIONE',rhCompanyOptions());
     if(el('btnNewRecCandidate')) el('btnNewRecCandidate').hidden = !recCanManage();
+    if(el('btnRecBatch')) el('btnRecBatch').hidden = !recCanManage();
     el('recCandidatesTableBody').innerHTML = '<tr><td colspan="7" class="responsive-empty">Carregando…</td></tr>';
     try{
       const status = el('recFilterStatus').value;
@@ -58031,6 +58070,123 @@ function renderHomeTasks(){
   }
 
   if(el('btnNewRecCandidate')) el('btnNewRecCandidate').addEventListener('click', () => openRecCandidateDialog(null));
+
+  // ---------------- CADASTRO EM LOTE (25/11/2026) ----------------
+  // Cola a lista (NOME - CONTATO por linha, ou colunas da planilha), confere a
+  // prévia e cadastra todos de uma vez. Quem já existe (mesmo nome ou mesmo
+  // telefone) vem desmarcado; repetido na própria lista, idem.
+  let recBatchRows = [];
+  let recBatchExisting = [];
+  const recBatchDigits = value => String(value || '').replace(/\D+/g, '');
+  const recBatchKey = value => normalizeSearchText(String(value || '')).replace(/\s+/g, ' ').trim();
+
+  function recBatchParseLine(line){
+    let cells = line.includes('\t') ? line.split('\t') : line.split(/\s+[-–—]\s+|;|\|/);
+    cells = cells.map(cell => cell.trim()).filter(Boolean);
+    const row = {fullName:'', phone:'', desiredRole:'', interviewDate:'', interviewTime:''};
+    const texts = [];
+    cells.forEach(cell => {
+      const date = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(cell);
+      const time = /^(\d{1,2})[:hH](\d{2})$/.exec(cell);
+      if(date){ row.interviewDate = date[3]+'-'+date[2].padStart(2,'0')+'-'+date[1].padStart(2,'0'); return; }
+      if(time){ row.interviewTime = time[1].padStart(2,'0')+':'+time[2]; return; }
+      if(/^[\d\s()+.\-]+$/.test(cell) && recBatchDigits(cell).length >= 8){ if(!row.phone) row.phone = cell; return; }
+      texts.push(cell);
+    });
+    // "NOME 81999990000" numa célula só: o telefone no fim vira contato.
+    if(!row.phone && texts.length){
+      const tail = /^(.*?)[\s,:]+(\+?\d[\d\s().-]{7,})$/.exec(texts[0]);
+      if(tail && recBatchDigits(tail[2]).length >= 8){ texts[0] = tail[1].trim(); row.phone = tail[2].trim(); }
+    }
+    row.fullName = (texts[0] || '').toLocaleUpperCase('pt-BR');
+    row.desiredRole = (texts[1] || '').toLocaleUpperCase('pt-BR');
+    return row;
+  }
+
+  function recBatchParse(){
+    const lines = el('recBatchText').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const previous = new Map(recBatchRows.map(row => [row.key, row.include]));
+    const seen = new Set();
+    recBatchRows = lines
+      .filter((line, index) => !(index === 0 && /^nome\b/i.test(line) && recBatchDigits(line).length < 8))
+      .map(line => {
+        const row = recBatchParseLine(line);
+        const phone = recBatchDigits(row.phone);
+        const nameKey = recBatchKey(row.fullName);
+        const existing = recBatchExisting.find(item => recBatchKey(item.fullName) === nameKey || (phone.length >= 8 && recBatchDigits(item.phone) === phone));
+        const repeated = seen.has(nameKey) || (phone.length >= 8 && seen.has(phone));
+        seen.add(nameKey); if(phone.length >= 8) seen.add(phone);
+        const warning = !row.fullName ? 'SEM NOME' : existing ? 'JÁ CADASTRADO ('+(REC_STATUS_LABELS[existing.status] || existing.status).toUpperCase()+')' : repeated ? 'REPETIDO NA LISTA' : '';
+        const key = nameKey+'|'+phone;
+        return {...row, key, warning, include: previous.has(key) ? previous.get(key) : !warning};
+      });
+    recBatchRender();
+  }
+
+  function recBatchRender(){
+    const body = el('recBatchPreview');
+    const role = el('recBatchRole').value.trim().toLocaleUpperCase('pt-BR');
+    const date = el('recBatchDate').value, time = el('recBatchTime').value;
+    if(!recBatchRows.length){
+      body.innerHTML = '<tr><td colspan="6" class="responsive-empty">Cole a lista acima.</td></tr>';
+    }else{
+      body.innerHTML = recBatchRows.map((row, index) => '<tr>'+
+        '<td><input type="checkbox" data-rec-batch-include="'+index+'"'+(row.include ? ' checked' : '')+(row.fullName ? '' : ' disabled')+' aria-label="Cadastrar"></td>'+
+        '<td>'+escapeHtml(row.fullName || '—')+'</td>'+
+        '<td>'+escapeHtml(row.phone || '—')+'</td>'+
+        '<td>'+escapeHtml(row.desiredRole || role || '—')+'</td>'+
+        '<td>'+escapeHtml([(row.interviewDate || date) ? rhFormatDate(row.interviewDate || date) : '', row.interviewTime || time].filter(Boolean).join(' ') || '—')+'</td>'+
+        '<td>'+(row.warning ? '<span class="status-pill warn">'+escapeHtml(row.warning)+'</span>' : '<span class="status-pill done">NOVO</span>')+'</td>'+
+      '</tr>').join('');
+    }
+    const count = recBatchRows.filter(row => row.include && row.fullName).length;
+    el('btnSaveRecBatch').disabled = !count;
+    el('btnSaveRecBatch').textContent = count ? 'CADASTRAR '+count+' CANDIDATO(S)' : 'CADASTRAR';
+  }
+
+  if(el('btnRecBatch')) el('btnRecBatch').addEventListener('click', async () => {
+    el('recBatchForm').reset();
+    recBatchRows = [];
+    el('recBatchStatusText').textContent = '';
+    recBatchRender();
+    el('recBatchDialog').showModal();
+    // Todos os candidatos (de qualquer status) para avisar quem já existe.
+    try{
+      const data = await recApiRequest('/candidates');
+      recBatchExisting = Array.isArray(data.candidates) ? data.candidates : [];
+    }catch(error){
+      recBatchExisting = recCandidates.slice();
+    }
+  });
+  if(el('recBatchText')) el('recBatchText').addEventListener('input', debounce(recBatchParse, 200));
+  ['recBatchRole','recBatchDate','recBatchTime'].forEach(id => { if(el(id)) el(id).addEventListener('input', recBatchRender); });
+  if(el('recBatchPreview')) el('recBatchPreview').addEventListener('change', event => {
+    const box = event.target.closest('[data-rec-batch-include]');
+    if(!box) return;
+    recBatchRows[Number(box.dataset.recBatchInclude)].include = box.checked;
+    recBatchRender();
+  });
+  ['btnCloseRecBatch','btnCancelRecBatch'].forEach(id => { if(el(id)) el(id).addEventListener('click', () => el('recBatchDialog').close()); });
+  if(el('recBatchForm')) el('recBatchForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const role = el('recBatchRole').value.trim(), date = el('recBatchDate').value, time = el('recBatchTime').value;
+    const items = recBatchRows.filter(row => row.include && row.fullName).map(row => ({
+      fullName: row.fullName, phone: row.phone,
+      desiredRole: row.desiredRole || role, interviewDate: row.interviewDate || date, interviewTime: row.interviewTime || time
+    }));
+    if(!items.length) return;
+    const button = el('btnSaveRecBatch');
+    button.disabled = true;
+    try{
+      const data = await recApiRequest('/candidates/batch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status: el('recBatchStatus').value, items})});
+      el('recBatchDialog').close();
+      showPurchaseToast(Number(data.created || 0)+' candidato(s) cadastrado(s).');
+      await loadRecCandidates();
+    }catch(error){
+      el('recBatchStatusText').textContent = error.message;
+      button.disabled = false;
+    }
+  });
   if(el('btnCloseRecCandidateDialog')) el('btnCloseRecCandidateDialog').addEventListener('click', () => el('recCandidateDialog').close());
   if(el('btnCancelRecCandidateDialog')) el('btnCancelRecCandidateDialog').addEventListener('click', () => el('recCandidateDialog').close());
 
