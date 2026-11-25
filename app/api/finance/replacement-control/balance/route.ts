@@ -5,7 +5,10 @@ import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type Js
 
 // Saldos do CONTROLE DE REPOSIÇÃO por conta de responsável (23/11/2026):
 // - { action: 'initial', responsibleName, month, amountCents } → SALDO INICIAL
-//   da conta, vale a partir do mês (gravar de novo substitui o anterior);
+//   da conta, vale a partir do mês (gravar de novo substitui o anterior — é o
+//   EDITAR da tela);
+// - { action: 'delete_initial', responsibleName, month } → EXCLUI o saldo
+//   inicial da conta (25/11/2026);
 // - { action: 'close', month } → FINALIZAR MÊS: grava o saldo final de cada
 //   conta (vira o SALDO MÊS ANTERIOR do mês seguinte) e trava os lançamentos
 //   do mês;
@@ -50,6 +53,19 @@ export async function POST(request: Request) {
           .bind(crypto.randomUUID(), month, responsibleName, amountCents, actor.id, who),
       ]);
       return jsonResponse({ saved: true, name: responsibleName, month, amountCents });
+    }
+
+    if (action === "delete_initial") {
+      const responsibleName = safeText(body.responsibleName, 160).toLocaleUpperCase("pt-BR");
+      if (!responsibleName) return jsonResponse({ error: "INFORME O RESPONSÁVEL (DONO DA CONTA)." }, 400);
+      if (closedMonths.has(month)) return jsonResponse({ error: `O MÊS ${monthLabel(month)} ESTÁ FINALIZADO. REABRA O MÊS PARA ALTERAR.` }, 409);
+      // RETURNING: no Postgres (d1-compat) o "changes" é o número de linhas devolvidas.
+      const deleted = await database
+        .prepare("DELETE FROM finance_replacement_balances WHERE kind='initial' AND responsible_name=?1 RETURNING id")
+        .bind(responsibleName)
+        .all<{ id: string }>();
+      if (!(deleted.results ?? []).length) return jsonResponse({ error: "SALDO INICIAL NÃO ENCONTRADO. ATUALIZE A TELA." }, 404);
+      return jsonResponse({ deleted: true, name: responsibleName, month });
     }
 
     if (action === "close") {

@@ -127,3 +127,20 @@ test("OUTROS (ENTRADA) soma e OUTROS (SAÍDA) subtrai; filtro TIPO = OUTROS (25/
   assert.deepEqual(outros.rows.map((row) => row.kind).sort(), ["outros_entrada", "outros_saida"]);
   assert.equal((await get("monthFrom=2026-12&monthTo=2026-12&kind=entrada")).rows.length, 1);
 });
+
+test("SALDO INICIAL: editar (gravar de novo substitui) e EXCLUIR; mês finalizado trava (25/11/2026)", async () => {
+  const initial = (body) => post(balance.POST, `${api}/balance`, { action: "initial", ...body });
+  const del = (body) => post(balance.POST, `${api}/balance`, { action: "delete_initial", ...body });
+  const list = async () => (await get("monthFrom=2027-03&monthTo=2027-03")).initialBalances.filter((row) => row.responsibleName === "ELIS");
+  await initial({ responsibleName: "elis", month: "2027-03", amountCents: 1_000 });
+  await initial({ responsibleName: "ELIS", month: "2027-03", amountCents: -250 });
+  assert.deepEqual((await list()).map((row) => [row.month, row.amountCents]), [["2027-03", -250]]);
+  assert.equal((await del({ responsibleName: "ELIS", month: "2027-03" })).deleted, true);
+  assert.equal((await list()).length, 0);
+  assert.equal((await del({ responsibleName: "ELIS", month: "2027-03" })).status, 404);
+  await post(route.POST, api, entry({ entryDate: "2027-04-02", responsibleName: "ELIS" }));
+  await initial({ responsibleName: "ELIS", month: "2027-04", amountCents: 500 });
+  await post(balance.POST, `${api}/balance`, { action: "close", month: "2027-04" });
+  assert.equal((await del({ responsibleName: "ELIS", month: "2027-04" })).status, 409);
+  await post(balance.POST, `${api}/balance`, { action: "reopen", month: "2027-04" });
+});

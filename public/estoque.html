@@ -13647,7 +13647,7 @@
       <div class="purchase-field"><label for="reposicaoSaldoValor">SALDO NO INÍCIO DO MÊS (R$) *</label><input type="text" inputmode="decimal" id="reposicaoSaldoValor" placeholder="R$ 0,00" required></div>
       <label class="assist-check"><input type="checkbox" id="reposicaoSaldoNegativo"> SALDO NEGATIVO</label>
     </div>
-    <p class="purchase-field-help">GRAVAR DE NOVO SUBSTITUI O SALDO INICIAL DESSA CONTA. DEPOIS DE CADA MÊS FINALIZADO, O SALDO FINAL VIRA O SALDO MÊS ANTERIOR DO MÊS SEGUINTE.</p>
+    <p class="purchase-field-help">GRAVAR DE NOVO SUBSTITUI O SALDO INICIAL DESSA CONTA (OU USE ✎ / EXCLUIR NA LISTA ABAIXO). DEPOIS DE CADA MÊS FINALIZADO, O SALDO FINAL VIRA O SALDO MÊS ANTERIOR DO MÊS SEGUINTE.</p>
     <div id="reposicaoSaldoLista" class="page-desc"></div>
     <div class="user-form-status" id="reposicaoSaldoFormStatus" role="status" aria-live="polite"></div>
     <div class="purchase-form-actions">
@@ -45861,10 +45861,41 @@ function renderHomeTasks(){
   ['reposicaoFiltroResponsavel', 'reposicaoMesDe', 'reposicaoMesAte'].forEach(id => el(id) && el(id).addEventListener('change', reloadReposicao));
   function renderReposicaoSaldoLista(){
     const initials = (reposicaoData && Array.isArray(reposicaoData.initialBalances)) ? reposicaoData.initialBalances : [];
+    // 25/11/2026: ✎ carrega no formulário (salvar substitui) e EXCLUIR apaga o saldo inicial da conta.
     el('reposicaoSaldoLista').innerHTML = initials.length
-      ? '<strong>SALDOS INICIAIS GRAVADOS:</strong><br>'+initials.map(b => escapeHtml(b.responsibleName)+' — '+formatCentsBRL(b.amountCents)+' A PARTIR DE '+rpMonthLabel(b.month)).join('<br>')
+      ? '<strong>SALDOS INICIAIS GRAVADOS:</strong>'+initials.map((b, index) =>
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;"><span style="flex:1 1 220px;">'+escapeHtml(b.responsibleName)+' — '+formatCentsBRL(b.amountCents)+' A PARTIR DE '+rpMonthLabel(b.month)+'</span>'+
+        '<button class="btn-outline btn-sm" type="button" data-rp-saldo-edit="'+index+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
+        '<button class="btn-danger-outline btn-sm" type="button" data-rp-saldo-del="'+index+'">EXCLUIR</button></div>').join('')
       : 'NENHUM SALDO INICIAL GRAVADO AINDA.';
   }
+  el('reposicaoSaldoLista').addEventListener('click', async event => {
+    const initials = (reposicaoData && Array.isArray(reposicaoData.initialBalances)) ? reposicaoData.initialBalances : [];
+    const editButton = event.target.closest('[data-rp-saldo-edit]');
+    const delButton = event.target.closest('[data-rp-saldo-del]');
+    const item = initials[Number((editButton || delButton || {dataset:{}}).dataset[editButton ? 'rpSaldoEdit' : 'rpSaldoDel'])];
+    if(!item) return;
+    const status = el('reposicaoSaldoFormStatus');
+    if(editButton){
+      el('reposicaoSaldoResponsavel').value = item.responsibleName;
+      el('reposicaoSaldoMes').value = item.month;
+      setCurrencyValue(el('reposicaoSaldoValor'), Math.abs(Number(item.amountCents) || 0) / 100);
+      el('reposicaoSaldoNegativo').checked = Number(item.amountCents) < 0;
+      status.textContent = 'EDITANDO O SALDO INICIAL DE '+item.responsibleName+'. ALTERE E CLIQUE EM SALVAR SALDO.';
+      el('reposicaoSaldoValor').focus();
+      return;
+    }
+    if(!await askConfirm('EXCLUIR O SALDO INICIAL DE '+item.responsibleName+' ('+formatCentsBRL(item.amountCents)+' A PARTIR DE '+rpMonthLabel(item.month)+')? A CONTA PASSA A COMEÇAR DO ZERO, OU DO ÚLTIMO MÊS FINALIZADO.', {okText:'EXCLUIR', danger:true})) return;
+    try{
+      await financeApiRequest('/replacement-control/balance', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        action:'delete_initial', responsibleName: item.responsibleName, month: item.month
+      })});
+      await reloadReposicao();
+      renderReposicaoSaldoLista();
+      status.textContent = 'SALDO INICIAL EXCLUÍDO.';
+      showPurchaseToast('Saldo inicial excluído.');
+    }catch(error){ status.textContent = error.message; }
+  });
   el('btnReposicaoSaldoInicial') && el('btnReposicaoSaldoInicial').addEventListener('click', () => {
     el('reposicaoSaldoForm').reset();
     el('reposicaoSaldoResponsavel').value = el('reposicaoFiltroResponsavel').value.trim();
