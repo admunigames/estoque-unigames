@@ -10,8 +10,9 @@
 // (vale a partir do mês dele) ou o FECHAMENTO de um mês já finalizado (vale
 // a partir do mês seguinte) — o que começar mais tarde. Sem base, parte de 0.
 
-export const INFLOW_KINDS = ["entrada", "reposicao", "recuperacao"];
-export const OUTFLOW_KINDS = ["saida", "ressarcimento", "prejuizo"];
+// OUTROS (ENTRADA) soma e OUTROS (SAÍDA) subtrai, como entrada/saída (25/11/2026).
+export const INFLOW_KINDS = ["entrada", "reposicao", "recuperacao", "outros_entrada"];
+export const OUTFLOW_KINDS = ["saida", "ressarcimento", "prejuizo", "outros_saida"];
 
 export type BalanceEntry = { entryDate: string; amountCents: number; kind: string; responsibleName: string };
 export type BalanceRow = { kind: "initial" | "closing" | string; month: string; responsibleName: string; amountCents: number };

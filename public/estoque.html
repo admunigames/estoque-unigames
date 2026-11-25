@@ -11226,6 +11226,7 @@
             <option value="">ENTRADAS E SAÍDAS</option>
             <option value="entrada">ENTRADA</option>
             <option value="saida">SAÍDA</option>
+            <option value="outros">OUTROS (ENTRADA E SAÍDA)</option>
           </select>
         </div>
         <div class="field"><label for="reposicaoFiltroResponsavel">RESPONSÁVEL</label><input id="reposicaoFiltroResponsavel" list="reposicaoResponsaveisList" maxlength="160" placeholder="TODOS — ESCOLHA OU DIGITE"></div>
@@ -11281,31 +11282,6 @@
         </div>
       </div>
 
-      <h3 class="supply-section-title">BATER COM O EXTRATO BANCÁRIO</h3>
-      <p class="page-desc">AS SAÍDAS VÊM DOS EXTRATOS JÁ IMPORTADOS NA CONCILIAÇÃO BANCÁRIA. BATA CADA SAÍDA COM O LANÇAMENTO DE REPOSIÇÃO — A REPOSIÇÃO NÃO É LIGADA A CONTA CADASTRADA, SÓ AO RESPONSÁVEL. O QUE FICAR SEM PAR APARECE NOS DOIS LADOS.</p>
-      <div class="dre-toolbar">
-        <div class="field"><label for="rpBankResponsible">RESPONSÁVEL</label><select id="rpBankResponsible"><option value="">TODOS</option></select></div>
-        <div class="field"><label for="rpBankMonth">MÊS</label><input type="month" id="rpBankMonth"></div>
-      </div>
-      <div class="user-form-status" id="rpBankStatus" role="status" aria-live="polite"></div>
-      <section class="summary" id="rpBankSummary" aria-label="Resumo do extrato"></section>
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table id="rpBankTable">
-            <thead><tr><th>Data</th><th>Histórico</th><th>Saída</th><th>Lançamento de reposição</th><th></th></tr></thead>
-            <tbody id="rpBankBody"><tr><td colspan="5" class="responsive-empty">Escolha o mês.</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-      <h3 class="supply-section-title">LANÇAMENTOS DO MÊS SEM PAR NO EXTRATO</h3>
-      <div class="table-panel responsive-table">
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>Data</th><th>Unidade</th><th>Produto</th><th>Motivo</th><th>Valor</th></tr></thead>
-            <tbody id="rpUnmatchedBody"><tr><td colspan="5" class="responsive-empty">—</td></tr></tbody>
-          </table>
-        </div>
-      </div>
     </section>
 
     <section id="pageFinanceiroRecargas" class="page wrap">
@@ -11944,9 +11920,12 @@
           <option value="">SELECIONE</option>
           <option value="entrada">ENTRADA</option>
           <option value="saida">SAÍDA</option>
+          <option value="outros_entrada">OUTROS (ENTRADA)</option>
+          <option value="outros_saida">OUTROS (SAÍDA)</option>
         </select>
       </div>
-      <div class="purchase-field"><label for="reposicaoSetorForm">SETOR</label><select id="reposicaoSetorForm"><option value="">SEM SETOR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
+      <!-- 25/11/2026: OUTROS saiu do SETOR (virou tipo). A opção fica só para os lançamentos antigos que já têm. -->
+      <div class="purchase-field"><label for="reposicaoSetorForm">SETOR</label><select id="reposicaoSetorForm"><option value="">SEM SETOR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros" hidden disabled>OUTROS</option></select></div>
       <div class="purchase-field"><label for="reposicaoCategoria">CATEGORIA</label><input id="reposicaoCategoria" list="reposicaoCategoriasList" maxlength="120" placeholder="OPCIONAL — ESCOLHA OU DIGITE"></div>
       <div class="purchase-field full"><label for="reposicaoItemFinanceiro">CATEGORIA FINANCEIRA</label><select id="reposicaoItemFinanceiro" data-finance-item-picker data-placeholder="SEM CATEGORIA FINANCEIRA"><option value="">SEM CATEGORIA FINANCEIRA</option></select></div>
       <div class="purchase-field"><label for="reposicaoValor">VALOR (R$) *</label><input type="text" inputmode="decimal" id="reposicaoValor" placeholder="R$ 0,00" required></div>
@@ -13600,7 +13579,7 @@
   </div>
   <form class="purchase-form" id="reposicaoBulkForm">
     <div class="purchase-form-grid">
-      <div class="purchase-field"><label for="reposicaoBulkSetor">SETOR</label><select id="reposicaoBulkSetor"><option value="">NÃO ALTERAR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
+      <div class="purchase-field"><label for="reposicaoBulkSetor">SETOR</label><select id="reposicaoBulkSetor"><option value="">NÃO ALTERAR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option></select></div>
       <div class="purchase-field"><label for="reposicaoBulkCategoria">CATEGORIA</label><input id="reposicaoBulkCategoria" list="reposicaoCategoriasList" maxlength="120" placeholder="EM BRANCO = NÃO ALTERAR"></div>
       <div class="purchase-field full"><label for="reposicaoBulkItemFinanceiro">CATEGORIA FINANCEIRA</label><select id="reposicaoBulkItemFinanceiro" data-finance-item-picker data-placeholder="NÃO ALTERAR"><option value="">NÃO ALTERAR</option></select></div>
       <div class="purchase-field full"><label for="reposicaoBulkMotivo">MOTIVO</label><input id="reposicaoBulkMotivo" maxlength="500" placeholder="EM BRANCO = NÃO ALTERAR"></div>
@@ -13681,7 +13660,7 @@
     <p class="purchase-field-help">LINHAS SEM MOTIVO E SEM VALOR SÃO IGNORADAS. AS PULADAS FICAM NA GRADE COM O MOTIVO DO ERRO.</p>
     <div class="purchase-form-grid">
       <div class="purchase-field"><label for="reposicaoBatchSector">SETOR (TODAS AS LINHAS)</label>
-        <select id="reposicaoBatchSector"><option value="">SEM SETOR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option><option value="outros">OUTROS</option></select></div>
+        <select id="reposicaoBatchSector"><option value="">SEM SETOR</option><option value="assistencia">ASSISTÊNCIA</option><option value="logistica">LOGÍSTICA</option></select></div>
     </div>
     <div class="table-panel responsive-table decl-batch-table cr-batch-table">
       <div class="table-scroll">
@@ -13734,30 +13713,6 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelObraBulk" type="button">CANCELAR</button>
       <button class="btn-accent" type="submit">APLICAR</button>
-    </div>
-  </form>
-</dialog>
-
-<dialog class="purchase-dialog" id="rpLinkDialog" aria-labelledby="rpLinkTitle">
-  <div class="purchase-dialog-head">
-    <h3 id="rpLinkTitle">BATER SAÍDA DO EXTRATO</h3>
-    <button class="purchase-dialog-close" id="btnCloseRpLink" type="button" aria-label="Fechar">×</button>
-  </div>
-  <form class="purchase-form" id="rpLinkForm">
-    <p class="purchase-field-help" id="rpLinkExit"></p>
-    <div class="table-panel responsive-table">
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th class="bulk-col" aria-label="Selecionar"></th><th>Data</th><th>Unidade</th><th>Produto</th><th>Valor</th></tr></thead>
-          <tbody id="rpLinkBody"></tbody>
-        </table>
-      </div>
-    </div>
-    <p class="purchase-field-help" id="rpLinkTotal"></p>
-    <div class="user-form-status" id="rpLinkStatus" role="status" aria-live="polite"></div>
-    <div class="purchase-form-actions">
-      <button class="btn-outline" id="btnCancelRpLink" type="button">CANCELAR</button>
-      <button class="btn-accent" type="submit">BATER</button>
     </div>
   </form>
 </dialog>
@@ -45433,8 +45388,10 @@ function renderHomeTasks(){
   // ----- Controle de Reposição -----
   // 23/11/2026: lançamento é só ENTRADA ou SAÍDA; os tipos antigos continuam
   // gravados e aparecem/somam no grupo (mesma regra de app/lib/replacement-balance.ts).
-  const REPOSICAO_KIND_LABELS = {entrada:'ENTRADA', saida:'SAÍDA'};
-  const REPOSICAO_KIND_GROUP = {entrada:'entrada', reposicao:'entrada', recuperacao:'entrada', saida:'saida', ressarcimento:'saida', prejuizo:'saida'};
+  // OUTROS (ENTRADA) soma no saldo e OUTROS (SAÍDA) subtrai (25/11/2026).
+  const REPOSICAO_KIND_LABELS = {entrada:'ENTRADA', saida:'SAÍDA', outros_entrada:'OUTROS (ENTRADA)', outros_saida:'OUTROS (SAÍDA)'};
+  const REPOSICAO_KIND_GROUP = {entrada:'entrada', reposicao:'entrada', recuperacao:'entrada', outros_entrada:'entrada', saida:'saida', ressarcimento:'saida', prejuizo:'saida', outros_saida:'saida'};
+  const rpKindLabel = kind => REPOSICAO_KIND_LABELS[kind] || REPOSICAO_KIND_LABELS[rpKindGroup(kind)];
   const rpKindGroup = kind => REPOSICAO_KIND_GROUP[kind] || 'saida';
   const REPOSICAO_SECTOR_LABELS = {assistencia:'ASSISTÊNCIA', logistica:'LOGÍSTICA', outros:'OUTROS'};
   let reposicaoRows = [];
@@ -45456,7 +45413,6 @@ function renderHomeTasks(){
       el('reposicaoMesDe').value = el('reposicaoMesAte').value = todayDateKeyRecife().slice(0, 7);
     }
     await reloadReposicao();
-    await loadRpBank();
   }
   async function reloadReposicao(){
     const body = el('reposicaoTableBody');
@@ -45575,7 +45531,7 @@ function renderHomeTasks(){
         '<td data-label="Setor">'+escapeHtml(REPOSICAO_SECTOR_LABELS[r.sector] || r.sector || '—')+'</td>'+
         '<td data-label="Categoria">'+(categoryCell || '—')+'</td>'+
         '<td data-label="Responsável">'+escapeHtml(r.responsibleName || '—')+'</td>'+
-        '<td data-label="Tipo"><span class="status-pill'+(rpKindGroup(r.kind) === 'entrada' ? ' ok' : '')+'">'+REPOSICAO_KIND_LABELS[rpKindGroup(r.kind)]+'</span></td>'+
+        '<td data-label="Tipo"><span class="status-pill'+(rpKindGroup(r.kind) === 'entrada' ? ' ok' : '')+'">'+rpKindLabel(r.kind)+'</span></td>'+
         '<td data-label="Valor">'+formatCentsBRL(r.amountCents)+
           (r.repeated ? ' <span class="status-pill alert" title="Outro lançamento com a mesma data, o mesmo valor e o mesmo tipo">REPETIDO</span>' : '')+'</td>'+
         '<td data-label="Despesa">'+despesaCell+'</td>'+
@@ -45635,7 +45591,7 @@ function renderHomeTasks(){
       }
       el('reposicaoDeleteDialog').close();
       reposicaoBulk.clear();
-      await Promise.all([reloadReposicao(), loadRpBank()]);
+      await reloadReposicao();
     }catch(error){ el('reposicaoDeleteStatus').textContent = error.message; }
     finally{ button.disabled = false; }
   });
@@ -45852,121 +45808,7 @@ function renderHomeTasks(){
     finally{ button.disabled = false; }
   });
 
-  // ----- Controle de Reposição × EXTRATO (saídas do extrato batidas com os lançamentos) -----
-  let rpBankData = null;
-  let rpLinkAfterSave = '';
-  let rpLinkExitId = '';
-  async function loadRpBank(){
-    if(!el('rpBankMonth').value) el('rpBankMonth').value = financeCurrentMonthKey();
-    const params = new URLSearchParams({month: el('rpBankMonth').value});
-    if(el('rpBankResponsible').value) params.set('responsibleName', el('rpBankResponsible').value);
-    el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">Carregando…</td></tr>';
-    try{
-      rpBankData = await financeApiRequest('/replacement-control/bank?'+params.toString());
-      fillSelect('rpBankResponsible', '<option value="">TODOS</option>', (rpBankData.responsibles || []).map(name =>
-        '<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join(''));
-    }catch(error){
-      rpBankData = null;
-      el('rpBankBody').innerHTML = '<tr><td colspan="5" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
-      return;
-    }
-    renderRpBank();
-  }
-  function renderRpBank(){
-    const exits = rpBankData.exits || [];
-    const free = rpBankData.free || [];
-    const matched = exits.filter(exit => exit.linked.length).length;
-    const card = (label, value, neg) => '<div class="card'+(neg ? ' neg' : '')+'"><div class="lbl">'+label+'</div><div class="num">'+value+'</div></div>';
-    el('rpBankSummary').innerHTML = card('SAÍDAS NO EXTRATO', String(exits.length))+card('BATIDAS COM REPOSIÇÃO', String(matched))+
-      card('LANÇAMENTOS SEM PAR', String((rpBankData.unmatched || []).length), (rpBankData.unmatched || []).length > 0);
-    el('rpBankBody').innerHTML = exits.length ? exits.map(exit => {
-      const suggestion = free.find(item => item.id === exit.suggestionId);
-      const linkedText = exit.linked.length
-        ? exit.linked.map(item => escapeHtml(item.product)+' · '+formatCentsBRL(item.amountCents)).join('<br>')+
-          (exit.linkedCents !== Math.abs(exit.amountCents) ? ' <span class="status-pill warn">DIFERENÇA '+formatCentsBRL(Math.abs(exit.amountCents) - exit.linkedCents)+'</span>' : ' <span class="status-pill ok">BATIDA</span>')
-        : (suggestion ? '<span class="status-pill waiting">SUGESTÃO: '+escapeHtml(suggestion.product)+'</span>' : '—');
-      return '<tr>'+
-        '<td data-label="Data">'+escapeHtml(formatDateBR(exit.entryDate))+'</td>'+
-        '<td data-label="Histórico">'+escapeHtml(exit.description || '—')+'</td>'+
-        '<td data-label="Saída">'+formatCentsBRL(Math.abs(exit.amountCents))+'</td>'+
-        '<td data-label="Lançamento"><span>'+linkedText+'</span></td>'+
-        '<td data-label="Ações"><div class="loan-cell-actions assist-row-actions">'+
-          (exit.linked.length
-            ? '<button class="btn-outline btn-sm" type="button" data-rp-unlink="'+escapeHtml(exit.id)+'">DESFAZER</button>'
-            : '<button class="btn-outline btn-sm" type="button" data-rp-link="'+escapeHtml(exit.id)+'">BATER</button>'+
-              '<button class="btn-outline btn-sm" type="button" data-rp-create="'+escapeHtml(exit.id)+'">CRIAR LANÇAMENTO</button>')+
-        '</div></td>'+
-      '</tr>';
-    }).join('') : '<tr><td colspan="5" class="responsive-empty">Nenhuma saída no extrato deste mês. Importe o extrato acima.</td></tr>';
-    const unmatched = rpBankData.unmatched || [];
-    el('rpUnmatchedBody').innerHTML = unmatched.length ? unmatched.map(item =>
-      '<tr><td data-label="Data">'+escapeHtml(formatDateBR(item.entryDate))+'</td><td data-label="Unidade">'+escapeHtml(item.companyName || fase8CompanyName(item.companyId) || '—')+'</td>'+
-      '<td data-label="Produto">'+escapeHtml(item.product || '—')+'</td><td data-label="Motivo">'+escapeHtml(item.reason || '—')+'</td><td data-label="Valor">'+formatCentsBRL(item.amountCents)+'</td></tr>').join('')
-      : '<tr><td colspan="5" class="responsive-empty">Todos os lançamentos do mês estão batidos com o extrato.</td></tr>';
-  }
-  ['rpBankResponsible','rpBankMonth'].forEach(id => el(id).addEventListener('change', loadRpBank));
-  function openRpLinkDialog(exitId){
-    const exit = (rpBankData.exits || []).find(item => item.id === exitId);
-    if(!exit) return;
-    rpLinkExitId = exitId;
-    el('rpLinkExit').textContent = 'SAÍDA DE '+formatDateBR(exit.entryDate)+' · '+(exit.description || 'SEM HISTÓRICO')+' · '+formatCentsBRL(Math.abs(exit.amountCents));
-    const free = (rpBankData.free || []).slice().sort((a, b) => Number(b.id === exit.suggestionId) - Number(a.id === exit.suggestionId) || a.entryDate.localeCompare(b.entryDate));
-    el('rpLinkBody').innerHTML = free.length ? free.map(item =>
-      '<tr><td class="bulk-col" data-label="Selecionar"><input type="checkbox" class="bulk-check" data-rp-pick="'+escapeHtml(item.id)+'"'+(item.id === exit.suggestionId ? ' checked' : '')+' aria-label="Selecionar '+escapeHtml(item.product)+'"></td>'+
-      '<td data-label="Data">'+escapeHtml(formatDateBR(item.entryDate))+'</td><td data-label="Unidade">'+escapeHtml(item.companyName || fase8CompanyName(item.companyId) || '—')+'</td>'+
-      '<td data-label="Produto">'+escapeHtml(item.product || '—')+'</td><td data-label="Valor">'+formatCentsBRL(item.amountCents)+'</td></tr>').join('')
-      : '<tr><td colspan="5" class="responsive-empty">Nenhum lançamento livre. Use CRIAR LANÇAMENTO.</td></tr>';
-    el('rpLinkStatus').textContent = '';
-    renderRpLinkTotal();
-    el('rpLinkDialog').showModal();
-  }
-  function renderRpLinkTotal(){
-    const exit = (rpBankData.exits || []).find(item => item.id === rpLinkExitId);
-    const picked = Array.from(el('rpLinkBody').querySelectorAll('[data-rp-pick]:checked')).map(box => box.dataset.rpPick);
-    const sum = (rpBankData.free || []).filter(item => picked.includes(item.id)).reduce((total, item) => total + item.amountCents, 0);
-    el('rpLinkTotal').textContent = 'SELECIONADO: '+formatCentsBRL(sum)+' · SAÍDA: '+formatCentsBRL(Math.abs(exit.amountCents))+' · DIFERENÇA: '+formatCentsBRL(Math.abs(exit.amountCents) - sum);
-  }
-  el('rpLinkBody').addEventListener('change', renderRpLinkTotal);
-  el('btnCloseRpLink').addEventListener('click', () => el('rpLinkDialog').close());
-  el('btnCancelRpLink').addEventListener('click', () => el('rpLinkDialog').close());
-  el('rpLinkForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const replacementIds = Array.from(el('rpLinkBody').querySelectorAll('[data-rp-pick]:checked')).map(box => box.dataset.rpPick);
-    if(!replacementIds.length){ el('rpLinkStatus').textContent = 'SELECIONE AO MENOS UM LANÇAMENTO.'; return; }
-    try{
-      await financeApiRequest('/replacement-control/bank', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'link', bankEntryId: rpLinkExitId, replacementIds})});
-      el('rpLinkDialog').close();
-      showPurchaseToast('Saída batida com a reposição.');
-      await Promise.all([loadRpBank(), reloadReposicao()]);
-    }catch(error){ el('rpLinkStatus').textContent = error.message; }
-  });
-  el('rpBankBody').addEventListener('click', async event => {
-    const link = event.target.closest('[data-rp-link]');
-    const unlink = event.target.closest('[data-rp-unlink]');
-    const create = event.target.closest('[data-rp-create]');
-    if(link){ openRpLinkDialog(link.dataset.rpLink); return; }
-    if(unlink){
-      if(!comprasArmButton(unlink, 'CONFIRMAR')) return;
-      const exit = (rpBankData.exits || []).find(item => item.id === unlink.dataset.rpUnlink);
-      try{
-        await financeApiRequest('/replacement-control/bank', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'unlink', replacementIds: exit.linked.map(item => item.id)})});
-        await Promise.all([loadRpBank(), reloadReposicao()]);
-      }catch(error){ showPurchaseToast(error.message, 'error'); }
-      return;
-    }
-    if(create){
-      const exit = (rpBankData.exits || []).find(item => item.id === create.dataset.rpCreate);
-      if(!exit) return;
-      openReposicaoDialog(null);
-      rpLinkAfterSave = exit.id;
-      el('reposicaoData').value = exit.entryDate;
-      setCurrencyValue(el('reposicaoValor'), Math.abs(exit.amountCents) / 100);
-      el('reposicaoMotivo').value = exit.description || '';
-    }
-  });
-
   function openReposicaoDialog(row){
-    rpLinkAfterSave = '';
     el('reposicaoForm').reset();
     // Sem unidade e sem setor no formulário (02/11/2026): o antigo mantém os que tem.
     el('reposicaoForm').dataset.companyId = row ? (row.companyId || '') : '';
@@ -45977,7 +45819,7 @@ function renderHomeTasks(){
     el('reposicaoProduto').value = row ? (row.product || '') : '';
     el('reposicaoMotivo').value = row ? (row.reason || '') : '';
     el('reposicaoResponsavel').value = row ? (row.responsibleName || '') : '';
-    el('reposicaoTipoForm').value = row ? rpKindGroup(row.kind) : '';
+    el('reposicaoTipoForm').value = row ? (REPOSICAO_KIND_LABELS[row.kind] ? row.kind : rpKindGroup(row.kind)) : '';
     el('reposicaoSetorForm').value = row ? (row.sector || '') : '';
     el('reposicaoCategoria').value = row ? (row.category || '') : '';
     renderFlatFinanceItemOptions('reposicaoItemFinanceiro', 'SEM CATEGORIA FINANCEIRA');
@@ -46077,12 +45919,7 @@ function renderHomeTasks(){
         await financeBulkRequest('/expenses/bulk', {action:'category', ids:[before.expenseId], fields:{financeItemId: payload.financeItemId}});
       }
       el('reposicaoDialog').close();
-      // Criado a partir de uma saída do extrato: já fica batido com ela.
-      if(rpLinkAfterSave && saved && saved.id){
-        await financeApiRequest('/replacement-control/bank', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'link', bankEntryId: rpLinkAfterSave, replacementIds:[saved.id]})});
-      }
-      rpLinkAfterSave = '';
-      await Promise.all([reloadReposicao(), loadRpBank()]);
+      await reloadReposicao();
       showPurchaseToast('Lançamento salvo.');
     }catch(error){ status.textContent = error.message; }
   });
@@ -46166,7 +46003,7 @@ function renderHomeTasks(){
           idempotencyKey: 'reposicao:'+row.id,
           companyId: expenseCompanyId,
           companyName: fase8CompanyName(expenseCompanyId),
-          description: ('Reposição: '+(row.product || row.reason || REPOSICAO_KIND_LABELS[rpKindGroup(row.kind)])).slice(0,200),
+          description: ('Reposição: '+(row.product || row.reason || rpKindLabel(row.kind))).slice(0,200),
           financeItemId,
           costCenterId: el('reposicaoExpenseCostCenter').value || '',
           originalAmountCents: row.amountCents,

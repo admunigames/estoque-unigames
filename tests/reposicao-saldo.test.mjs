@@ -49,7 +49,7 @@ test("regra do saldo: base mais recente (inicial ou fechamento), tipos antigos n
 });
 
 test("lançamento: só ENTRADA/SAÍDA, categoria própria e financeira, filtro de responsável e de tipo com os antigos", async () => {
-  assert.equal((await post(route.POST, api, entry({ kind: "reposicao" }))).error, "SELECIONE SE É ENTRADA OU SAÍDA.");
+  assert.equal((await post(route.POST, api, entry({ kind: "reposicao" }))).error, "SELECIONE SE É ENTRADA, SAÍDA OU OUTROS.");
   const created = await post(route.POST, api, entry({ category: "peças", financeItemId: "item-pecas", sector: "assistencia" }));
   assert.equal(created.status, 201);
   const row = db.sqlite.prepare("SELECT category, finance_item_id, sector FROM finance_replacement_entries WHERE id=?").get(created.id);
@@ -112,4 +112,18 @@ test("saldo inicial, FINALIZAR MÊS trava o mês, saldo final vira o do mês seg
   assert.equal((await post(balance.POST, `${api}/balance`, { action: "reopen", month: "2026-10" })).reopened, true);
   assert.equal((await post(route.POST, api, { ...entry(), id: "antigo" })).status, 200, "reaberto: edita de novo");
   assert.equal((await callRoute(balance.POST, { id: "x", permissions: ["stock:view"] }, "POST", `${api}/balance`, { action: "close", month: "2026-10" })).status, 403);
+});
+
+test("OUTROS (ENTRADA) soma e OUTROS (SAÍDA) subtrai; filtro TIPO = OUTROS (25/11/2026)", async () => {
+  assert.deepEqual(lib.accountBalance([
+    { entryDate: "2026-12-02", amountCents: 300, kind: "outros_entrada", responsibleName: "DORA" },
+    { entryDate: "2026-12-03", amountCents: 100, kind: "outros_saida", responsibleName: "DORA" },
+  ], [], "2026-12", "2026-12"), { openingCents: 0, inflowCents: 300, outflowCents: 100, closingCents: 200 });
+  await post(route.POST, api, entry({ entryDate: "2026-12-02", kind: "outros_entrada", amountCents: 300, responsibleName: "DORA" }));
+  await post(route.POST, api, entry({ entryDate: "2026-12-03", kind: "outros_saida", amountCents: 100, responsibleName: "DORA" }));
+  const dec = await get("monthFrom=2026-12&monthTo=2026-12&responsible=DORA");
+  assert.deepEqual(dec.balance, { openingCents: 0, inflowCents: 300, outflowCents: 100, closingCents: 200 });
+  const outros = await get("monthFrom=2026-12&monthTo=2026-12&kind=outros");
+  assert.deepEqual(outros.rows.map((row) => row.kind).sort(), ["outros_entrada", "outros_saida"]);
+  assert.equal((await get("monthFrom=2026-12&monthTo=2026-12&kind=entrada")).rows.length, 1);
 });

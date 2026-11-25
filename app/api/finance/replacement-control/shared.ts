@@ -15,8 +15,8 @@ import { INFLOW_KINDS, OUTFLOW_KINDS } from "../../../lib/replacement-balance";
 export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const SECTORS = new Set(["assistencia", "logistica", "outros"]);
 // Tipos aceitos em lançamento novo/editado; KIND_GROUPS = filtro ENTRADA/SAÍDA com os antigos.
-export const KINDS = new Set(["entrada", "saida"]);
-export const KIND_GROUPS: Record<string, string[]> = { entrada: INFLOW_KINDS, saida: OUTFLOW_KINDS };
+export const KINDS = new Set(["entrada", "saida", "outros_entrada", "outros_saida"]);
+export const KIND_GROUPS: Record<string, string[]> = { entrada: INFLOW_KINDS, saida: OUTFLOW_KINDS, outros: ["outros_entrada", "outros_saida"] };
 
 export type ReplacementEntry = {
   entryDate: string;
@@ -43,7 +43,7 @@ export function parseReplacementEntry(body: JsonMap): { error: string } | Replac
   const sector = safeText(body.sector, 20);
   if (sector && !SECTORS.has(sector)) return { error: "SETOR INVÁLIDO." };
   const kind = safeText(body.kind, 20);
-  if (!KINDS.has(kind)) return { error: "SELECIONE SE É ENTRADA OU SAÍDA." };
+  if (!KINDS.has(kind)) return { error: "SELECIONE SE É ENTRADA, SAÍDA OU OUTROS." };
   const amountCents = Number(body.amountCents);
   if (!Number.isInteger(amountCents) || amountCents <= 0) return { error: "INFORME UM VALOR VÁLIDO EM CENTAVOS." };
   // A reposição não é ligada a conta cadastrada — só ao RESPONSÁVEL (23/10/2026).
