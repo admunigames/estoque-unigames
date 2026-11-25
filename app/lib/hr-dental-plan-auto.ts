@@ -26,9 +26,8 @@ export function formatCnpj(value: string) {
   return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
 }
 
-async function companyOf(database: Database, companyId: string): Promise<{ name: string; cnpj: string }> {
-  if (!companyId) return { name: "", cnpj: "" };
-  if (companyId === "assistencia") return { name: "ASSISTÊNCIA", cnpj: "" };
+/** Lojas do cadastro (shared_state companies_list): id → nome e CNPJ formatado. */
+export async function loadCompanyMap(database: Database): Promise<Map<string, { name: string; cnpj: string }>> {
   const row = await database
     .prepare("SELECT value_json AS value FROM shared_state WHERE state_key='companies_list'")
     .first<{ value: string }>();
@@ -38,8 +37,17 @@ async function companyOf(database: Database, companyId: string): Promise<{ name:
   } catch {
     list = [];
   }
-  const company = (Array.isArray(list) ? list : []).find((item) => item && item.id === companyId);
-  return { name: upper(company?.name || ""), cnpj: formatCnpj(company?.cnpj || "") };
+  const map = new Map<string, { name: string; cnpj: string }>();
+  for (const item of Array.isArray(list) ? list : []) {
+    if (item && item.id) map.set(item.id, { name: upper(item.name || ""), cnpj: formatCnpj(item.cnpj || "") });
+  }
+  map.set("assistencia", map.get("assistencia") ?? { name: "ASSISTÊNCIA", cnpj: "" });
+  return map;
+}
+
+async function companyOf(database: Database, companyId: string): Promise<{ name: string; cnpj: string }> {
+  if (!companyId) return { name: "", cnpj: "" };
+  return (await loadCompanyMap(database)).get(companyId) ?? { name: "", cnpj: "" };
 }
 
 function insertPending(

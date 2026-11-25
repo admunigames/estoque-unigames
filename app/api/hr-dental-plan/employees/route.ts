@@ -1,5 +1,6 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
+import { loadCompanyMap } from "../../../lib/hr-dental-plan-auto";
 import { canViewDentalPlan, identity, jsonResponse } from "../shared";
 
 // Lista de colaboradores ativos pro seletor do formulário — CPF e data de
@@ -30,11 +31,18 @@ export async function GET(request: Request) {
     const result = await database
       .prepare(
         `SELECT id, full_name AS fullName, cpf, birth_date AS birthDate,
-                company_id AS companyId, company_name AS companyName
+                COALESCE(NULLIF(admission_company_id, ''), company_id) AS companyId,
+                COALESCE(NULLIF(admission_company_name, ''), company_name) AS companyName
          FROM hr_employees WHERE status='active' ORDER BY full_name ASC`,
       )
       .all<EmployeeOption>();
-    return jsonResponse({ employees: result.results ?? [] });
+    // Loja CADASTRADA e o CNPJ dela: o formulário preenche a unidade sozinho.
+    const companies = await loadCompanyMap(database);
+    const employees = (result.results ?? []).map((employee) => {
+      const company = companies.get(employee.companyId || "");
+      return { ...employee, unitName: company?.name || String(employee.companyName || "").toLocaleUpperCase("pt-BR"), cnpj: company?.cnpj || "" };
+    });
+    return jsonResponse({ employees });
   } catch (error) {
     console.error("Não foi possível carregar os colaboradores.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR OS COLABORADORES." }, 500);

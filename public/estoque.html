@@ -12439,8 +12439,8 @@
       </div>
       <div class="purchase-field"><label for="dentalPlanCpf">CPF</label><input id="dentalPlanCpf" readonly placeholder="PUXADO DO CADASTRO"></div>
       <div class="purchase-field"><label for="dentalPlanBirthDate">DATA DE NASCIMENTO</label><input id="dentalPlanBirthDate" readonly placeholder="PUXADO DO CADASTRO"></div>
-      <div class="purchase-field"><label for="dentalPlanUnitName">UNIDADE DE INCLUSÃO (RAZÃO SOCIAL)</label><input id="dentalPlanUnitName" maxlength="200"></div>
-      <div class="purchase-field"><label for="dentalPlanCnpj">CNPJ</label><input id="dentalPlanCnpj" maxlength="32" placeholder="00.000.000/0000-00"></div>
+      <div class="purchase-field"><label for="dentalPlanUnitName">UNIDADE DE INCLUSÃO (RAZÃO SOCIAL)</label><input id="dentalPlanUnitName" maxlength="200" placeholder="EM BRANCO = LOJA CADASTRADA"></div>
+      <div class="purchase-field"><label for="dentalPlanCnpj">CNPJ</label><input id="dentalPlanCnpj" maxlength="32" placeholder="EM BRANCO = CNPJ DA LOJA CADASTRADA"></div>
       <div class="purchase-field"><label for="dentalPlanStatus">STATUS *</label>
         <select id="dentalPlanStatus" required>
           <option value="incluso">INCLUSO</option>
@@ -59153,8 +59153,11 @@ function renderHomeTasks(){
     if(row && row.employeeId) ensureDentalPlanEmployeeOption(row.employeeId, row.employeeName);
     el('dentalPlanEmployee').value = row ? row.employeeId : '';
     dentalPlanSetReadonly(row ? row.cpf : '', row ? row.birthDate : '');
+    // Em branco no registro = loja cadastrada (o GET já devolve preenchido).
     el('dentalPlanUnitName').value = row ? (row.unitName || '') : '';
     el('dentalPlanCnpj').value = row ? (row.cnpj || '') : '';
+    el('dentalPlanUnitName').dataset.fromCadastro = row && row.unitFromCadastro ? row.unitName : '';
+    el('dentalPlanCnpj').dataset.fromCadastro = row && row.cnpjFromCadastro ? row.cnpj : '';
     el('dentalPlanStatus').value = row ? row.status : 'faltando_incluir';
     el('dentalPlanReason').value = row ? dentalReasonOf(row) : 'inclusao';
     el('dentalPlanProcessNumber').value = row ? (row.processNumber || '') : '';
@@ -59169,6 +59172,14 @@ function renderHomeTasks(){
   if(el('dentalPlanEmployee')) el('dentalPlanEmployee').addEventListener('change', () => {
     const employee = dentalPlanEmployees.find(item => item.id === el('dentalPlanEmployee').value);
     dentalPlanSetReadonly(employee ? employee.cpf : '', employee ? employee.birthDate : '');
+    // Unidade e CNPJ da LOJA CADASTRADA (25/11/2026): preenche o que estiver
+    // vazio ou ainda com o valor puxado do colaborador anterior.
+    [['dentalPlanUnitName','unitName'],['dentalPlanCnpj','cnpj']].forEach(([id, key]) => {
+      const input = el(id);
+      if(input.value.trim() && input.value !== input.dataset.fromCadastro) return;
+      input.value = employee ? (employee[key] || '') : '';
+      input.dataset.fromCadastro = input.value;
+    });
   });
 
   if(el('btnNewDentalPlan')) el('btnNewDentalPlan').addEventListener('click', () => openDentalPlanDialog(null));

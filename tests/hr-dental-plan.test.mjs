@@ -118,3 +118,25 @@ test("Recrutamento: candidato CONTRATADO nasce FALTANDO INCLUIR no plano", async
     ["faltando_incluir", "inclusao", "ADMITIDO EM 23/11/2026 · GUARARAPES"],
   ]);
 });
+
+test("UNIDADE e CNPJ em branco no registro aparecem os da LOJA CADASTRADA (e o filtro de CNPJ acha)", async () => {
+  db.insert("hr_employees", {
+    id: "caio", full_name: "CAIO RENDALL", company_id: "outra", company_name: "RIOMAR", admission_company_id: ALFA,
+    admission_company_name: "GUARARAPES", status: "active", admission_date: "2026-11-02", created_by: "x",
+  });
+  db.insert("hr_dental_plan", { id: "d-caio", employee_id: "caio", employee_name: "CAIO RENDALL", status: "faltando_incluir", reason: "inclusao" });
+  db.insert("hr_dental_plan", { id: "d-digitado", employee_id: "caio", employee_name: "CAIO RENDALL", unit_name: "GUARA", cnpj: "11.111.111/0001-11", status: "incluso", reason: "inclusao" });
+  const items = await list();
+  const vazio = items.find((row) => row.id === "d-caio");
+  assert.equal(vazio.unitName, "GUARARAPES");
+  assert.equal(vazio.cnpj, "23.189.383/0001-93");
+  assert.equal(vazio.unitFromCadastro, true);
+  const digitado = items.find((row) => row.id === "d-digitado");
+  assert.deepEqual([digitado.unitName, digitado.cnpj, digitado.unitFromCadastro], ["GUARA", "11.111.111/0001-11", false]);
+  assert.ok((await list("?cnpj=23.189.383%2F0001-93")).some((row) => row.id === "d-caio"));
+
+  const employeesRoute = await import("../app/api/hr-dental-plan/employees/route.ts");
+  const options = (await (await callRoute(employeesRoute.GET, ADMIN, "GET", "/api/hr-dental-plan/employees")).json()).employees;
+  const caio = options.find((row) => row.id === "caio");
+  assert.deepEqual([caio.unitName, caio.cnpj], ["GUARARAPES", "23.189.383/0001-93"]);
+});

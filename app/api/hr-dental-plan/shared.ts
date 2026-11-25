@@ -134,7 +134,9 @@ export const DENTAL_PLAN_COLUMNS = `
   d.process_number AS processNumber, d.notes,
   d.created_by AS createdBy, d.created_by_name AS createdByName, d.created_at AS createdAt,
   d.updated_by AS updatedBy, d.updated_by_name AS updatedByName, d.updated_at AS updatedAt,
-  e.cpf AS cpf, e.birth_date AS birthDate
+  e.cpf AS cpf, e.birth_date AS birthDate,
+  COALESCE(NULLIF(e.admission_company_id, ''), e.company_id, '') AS employeeCompanyId,
+  COALESCE(NULLIF(e.admission_company_name, ''), e.company_name, '') AS employeeCompanyName
 `;
 
 export type DentalPlanRow = {
@@ -155,4 +157,7 @@ export type DentalPlanRow = {
   updatedAt: string;
   cpf: string | null;
   birthDate: string | null;
+  /** Loja CADASTRADA do funcionário (admissão; vazia = loja do cadastro). */
+  employeeCompanyId: string | null;
+  employeeCompanyName: string | null;
 };

@@ -1,4 +1,5 @@
 import { getD1 } from "../../../db";
+import { loadCompanyMap } from "../../lib/hr-dental-plan-auto";
 import { unauthorizedResponse } from "../../lib/notion";
 import {
   DENTAL_PLAN_COLUMNS,
@@ -38,6 +39,7 @@ export async function GET(request: Request) {
     const cnpj = safeText(url.searchParams.get("cnpj"), 32);
 
     const conditions: string[] = [];
+    // O filtro de CNPJ é aplicado depois do preenchimento pela loja cadastrada.
     const bindings: string[] = [];
     if (status && isDentalPlanStatus(status)) {
       bindings.push(status);
@@ -46,10 +48,6 @@ export async function GET(request: Request) {
     if (reason && isDentalPlanReason(reason) && reason !== "") {
       bindings.push(reason);
       conditions.push(`LOWER(d.reason)=?${bindings.length}`);
-    }
-    if (cnpj) {
-      bindings.push(cnpj);
-      conditions.push(`d.cnpj=?${bindings.length}`);
     }
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -65,7 +63,22 @@ export async function GET(request: Request) {
     const result = bindings.length
       ? await database.prepare(query).bind(...bindings).all<DentalPlanRow>()
       : await database.prepare(query).all<DentalPlanRow>();
-    return jsonResponse({ items: result.results ?? [] });
+    // UNIDADE DE INCLUSÃO e CNPJ em branco = os da LOJA CADASTRADA do
+    // funcionário, ao vivo (25/11/2026 — "no cadastro está tudo ok mas não
+    // aparece no plano"). O que o RH digitou no registro continua valendo.
+    const companies = await loadCompanyMap(database);
+    const items = (result.results ?? []).map((row) => {
+      const company = companies.get(row.employeeCompanyId || "");
+      const fallbackUnit = company?.name || String(row.employeeCompanyName || "").toLocaleUpperCase("pt-BR");
+      return {
+        ...row,
+        unitName: row.unitName || fallbackUnit,
+        cnpj: row.cnpj || company?.cnpj || "",
+        unitFromCadastro: !row.unitName && Boolean(fallbackUnit),
+        cnpjFromCadastro: !row.cnpj && Boolean(company?.cnpj),
+      };
+    }).filter((row) => !cnpj || row.cnpj === cnpj);
+    return jsonResponse({ items });
   } catch (error) {
     console.error("Não foi possível carregar o plano odontológico.", error);
     return jsonResponse({ error: "NÃO FOI POSSÍVEL CARREGAR O PLANO ODONTOLÓGICO." }, 500);
