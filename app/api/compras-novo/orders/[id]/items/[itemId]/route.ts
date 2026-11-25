@@ -130,9 +130,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       if (!Number.isFinite(receivedQuantity) || !Number.isInteger(receivedQuantity) || receivedQuantity < 0) {
         return jsonResponse({ error: "INFORME UMA QUANTIDADE RECEBIDA VÁLIDA." }, 400);
       }
-      if (receivedQuantity > quantity) {
-        return jsonResponse({ error: "A QUANTIDADE RECEBIDA NÃO PODE SER MAIOR QUE A QUANTIDADE DO ITEM." }, 400);
-      }
+      // 25/11/2026: pode passar do pedido ("veio a mais") — pedido do usuário
+      // junto com o Recebimento da loja. Painéis e "a caminho" limitam ao pedido.
     }
 
     let unitPriceCents = item.unitPriceCents;

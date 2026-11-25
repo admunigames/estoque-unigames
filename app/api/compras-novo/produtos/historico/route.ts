@@ -130,7 +130,7 @@ export async function GET(request: Request) {
     // quando o item efetivamente está "a caminho".
     const inProgressResult = await database
       .prepare(
-        `SELECT COALESCE(SUM(poi.quantity - poi.received_quantity), 0) AS total
+        `SELECT COALESCE(SUM(CASE WHEN poi.received_quantity > poi.quantity THEN 0 ELSE poi.quantity - poi.received_quantity END), 0) AS total
          FROM purchase_order_items poi
          JOIN purchase_orders po ON po.id = poi.order_id
          WHERE poi.product_code IN (${codePlaceholders}) AND po.origin='native' AND po.canceled=0 AND po.status='aguardando_chegada'`,
@@ -143,7 +143,7 @@ export async function GET(request: Request) {
     const today = todayInTimezone();
     const lateResult = await database
       .prepare(
-        `SELECT COALESCE(SUM(poi.quantity - poi.received_quantity), 0) AS total
+        `SELECT COALESCE(SUM(CASE WHEN poi.received_quantity > poi.quantity THEN 0 ELSE poi.quantity - poi.received_quantity END), 0) AS total
          FROM purchase_order_items poi
          JOIN purchase_orders po ON po.id = poi.order_id
          WHERE poi.product_code IN (${codePlaceholders}) AND po.origin='native' AND po.canceled=0

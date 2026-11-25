@@ -5460,3 +5460,31 @@ export const fidelizaImports = pgTable("fideliza_imports", {
   createdByName: text("created_by_name").notNull().default(""),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
 });
+
+// Estoque > Recebimento (0147): a loja envia a nota e confere a compra, sem
+// alterar o Compras. Uma linha por purchase_orders.id. deliveryCompanyId
+// vazio = LOJA QUE FATURA do pedido. Detalhe por item, extras e histórico
+// (correções com motivo, troca de loja, e-mails) em JSON; version = trava.
+export const purchaseReceipts = pgTable(
+  "purchase_receipts",
+  {
+    orderId: text("order_id").primaryKey(),
+    deliveryCompanyId: text("delivery_company_id").notNull().default(""),
+    deliveryCompanyName: text("delivery_company_name").notNull().default(""),
+    nfNumber: text("nf_number").notNull().default(""),
+    nfAttachmentId: text("nf_attachment_id").notNull().default(""),
+    nfSentBy: text("nf_sent_by").notNull().default(""),
+    nfSentByName: text("nf_sent_by_name").notNull().default(""),
+    nfSentAt: text("nf_sent_at").notNull().default(""),
+    checkedBy: text("checked_by").notNull().default(""),
+    checkedByName: text("checked_by_name").notNull().default(""),
+    checkedAt: text("checked_at").notNull().default(""),
+    itemsJson: text("items_json").notNull().default("[]"),
+    extrasJson: text("extras_json").notNull().default("[]"),
+    historyJson: text("history_json").notNull().default("[]"),
+    version: integer("version").notNull().default(1),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("purchase_receipts_delivery_company_idx").on(table.deliveryCompanyId)],
+);

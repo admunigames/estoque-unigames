@@ -110,6 +110,8 @@ export const UPPER_TEXT_COLUMNS: Record<string, readonly string[]> = {
   purchase_order_items: ["product_name", "notes", "created_by_name", "updated_by_name"],
   purchase_order_item_quotes: ["notes", "created_by_name", "updated_by_name"],
   purchase_order_attachments: ["uploaded_by_name"],
+  // Recebimento (0147): os *_json guardam ids e ficam de fora (a rota já grava em maiúsculas).
+  purchase_receipts: ["delivery_company_name", "nf_sent_by_name", "checked_by_name"],
   product_catalog: ["name", "updated_by_name"],
   hr_leader_pdi: ["leader_name", "company_name", "topic_discussed", "suggested_activity", "management_feedback", "team_members", "transcript_text", "agreed_text", "participants", "created_by_name", "updated_by_name"],
   hr_time_tracking_settings: ["notes", "created_by_name", "updated_by_name"],

@@ -4691,6 +4691,45 @@
     .app-bar-search:focus-within input{width:auto; flex:1;}
     .home-brand-compact .brand-copy{display:flex;}
   }
+  /* Estoque > Recebimento: lista em painel, conferência pensada para celular. */
+  .rec-list{display:flex; flex-direction:column;}
+  .rec-row{display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; padding:14px 16px; border:0; border-bottom:1px solid var(--surface-border); background:transparent; color:var(--ink); text-align:left; font:inherit; cursor:pointer;}
+  .rec-row:last-child{border-bottom:0;}
+  .rec-row:hover{background:color-mix(in srgb, var(--accent) 8%, transparent);}
+  .rec-row-main,.rec-row-side{display:flex; flex-direction:column; gap:4px; min-width:0;}
+  .rec-row-side{align-items:flex-end; text-align:right;}
+  .rec-row small,.rec-head p,.rec-list-plain small{color:var(--ink-soft);}
+  .rec-empty{margin:0; padding:18px 16px; color:var(--ink-soft);}
+  .rec-panel{padding:14px 16px; margin:12px 0;}
+  .rec-panel h4{margin:0 0 10px; font-size:13px; color:var(--ink-soft);}
+  .rec-panel summary{cursor:pointer; font-weight:800;}
+  .rec-head h3{margin:0 0 4px;}
+  .rec-head p{margin:0 0 8px;}
+  .rec-steps{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0;}
+  .rec-actions{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;}
+  .rec-big{min-height:48px; padding:12px 20px; font-size:15px;}
+  .rec-conf{border:1px solid var(--surface-border); border-radius:10px; padding:12px; margin-bottom:10px;}
+  .rec-conf.is-diff{border-color:#d3ac62;}
+  .rec-conf-name{display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;}
+  .rec-qty{display:flex; align-items:center; gap:6px; margin:8px 0;}
+  .rec-qty .btn-outline{width:44px; height:44px; padding:0; font-size:20px;}
+  .rec-qty input{width:84px; height:44px; text-align:center; font-size:18px; font-weight:800;}
+  .rec-auto{font-weight:800; color:#d3ac62;}
+  .rec-conf-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); align-items:end;}
+  .rec-extra{border-top:1px dashed var(--surface-border); padding-top:10px; margin-bottom:10px;}
+  .rec-thumbs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  .rec-thumbs img{width:72px; height:96px; object-fit:cover; border:1px solid var(--surface-border); border-radius:6px;}
+  .rec-notice{padding:10px 12px; border-radius:10px; background:color-mix(in srgb, var(--accent) 12%, transparent); font-weight:700;}
+  .rec-list-plain{list-style:none; margin:0 0 12px; padding:0;}
+  .rec-list-plain li{padding:8px 0; border-bottom:1px solid var(--surface-border);}
+  .rec-list-plain .btn-outline{display:inline-block; padding:4px 10px; text-decoration:none;}
+  .rec-summary{width:100%;}
+  #recStoreFilter{min-width:180px;}
+  @media(max-width:680px){
+    .rec-row{flex-direction:column; align-items:flex-start;}
+    .rec-row-side{align-items:flex-start; text-align:left;}
+    .rec-big{width:100%;}
+  }
 </style>
 <!-- NOTA ADESIVA DE TAREFAS: estilo isolado (cores fixas de post-it, igual nos 3 temas)
      porque este bloco é copiado para a janela "fora do site" (Picture-in-Picture). -->
@@ -4842,6 +4881,7 @@
         <a class="nav-item sub-item" id="navDivergencias" data-page="divergencias" data-permission="divergencias" data-home-desc="Pedidos de verificação de divergência entre o físico e o sistema." title="Divergências" href="/divergencias"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Divergências</span></a>
         <a class="nav-item sub-item" id="navInventario" data-page="inventario" data-permission="inventario" data-home-desc="Inventário por loja: sobe o estoque por categoria, contagem física ao vivo, divergências com custo, PDFs para o diretor, recontagem e Pontti." title="Inventário" href="/inventario"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><path d="M8 16l2 2 4-4"/></svg></span><span class="nav-label">Inventário</span></a>
         <a class="nav-item sub-item" id="navRelatoriosLogistica" data-page="relatoriosLogistica" data-permission="relatorios_logistica" data-home-desc="A loja envia o relatório da logística (PDF ou fotos escaneadas) direto para o e-mail do estoque." title="Relatórios Logística" href="/relatorios-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 7l8 6 8-6"/></svg></span><span class="nav-label">Relatórios Logística</span></a>
+        <a class="nav-item sub-item" id="navRecebimento" data-page="recebimento" data-permission="recebimento" data-home-desc="A loja envia a nota e confere o que chegou de cada compra, sem valores. O Compras acompanha todas as lojas." title="Recebimento" href="/recebimento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/></svg></span><span class="nav-label">Recebimento</span></a>
         <a class="nav-item sub-item" id="navReintegracaoFiscal" data-page="reintegracaoFiscal" data-permission="reintegracao_fiscal" data-home-desc="Cancelamentos anotados na semana e fechados com a data e o nº da nota de reintegração emitida." title="Reintegração Fiscal" href="/reintegracao-fiscal"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 14l2 2 4-4"/></svg></span><span class="nav-label">Reintegração Fiscal</span></a>
         <a class="nav-item sub-item" id="navAssistenciaRma" data-page="assistenciaRma" data-permission="rma" data-home-desc="RMAs dos produtos que seguem para o fornecedor: chegada, status, O.S., linha do tempo de atualizações, créditos e descartes. A loja acompanha só os RMAs dela." title="RMA" href="/assistencia/rma"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></span><span class="nav-label">RMA</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
@@ -5802,6 +5842,29 @@
         <table><thead><tr><th>Data do relatório</th><th>Loja</th><th>Arquivo</th><th>Enviado por</th><th>Enviado em</th></tr></thead>
         <tbody id="rlogBody"><tr><td colspan="5" class="responsive-empty">Carregando…</td></tr></tbody></table>
       </div></div>
+    </section>
+
+    <section id="pageRecebimento" class="page wrap">
+      <header class="page-header">
+        <div class="page-heading">
+          <button class="page-logo" type="button" data-home aria-label="Ir para o Início" title="Ir para o Início"><img class="brand-logo" data-logo alt=""></button>
+          <h2 class="page-title" id="recPageTitle">Recebimento</h2>
+        </div>
+      </header>
+      <div id="recRoot">
+      <div class="dre-toolbar"><select id="recStoreFilter" aria-label="Filtrar por loja" hidden><option value="">TODAS AS LOJAS</option></select></div>
+      <div id="recListView">
+        <div class="supply-tabs" role="tablist" aria-label="Situação das compras" id="recTabs"></div>
+        <div class="table-panel rec-list" id="recList"><p class="rec-empty">Carregando…</p></div>
+        <div class="table-panel rec-panel" id="recConfig" hidden>
+          <h4>E-MAILS QUE RECEBEM A NOTA (1 PARA + 2 EM CÓPIA)</h4>
+          <div id="recConfigEmails"></div>
+          <button class="btn-accent" id="btnRecConfigSave" type="button">SALVAR E-MAILS</button>
+          <p class="purchase-field-help" id="recConfigInfo"></p>
+        </div>
+      </div>
+      <div id="recDetailView" hidden><div id="recDetail"></div></div>
+      </div>
     </section>
 
     <section id="pageReintegracaoFiscal" class="page wrap">
@@ -7298,7 +7361,10 @@
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-compras-section-tab="porProduto">POR PRODUTO</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="pedidos">PEDIDOS</button>
         <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="fornecedores">CADASTRO DE FORNECEDOR</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-compras-section-tab="recebimento" id="comprasTabRecebimento" hidden>RECEBIMENTO DAS LOJAS</button>
       </div>
+      <!-- Recebimento das Lojas: a tela de Estoque > Recebimento (#recRoot) é movida para cá. -->
+      <section id="comprasSectionRecebimento" hidden></section>
 
       <section id="comprasSectionPedidos" hidden>
         <!-- Painel da aba PEDIDOS (12/11/2026): clique filtra a lista abaixo. -->
@@ -12183,6 +12249,13 @@
               </div>
             </details>
             <details class="permission-module">
+              <summary>Estoque - Recebimento</summary>
+              <div class="permission-grid">
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="recebimento:loja"> Loja: enviar a nota, conferir e corrigir o que chegou (só a própria loja, sem valores)</label>
+                <label class="permission-option"><input type="checkbox" name="userPermission" value="recebimento:acompanhar"> Compras: acompanhar todas as lojas, abrir o PDF, trocar a loja de chegada, e-mails e avisos no celular</label>
+              </div>
+            </details>
+            <details class="permission-module">
               <summary>Estoque - Reintegração Fiscal</summary>
               <div class="permission-grid">
                 <label class="permission-option"><input type="checkbox" name="userPermission" value="reintegracao_fiscal:view"> Ver os lançamentos (interno: login com loja não vê)</label>
@@ -16429,7 +16502,7 @@
 
   // O canal ao vivo carrega somente avisos de invalidacao. Os dados continuam
   // sendo buscados pelas APIs existentes, que aplicam as permissoes da sessao.
-  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans',comprasNovo:'compras',comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia',inventario:'inventario',assistenciaRma:'rma'});
+  const LIVE_PAGE_MODULES = Object.freeze({missoes:'missions',captacao:'captures',insumos:'supplies',tarefas:'tasks',aparelhosEmprestimo:'loans',comprasNovo:'compras',comercialAcompanhamento:'commercial',assistenciaOrdensServico:'ordens_servico',assistenciaEstoque:'estoque_assistencia',inventario:'inventario',assistenciaRma:'rma',recebimento:'recebimento'});
   let livePageName = '';
   let liveModule = '';
   let liveSocket = null;
@@ -16472,6 +16545,7 @@
     if(livePageName === 'assistenciaEstoque') await refreshAfterAction(() => loadAstPage());
     if(livePageName === 'assistenciaRma') await refreshAfterAction(() => loadRmaPage());
     if(livePageName === 'inventario') await refreshAfterAction(() => loadInvPage({live:true}));
+    if(livePageName === 'recebimento') await refreshAfterAction(() => loadRecebPage({live:true}));
     if(livePageName === 'insumos'){
       await refreshAfterAction(() => {
         const refreshes = [loadSupplyAdminData(),loadSupplyExitData(),loadSupplyMissing({silent:true}),loadSupplyRequest(),loadSupplyRequestPendingOld()];
@@ -16497,6 +16571,7 @@
           if(comprasOrderDetailOpenId) await openComprasOrderDetail(comprasOrderDetailOpenId);
         });
       }
+      if(comprasSectionTab === 'recebimento') await refreshAfterAction(() => loadRecebPage({live:true}));
     }
     if(livePageName === 'inicio') await loadHomeSupplies();
   }
@@ -16925,6 +17000,7 @@
     divergencias:'/divergencias',
     inventario:'/inventario',
     relatoriosLogistica:'/relatorios-logistica',
+    recebimento:'/recebimento',
     reintegracaoFiscal:'/reintegracao-fiscal',
     fornecedoresPagar:'/fornecedores-a-pagar',
     assistenciaOrcamentos:'/assistencia/orcamentos',
@@ -17002,6 +17078,7 @@
     divergencias:'DIVERGÊNCIAS',
     inventario:'INVENTÁRIO',
     relatoriosLogistica:'RELATÓRIOS LOGÍSTICA',
+    recebimento:'RECEBIMENTO',
     reintegracaoFiscal:'REINTEGRAÇÃO FISCAL',
     fornecedoresPagar:'FORNECEDORES A PAGAR',
     assistenciaOrcamentos:'ORÇAMENTOS',
@@ -17075,6 +17152,7 @@
     divergencias:'divergencias',
     inventario:'inventario',
     relatoriosLogistica:'relatorios_logistica',
+    recebimento:'recebimento',
     reintegracaoFiscal:'reintegracao_fiscal',
     fornecedoresPagar:'fornecedores_pagar',
     assistenciaOrcamentos:'assistencia:manage',
@@ -17390,10 +17468,19 @@
     if(homeAttn.supplies){
       cards.push(card('insumos', 'warn', svg('<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>'), 'INSUMOS', homeAttn.supplies, 'FALTAS MARCADAS · PEDIR NA SEGUNDA'));
     }
+    if(homeAttn.receb){
+      const r = homeAttn.receb;
+      cards.push(r.canFollow
+        ? card('recebimento', r.divergent ? 'late' : r.arrived ? 'warn' : 'ok', svg('<path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/>'), 'RECEBIMENTO DAS LOJAS', r.arrived,
+            (r.divergent ? r.divergent+' COM DIVERGÊNCIA · ' : '')+'CHEGARAM, FALTA O COMPRAS')
+        : card('recebimento', r.late ? 'late' : r.toReceive ? 'warn' : 'ok', svg('<path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/>'), 'RECEBIMENTO', r.toReceive,
+            r.late ? r.late+' ATRASADA(S)' : 'COMPRAS PARA RECEBER'));
+    }
     if(homeAttn.instructions !== undefined){
       cards.push(card('instrucoes', 'info', svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/>'), 'COMUNICADOS', homeAttn.instructions, 'INSTRUÇÕES VIGENTES'));
     }
-    const attnRank = card => telaPrefs.widgetOrder.indexOf(({tarefas:'tarefas', missoes:'rotina', divergencias:'divergencias', insumos:'insumos', instrucoes:'comunicados'})[(card.match(/data-home-attn="([^"]+)"/) || [])[1]]);
+    // Cartão sem quadro próprio no PERSONALIZAR (ex.: Recebimento) vai para o fim.
+    const attnRank = card => { const rank = telaPrefs.widgetOrder.indexOf(({tarefas:'tarefas', missoes:'rotina', divergencias:'divergencias', insumos:'insumos', instrucoes:'comunicados'})[(card.match(/data-home-attn="([^"]+)"/) || [])[1]]); return rank < 0 ? 99 : rank; };
     cards.sort((a, b) => attnRank(a) - attnRank(b));
     box.innerHTML = cards.join('');
     box.hidden = !cards.length;
@@ -17473,6 +17560,10 @@
     document.querySelectorAll('[data-permission]').forEach(node => {
       node.toggleAttribute('data-access-hidden', !canAccess(node.dataset.permission));
     });
+    // Recebimento: quem acompanha usa a aba do Compras (caminho único); o item do menu fica para a loja.
+    const recFollow = canActAcrossStores('recebimento:acompanhar');
+    if(el('comprasTabRecebimento')) el('comprasTabRecebimento').hidden = !recFollow;
+    if(el('navRecebimento') && recFollow && canAccess('purchases_draft')) el('navRecebimento').setAttribute('data-access-hidden', '');
     document.querySelectorAll('[data-any-permission]').forEach(node => {
       const allowed = node.dataset.anyPermission.split(',').some(permission => canAccess(permission));
       node.toggleAttribute('data-access-hidden', !allowed);
@@ -17987,7 +18078,7 @@
     const isCadastros = name === 'cadastros' || name === 'lojas' || name === 'dados' || name === 'fornecedores' || name === 'usuarios' || name === 'auditoria' || name === 'infoGerais';
     const isRhFinanceiro = name === 'rhFuncionarios' || name === 'rhFolha' || name === 'rhBeneficios' || name === 'rhComissionamento' || name === 'rhDreFuncionario' || name === 'rhContabilidade';
     const isRh = name === 'rhFolgas' || name === 'rhEscalas' || isRhFinanceiro;
-    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'relatoriosLogistica' || name === 'reintegracaoFiscal' || name === 'assistenciaRma' || name === 'comercialRelatorioNf';
+    const isEstoque = name === 'puxadas' || name === 'relatorio41' || name === 'dashboard' || name === 'compras' || name === 'saidas' || name === 'divergencias' || name === 'inventario' || name === 'relatoriosLogistica' || name === 'recebimento' || name === 'reintegracaoFiscal' || name === 'assistenciaRma' || name === 'comercialRelatorioNf';
     const isDocumentos = name === 'documentos';
     const isSolicitacoes = name === 'alteracoesPdv' || name === 'notasOs';
     const isAssistencia = name === 'assistenciaOrcamentos' || name === 'assistenciaControleGorduras' || name === 'assistenciaOrdensServico' || name === 'assistenciaPrecos' || name === 'assistenciaEstoque';
@@ -18048,6 +18139,7 @@
     if(name === 'divergencias') loadDivergencias();
     if(name === 'inventario') loadInvPage();
     if(name === 'relatoriosLogistica') loadRlogPage();
+    if(name === 'recebimento') openRecebimento();
     if(name === 'reintegracaoFiscal') loadRfisPage();
     if(name === 'fornecedoresPagar') loadFpgPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
@@ -18128,6 +18220,7 @@
     if(name === 'divergencias') loadDivergencias();
     if(name === 'inventario') loadInvPage();
     if(name === 'relatoriosLogistica') loadRlogPage();
+    if(name === 'recebimento') openRecebimento();
     if(name === 'reintegracaoFiscal') loadRfisPage();
     if(name === 'fornecedoresPagar') loadFpgPage();
     if(name === 'assistenciaOrcamentos') loadAssistenciaOrcamentos();
@@ -32417,6 +32510,482 @@ function renderHomeTasks(){
     finally{ button.disabled = false; button.textContent = 'ENVIAR POR E-MAIL'; }
   });
 
+  // ---------- ESTOQUE · RECEBIMENTO ----------
+  // Página nova sobre os pedidos do Compras (app/api/recebimento). O servidor
+  // nunca manda valores (preço, custo, total, NF do financeiro, divisão).
+  // Loja: VAI CHEGAR → envia a(s) NF(s) → confere → corrige com motivo.
+  // Compras (recebimento:acompanhar): todas as lojas, só acompanha, troca a
+  // loja de chegada e configura os 3 e-mails. Quem conclui é sempre o Compras.
+  const REC_API = '/api/recebimento';
+  const REC_DIVS = {faltou:'FALTOU', veio_a_mais:'VEIO A MAIS', cor_diferente:'COR DIFERENTE', modelo_diferente:'MODELO DIFERENTE', avariado:'AVARIADO', outro:'OUTRO'};
+  const REC_MANUAL = ['cor_diferente','modelo_diferente','avariado','outro'];
+  let recData = null;
+  let recTab = '';
+  let recOpenId = '';
+  let recFixItem = '';
+  let recPdf = null;
+  let recPhotos = [];
+
+  const recStage = o => o.steps.concluido ? 'concluidas' : !o.steps.nota ? 'aguardando' : !o.steps.conferida ? 'nota'
+    : (o.items.some(i => i.divergence) || o.extras.length) ? 'divergencia' : 'conferida';
+  const recOrder = () => recData && recData.orders.find(o => o.id === recOpenId);
+  const recCanEdit = o => recData.canRegister && o.status === 'aguardando_chegada';
+
+  function recTabs(){
+    return recData.canFollow
+      ? [['aguardando','AGUARDANDO CHEGADA',['aguardando']],['nota','NOTA ENVIADA',['nota']],['divergencia','COM DIVERGÊNCIA',['divergencia']],
+         ['conferida','CONFERIDAS',['conferida']],['concluidas','CONCLUÍDAS',['concluidas']],['config','CONFIGURAÇÃO',null]]
+      : [['aguardando','VAI CHEGAR',['aguardando']],['nota','CONFERIR',['nota']],['recebidas','RECEBIDAS',['divergencia','conferida']],['concluidas','CONCLUÍDAS',['concluidas']]];
+  }
+
+  // Ao vivo (aviso do servidor): atualiza os dados, mas não redesenha a compra
+  // aberta enquanto a loja digita a conferência, a nota ou uma correção.
+  function recEditing(){
+    if(!recOpenId || el('recDetailView').hidden) return false;
+    if(recPdf || recPhotos.length || recFixItem || (el('recNfNumber') && el('recNfNumber').value)) return true;
+    return [...document.querySelectorAll('#recDetail [data-rec-count],#recDetail [data-rec-note],#recDetail [data-rec-extra-name]')].some(input => input.value)
+      || [...document.querySelectorAll('#recDetail [data-rec-div]')].some(select => select.value);
+  }
+
+  // Faixa de atenção do Início: loja = compras a receber (atrasadas em vermelho);
+  // Compras = compras que chegaram e esperam NF/divisão/conclusão.
+  async function loadHomeRecebimento(){
+    try{
+      homeAttn.receb = await invApi('GET', null, '?resumo=1', REC_API);
+      renderHomeAttn();
+    }catch{ /* o Início segue sem o cartão */ }
+  }
+
+  let recPendingOpen = '';
+  const recInCompras = () => Boolean(el('recRoot').closest('#pageComprasNovo'));
+  // Estoque > Recebimento: a loja usa esta página; quem acompanha e tem o
+  // Compras vai para a aba RECEBIMENTO DAS LOJAS do Compras (caminho único).
+  // O aviso do celular abre /recebimento?pedido=<id>.
+  function openRecebimento(){
+    const wanted = new URLSearchParams(location.search).get('pedido');
+    if(wanted){ recPendingOpen = wanted; history.replaceState(history.state, '', location.pathname); }
+    if(canActAcrossStores('recebimento:acompanhar') && canAccess('purchases_draft')){
+      comprasSectionTab = 'recebimento';
+      navigateToPage('comprasNovo', {replace:true});
+      return;
+    }
+    el('pageRecebimento').append(el('recRoot'));
+    loadRecebPage();
+  }
+
+  async function loadRecebPage(options){
+    const live = Boolean(options && options.live);
+    try{
+      const data = await invApi('GET', null, '', REC_API);
+      if(live && recEditing()){ recData = data; return; }
+      recData = data;
+      const follow = recData.canFollow;
+      const filter = el('recStoreFilter');
+      filter.hidden = !follow;
+      if(follow){
+        const current = filter.value;
+        filter.innerHTML = '<option value="">TODAS AS LOJAS</option>'+(recData.stores || []).map(store =>
+          '<option value="'+escapeHtml(store.id)+'">'+escapeHtml(String(store.name).toLocaleUpperCase('pt-BR'))+'</option>').join('');
+        filter.value = current;
+      }
+      const wanted = recPendingOpen;
+      if(wanted){
+        recPendingOpen = '';
+        recOpenId = wanted;
+        if(!recOrder()) showPurchaseToast('COMPRA NÃO ENCONTRADA (CONCLUÍDA HÁ MAIS DE 60 DIAS OU DE OUTRA LOJA).', 'error');
+      }
+      if(recOpenId && !recOrder()) recOpenId = '';
+      if(!recTab) recTab = !follow && recData.orders.some(o => recStage(o) === 'nota') ? 'nota' : 'aguardando';
+      recRender();
+    }catch(error){ if(!live) showPurchaseToast(error.message, 'error'); }
+  }
+
+  function recRender(){
+    const order = recOrder();
+    el('recListView').hidden = Boolean(order);
+    el('recDetailView').hidden = !order;
+    // Dentro da compra: sem filtro, volta pelo caminho (mesmo modelo do Inventário).
+    el('recStoreFilter').hidden = Boolean(order) || !recData.canFollow;
+    if(!recInCompras()) el('recPageTitle').textContent = order ? order.supplierName : recData.canFollow ? 'Recebimento das Lojas' : 'Recebimento';
+    recCrumb(order);
+    if(order) recRenderDetail(order); else recRenderList();
+  }
+
+  // Caminho da página onde a tela está (Recebimento ou Compras): na compra
+  // aberta, o nome da página vira link de volta para a lista.
+  function recCrumb(order){
+    const page = el('recRoot').closest('.page');
+    const crumbs = page && page.querySelector('.page-crumbs');
+    const here = crumbs && crumbs.querySelector('.here');
+    if(!here) return;
+    crumbs.querySelectorAll('[data-rec-crumb]').forEach(node => node.remove());
+    if(!here.dataset.recBase) here.dataset.recBase = here.textContent;
+    const title = page.id === 'pageComprasNovo' ? here.dataset.recBase
+      : (recData && recData.canFollow ? 'Recebimento das Lojas' : 'Recebimento').toLocaleUpperCase('pt-BR');
+    here.textContent = order ? order.supplierName : title;
+    if(order) here.insertAdjacentHTML('beforebegin', '<a href="/recebimento" data-rec-crumb data-rec-crumb-back>'+escapeHtml(title)+'</a>'+
+      '<svg data-rec-crumb viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>');
+  }
+
+  function recPills(o){
+    const pill = {aguardando:['waiting','AGUARDANDO CHEGADA'], nota:['progress','NOTA ENVIADA · FALTA CONFERIR'], divergencia:['alert','COM DIVERGÊNCIA'],
+      conferida:['done','CONFERIDA'], concluidas:['done','CONCLUÍDA PELO COMPRAS']}[recStage(o)];
+    return (o.late ? '<span class="status-pill alert">ATRASADA</span> ' : '')+'<span class="status-pill '+pill[0]+'">'+pill[1]+'</span>';
+  }
+
+  function recRenderList(){
+    const store = el('recStoreFilter').value;
+    const orders = recData.orders.filter(o => !store || o.deliveryCompanyId === store);
+    const tabs = recTabs();
+    if(!tabs.some(t => t[0] === recTab)) recTab = tabs[0][0];
+    el('recTabs').innerHTML = tabs.map(([key, label, stages]) =>
+      '<button class="supply-tab'+(key === recTab ? ' active' : '')+'" type="button" role="tab" data-rec-tab="'+key+'">'+label+
+      (stages ? ' ('+orders.filter(o => stages.includes(recStage(o))).length+')' : '')+'</button>').join('');
+    const tab = tabs.find(t => t[0] === recTab);
+    el('recConfig').hidden = tab[2] !== null;
+    el('recList').hidden = tab[2] === null;
+    if(tab[2] === null){
+      el('recConfigEmails').innerHTML = recData.emails.map((email, index) =>
+        '<div class="purchase-field"><label>E-MAIL '+(index + 1)+(index ? ' (CÓPIA)' : ' (PARA)')+'</label><input type="email" data-rec-email value="'+escapeHtml(email)+'"></div>').join('');
+      el('recConfigInfo').textContent = recData.emailConfigured
+        ? 'O E-MAIL SAI DE recebimento@unigameslojas.com COM O PDF DA NOTA EM ANEXO.'
+        : 'ENVIO DE E-MAIL AINDA NÃO CONFIGURADO (FALTA A CHAVE RESEND_RECEBIMENTO_API_KEY NO SERVIDOR). A NOTA ENTRA NO PEDIDO E O AVISO SAI NORMALMENTE.';
+      return;
+    }
+    const list = orders.filter(o => tab[2].includes(recStage(o)));
+    el('recList').innerHTML = list.length ? list.map(o => {
+      const units = o.items.reduce((sum, item) => sum + item.quantity, 0);
+      return '<button type="button" class="rec-row" data-rec-open="'+escapeHtml(o.id)+'">'+
+        '<span class="rec-row-main"><strong>'+escapeHtml(o.supplierName)+'</strong><small>'+
+        escapeHtml(o.deliveryCompanyName)+(o.deliveryChanged ? ' · FATURA: '+escapeHtml(o.billingCompanyName) : '')+
+        ' · '+(o.items.length ? o.items.length+' PRODUTO(S), '+units+' UN.' : 'SEM ITENS DETALHADOS')+(o.nfNumber ? ' · NF '+escapeHtml(o.nfNumber) : '')+'</small></span>'+
+        '<span class="rec-row-side">'+recPills(o)+'<small>'+(o.expectedDate ? 'PREVISÃO '+gdDateLabel(o.expectedDate) : 'SEM PREVISÃO')+'</small></span></button>';
+    }).join('') : '<p class="rec-empty">NENHUMA COMPRA AQUI.</p>';
+  }
+
+  function recHistoryLine(h){
+    const text = {
+      nota: () => 'NF '+h.nfNumber+' ENVIADA AO COMPRAS.',
+      email: () => h.ok ? 'E-MAIL ENVIADO PARA '+h.to+(h.cc && h.cc.length ? ' (CÓPIA: '+h.cc.join(', ')+')' : '')+'.' : 'E-MAIL NÃO ENVIADO: '+(h.error || 'ERRO'),
+      conferencia: () => h.divergences ? 'CONFERÊNCIA REGISTRADA COM '+h.divergences+' DIVERGÊNCIA(S).' : 'CONFERÊNCIA REGISTRADA. TUDO CONFERE.',
+      correcao: () => 'CORREÇÃO: '+h.productName+' DE '+(h.from === null ? '—' : h.from)+' PARA '+h.to+'. MOTIVO: '+h.reason,
+      loja: () => 'LOJA DE CHEGADA: '+h.from+' → '+h.to+'.',
+    }[h.type];
+    return '<li><small>'+escapeHtml(formatDateTimeBR(h.at))+' · '+escapeHtml(h.byName)+'</small><br>'+escapeHtml(text ? text() : h.type)+'</li>';
+  }
+
+  function recNotaForm(o){
+    const first = !o.steps.nota;
+    const thumbs = recPhotos.map(p => '<img alt="" src="'+URL.createObjectURL(new Blob([p.bytes], {type:'image/jpeg'}))+'">').join('');
+    const body = '<div class="purchase-field"><label for="recNfNumber">NÚMERO DA NF *</label><input id="recNfNumber" inputmode="numeric" autocomplete="off" placeholder="EX.: 104521"></div>'+
+      '<div class="rec-actions"><button class="btn-accent rec-big" type="button" data-rec-scan>ESCANEAR NOTA (FOTOS)</button>'+
+      '<button class="btn-outline" type="button" data-rec-pdf>ANEXAR PDF</button>'+
+      ((recPdf || recPhotos.length) ? '<button class="btn-outline" type="button" data-rec-clear>LIMPAR</button>' : '')+'</div>'+
+      '<input type="file" id="recPdfInput" accept="application/pdf,.pdf" hidden><input type="file" id="recScanInput" accept="image/*" capture="environment" multiple hidden>'+
+      '<p class="purchase-field-help">'+(recPdf ? 'PDF ANEXADO: '+escapeHtml(recPdf.name)
+        : recPhotos.length ? recPhotos.length+' FOLHA(S). CONFIRA SE DÁ PARA LER. TIRE MAIS FOTOS PARA ACRESCENTAR FOLHAS.'
+        : 'UMA FOTO POR FOLHA, COM A NOTA INTEIRA E SEM SOMBRA. O SISTEMA MONTA O PDF.')+'</p>'+
+      (thumbs ? '<div class="rec-thumbs">'+thumbs+'</div>' : '')+
+      '<button class="btn-accent rec-big" type="button" data-rec-send-nota>ENVIAR NOTA</button>'+
+      '<p class="purchase-field-help">A NOTA VAI PARA O PEDIDO NO COMPRAS E POR E-MAIL. DEPOIS DE ENVIADA, A LOJA NÃO REABRE O PDF.</p>';
+    return first
+      ? '<div class="table-panel rec-panel"><h4>PASSO 1 DE 2 · A MERCADORIA CHEGOU? ENVIE A NOTA</h4>'+body+'</div>'
+      : '<details class="table-panel rec-panel"'+(recPdf || recPhotos.length ? ' open' : '')+'><summary>VEIO MAIS DE UMA NOTA? ENVIAR OUTRA NF DESTA COMPRA</summary>'+body+'</details>';
+  }
+
+  function recConferenceForm(o){
+    const options = '<option value="">NENHUMA</option>'+REC_MANUAL.map(key => '<option value="'+key+'">'+REC_DIVS[key]+'</option>').join('');
+    return '<div class="table-panel rec-panel" id="recConference"><h4>PASSO 2 DE 2 · CONFIRA PRODUTO POR PRODUTO</h4>'+
+      '<p class="purchase-field-help">CONTE O QUE TEM NA CAIXA E DIGITE A QUANTIDADE DE TODOS OS PRODUTOS (MESMO QUE 0). FALTOU E VEIO A MAIS SÃO MARCADOS SOZINHOS.</p>'+
+      o.items.map(item =>
+        '<div class="rec-conf" data-rec-item="'+escapeHtml(item.id)+'" data-rec-qty="'+item.quantity+'">'+
+          '<div class="rec-conf-name"><strong>'+escapeHtml(item.productName || item.productCode)+'</strong>'+
+          (item.productCode && item.productName ? ' <small>'+escapeHtml(item.productCode)+'</small>' : '')+
+          '<small>PEDIDO: '+item.quantity+'</small></div>'+
+          '<div class="rec-qty"><button class="btn-outline" type="button" data-rec-step="-1" aria-label="Menos um">-</button>'+
+          '<input type="number" inputmode="numeric" min="0" step="1" data-rec-count aria-label="Quantidade que chegou">'+
+          '<button class="btn-outline" type="button" data-rec-step="1" aria-label="Mais um">+</button><span class="rec-auto" data-rec-auto></span></div>'+
+          '<div class="purchase-form-grid rec-conf-grid"><div class="purchase-field"><label>DIVERGÊNCIA</label><select data-rec-div>'+options+'</select></div>'+
+          '<div class="purchase-field"><label>OBSERVAÇÃO</label><input data-rec-note maxlength="500" placeholder="EX.: VEIO BRANCO NO LUGAR DO PRETO"></div></div>'+
+        '</div>').join('')+
+      '<div id="recExtras"></div>'+
+      '<button class="btn-outline" type="button" data-rec-add-extra>+ CHEGOU PRODUTO QUE NÃO ESTÁ NO PEDIDO</button>'+
+      '<div id="recSummary"></div>'+
+      '<button class="btn-accent rec-big" type="button" id="btnRecRegister" data-rec-register>REGISTRAR CONFERÊNCIA</button></div>';
+  }
+
+  function recItemsTable(o){
+    const fixable = recCanEdit(o) && o.steps.conferida;
+    const divOptions = current => '<option value="">'+'PELA CONTAGEM'+'</option>'+REC_MANUAL.map(key =>
+      '<option value="'+key+'"'+(key === current ? ' selected' : '')+'>'+REC_DIVS[key]+'</option>').join('');
+    const rows = o.items.map(item => {
+      const diff = item.counted === null ? '' : item.counted - item.quantity;
+      const status = item.counted === null ? '—'
+        : (item.divergence ? '<span class="status-pill alert">'+REC_DIVS[item.divergence]+(item.divergence === 'faltou' ? ' '+(-diff) : item.divergence === 'veio_a_mais' ? ' '+diff : '')+'</span>' : '<span class="status-pill done">OK</span>')+
+          (item.note ? ' <small>'+escapeHtml(item.note)+'</small>' : '')+
+          (item.changedByCompras ? ' <span class="status-pill waiting">COMPRAS ALTEROU PARA '+item.receivedQuantity+'</span>' : '');
+      let row = '<tr><td data-label="Produto"><strong>'+escapeHtml(item.productName || item.productCode)+'</strong>'+(item.productCode && item.productName ? ' <small>'+escapeHtml(item.productCode)+'</small>' : '')+'</td>'+
+        '<td data-label="Pedido">'+item.quantity+'</td><td data-label="Chegou"><strong>'+(item.counted === null ? '—' : item.counted)+'</strong></td>'+
+        '<td data-label="Conferência">'+status+'</td>'+
+        (fixable ? '<td><button class="btn-outline" type="button" data-rec-fix="'+escapeHtml(item.id)+'">CORRIGIR</button></td>' : '')+'</tr>';
+      if(fixable && recFixItem === item.id){
+        row += '<tr class="rec-fix-row"><td colspan="5"><div class="purchase-form-grid rec-conf-grid">'+
+          '<div class="purchase-field"><label>QUANTIDADE CORRETA *</label><input id="recFixQty" type="number" inputmode="numeric" min="0" step="1" value="'+(item.counted === null ? '' : item.counted)+'"></div>'+
+          '<div class="purchase-field"><label>DIVERGÊNCIA</label><select id="recFixDiv">'+divOptions(REC_MANUAL.includes(item.divergence) ? item.divergence : '')+'</select></div>'+
+          '<div class="purchase-field"><label>OBSERVAÇÃO</label><input id="recFixNote" maxlength="500" value="'+escapeHtml(item.note)+'"></div>'+
+          '<div class="purchase-field"><label>MOTIVO DA CORREÇÃO *</label><input id="recFixReason" maxlength="500" placeholder="EX.: CAIXA ESTAVA NO ESTOQUE"></div></div>'+
+          '<div class="rec-actions"><button class="btn-accent" type="button" data-rec-fix-save="'+escapeHtml(item.id)+'">SALVAR CORREÇÃO</button>'+
+          '<button class="btn-outline" type="button" data-rec-fix-cancel>CANCELAR</button></div></td></tr>';
+      }
+      return row;
+    }).join('');
+    return '<h3 class="supply-section-title">PRODUTOS</h3><div class="table-panel responsive-table"><div class="table-scroll"><table><thead><tr><th>Produto</th><th>Pedido</th><th>Chegou</th><th>Conferência</th>'+
+      (fixable ? '<th></th>' : '')+'</tr></thead><tbody>'+(rows || '<tr><td colspan="5" class="responsive-empty">SEM ITENS DETALHADOS.</td></tr>')+'</tbody></table></div></div>';
+  }
+
+  function recRenderDetail(o){
+    const follow = recData.canFollow;
+    const dateOr = iso => iso ? gdDateLabel(iso) : '—';
+    const steps = [['NOTA ENVIADA', o.steps.nota], ['CONFERIDA PELA LOJA', o.steps.conferida], ['NF LANÇADA', o.steps.nf], ['DIVISÃO', o.steps.divisao], ['CONCLUÍDO PELO COMPRAS', o.steps.concluido]];
+    let html = '<div class="rec-head">'+(recInCompras() ? '<h3>'+escapeHtml(o.supplierName)+'</h3>' : '')+'<p>CHEGA NA '+escapeHtml(o.deliveryCompanyName)+(o.deliveryChanged ? ' (FATURADA PELA '+escapeHtml(o.billingCompanyName)+')' : '')+
+      ' · PEDIDO DE '+dateOr(o.orderDate)+' · PREVISÃO '+dateOr(o.expectedDate)+(o.receivedDate ? ' · RECEBIDO EM '+gdDateLabel(o.receivedDate) : '')+'</p>'+
+      recPills(o)+'<div class="rec-steps">'+steps.map(([label, done]) => '<span class="status-pill'+(done ? ' done' : '')+'">'+label+'</span>').join('')+'</div></div>';
+
+    if(o.steps.concluido){
+      html += '<p class="rec-notice">CONCLUÍDA PELO COMPRAS. NÃO PODE MAIS SER ALTERADA.</p>';
+    }else if(recData.canRegister){
+      html += recNotaForm(o);
+      if(o.steps.nota && !o.steps.conferida && o.items.length) html += recConferenceForm(o);
+      if(o.steps.conferida) html += '<p class="rec-notice">CONFERÊNCIA REGISTRADA POR '+escapeHtml(o.checkedByName)+' EM '+escapeHtml(formatDateTimeBR(o.checkedAt))+'. ERROU ALGUMA QUANTIDADE? USE CORRIGIR NO PRODUTO (PRECISA DO MOTIVO).</p>';
+      if(!o.items.length) html += '<p class="rec-notice">PEDIDO SEM ITENS DETALHADOS: SÓ ENVIE A NOTA.</p>';
+    }
+
+    if(follow){
+      html += '<div class="table-panel rec-panel"><h4>COMPRAS</h4><p class="purchase-field-help">CONFERIR O PDF · VINCULAR A NF · PREENCHER E ENVIAR A DIVISÃO · MARCAR COMO CONCLUÍDO EM EDITAR PEDIDO.</p>'+
+        '<div class="rec-actions">'+(canAccess('purchases_draft') ? '<button class="btn-accent" type="button" data-rec-compras>ABRIR ESTE PEDIDO NO COMPRAS</button>' : '')+'</div>'+
+        (o.status === 'aguardando_chegada'
+          ? '<div class="purchase-form-grid rec-conf-grid"><div class="purchase-field"><label for="recDeliveryStore">LOJA DE CHEGADA</label><select id="recDeliveryStore">'+
+            (recData.stores || []).map(store => '<option value="'+escapeHtml(store.id)+'"'+(store.id === o.deliveryCompanyId ? ' selected' : '')+'>'+escapeHtml(String(store.name).toLocaleUpperCase('pt-BR'))+(store.id === o.billingCompanyId ? ' (LOJA QUE FATURA)' : '')+'</option>').join('')+
+            '</select></div></div><button class="btn-outline" type="button" data-rec-store-save>TROCAR LOJA DE CHEGADA</button>'
+          : '')+'</div>';
+    }
+
+    if(o.steps.nota || o.notas.length){
+      html += '<h3 class="supply-section-title">NOTAS ENVIADAS</h3><ul class="rec-list-plain">'+o.notas.map(n =>
+        '<li><strong>NF '+escapeHtml(n.nfNumber)+'</strong> <small>· '+escapeHtml(n.byName)+' · '+escapeHtml(formatDateTimeBR(n.at))+'</small>'+
+        (follow && n.attachmentId ? ' <a class="btn-outline" target="_blank" rel="noopener" href="'+REC_API+'/'+encodeURIComponent(o.id)+'?anexo='+encodeURIComponent(n.attachmentId)+'">ABRIR PDF</a>' : ' <small>· NOTA ENVIADA AO COMPRAS</small>')+'</li>').join('')+'</ul>';
+    }
+    // Durante a conferência os produtos já estão no formulário.
+    const conferring = recData.canRegister && !o.steps.concluido && o.steps.nota && !o.steps.conferida && o.items.length;
+    if(!conferring) html += recItemsTable(o);
+    if(o.extras.length){
+      html += '<h3 class="supply-section-title">CHEGOU FORA DO PEDIDO</h3><ul class="rec-list-plain">'+o.extras.map(x =>
+        '<li><strong>'+escapeHtml(x.productName)+'</strong> · '+x.quantity+' UN.'+(x.note ? ' <small>· '+escapeHtml(x.note)+'</small>' : '')+'</li>').join('')+'</ul>';
+    }
+    if(o.history.length) html += '<h3 class="supply-section-title">HISTÓRICO</h3><ul class="rec-list-plain rec-history">'+o.history.slice().reverse().map(recHistoryLine).join('')+'</ul>';
+    el('recDetail').innerHTML = html;
+  }
+
+  function recReadConference(o){
+    const items = [];
+    for(const row of el('recDetail').querySelectorAll('[data-rec-item]')){
+      const value = row.querySelector('[data-rec-count]').value.trim();
+      const name = row.querySelector('.rec-conf-name strong').textContent;
+      if(value === '' || !/^\d+$/.test(value)) throw new Error('INFORME A QUANTIDADE DE '+name+' (MESMO QUE 0).');
+      const divergence = row.querySelector('[data-rec-div]').value;
+      const note = row.querySelector('[data-rec-note]').value.trim();
+      if(divergence && !note) throw new Error(name+': DESCREVA A DIVERGÊNCIA NA OBSERVAÇÃO.');
+      items.push({itemId: row.dataset.recItem, counted: Number(value), divergence, note, name, quantity: Number(row.dataset.recQty)});
+    }
+    const extras = [];
+    for(const row of el('recDetail').querySelectorAll('[data-rec-extra]')){
+      const productName = row.querySelector('[data-rec-extra-name]').value.trim();
+      const quantity = row.querySelector('[data-rec-extra-qty]').value.trim();
+      if(!productName && !quantity) continue;
+      if(!productName || !/^\d+$/.test(quantity) || Number(quantity) < 1) throw new Error('INFORME O PRODUTO E A QUANTIDADE QUE CHEGOU FORA DO PEDIDO.');
+      extras.push({productName, quantity: Number(quantity), note: row.querySelector('[data-rec-extra-note]').value.trim()});
+    }
+    return {items, extras};
+  }
+
+  async function recPost(body, okMessage){
+    const order = recOrder();
+    await invApi('POST', body, '', REC_API+'/'+encodeURIComponent(order.id));
+    if(okMessage) showPurchaseToast(okMessage);
+    await loadRecebPage();
+  }
+
+  async function recSendNota(button){
+    const order = recOrder();
+    const nfNumber = el('recNfNumber').value.replace(/\D/g, '');
+    if(!nfNumber) return showPurchaseToast('INFORME O NÚMERO DA NOTA.', 'error');
+    if(!recPdf && !recPhotos.length) return showPurchaseToast('ESCANEIE OU ANEXE A NOTA.', 'error');
+    button.disabled = true;
+    button.textContent = 'ENVIANDO…';
+    try{
+      const body = recPdf || rlogBuildPdf(recPhotos);
+      if(body.size > 15 * 1024 * 1024) throw new Error('O PDF DEVE TER NO MÁXIMO 15 MB. TIRE AS FOTOS COM MENOS ZOOM.');
+      const response = await fetch(REC_API+'/'+encodeURIComponent(order.id)+'?nfNumber='+nfNumber,
+        {method:'POST', headers:{Accept:'application/json','Content-Type':'application/pdf'}, body});
+      const payload = await response.json().catch(() => ({}));
+      if(response.status === 401){ location.assign('/login?next='+encodeURIComponent(location.pathname)); return; }
+      if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL ENVIAR A NOTA.');
+      showPurchaseToast(payload.emailSent ? 'NOTA ENVIADA AO COMPRAS E POR E-MAIL.' : 'NOTA ENVIADA AO COMPRAS. O E-MAIL NÃO SAIU, MAS O COMPRAS FOI AVISADO PELO SISTEMA.');
+      recPdf = null;
+      recPhotos = [];
+      await loadRecebPage();
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      button.disabled = false;
+      button.textContent = 'ENVIAR NOTA';
+    }
+  }
+
+  document.addEventListener('click', event => {
+    if(!event.target.closest('[data-rec-crumb-back]') || event.metaKey || event.ctrlKey) return;
+    event.preventDefault();
+    recOpenId = '';
+    recFixItem = '';
+    recRender();
+  });
+  el('recStoreFilter') && el('recStoreFilter').addEventListener('change', recRender);
+  el('recTabs') && el('recTabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-rec-tab]');
+    if(!button) return;
+    recTab = button.dataset.recTab;
+    recRender();
+  });
+  el('recList') && el('recList').addEventListener('click', event => {
+    const button = event.target.closest('[data-rec-open]');
+    if(!button) return;
+    recOpenId = button.dataset.recOpen;
+    recFixItem = '';
+    recPdf = null;
+    recPhotos = [];
+    recRender();
+    window.scrollTo({top:0});
+  });
+  el('btnRecConfigSave') && el('btnRecConfigSave').addEventListener('click', async () => {
+    try{
+      const emails = [...document.querySelectorAll('[data-rec-email]')].map(input => input.value.trim());
+      const payload = await invApi('PUT', {emails}, '', REC_API);
+      recData.emails = payload.emails;
+      showPurchaseToast('E-MAILS SALVOS. A PRÓXIMA NOTA JÁ VAI PARA ELES.');
+    }catch(error){ showPurchaseToast(error.message, 'error'); }
+  });
+  el('recDetail') && el('recDetail').addEventListener('change', async event => {
+    if(event.target.id === 'recPdfInput'){
+      const file = event.target.files[0];
+      event.target.value = '';
+      if(!file) return;
+      recPdf = file;
+      recPhotos = [];
+    }else if(event.target.id === 'recScanInput'){
+      const files = [...event.target.files];
+      event.target.value = '';
+      try{
+        for(const file of files) recPhotos.push(await rlogPhoto(file));
+        recPdf = null;
+      }catch(error){ showPurchaseToast(error.message, 'error'); }
+    }else return;
+    const nf = el('recNfNumber') ? el('recNfNumber').value : '';
+    recRender();
+    if(el('recNfNumber')) el('recNfNumber').value = nf;
+  });
+  el('recDetail') && el('recDetail').addEventListener('input', event => {
+    const row = event.target.closest('[data-rec-item]');
+    if(!row || !event.target.matches('[data-rec-count]')) return;
+    const value = event.target.value.trim();
+    const diff = /^\d+$/.test(value) ? Number(value) - Number(row.dataset.recQty) : 0;
+    row.querySelector('[data-rec-auto]').textContent = diff < 0 ? 'FALTOU '+(-diff) : diff > 0 ? 'VEIO A MAIS '+diff : '';
+    row.classList.toggle('is-diff', diff !== 0);
+  });
+  el('recDetail') && el('recDetail').addEventListener('click', async event => {
+    const target = event.target.closest('button,a');
+    if(!target) return;
+    const order = recOrder();
+    const data = target.dataset;
+    try{
+      if('recScan' in data) return el('recScanInput').click();
+      if('recPdf' in data) return el('recPdfInput').click();
+      if('recClear' in data){ recPdf = null; recPhotos = []; return recRender(); }
+      if('recSendNota' in data) return recSendNota(target);
+      if('recStep' in data){
+        const input = target.closest('[data-rec-item]').querySelector('[data-rec-count]');
+        input.value = Math.max(0, (Number(input.value) || 0) + Number(data.recStep));
+        input.dispatchEvent(new Event('input', {bubbles:true}));
+        return;
+      }
+      if('recAddExtra' in data){
+        const row = document.createElement('div');
+        row.className = 'purchase-form-grid rec-conf-grid rec-extra';
+        row.dataset.recExtra = '';
+        row.innerHTML = '<div class="purchase-field"><label>PRODUTO QUE VEIO</label><input data-rec-extra-name maxlength="200"></div>'+
+          '<div class="purchase-field"><label>QUANTIDADE</label><input data-rec-extra-qty type="number" inputmode="numeric" min="1" step="1"></div>'+
+          '<div class="purchase-field"><label>OBSERVAÇÃO</label><input data-rec-extra-note maxlength="500"></div>'+
+          '<button class="btn-outline" type="button" data-rec-del-extra>REMOVER</button>';
+        el('recExtras').append(row);
+        return;
+      }
+      if('recDelExtra' in data) return target.closest('[data-rec-extra]').remove();
+      if('recRegister' in data){
+        const read = recReadConference(order);
+        const lines = read.items.map(item => {
+          const auto = item.counted < item.quantity ? 'FALTOU '+(item.quantity - item.counted) : item.counted > item.quantity ? 'VEIO A MAIS '+(item.counted - item.quantity) : '';
+          const label = [item.divergence ? REC_DIVS[item.divergence] : '', auto].filter(Boolean).join(' · ');
+          return '<tr><td>'+escapeHtml(item.name)+'</td><td>'+item.quantity+'</td><td><strong>'+item.counted+'</strong></td><td>'+(label ? '<span class="status-pill alert">'+escapeHtml(label)+'</span>' : '<span class="status-pill done">OK</span>')+'</td></tr>';
+        }).concat(read.extras.map(x => '<tr><td>'+escapeHtml(x.productName.toLocaleUpperCase('pt-BR'))+'</td><td>—</td><td><strong>'+x.quantity+'</strong></td><td><span class="status-pill alert">FORA DO PEDIDO</span></td></tr>'));
+        const count = read.items.filter(item => item.divergence || item.counted !== item.quantity).length + read.extras.length;
+        el('recSummary').innerHTML = '<h4>CONFIRA ANTES DE AVISAR O COMPRAS</h4><div class="table-scroll"><table class="rec-summary"><thead><tr><th>Produto</th><th>Pedido</th><th>Chegou</th><th></th></tr></thead><tbody>'+lines.join('')+'</tbody></table></div>'+
+          '<p class="rec-notice">'+(count ? count+' DIVERGÊNCIA(S). O COMPRAS SERÁ AVISADO NA HORA.' : 'TUDO CONFERE. O COMPRAS SERÁ AVISADO PARA ENVIAR A DIVISÃO.')+'</p>'+
+          '<div class="rec-actions"><button class="btn-accent rec-big" type="button" data-rec-confirm>CONFIRMAR E AVISAR O COMPRAS</button><button class="btn-outline" type="button" data-rec-edit>VOLTAR E EDITAR</button></div>';
+        el('btnRecRegister').hidden = true;
+        el('recSummary').scrollIntoView({behavior:'smooth', block:'start'});
+        return;
+      }
+      if('recEdit' in data){ el('recSummary').innerHTML = ''; el('btnRecRegister').hidden = false; return; }
+      if('recConfirm' in data){
+        const read = recReadConference(order);
+        target.disabled = true;
+        await recPost({action:'conferir', items: read.items.map(({itemId, counted, divergence, note}) => ({itemId, counted, divergence, note})), extras: read.extras}, 'CONFERÊNCIA REGISTRADA. O COMPRAS FOI AVISADO.');
+        return;
+      }
+      if('recFix' in data){ recFixItem = data.recFix; return recRender(); }
+      if('recFixCancel' in data){ recFixItem = ''; return recRender(); }
+      if('recFixSave' in data){
+        const counted = el('recFixQty').value.trim();
+        if(!/^\d+$/.test(counted)) throw new Error('INFORME A QUANTIDADE CORRETA.');
+        const reason = el('recFixReason').value.trim();
+        if(reason.length < 5) throw new Error('INFORME O MOTIVO DA CORREÇÃO.');
+        const divergence = el('recFixDiv').value;
+        const note = el('recFixNote').value.trim();
+        if(divergence && !note) throw new Error('DESCREVA A DIVERGÊNCIA NA OBSERVAÇÃO.');
+        target.disabled = true;
+        recFixItem = '';
+        await recPost({action:'corrigir', itemId: data.recFixSave, counted: Number(counted), divergence, note, reason}, 'CORREÇÃO SALVA. O COMPRAS FOI AVISADO.');
+        return;
+      }
+      if('recStoreSave' in data){
+        const select = el('recDeliveryStore');
+        const name = select.options[select.selectedIndex].textContent;
+        if(!await askConfirm('A COMPRA PASSA A APARECER PARA '+name+'. CONFIRMA?', {okText:'TROCAR'})) return;
+        await recPost({action:'loja', companyId: select.value}, 'LOJA DE CHEGADA ALTERADA.');
+        return;
+      }
+      if('recCompras' in data){
+        // O detalhe do pedido vive na aba PEDIDOS do Compras: abre a aba, carrega a lista e o pedido.
+        if(recInCompras()) setComprasSectionTab('pedidos');
+        else { comprasSectionTab = 'pedidos'; navigateToPage('comprasNovo'); }
+        await loadComprasOrdersPage({silent:true});
+        await openComprasOrderDetail(order.id);
+        if(el('comprasOrderDetail')) el('comprasOrderDetail').scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    }catch(error){
+      showPurchaseToast(error.message, 'error');
+      target.disabled = false;
+    }
+  });
+
   // ---------- ESTOQUE · REINTEGRAÇÃO FISCAL ----------
   // Interno (login com loja não vê). Lança durante a semana; fecha um a um
   // com a data e o nº da nota de reintegração.
@@ -45996,6 +46565,9 @@ function renderHomeTasks(){
     el('comprasSectionPedidos').hidden = tab !== 'pedidos';
     el('comprasSectionPorProduto').hidden = tab !== 'porProduto';
     el('comprasSectionFornecedores').hidden = tab !== 'fornecedores';
+    el('comprasSectionRecebimento').hidden = tab !== 'recebimento';
+    if(tab === 'recebimento'){ el('comprasSectionRecebimento').append(el('recRoot')); loadRecebPage(); }
+    else if(el('recRoot').closest('#pageComprasNovo')) recCrumb(null);
     if(tab === 'porProduto') initComprasProdutoBusca();
     if(tab === 'fornecedores') loadComprasFornecedoresTab();
     if(tab === 'pedidos') loadComprasOrdersPage();
@@ -47484,11 +48056,11 @@ function renderHomeTasks(){
       return '<tr>'+
       '<td><strong>'+escapeHtml(comprasItemLabel(item))+'</strong>'+(item.productCode && item.productName ? ' <small style="color:var(--ink-faint);">'+escapeHtml(item.productCode)+'</small>' : '')+'</td>'+
       '<td>'+Number(item.quantity || 0)+'</td>'+
-      '<td>'+Number(item.receivedQuantity || 0)+(partial ? ' <span class="status-pill waiting">FALTAM '+missing+'</span>' : '')+'</td>'+
+      '<td>'+Number(item.receivedQuantity || 0)+(partial ? ' <span class="status-pill waiting">FALTAM '+missing+'</span>' : '')+(missing < 0 ? ' <span class="status-pill waiting">VEIO A MAIS '+(-missing)+'</span>' : '')+'</td>'+
       // 0 = "não informado" (default do schema), não mostra R$ 0,00.
       '<td>'+(Number(item.unitPriceCents || 0) > 0 ? formatCentsBRL(item.unitPriceCents) : '—')+'</td>'+
       '<td class="no-print"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
-        '<input type="number" min="0" max="'+Number(item.quantity || 0)+'" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
+        '<input type="number" min="0" step="1" value="'+Number(item.receivedQuantity || 0)+'" data-compras-order-item-received="'+escapeHtml(item.id)+'" style="width:80px;" title="Quantidade recebida">'+
         '<input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) / 100).toFixed(2)+'" data-compras-order-item-price="'+escapeHtml(item.id)+'" style="width:100px;" title="Preço unitário (R$)" aria-label="Preço unitário">'+
         '<input type="text" inputmode="decimal" value="'+(Number(item.unitPriceCents || 0) * Number(item.quantity || 0) / 100).toFixed(2)+'" data-compras-order-item-total="'+escapeHtml(item.id)+'" style="width:110px;" title="Valor total do produto (quantidade × preço): digite e o preço unitário é calculado" aria-label="Valor total">'+
         '<button class="btn-outline" type="button" data-compras-order-item-save="'+escapeHtml(item.id)+'">SALVAR</button>'+
@@ -63718,6 +64290,7 @@ function renderHomeTasks(){
     if(canAccess('outputs')) loaders.push(() => loadOutputs());
     if(canAccess('inputs')) loaders.push(() => loadInputs());
     if(canAccess('supplies')) loaders.push(() => loadHomeSupplies());
+    if(canAccess('recebimento')) loaders.push(() => loadHomeRecebimento());
     const HOME_LOADERS_BATCH_SIZE = 4;
     for(let start = 0; start < loaders.length; start += HOME_LOADERS_BATCH_SIZE){
       const batch = loaders.slice(start, start + HOME_LOADERS_BATCH_SIZE);

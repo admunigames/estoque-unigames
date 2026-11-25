@@ -151,6 +151,14 @@ export async function liveInvalidationForRequest(
     return { module: "rma", audience: { kind: "all" } };
   }
 
+  if (path === "/api/recebimento" || path.startsWith("/api/recebimento/")) {
+    // Recebimento ao vivo: nota, conferência, correção, troca de loja e
+    // e-mails avisam as telas abertas; cada sessão recarrega pela API, que
+    // aplica o escopo de loja e nunca manda valores. O Compras também é
+    // avisado (ver LIVE_TWINS em worker/index.ts).
+    return { module: "recebimento", audience: { kind: "all" } };
+  }
+
   if (path === "/api/inventario") {
     // Inventário ao vivo: contagem, categorias, custos e motivos avisam as
     // telas abertas (vários usuários contam ao mesmo tempo); cada sessão

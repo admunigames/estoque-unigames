@@ -92,6 +92,7 @@ type Permission =
   | "rma:view" | "rma:create" | "rma:edit" | "rma:finance" | "rma:delete" | "rma:config"
   | "inventario:view" | "inventario:count" | "inventario:manage" | "inventario:delete"
   | "relatorios_logistica:view" | "relatorios_logistica:send"
+  | "recebimento:loja" | "recebimento:acompanhar"
   | "reintegracao_fiscal:view" | "reintegracao_fiscal:create" | "reintegracao_fiscal:emit" | "reintegracao_fiscal:delete"
   | "fornecedores_pagar:view" | "fornecedores_pagar:create" | "fornecedores_pagar:pay" | "fornecedores_pagar:delete"
   | "auditoria_operacional:view" | "auditoria_operacional:audit" | "auditoria_operacional:manage" | "auditoria_operacional:delete"
@@ -275,6 +276,8 @@ const ASSIGNABLE_PERMISSIONS: Permission[] = [
   "inventario:view", "inventario:count", "inventario:manage", "inventario:delete",
   // Estoque > Relatórios Logística — loja envia e vê só a própria (a rota confere).
   "relatorios_logistica:view", "relatorios_logistica:send",
+  // Estoque > Recebimento — loja envia nota/confere a própria; acompanhar = Compras, todas as lojas (a rota confere).
+  "recebimento:loja", "recebimento:acompanhar",
   // Estoque > Reintegração Fiscal — interno: login com loja não vê (a rota confere).
   "reintegracao_fiscal:view", "reintegracao_fiscal:create", "reintegracao_fiscal:emit", "reintegracao_fiscal:delete",
   // Financeiro > Fornecedores a Pagar — interno: login com loja não vê (a rota confere).
@@ -402,6 +405,7 @@ const APP_ROUTE_PATHS = new Set([
   "/assistencia/rma",
   "/inventario",
   "/relatorios-logistica",
+  "/recebimento",
   "/reintegracao-fiscal",
   "/fornecedores-a-pagar",
   "/auditoria-operacional",
@@ -1443,6 +1447,7 @@ const MODULE_VIEW_PERMISSIONS: Record<string, Permission[]> = {
   controleGd: ["controle_gd:view", "controle_gd:create", "controle_gd:edit", "controle_gd:opening"],
   inventario: ["inventario:view", "inventario:count", "inventario:manage", "inventario:delete"],
   relatoriosLogistica: ["relatorios_logistica:view", "relatorios_logistica:send"],
+  recebimento: ["recebimento:loja", "recebimento:acompanhar"],
   reintegracaoFiscal: ["reintegracao_fiscal:view", "reintegracao_fiscal:create", "reintegracao_fiscal:emit", "reintegracao_fiscal:delete"],
   fornecedoresPagar: ["fornecedores_pagar:view", "fornecedores_pagar:create", "fornecedores_pagar:pay", "fornecedores_pagar:delete"],
   rma: ["rma:view", "rma:create", "rma:edit", "rma:finance", "rma:delete", "rma:config"],
@@ -1478,7 +1483,12 @@ const LIVE_MODULE_PERMISSION_KEYS: Record<LiveModule, keyof typeof MODULE_VIEW_P
   estoque_assistencia: "estoqueAssistencia",
   inventario: "inventario",
   rma: "rma",
+  recebimento: "recebimento",
 };
+
+// Recebimento e Compras gravam nos mesmos pedidos: o aviso de um também
+// atualiza as telas abertas do outro.
+const LIVE_TWINS: Partial<Record<LiveModule, LiveModule>> = { compras: "recebimento", recebimento: "compras" };
 
 async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): Promise<boolean> {
   const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -1565,6 +1575,8 @@ async function isAllowed(request: Request, url: URL, user: AuthenticatedUser): P
     [path === "/inventario" || path.startsWith("/api/inventario"), "inventario"],
     // Estoque > Relatórios Logística — permissão própria (relatorios_logistica:*).
     [path === "/relatorios-logistica" || path.startsWith("/api/relatorios-logistica"), "relatoriosLogistica"],
+    // Estoque > Recebimento — permissão própria (recebimento:*).
+    [path === "/recebimento" || path === "/api/recebimento" || path.startsWith("/api/recebimento/"), "recebimento"],
     // Estoque > Reintegração Fiscal — permissão própria (reintegracao_fiscal:*).
     [path === "/reintegracao-fiscal" || path.startsWith("/api/reintegracao-fiscal"), "reintegracaoFiscal"],
     // Financeiro > Fornecedores a Pagar — permissão própria (fornecedores_pagar:*).
@@ -3153,6 +3165,8 @@ const worker = {
     );
     if (response.ok && liveInvalidation) {
       ctx.waitUntil(publishLiveUpdate(env, liveInvalidation));
+      const twin = LIVE_TWINS[liveInvalidation.module];
+      if (twin) ctx.waitUntil(publishLiveUpdate(env, { ...liveInvalidation, module: twin }));
     }
     return securityHeaders(response);
   },
