@@ -13665,7 +13665,7 @@
     <div class="table-panel responsive-table decl-batch-table cr-batch-table">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Data *</th><th>Motivo *</th><th>Responsável *</th><th>Entrada ou saída *</th><th>Valor *</th></tr></thead>
+          <thead><tr><th>Data *</th><th>Motivo *</th><th>Responsável *</th><th>Entrada ou saída *</th><th>Valor *</th><th aria-label="Remover"></th></tr></thead>
           <tbody id="reposicaoBatchBody"></tbody>
         </table>
       </div>
@@ -45628,6 +45628,7 @@ function renderHomeTasks(){
         '<td data-label="RESPONSÁVEL"><input data-rp-batch="responsibleName" maxlength="160" aria-label="Responsável"></td>'+
         '<td data-label="TIPO"><select data-rp-batch="kind" aria-label="Tipo">'+kindOptions+'</select></td>'+
         '<td data-label="VALOR"><input data-rp-batch="amount" aria-label="Valor"></td>'+
+        '<td data-label="REMOVER"><button class="btn-danger-outline btn-sm" type="button" data-rp-batch-remove aria-label="Remover linha" title="REMOVER — ESTA LINHA NÃO SOBE">×</button></td>'+
       '</tr>').join(''));
     Array.from(body.rows).slice(before).forEach(tr => attachCurrencyMask(tr.querySelector('[data-rp-batch="amount"]')));
   }
@@ -45774,6 +45775,20 @@ function renderHomeTasks(){
     }catch(error){ showPurchaseToast(error.message, 'error'); }
   });
   el('btnReposicaoBatchAddRows').addEventListener('click', () => reposicaoBatchAddRows(5));
+  // 25/11/2026: × remove o movimento da grade antes de salvar (não sobe) e refaz a conta do que vai subir.
+  el('reposicaoBatchBody').addEventListener('click', event => {
+    const remove = event.target.closest('[data-rp-batch-remove]');
+    if(!remove) return;
+    remove.closest('tr').remove();
+    const rows = Array.from(el('reposicaoBatchBody').rows).map(tr => ({
+      kind: tr.querySelector('[data-rp-batch="kind"]').value,
+      cents: Math.round(Number(getCurrencyValue(tr.querySelector('[data-rp-batch="amount"]')) || 0) * 100)
+    })).filter(row => row.cents);
+    const group = name => rows.filter(row => row.kind && rpKindGroup(row.kind) === name);
+    const total = list => formatCentsBRL(list.reduce((sum, row) => sum + row.cents, 0));
+    el('reposicaoBatchStatus').textContent = 'LINHA REMOVIDA. VÃO SUBIR '+rows.length+' LINHA(S) · '+group('saida').length+' SAÍDA(S) '+total(group('saida'))+
+      ' · '+group('entrada').length+' ENTRADA(S) '+total(group('entrada'))+'.';
+  });
   el('btnCloseReposicaoBatch').addEventListener('click', () => el('reposicaoBatchDialog').close());
   el('btnCancelReposicaoBatch').addEventListener('click', () => el('reposicaoBatchDialog').close());
   el('reposicaoBatchForm').addEventListener('submit', async event => {

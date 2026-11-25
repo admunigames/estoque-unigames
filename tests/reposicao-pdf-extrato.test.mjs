@@ -107,3 +107,8 @@ test("abas A VINCULAR × VINCULADOS: lançamento com despesa vinculada sai da li
   assert.match(html, /id="reposicaoTabs"[\s\S]*?data-rp-view="pendentes"[\s\S]*?data-rp-view="vinculados"/);
   assert.match(html, /const shown = reposicaoRows\.filter\(r => Boolean\(r\.expenseId\) === linkedView && \(!onlyRepeated \|\| r\.repeated\)\);/);
 });
+
+test("grade do lote/PDF: × remove o movimento antes de salvar (25/11/2026)", () => {
+  assert.match(html, /data-rp-batch-remove aria-label="Remover linha"/);
+  assert.match(html, /const remove = event\.target\.closest\('\[data-rp-batch-remove\]'\);\s*if\(!remove\) return;\s*remove\.closest\('tr'\)\.remove\(\);/);
+});
