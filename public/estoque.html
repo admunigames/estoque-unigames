@@ -4723,7 +4723,12 @@
   .rec-list-plain{list-style:none; margin:0 0 12px; padding:0;}
   .rec-list-plain li{padding:8px 0; border-bottom:1px solid var(--surface-border);}
   .rec-list-plain .btn-outline{display:inline-block; padding:4px 10px; text-decoration:none;}
-  .rec-summary{width:100%;}
+  .rec-summary{width:100%; border-collapse:collapse; margin-bottom:8px;}
+  .rec-summary th,.rec-summary td{padding:8px 6px; border-bottom:1px solid var(--surface-border); text-align:left; vertical-align:top;}
+  .rec-add-extra{max-width:100%; white-space:normal; text-align:left;}
+  #recSummary h4{margin:16px 0 8px;}
+  .responsive-table tbody tr.rec-fix-row td{display:block; text-align:left; padding:12px;}
+  .responsive-table tbody tr.rec-fix-row td::before{content:none; display:none;}
   #recStoreFilter{min-width:180px;}
   @media(max-width:680px){
     .rec-row{flex-direction:column; align-items:flex-start;}
@@ -4881,7 +4886,7 @@
         <a class="nav-item sub-item" id="navDivergencias" data-page="divergencias" data-permission="divergencias" data-home-desc="Pedidos de verificação de divergência entre o físico e o sistema." title="Divergências" href="/divergencias"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h11l-3-3"/><path d="M18 16H7l3 3"/></svg></span><span class="nav-label">Divergências</span></a>
         <a class="nav-item sub-item" id="navInventario" data-page="inventario" data-permission="inventario" data-home-desc="Inventário por loja: sobe o estoque por categoria, contagem física ao vivo, divergências com custo, PDFs para o diretor, recontagem e Pontti." title="Inventário" href="/inventario"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><path d="M8 16l2 2 4-4"/></svg></span><span class="nav-label">Inventário</span></a>
         <a class="nav-item sub-item" id="navRelatoriosLogistica" data-page="relatoriosLogistica" data-permission="relatorios_logistica" data-home-desc="A loja envia o relatório da logística (PDF ou fotos escaneadas) direto para o e-mail do estoque." title="Relatórios Logística" href="/relatorios-logistica"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 7l8 6 8-6"/></svg></span><span class="nav-label">Relatórios Logística</span></a>
-        <a class="nav-item sub-item" id="navRecebimento" data-page="recebimento" data-permission="recebimento" data-home-desc="A loja envia a nota e confere o que chegou de cada compra, sem valores. O Compras acompanha todas as lojas." title="Recebimento" href="/recebimento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/></svg></span><span class="nav-label">Recebimento</span></a>
+        <a class="nav-item sub-item" id="navRecebimento" data-page="recebimento" data-permission="recebimento:loja" data-home-desc="A loja envia a nota e confere o que chegou de cada compra, sem valores. O Compras acompanha todas as lojas." title="Recebimento" href="/recebimento"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 4H17a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.5"/><path d="M13 12H3.5"/><path d="m7.5 8-4 4 4 4"/></svg></span><span class="nav-label">Recebimento</span></a>
         <a class="nav-item sub-item" id="navReintegracaoFiscal" data-page="reintegracaoFiscal" data-permission="reintegracao_fiscal" data-home-desc="Cancelamentos anotados na semana e fechados com a data e o nº da nota de reintegração emitida." title="Reintegração Fiscal" href="/reintegracao-fiscal"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 14l2 2 4-4"/></svg></span><span class="nav-label">Reintegração Fiscal</span></a>
         <a class="nav-item sub-item" id="navAssistenciaRma" data-page="assistenciaRma" data-permission="rma" data-home-desc="RMAs dos produtos que seguem para o fornecedor: chegada, status, O.S., linha do tempo de atualizações, créditos e descartes. A loja acompanha só os RMAs dela." title="RMA" href="/assistencia/rma"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></span><span class="nav-label">RMA</span></a>
         <a class="nav-item sub-item" id="navComercialRelatorioNf" data-page="comercialRelatorioNf" data-permission="relatorio_nf" data-home-desc="Lançamento manual de vendas x notas fiscais emitidas por loja, com histórico e imagem para WhatsApp." title="Relatório NF" href="/relatorio-nf"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4.5"/></svg></span><span class="nav-label">Relatório NF</span></a>
@@ -17515,10 +17520,9 @@
     document.querySelectorAll('[data-permission]').forEach(node => {
       node.toggleAttribute('data-access-hidden', !canAccess(node.dataset.permission));
     });
-    // Recebimento: quem acompanha usa a aba do Compras (caminho único); o item do menu fica para a loja.
-    const recFollow = canActAcrossStores('recebimento:acompanhar');
-    if(el('comprasTabRecebimento')) el('comprasTabRecebimento').hidden = !recFollow;
-    if(el('navRecebimento') && recFollow && canAccess('purchases_draft')) el('navRecebimento').setAttribute('data-access-hidden', '');
+    // Recebimento: o item do menu (e o cartão de SEUS MÓDULOS) é da loja (recebimento:loja);
+    // quem acompanha usa a aba RECEBIMENTO DAS LOJAS do Compras (caminho único).
+    if(el('comprasTabRecebimento')) el('comprasTabRecebimento').hidden = !canActAcrossStores('recebimento:acompanhar');
     document.querySelectorAll('[data-any-permission]').forEach(node => {
       const allowed = node.dataset.anyPermission.split(',').some(permission => canAccess(permission));
       node.toggleAttribute('data-access-hidden', !allowed);
@@ -32664,7 +32668,7 @@ function renderHomeTasks(){
           '<div class="purchase-field"><label>OBSERVAÇÃO</label><input data-rec-note maxlength="500" placeholder="EX.: VEIO BRANCO NO LUGAR DO PRETO"></div></div>'+
         '</div>').join('')+
       '<div id="recExtras"></div>'+
-      '<button class="btn-outline" type="button" data-rec-add-extra>+ CHEGOU PRODUTO QUE NÃO ESTÁ NO PEDIDO</button>'+
+      '<button class="btn-outline rec-add-extra" type="button" data-rec-add-extra>+ CHEGOU PRODUTO QUE NÃO ESTÁ NO PEDIDO</button>'+
       '<div id="recSummary"></div>'+
       '<button class="btn-accent rec-big" type="button" id="btnRecRegister" data-rec-register>REGISTRAR CONFERÊNCIA</button></div>';
   }
@@ -32891,7 +32895,7 @@ function renderHomeTasks(){
           return '<tr><td>'+escapeHtml(item.name)+'</td><td>'+item.quantity+'</td><td><strong>'+item.counted+'</strong></td><td>'+(label ? '<span class="status-pill alert">'+escapeHtml(label)+'</span>' : '<span class="status-pill done">OK</span>')+'</td></tr>';
         }).concat(read.extras.map(x => '<tr><td>'+escapeHtml(x.productName.toLocaleUpperCase('pt-BR'))+'</td><td>—</td><td><strong>'+x.quantity+'</strong></td><td><span class="status-pill alert">FORA DO PEDIDO</span></td></tr>'));
         const count = read.items.filter(item => item.divergence || item.counted !== item.quantity).length + read.extras.length;
-        el('recSummary').innerHTML = '<h4>CONFIRA ANTES DE AVISAR O COMPRAS</h4><div class="table-scroll"><table class="rec-summary"><thead><tr><th>Produto</th><th>Pedido</th><th>Chegou</th><th></th></tr></thead><tbody>'+lines.join('')+'</tbody></table></div>'+
+        el('recSummary').innerHTML = '<h4>CONFIRA ANTES DE AVISAR O COMPRAS</h4><table class="rec-summary"><thead><tr><th>Produto</th><th>Pedido</th><th>Chegou</th><th></th></tr></thead><tbody>'+lines.join('')+'</tbody></table>'+
           '<p class="rec-notice">'+(count ? count+' DIVERGÊNCIA(S). O COMPRAS SERÁ AVISADO NA HORA.' : 'TUDO CONFERE. O COMPRAS SERÁ AVISADO PARA ENVIAR A DIVISÃO.')+'</p>'+
           '<div class="rec-actions"><button class="btn-accent rec-big" type="button" data-rec-confirm>CONFIRMAR E AVISAR O COMPRAS</button><button class="btn-outline" type="button" data-rec-edit>VOLTAR E EDITAR</button></div>';
         el('btnRecRegister').hidden = true;
