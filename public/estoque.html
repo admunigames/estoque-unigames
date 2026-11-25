@@ -11190,6 +11190,11 @@
       <div id="reposicaoSaldoContas"></div>
       <section class="summary" id="reposicaoSummary" aria-label="Totais por setor"><div class="dre-empty">Carregando…</div></section>
 
+      <!-- 25/11/2026: lançamento com DESPESA vinculada sai da lista principal e vai para VINCULADOS. -->
+      <div class="supply-tabs" role="tablist" aria-label="Situação dos lançamentos" id="reposicaoTabs">
+        <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-rp-view="pendentes">A VINCULAR</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-rp-view="vinculados">VINCULADOS</button>
+      </div>
       <div class="bulk-bar" id="reposicaoBulkBar">
         <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
         <div class="bulk-bar-actions" data-bulk-actions hidden>
@@ -44866,6 +44871,7 @@ function renderHomeTasks(){
   let reposicaoRows = [];
   let reposicaoData = null;
   let reposicaoClosedMonths = new Set();
+  let reposicaoView = 'pendentes';
   const rpMonthLabel = month => month ? month.slice(5, 7)+'/'+month.slice(0, 4) : '';
 
   async function loadReposicaoPage(){
@@ -44973,7 +44979,17 @@ function renderHomeTasks(){
   function renderReposicaoTable(){
     const body = el('reposicaoTableBody');
     const onlyRepeated = el('reposicaoSoRepetidos').checked;
-    const shown = onlyRepeated ? reposicaoRows.filter(r => r.repeated) : reposicaoRows;
+    // Abas A VINCULAR × VINCULADOS (despesa vinculada). Saldo e totais seguem o filtro, não a aba.
+    const linkedView = reposicaoView === 'vinculados';
+    const counts = {pendentes: reposicaoRows.filter(r => !r.expenseId).length, vinculados: reposicaoRows.filter(r => r.expenseId).length};
+    el('reposicaoTabs').querySelectorAll('[data-rp-view]').forEach(tab => {
+      const active = tab.dataset.rpView === reposicaoView;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+      tab.textContent = (tab.dataset.rpView === 'vinculados' ? 'VINCULADOS' : 'A VINCULAR')+' ('+counts[tab.dataset.rpView]+')';
+    });
+    el('reposicaoBulkBar').querySelector('[data-bulk-action="expense"]').hidden = linkedView;
+    const shown = reposicaoRows.filter(r => Boolean(r.expenseId) === linkedView && (!onlyRepeated || r.repeated));
     body.innerHTML = shown.length ? shown.map(r => {
       const eligible = rpKindGroup(r.kind) === 'saida';
       const despesaCell = r.expenseId
@@ -45001,7 +45017,7 @@ function renderHomeTasks(){
           '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>')+
         '</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="12" class="responsive-empty">'+(onlyRepeated ? 'Nenhum lançamento repetido.' : 'Nenhum lançamento.')+'</td></tr>';
+    }).join('') : '<tr><td colspan="12" class="responsive-empty">'+(onlyRepeated ? 'Nenhum lançamento repetido.' : linkedView ? 'Nenhum lançamento vinculado a despesa.' : 'Nenhum lançamento a vincular.')+'</td></tr>';
     reposicaoBulk.sync();
   }
 
@@ -45405,6 +45421,13 @@ function renderHomeTasks(){
   el('reposicaoValor') && attachCurrencyMask(el('reposicaoValor'));
   el('reposicaoSaldoValor') && attachCurrencyMask(el('reposicaoSaldoValor'));
   el('reposicaoSoRepetidos') && el('reposicaoSoRepetidos').addEventListener('change', () => { reposicaoBulk.clear(); renderReposicaoTable(); });
+  el('reposicaoTabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-rp-view]');
+    if(!tab || tab.dataset.rpView === reposicaoView) return;
+    reposicaoView = tab.dataset.rpView;
+    reposicaoBulk.clear();
+    renderReposicaoTable();
+  });
   ['reposicaoFiltroResponsavel', 'reposicaoMesDe', 'reposicaoMesAte'].forEach(id => el(id) && el(id).addEventListener('change', reloadReposicao));
   function renderReposicaoSaldoLista(){
     const initials = (reposicaoData && Array.isArray(reposicaoData.initialBalances)) ? reposicaoData.initialBalances : [];
@@ -45591,7 +45614,7 @@ function renderHomeTasks(){
       el('reposicaoExpenseDialog').close();
       if(bulk) reposicaoBulk.clear();
       await reloadReposicao();
-      showPurchaseToast(bulk ? done+' despesa(s) criada(s) e vinculada(s).' : 'Despesa criada e vinculada.');
+      showPurchaseToast((bulk ? done+' despesa(s) criada(s) e vinculada(s).' : 'Despesa criada e vinculada.')+' Veja na aba VINCULADOS.');
     }catch(error){
       status.textContent = (done ? done+' DESPESA(S) CRIADA(S) ANTES DO ERRO. ' : '')+error.message;
       if(done) await reloadReposicao();
