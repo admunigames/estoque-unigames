@@ -99,3 +99,8 @@ export async function loadCompanyList(database: D1Database): Promise<CompanyRow[
     return [];
   }
 }
+
+// Filtro CATEGORIA das listas (Contas a Pagar e Despesas, 26/11/2026): itens da
+// categoria e das subcategorias dela. Usar com addCondition(SQL, categoryId, categoryId).
+export const FINANCE_CATEGORY_FILTER_SQL =
+  "finance_item_id IN (SELECT id FROM finance_items WHERE category_id = ? OR category_id IN (SELECT id FROM finance_categories WHERE parent_id = ?))";

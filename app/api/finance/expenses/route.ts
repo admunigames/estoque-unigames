@@ -1,7 +1,7 @@
 import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
-import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
+import { canManageFinance, FINANCE_CATEGORY_FILTER_SQL, identity, jsonResponse, safeText, sameOrigin, type JsonMap } from "../shared";
 import { DATE_PATTERN, EXPENSE_SELECT_COLUMNS, MONTH_PATTERN, planExpense } from "./shared";
 
 type ListRow = Record<string, unknown>;
@@ -58,6 +58,8 @@ export async function GET(request: Request) {
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const financeItemId = safeText(params.get("financeItemId"), 80);
   if (financeItemId) addCondition("finance_item_id = ?", financeItemId);
+  const categoryId = safeText(params.get("categoryId"), 80);
+  if (categoryId && !financeItemId) addCondition(FINANCE_CATEGORY_FILTER_SQL, categoryId, categoryId);
   const costCenterId = safeText(params.get("costCenterId"), 80);
   if (costCenterId) addCondition("cost_center_id = ?", costCenterId);
   const kind = safeText(params.get("kind"), 20);

@@ -31258,8 +31258,22 @@ function renderHomeTasks(){
       location.assign('/login?next='+encodeURIComponent(location.pathname));
       throw new Error('SESSÃO EXPIRADA.');
     }
-    if(!response.ok) throw new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+    if(!response.ok){
+      const error = new Error(payload.error || 'NÃO FOI POSSÍVEL CONCLUIR A OPERAÇÃO.');
+      // Conta repetida (26/11/2026): a tela pergunta CRIAR MESMO ASSIM? e reenvia com allowDuplicate.
+      error.duplicate = payload.duplicate === true;
+      throw error;
+    }
     return payload;
+  }
+  // POST de cadastro com a trava de conta repetida: avisa e só cria se confirmar.
+  async function financeCreateConfirmingDuplicate(path, body){
+    const send = extra => financeApiRequest(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...body, ...(extra || {})})});
+    try{ return await send(); }
+    catch(error){
+      if(!error.duplicate || !await askConfirm(error.message+' CRIAR MESMO ASSIM?', {okText:'CRIAR MESMO ASSIM', cancelText:'NÃO CRIAR'})) throw error;
+      return send({allowDuplicate:true});
+    }
   }
 
   function formatCentsBRL(cents){
@@ -37020,11 +37034,17 @@ function renderHomeTasks(){
     const parent = category.parentId ? financeCategories.find(c => c.id === category.parentId) : null;
     return (parent ? parent.name+' › ' : '')+category.name;
   }
+  // "CATEGORIA › ITEM" sem repetir quando o item tem o mesmo nome da categoria
+  // (criado sozinho ao escolher uma categoria sem item) — 26/11/2026.
+  function financeJoinItemLabel(path, itemName){
+    if(!path) return itemName;
+    const last = String(path).split(' › ').pop();
+    return normalizeSearchText(last).trim() === normalizeSearchText(itemName).trim() ? path : path+' › '+itemName;
+  }
   function financeItemPathLabel(financeItemId){
     const item = financeItems.find(i => i.id === financeItemId);
     if(!item) return '';
-    const path = financeCategoryPathLabel(item.categoryId);
-    return (path ? path+' › ' : '')+item.name;
+    return financeJoinItemLabel(financeCategoryPathLabel(item.categoryId), item.name);
   }
   // Categorias/subcategorias cadastradas SEM item também aparecem (valor
   // "cat:<id>"): ao escolher, o item é criado com o mesmo nome (23/10/2026 —
@@ -37574,7 +37594,7 @@ function renderHomeTasks(){
   function dreItemLabel(itemId){
     const item = financeItems.find(i => i.id === itemId);
     if(!item) return '';
-    return dreCategoryLabel(item.categoryId)+(item.categoryId ? ' › ' : '')+item.name;
+    return item.categoryId ? financeJoinItemLabel(dreCategoryLabel(item.categoryId), item.name) : item.name;
   }
 
   async function openDreDetailDialog({itemId, categoryId, month, storeId}){
@@ -38194,6 +38214,9 @@ function renderHomeTasks(){
     if(supplierId) params.set('supplierId', supplierId);
     const financeItemId = el('payablesItem') ? el('payablesItem').value : '';
     if(financeItemId) params.set('financeItemId', financeItemId);
+    // 26/11/2026: CATEGORIA sozinha também filtra (antes só o ITEM ia para o servidor).
+    const categoryId = el('payablesCategory') ? el('payablesCategory').value : '';
+    if(categoryId && !financeItemId) params.set('categoryId', categoryId);
     const financeAccountId = el('payablesAccount') ? el('payablesAccount').value : '';
     if(financeAccountId) params.set('financeAccountId', financeAccountId);
     const costCenterId = el('payablesCostCenter') ? el('payablesCostCenter').value : '';
@@ -38230,7 +38253,7 @@ function renderHomeTasks(){
     const item = financeItems.find(i => i.id === financeItemId);
     if(!item) return '—';
     const category = financeCategories.find(c => c.id === item.categoryId);
-    return (category ? category.name+' › ' : '')+item.name;
+    return financeJoinItemLabel(category ? category.name : '', item.name);
   }
 
   function renderPayablesTable(){
@@ -38617,7 +38640,7 @@ function renderHomeTasks(){
           if(count) body.recurrenceOccurrenceCount = Number(count);
           if(endDate) body.recurrenceEndDate = endDate;
         }
-        response = await financeApiRequest('/payables', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        response = await financeCreateConfirmingDuplicate('/payables', body);
       }
       showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Conta salva.');
       closePayableDialog();
@@ -43031,7 +43054,7 @@ function renderHomeTasks(){
     const item = financeItems.find(i => i.id === itemId);
     if(!item) return '';
     const category = financeCategories.find(c => c.id === item.categoryId);
-    return (category ? category.name+' › ' : '')+item.name;
+    return financeJoinItemLabel(category ? category.name : '', item.name);
   }
   // Opções dos filtros a partir dos lançamentos carregados (mantém a escolha).
   function renderCorpEntryFilters(){
@@ -43576,7 +43599,7 @@ function renderHomeTasks(){
     const item = financeItems.find(i => i.id === itemId);
     if(!item) return '';
     const category = financeCategories.find(c => c.id === item.categoryId);
-    return (category ? category.name+' › ' : '')+item.name;
+    return financeJoinItemLabel(category ? category.name : '', item.name);
   }
   function reconItemOptions(selected){
     return '<option value="">—</option>'+financeItems.map(item =>
@@ -45272,6 +45295,7 @@ function renderHomeTasks(){
     try{
       const created = await financeApiRequest('/expenses', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         idempotencyKey: 'bank-entry:'+entryId,
+        allowDuplicate: true, // 1 despesa por linha do extrato
         companyId,
         companyName: company ? company.name : '',
         description: (entry.description || 'Extrato bancário').slice(0, 200),
@@ -46066,6 +46090,7 @@ function renderHomeTasks(){
         const expensePayload = {
           // Mesma chave do ADICIONAR individual: repetir não duplica a despesa.
           idempotencyKey: 'reposicao:'+row.id,
+          allowDuplicate: true, // 1 despesa por lançamento de reposição
           companyId: expenseCompanyId,
           companyName: fase8CompanyName(expenseCompanyId),
           description: ('Reposição: '+(row.product || row.reason || rpKindLabel(row.kind))).slice(0,200),
@@ -49038,7 +49063,7 @@ function renderHomeTasks(){
     financeBatchAddRows(5);
     el('financeBatchDialog').showModal();
   }
-  async function financeBatchSend(dryRun){
+  async function financeBatchSend(dryRun, allowDuplicates){
     const status = el('financeBatchStatus');
     const filled = financeBatchFilledRows();
     Array.from(el('financeBatchBody').rows).forEach(tr => { tr.classList.remove('is-error'); tr.querySelector('[data-fb-situation]').textContent = ''; });
@@ -49050,7 +49075,7 @@ function renderHomeTasks(){
       const endpoint = financeBatchConfig.endpoint;
       const res = await fetch(endpoint.startsWith('/api/') ? endpoint : '/api/finance'+endpoint, {
         method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(Object.assign({rows: filled.map(row => row.values), dryRun, batchKey: financeBatchKey}, financeBatchConfig.extraBody ? financeBatchConfig.extraBody() : {}))
+        body: JSON.stringify(Object.assign({rows: filled.map(row => row.values), dryRun, batchKey: financeBatchKey}, allowDuplicates ? {allowDuplicates: true} : {}, financeBatchConfig.extraBody ? financeBatchConfig.extraBody() : {}))
       });
       const data = await res.json().catch(() => ({}));
       const errors = Array.isArray(data.errors) ? data.errors : [];
@@ -49059,6 +49084,15 @@ function renderHomeTasks(){
         tr.classList.toggle('is-error', Boolean(error));
         tr.querySelector('[data-fb-situation]').textContent = error ? error.error : (data.ok ? (dryRun ? 'OK' : 'CADASTRADA') : '');
       });
+      // Só linhas REPETIDAS (já existe conta igual): avisa e cria se confirmar (26/11/2026).
+      if(errors.length && errors.every(item => item.duplicate)){
+        status.textContent = errors.length+' LINHA(S) JÁ EXISTE(M) IGUAL(IS) — VEJA A SITUAÇÃO DE CADA LINHA.'+(dryRun ? ' AO CADASTRAR, O SISTEMA VAI PEDIR CONFIRMAÇÃO.' : '');
+        if(dryRun) return;
+        if(await askConfirm(errors.length+' LINHA(S) DESTE LOTE JÁ ESTÃO CADASTRADAS IGUAIS (MESMA LOJA, FORNECEDOR, CATEGORIA, VALOR, VENCIMENTO E DESCRIÇÃO). CRIAR MESMO ASSIM?', {okText:'CRIAR MESMO ASSIM', cancelText:'NÃO CRIAR'})){
+          return financeBatchSend(false, true);
+        }
+        return;
+      }
       if(errors.length){
         status.textContent = errors.length+' LINHA(S) COM ERRO'+(dryRun ? '' : ' — NADA FOI GRAVADO')+'. CORRIJA E TENTE DE NOVO.';
         return;
@@ -50075,6 +50109,8 @@ function renderHomeTasks(){
     if(supplierId) params.set('supplierId', supplierId);
     const financeItemId = el('expensesItem') ? el('expensesItem').value : '';
     if(financeItemId) params.set('financeItemId', financeItemId);
+    const categoryId = el('expensesCategory') ? el('expensesCategory').value : '';
+    if(categoryId && !financeItemId) params.set('categoryId', categoryId);
     const costCenterId = el('expensesCostCenter') ? el('expensesCostCenter').value : '';
     if(costCenterId) params.set('costCenterId', costCenterId);
     const kind = el('expensesKind') ? el('expensesKind').value : '';
@@ -50484,7 +50520,7 @@ function renderHomeTasks(){
     const button = el('btnSaveExpense');
     button.disabled = true;
     try{
-      const response = await financeApiRequest('/expenses', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const response = await financeCreateConfirmingDuplicate('/expenses', body);
       showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Despesa salva.');
       closeExpenseDialog();
       await refreshAfterAction(() => loadExpensesList({silent:true}));

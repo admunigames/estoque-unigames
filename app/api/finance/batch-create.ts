@@ -3,7 +3,7 @@ import { jsonResponse, type JsonMap } from "./shared";
 
 type Database = Awaited<ReturnType<typeof getD1>>;
 export type BatchStatement = [string, unknown[]];
-export type BatchRowPlan = { error: string } | { statements: BatchStatement[] };
+export type BatchRowPlan = { error: string; duplicate?: boolean } | { statements: BatchStatement[] };
 
 export const BATCH_MAX_ROWS = 200;
 
@@ -28,11 +28,11 @@ export async function runBatchCreate(
   }
   const dryRun = body.dryRun === true;
   const batchKey = typeof body.batchKey === "string" && body.batchKey.trim() ? body.batchKey.trim().slice(0, 80) : crypto.randomUUID();
-  const errors: Array<{ line: number; error: string }> = [];
+  const errors: Array<{ line: number; error: string; duplicate?: boolean }> = [];
   const statements: BatchStatement[] = [];
   for (let index = 0; index < rows.length; index += 1) {
     const result = await plan(rows[index], index + 1, batchKey);
-    if ("error" in result) errors.push({ line: index + 1, error: result.error });
+    if ("error" in result) errors.push({ line: index + 1, error: result.error, ...(result.duplicate ? { duplicate: true } : {}) });
     else statements.push(...result.statements);
   }
   if (errors.length) {

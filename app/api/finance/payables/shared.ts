@@ -583,3 +583,31 @@ export async function planPayablesDelete(
   }
   return { applied: deletedPayables.size, skipped, statements };
 }
+
+// Trava de conta REPETIDA (26/11/2026, pedido do usuário depois de um CADASTRAR
+// EM LOTE lançado duas vezes): conta única igual a uma não cancelada — mesma
+// loja, fornecedor, item, valor, vencimento e descrição. Quem cadastra recebe o
+// aviso (409, duplicate: true) e só cria se confirmar (allowDuplicate: true).
+// A descrição entra porque o mesmo exame/fornecedor/valor/dia para pessoas
+// diferentes é conta legítima.
+export async function findDuplicatePayable(
+  database: Awaited<ReturnType<typeof getD1>>,
+  row: { companyId: string; supplierId: string; financeItemId: string; amountCents: number; dueDate: string; description: string },
+): Promise<string | null> {
+  const found = await database
+    .prepare(
+      `SELECT description, due_date AS dueDate, original_amount_cents AS amountCents, created_by_name AS createdByName, created_at AS createdAt
+       FROM accounts_payable
+       WHERE company_id=?1 AND COALESCE(supplier_id,'')=?2 AND finance_item_id=?3 AND original_amount_cents=?4 AND due_date=?5
+         AND UPPER(TRIM(description))=UPPER(TRIM(?6)) AND status <> 'canceled'
+       LIMIT 1`,
+    )
+    .bind(row.companyId, row.supplierId, row.financeItemId, row.amountCents, row.dueDate, row.description)
+    .first<{ description: string; dueDate: string; amountCents: number; createdByName: string; createdAt: string }>();
+  if (!found) return null;
+  const br = (date: string) => String(date || "").slice(0, 10).split("-").reverse().join("/");
+  const money = (Number(found.amountCents) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return `JÁ EXISTE UMA CONTA IGUAL: ${String(found.description).toUpperCase()} · VENCIMENTO ${br(found.dueDate)} · ${money}` +
+    (found.createdByName ? ` (CADASTRADA POR ${String(found.createdByName).toUpperCase()} EM ${br(found.createdAt)})` : "") + ".";
+}
+

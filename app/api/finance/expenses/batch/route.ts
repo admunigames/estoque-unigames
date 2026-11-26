@@ -33,9 +33,13 @@ export async function POST(request: Request) {
         rateioType,
         companyName: companies.find((company) => company.id === companyId)?.name ?? "",
         idempotencyKey: `expenses-batch:${batchKey}:${line}`,
+        allowDuplicate: body.allowDuplicates === true,
       });
       if ("reply" in plan) {
-        return { error: String(plan.reply.payload.error || (plan.reply.payload.alreadyProcessed ? "LINHA JÁ CADASTRADA." : "LINHA INVÁLIDA.")) };
+        return {
+          error: String(plan.reply.payload.error || (plan.reply.payload.alreadyProcessed ? "LINHA JÁ CADASTRADA." : "LINHA INVÁLIDA.")),
+          duplicate: plan.reply.payload.duplicate === true,
+        };
       }
       return { statements: plan.statements };
     });

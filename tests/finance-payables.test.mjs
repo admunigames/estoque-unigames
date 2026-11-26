@@ -306,6 +306,7 @@ test("formulários do Financeiro têm um campo único de CATEGORIA (categoria �
   const make = new Function("financeCategories", "financeItems", "el", "document", "escapeHtml", "normalizeSearchText", `
     ${source("financeCategorySelectOptions")}
     ${source("financeCategoryPathLabel")}
+    ${source("financeJoinItemLabel")}
     ${source("financeItemPathLabel")}
     ${source("financeItemPickerOptions")}
     ${source("renderFinanceItemPicker")}

@@ -32,9 +32,14 @@ export async function POST(request: Request) {
         kind: "single",
         companyName: companies.find((company) => company.id === companyId)?.name ?? "",
         idempotencyKey: `payables-batch:${batchKey}:${line}`,
+        // Conta repetida: o lote avisa e só grava com CRIAR MESMO ASSIM (allowDuplicates).
+        allowDuplicate: body.allowDuplicates === true,
       });
       if ("reply" in plan) {
-        return { error: String(plan.reply.payload.error || (plan.reply.payload.alreadyProcessed ? "LINHA JÁ CADASTRADA." : "LINHA INVÁLIDA.")) };
+        return {
+          error: String(plan.reply.payload.error || (plan.reply.payload.alreadyProcessed ? "LINHA JÁ CADASTRADA." : "LINHA INVÁLIDA.")),
+          duplicate: plan.reply.payload.duplicate === true,
+        };
       }
       return { statements: plan.statements };
     });

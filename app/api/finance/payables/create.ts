@@ -8,6 +8,7 @@ import {
   assertFinanceAccountBelongsToCompany,
   assertSlotAvailableForPayable,
   competenceMonthOf,
+  findDuplicatePayable,
   computeDreAnchorAssignments,
   generateInstallmentDueDates,
   generateRecurrenceDueDates,
@@ -125,6 +126,12 @@ export async function planPayableCreate(
     .first<{ id: string }>();
   if (existingByKey) {
     return reply({ created: true, alreadyProcessed: true, ids: [existingByKey.id] });
+  }
+  if (kind === "single" && body.allowDuplicate !== true) {
+    const duplicate = await findDuplicatePayable(database, {
+      companyId, supplierId, financeItemId, amountCents: totalAmountCents, dueDate: firstDueDate, description,
+    });
+    if (duplicate) return reply({ error: duplicate, duplicate: true }, 409);
   }
 
   let plan: PayablePlanRow[];

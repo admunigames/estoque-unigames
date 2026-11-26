@@ -24,6 +24,7 @@ export async function planRechargeExpense(
   if (!company) return { error: "LOJA DA DESPESA NÃO ENCONTRADA.", status: 400 };
   const plan = await planExpense(database, actor, { allStores: true, companyId: "" }, {
     idempotencyKey: `recarga:${input.eventId}`,
+    allowDuplicate: true, // 1 despesa por recarga registrada
     kind: "single",
     companyId: company.id,
     companyName: company.name,

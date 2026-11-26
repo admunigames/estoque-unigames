@@ -14,7 +14,7 @@ import {
   splitIntoInstallments,
   type RecurrenceFrequency,
 } from "../../../lib/payables-recurrence";
-import { assertFinanceAccountBelongsToCompany, assertSlotAvailableForPayable } from "../payables/shared";
+import { assertFinanceAccountBelongsToCompany, assertSlotAvailableForPayable, findDuplicatePayable } from "../payables/shared";
 import { MONTH_PATTERN, safeText, type JsonMap } from "../shared";
 import { isAutoRateioModel, RATEIO_MODELS, type RateioModel } from "../../../lib/rateio-models";
 import { distributeAmount, type RateioShareInput } from "../../../lib/rateio-distribute";
@@ -254,6 +254,13 @@ export async function planExpense(
     .first<{ id: string }>();
   if (existingByKey) {
     return reply({ created: true, alreadyProcessed: true, id: existingByKey.id });
+  }
+  // Mesma trava de conta repetida do Contas a Pagar (a despesa vira conta a pagar).
+  if ((safeText(body.kind, 20) || "single") === "single" && body.allowDuplicate !== true) {
+    const duplicate = await findDuplicatePayable(database, {
+      companyId, supplierId, financeItemId, amountCents: totalAmountCents, dueDate: firstDueDate, description,
+    });
+    if (duplicate) return reply({ error: duplicate, duplicate: true }, 409);
   }
 
   // dueDatesForPlan/recorrência/parcelamento são decididos uma vez só —

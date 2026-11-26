@@ -2,7 +2,7 @@ import { getD1 } from "../../../../db";
 import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { quickViewDueRange, todayInTimezone, type QuickView } from "../../../lib/finance-status";
-import { canManageFinance, identity, jsonResponse, safeText, sameOrigin, MONTH_PATTERN, type JsonMap } from "../shared";
+import { canManageFinance, FINANCE_CATEGORY_FILTER_SQL, identity, jsonResponse, safeText, sameOrigin, MONTH_PATTERN, type JsonMap } from "../shared";
 import { DATE_PATTERN, displayStatusCaseSql } from "./shared";
 import { planPayableCreate } from "./create";
 
@@ -146,6 +146,8 @@ export async function GET(request: Request) {
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const financeItemId = safeText(params.get("financeItemId"), 80);
   if (financeItemId) addCondition("finance_item_id = ?", financeItemId);
+  const categoryId = safeText(params.get("categoryId"), 80);
+  if (categoryId && !financeItemId) addCondition(FINANCE_CATEGORY_FILTER_SQL, categoryId, categoryId);
   const financeAccountId = safeText(params.get("financeAccountId"), 80);
   if (financeAccountId) addCondition("finance_account_id = ?", financeAccountId);
   const costCenterId = safeText(params.get("costCenterId"), 80);

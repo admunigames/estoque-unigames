@@ -53,7 +53,7 @@ const dreCell = (store, item, month = "2026-10") =>
 const create = (actor, body) =>
   callRoute(payables.POST, actor, "POST", "/api/finance/payables", {
     idempotencyKey: key(), description: "BOLETO", financeItemId: "item-luz", originalAmountCents: 10000,
-    dueDate: "2026-10-20", ...body,
+    dueDate: "2026-10-20", allowDuplicate: true, ...body, // contas iguais de propósito (trava de repetida: tests/finance-filtro-categoria)
   });
 
 test("conta SEM loja: cria (PF), paga com conta de PF; login de loja não vê nem cria sem loja", async () => {

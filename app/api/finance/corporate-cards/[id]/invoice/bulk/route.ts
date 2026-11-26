@@ -78,6 +78,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
         const plan = await planExpense(database, actor, { allStores, companyId: scopeCompanyId }, {
           idempotencyKey: `card-entry:${entry.id}`,
+          allowDuplicate: true, // 1 despesa por lançamento da fatura (compras iguais no mesmo dia são legítimas)
           companyId: card.companyId,
           companyName: card.companyName,
           description: (entry.merchant || `Cartão ${card.name}`).slice(0, 200),
