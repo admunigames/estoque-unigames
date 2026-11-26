@@ -7,7 +7,7 @@ import {
   MONTH_PATTERN,
   safeText,
 } from "../shared";
-import { loadCommercialRevenue } from "./commercial";
+import { loadDreRevenueByStore } from "./commercial";
 
 export async function GET(request: Request) {
   const unauthorized = unauthorizedResponse(request);
@@ -30,8 +30,9 @@ export async function GET(request: Request) {
 
   try {
     const database = await getD1();
-    // Receita da DRE = Comercial (FEITO e FEITO ASSISTÊNCIA da loja no mês).
-    const revenue = await loadCommercialRevenue(database, storeId, month);
+    // Receita da DRE = Comercial; SERVIÇOS das lojas vão para a DRE da ASSISTÊNCIA (26/11/2026).
+    const revenue = (await loadDreRevenueByStore(database, month)).get(storeId) ??
+      { salesCents: 0, servicesCents: 0, amountCents: 0, updatedAt: "", updatedByName: "", isHub: false, servicesToHubCents: 0 };
     return jsonResponse({
       revenue: {
         storeId,
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
         amountCents: revenue.amountCents,
         salesAmountCents: revenue.salesCents,
         servicesAmountCents: revenue.servicesCents,
+        assistanceHub: revenue.isHub,
+        servicesToAssistanceCents: revenue.servicesToHubCents,
         updatedAt: revenue.updatedAt,
         updatedByName: revenue.updatedByName,
         source: "commercial",

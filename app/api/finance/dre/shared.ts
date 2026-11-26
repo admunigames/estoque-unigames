@@ -1,6 +1,6 @@
 import { getD1 } from "../../../../db";
 import { loadCompanyList } from "../shared";
-import { loadCommercialRevenue, loadCommercialRevenueByStore } from "../revenue/commercial";
+import { loadDreRevenueByStore } from "../revenue/commercial";
 import {
   loadPayrollDreContribution,
   loadPayrollDreMonth,
@@ -172,10 +172,10 @@ export async function buildStoreDre(
       )
       .bind(storeId, month)
       .all<EntryRow>(),
-    loadCommercialRevenue(database, storeId, month),
+    loadDreRevenueByStore(database, month),
     loadPayrollDreContribution(database, { companyId: storeId }, month),
   ]);
-  return storeDreFrom(catalog, entries.results ?? [], revenue.amountCents, payroll);
+  return storeDreFrom(catalog, entries.results ?? [], revenue.get(storeId)?.amountCents ?? 0, payroll);
 }
 
 /** DRE de uma loja a partir dos dados já carregados (só cálculo). */
@@ -241,7 +241,7 @@ export async function loadMonthWideTotals(database: Awaited<ReturnType<typeof ge
       )
       .bind(month, ASSISTENCIA_STORE_ID)
       .all<EntryRow>(),
-    loadCommercialRevenueByStore(database, month),
+    loadDreRevenueByStore(database, month),
     loadPayrollDreContribution(database, "stores", month),
   ]);
 
@@ -319,7 +319,7 @@ export async function buildByStoreDre(
       )
       .bind(month)
       .all<EntryRow & { storeId: string }>(),
-    loadCommercialRevenueByStore(database, month),
+    loadDreRevenueByStore(database, month),
     loadPayrollDreMonth(database, month),
   ]);
   const entriesByStore = new Map<string, EntryRow[]>();

@@ -2602,7 +2602,7 @@ test("DRE Por Loja/Consolidada/Gerencial vivem na mesma página, alternadas por 
   assert.match(dreRoute, /scope === "consolidated"/);
   assert.match(dreShared, /FROM finance_store_entries WHERE month=\?1/);
   // CONSOLIDADA = soma do Comercial de todas as lojas.
-  assert.match(dreShared, /loadCommercialRevenueByStore\(database, month\)/);
+  assert.match(dreShared, /loadDreRevenueByStore\(database, month\)/);
   // Percentual continua fora da soma de despesa também na Consolidada.
   assert.match(dreShared, /entry\?\.entryType === "fixed" \? entry\.amountCents \?\? 0 : 0/);
   assert.doesNotMatch(dreRoute, /managerial/);

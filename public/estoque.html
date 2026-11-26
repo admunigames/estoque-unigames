@@ -1879,6 +1879,17 @@
   .dre-flat-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:rgba(79,134,189,.03)}
   .dre-flat-row .dre-flat-name{font:800 12px var(--mono);letter-spacing:.05em;color:var(--ink)}
   .dre-flat-row .dre-flat-total{font:800 13px var(--mono);color:var(--accent)}
+  /* DRE (26/11/2026): totais numa coluna fixa à direita (antes ficavam soltos no meio, cada linha num lugar),
+     números das ANÁLISES centralizados e os 4 cartões do resumo na mesma linha. */
+  .dre-category>summary,.dre-subgroup>summary,.dre-flat-row{justify-content:flex-start}
+  .dre-category>summary>span:first-child,.dre-subgroup>summary>span:first-child,.dre-flat-row .dre-flat-name{flex:1 1 auto;min-width:0}
+  .dre-category-total,.dre-subgroup-total,.dre-flat-row .dre-flat-total{min-width:150px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #dreUnidadesTable th:not(:first-child),#dreUnidadesTable td:not(:first-child),
+  #dreMesesTable th:not(:first-child),#dreMesesTable td:not(:first-child){text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #pageFinanceiro .summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #pageFinanceiro .card .num{font-size:24px}
+  @media (max-width:800px){#pageFinanceiro .summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:520px){#pageFinanceiro .summary{grid-template-columns:1fr} .dre-category-total,.dre-subgroup-total,.dre-flat-row .dre-flat-total{min-width:0}}
   .dre-bar-chart{display:grid;gap:10px;margin-top:16px}
   .dre-variation{display:block;font-size:10px;color:var(--ink-soft);font-weight:700}
   .dre-bar-row{display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:center;font-size:12px}
@@ -9580,7 +9591,7 @@
             <button class="btn-outline" id="btnDreOverhead" type="button">RATEIO DEPÓSITO/ESCRITÓRIO</button>
           </div>
         </div>
-        <p class="purchase-field-help" id="dreRevenueSource">A RECEITA VEM DO COMERCIAL: VENDAS = META LOJA (FEITO) · SERVIÇOS = META ASSISTÊNCIA (FEITO ASSISTÊNCIA). O CUSTO DO RH ENTRA AUTOMÁTICO EM PESSOAL — RH.</p>
+        <p class="purchase-field-help" id="dreRevenueSource">A RECEITA VEM DO COMERCIAL: VENDAS = META LOJA (FEITO) · OS SERVIÇOS DA ASSISTÊNCIA DE CADA LOJA SOMAM NA DRE DA ASSISTÊNCIA. O CUSTO DO RH ENTRA AUTOMÁTICO EM PESSOAL — RH.</p>
 
         <section class="summary" aria-label="Resumo da DRE">
           <div class="card"><div class="lbl">RECEITA</div><div class="num" id="dreSummaryRevenue">R$ 0,00</div></div>
@@ -37484,8 +37495,12 @@ function renderHomeTasks(){
       const rev = revenueData.revenue;
       setCurrencyValue(el('dreRevenueSales'), rev ? Number(rev.salesAmountCents || 0)/100 : '');
       setCurrencyValue(el('dreRevenueServices'), rev ? Number(rev.servicesAmountCents || 0)/100 : '');
+      // 26/11/2026: SERVIÇOS DA ASSISTÊNCIA de cada loja somam na DRE da ASSISTÊNCIA, não na da loja.
+      const servicesNote = rev && rev.assistanceHub ? 'SERVIÇOS = SOMA DA META ASSISTÊNCIA (FEITO) DE TODAS AS LOJAS'
+        : rev && rev.servicesToAssistanceCents ? 'OS SERVIÇOS DA ASSISTÊNCIA DESTA LOJA ('+formatCentsBRL(rev.servicesToAssistanceCents)+') SOMAM NA DRE DA ASSISTÊNCIA'
+        : 'SERVIÇOS DA ASSISTÊNCIA SOMAM NA DRE DA ASSISTÊNCIA';
       el('dreRevenueSource').textContent = 'VEM DO COMERCIAL'+(rev && rev.updatedAt ? ' (ATUALIZADO EM '+formatDateTimeBR(rev.updatedAt)+(rev.updatedByName ? ' POR '+rev.updatedByName : '')+')' : ' (SEM FEITO LANÇADO NO MÊS)')+
-        ': VENDAS = META LOJA · SERVIÇOS = META ASSISTÊNCIA. O CUSTO DO RH ENTRA AUTOMÁTICO EM PESSOAL — RH.';
+        ': VENDAS = META LOJA · '+servicesNote+'. O CUSTO DO RH ENTRA AUTOMÁTICO EM PESSOAL — RH.';
       renderDreSummary();
       renderDreCategories();
     }catch(error){
