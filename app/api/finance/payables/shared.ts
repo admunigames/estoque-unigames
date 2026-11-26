@@ -599,10 +599,10 @@ export async function findDuplicatePayable(
       `SELECT description, due_date AS dueDate, original_amount_cents AS amountCents, created_by_name AS createdByName, created_at AS createdAt
        FROM accounts_payable
        WHERE company_id=?1 AND COALESCE(supplier_id,'')=?2 AND finance_item_id=?3 AND original_amount_cents=?4 AND due_date=?5
-         AND UPPER(TRIM(description))=UPPER(TRIM(?6)) AND status <> 'canceled'
+         AND UPPER(TRIM(description))=?6 AND status <> 'canceled'
        LIMIT 1`,
     )
-    .bind(row.companyId, row.supplierId, row.financeItemId, row.amountCents, row.dueDate, row.description)
+    .bind(row.companyId, row.supplierId, row.financeItemId, row.amountCents, row.dueDate, row.description.trim().toLocaleUpperCase("pt-BR"))
     .first<{ description: string; dueDate: string; amountCents: number; createdByName: string; createdAt: string }>();
   if (!found) return null;
   const br = (date: string) => String(date || "").slice(0, 10).split("-").reverse().join("/");

@@ -88,3 +88,15 @@ test("CADASTRAR EM LOTE lançado de novo: linhas repetidas voltam marcadas; allo
   assert.deepEqual(again.errors.map((e) => [e.line, e.duplicate]), [[1, true]]);
   assert.equal((await send({ allowDuplicates: true })).created, 1);
 });
+
+test("item com o mesmo nome na mesma categoria: criar devolve o existente; renomear para nome existente é recusado", async () => {
+  const itemsRoute = await import("../app/api/finance/items/route.ts");
+  const post = (body) => callRoute(itemsRoute.POST, ADMIN, "POST", "/api/finance/items", body);
+  const first = await (await post({ name: "Combustível", categoryId: "cat-ocup" })).json();
+  const again = await post({ name: "COMBUSTÍVEL ", categoryId: "cat-ocup" });
+  assert.equal(again.status, 200);
+  assert.deepEqual(await again.json(), { created: false, existing: true, id: first.id });
+  assert.equal((await post({ name: "COMBUSTÍVEL", categoryId: "cat-rh" })).status, 201); // outra categoria pode
+  assert.equal((await post({ id: "item-luz", name: "combustível", categoryId: "cat-ocup" })).status, 409);
+  assert.equal((await post({ id: first.id, name: "COMBUSTÍVEL", categoryId: "cat-ocup" })).status, 200); // salvar o próprio nome
+});

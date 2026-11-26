@@ -85,18 +85,30 @@ export async function POST(request: Request) {
 
     // Renomear + permitir mover de categoria (item não carrega a regra de
     // "1 nível" que categoria tem, então mover é seguro).
+    // Item com o mesmo nome na mesma categoria (26/11/2026): COMBUSTÍVEL foi
+    // criado 2x em OPERACIONAL pelo "escolher categoria sem item". Criar de novo
+    // devolve o que já existe; renomear para um nome que já existe é recusado.
+    // ponytail: checagem antes do INSERT (sem índice único); 2 pedidos no mesmo instante ainda passariam.
+    const sameName = await database
+      .prepare("SELECT id FROM finance_items WHERE category_id=?1 AND UPPER(TRIM(name))=?2 AND id<>?3 LIMIT 1")
+      .bind(categoryId, name.trim().toLocaleUpperCase("pt-BR"), editId)
+      .first<{ id: string }>();
+
     if (editId) {
       const existing = await database
         .prepare("SELECT id FROM finance_items WHERE id=?1")
         .bind(editId)
         .first<{ id: string }>();
       if (!existing) return jsonResponse({ error: "ITEM NÃO ENCONTRADO." }, 404);
+      if (sameName) return jsonResponse({ error: "JÁ EXISTE UM ITEM COM ESSE NOME NESTA CATEGORIA." }, 409);
       await database
         .prepare("UPDATE finance_items SET name=?1, category_id=?2 WHERE id=?3")
         .bind(name, categoryId, editId)
         .run();
       return jsonResponse({ updated: true, id: editId });
     }
+
+    if (sameName) return jsonResponse({ created: false, existing: true, id: sameName.id });
 
     const id = crypto.randomUUID();
     await database
