@@ -104,8 +104,10 @@ test("tela: botão IMPORTAR PDF (EXTRATO), setor para todas as linhas e notas v�
 });
 
 test("abas A VINCULAR × VINCULADOS: lançamento com despesa vinculada sai da lista principal (25/11/2026)", () => {
-  assert.match(html, /id="reposicaoTabs"[\s\S]*?data-rp-view="pendentes"[\s\S]*?data-rp-view="vinculados"/);
-  assert.match(html, /const shown = reposicaoRows\.filter\(r => Boolean\(r\.expenseId\) === linkedView && \(!onlyRepeated \|\| r\.repeated\)\);/);
+  assert.match(html, /id="reposicaoTabs"[\s\S]*?data-rp-view="pendentes"[\s\S]*?data-rp-view="finalizados">FINALIZADOS</);
+  // 27/11/2026: A VINCULAR = só SAÍDA (fora OUTROS) sem despesa; ENTRADAS e OUTROS já FINALIZADOS.
+  assert.match(html, /const rpNeedsExpense = r => rpKindGroup\(r\.kind\) === 'saida' && r\.kind !== 'outros_saida';/);
+  assert.match(html, /const shown = reposicaoRows\.filter\(r => pending\(r\) !== linkedView && \(!onlyRepeated \|\| r\.repeated\)\);/);
 });
 
 test("grade do lote/PDF: × remove o movimento antes de salvar (25/11/2026)", () => {

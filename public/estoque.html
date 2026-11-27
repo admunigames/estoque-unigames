@@ -11273,10 +11273,11 @@
       <div id="reposicaoSaldoContas"></div>
       <section class="summary" id="reposicaoSummary" aria-label="Totais por setor"><div class="dre-empty">Carregando…</div></section>
 
-      <!-- 25/11/2026: lançamento com DESPESA vinculada sai da lista principal e vai para VINCULADOS. -->
+      <!-- 25/11/2026: lançamento com DESPESA vinculada sai da lista principal. 27/11/2026: ENTRADAS e OUTROS
+           não são classificados — já vão para FINALIZADOS (junto com as saídas vinculadas). -->
       <div class="supply-tabs" role="tablist" aria-label="Situação dos lançamentos" id="reposicaoTabs">
         <button class="supply-tab active" type="button" role="tab" aria-selected="true" data-rp-view="pendentes">A VINCULAR</button>
-        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-rp-view="vinculados">VINCULADOS</button>
+        <button class="supply-tab" type="button" role="tab" aria-selected="false" data-rp-view="finalizados">FINALIZADOS</button>
       </div>
       <div class="bulk-bar" id="reposicaoBulkBar">
         <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
@@ -45436,6 +45437,8 @@ function renderHomeTasks(){
   const REPOSICAO_KIND_GROUP = {entrada:'entrada', reposicao:'entrada', recuperacao:'entrada', outros_entrada:'entrada', saida:'saida', ressarcimento:'saida', prejuizo:'saida', outros_saida:'saida'};
   const rpKindLabel = kind => REPOSICAO_KIND_LABELS[kind] || REPOSICAO_KIND_LABELS[rpKindGroup(kind)];
   const rpKindGroup = kind => REPOSICAO_KIND_GROUP[kind] || 'saida';
+  // Só SAÍDA (fora OUTROS) vira despesa; ENTRADAS e OUTROS ficam FINALIZADOS (27/11/2026).
+  const rpNeedsExpense = r => rpKindGroup(r.kind) === 'saida' && r.kind !== 'outros_saida';
   const REPOSICAO_SECTOR_LABELS = {assistencia:'ASSISTÊNCIA', logistica:'LOGÍSTICA', outros:'OUTROS'};
   let reposicaoRows = [];
   let reposicaoData = null;
@@ -45547,22 +45550,23 @@ function renderHomeTasks(){
   function renderReposicaoTable(){
     const body = el('reposicaoTableBody');
     const onlyRepeated = el('reposicaoSoRepetidos').checked;
-    // Abas A VINCULAR × VINCULADOS (despesa vinculada). Saldo e totais seguem o filtro, não a aba.
-    const linkedView = reposicaoView === 'vinculados';
-    const counts = {pendentes: reposicaoRows.filter(r => !r.expenseId).length, vinculados: reposicaoRows.filter(r => r.expenseId).length};
+    // Abas A VINCULAR × FINALIZADOS. A VINCULAR = só SAÍDA sem despesa; ENTRADAS e OUTROS
+    // não são classificados e já ficam FINALIZADOS. Saldo e totais seguem o filtro, não a aba.
+    const linkedView = reposicaoView === 'finalizados';
+    const pending = r => rpNeedsExpense(r) && !r.expenseId;
+    const counts = {pendentes: reposicaoRows.filter(pending).length, finalizados: reposicaoRows.filter(r => !pending(r)).length};
     el('reposicaoTabs').querySelectorAll('[data-rp-view]').forEach(tab => {
       const active = tab.dataset.rpView === reposicaoView;
       tab.classList.toggle('active', active);
       tab.setAttribute('aria-selected', String(active));
-      tab.textContent = (tab.dataset.rpView === 'vinculados' ? 'VINCULADOS' : 'A VINCULAR')+' ('+counts[tab.dataset.rpView]+')';
+      tab.textContent = (tab.dataset.rpView === 'finalizados' ? 'FINALIZADOS' : 'A VINCULAR')+' ('+counts[tab.dataset.rpView]+')';
     });
     el('reposicaoBulkBar').querySelector('[data-bulk-action="expense"]').hidden = linkedView;
-    const shown = reposicaoRows.filter(r => Boolean(r.expenseId) === linkedView && (!onlyRepeated || r.repeated));
+    const shown = reposicaoRows.filter(r => pending(r) !== linkedView && (!onlyRepeated || r.repeated));
     body.innerHTML = shown.length ? shown.map(r => {
-      const eligible = rpKindGroup(r.kind) === 'saida';
       const despesaCell = r.expenseId
         ? '<span class="status-pill ok">VINCULADA</span>'
-        : (eligible ? '<button class="btn-outline btn-sm" type="button" data-reposicao-expense="'+escapeHtml(r.id)+'">ADICIONAR</button>' : '—');
+        : (rpNeedsExpense(r) ? '<button class="btn-outline btn-sm" type="button" data-reposicao-expense="'+escapeHtml(r.id)+'">ADICIONAR</button>' : '<span class="status-pill done" title="Entrada ou outros: não é classificado">FINALIZADO</span>');
       const locked = reposicaoClosedMonths.has(String(r.entryDate || '').slice(0, 7));
       const categoryCell = [r.category, r.financeItemId ? financeItemPathLabel(r.financeItemId) : ''].filter(Boolean).map(escapeHtml).join('<br><small>')+(r.category && r.financeItemId ? '</small>' : '');
       return '<tr>'+
@@ -45585,7 +45589,7 @@ function renderHomeTasks(){
           '<button class="btn-outline btn-sm" type="button" data-reposicao-del="'+escapeHtml(r.id)+'">EXCLUIR</button>')+
         '</td>'+
       '</tr>';
-    }).join('') : '<tr><td colspan="12" class="responsive-empty">'+(onlyRepeated ? 'Nenhum lançamento repetido.' : linkedView ? 'Nenhum lançamento vinculado a despesa.' : 'Nenhum lançamento a vincular.')+'</td></tr>';
+    }).join('') : '<tr><td colspan="12" class="responsive-empty">'+(onlyRepeated ? 'Nenhum lançamento repetido.' : linkedView ? 'Nenhum lançamento finalizado.' : 'Nenhuma saída a vincular.')+'</td></tr>';
     reposicaoBulk.sync();
   }
 
@@ -46028,8 +46032,8 @@ function renderHomeTasks(){
   function openReposicaoExpenseDialog(rowOrIds){
     if(Array.isArray(rowOrIds)){
       const rows = reposicaoRows.filter(r => rowOrIds.includes(r.id));
-      const eligible = rows.filter(r => !r.expenseId && rpKindGroup(r.kind) === 'saida');
-      if(!eligible.length){ showPurchaseToast('NENHUM SELECIONADO PODE VIRAR DESPESA (SÓ SAÍDAS AINDA SEM DESPESA).', 'error'); return; }
+      const eligible = rows.filter(r => !r.expenseId && rpNeedsExpense(r));
+      if(!eligible.length){ showPurchaseToast('NENHUM SELECIONADO PODE VIRAR DESPESA (SÓ SAÍDAS, FORA OUTROS, AINDA SEM DESPESA).', 'error'); return; }
       reposicaoExpenseIds = eligible.map(r => r.id);
       el('reposicaoExpenseForm').reset();
       renderFlatFinanceItemOptions('reposicaoExpenseItem', 'SELECIONE');
@@ -46110,7 +46114,7 @@ function renderHomeTasks(){
       el('reposicaoExpenseDialog').close();
       if(bulk) reposicaoBulk.clear();
       await reloadReposicao();
-      showPurchaseToast((bulk ? done+' despesa(s) criada(s) e vinculada(s).' : 'Despesa criada e vinculada.')+' Veja na aba VINCULADOS.');
+      showPurchaseToast((bulk ? done+' despesa(s) criada(s) e vinculada(s).' : 'Despesa criada e vinculada.')+' Já paga, em Despesas. Veja na aba FINALIZADOS.');
     }catch(error){
       status.textContent = (done ? done+' DESPESA(S) CRIADA(S) ANTES DO ERRO. ' : '')+error.message;
       if(done) await reloadReposicao();

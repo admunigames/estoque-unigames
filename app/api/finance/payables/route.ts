@@ -142,6 +142,9 @@ export async function GET(request: Request) {
   } else if (effectiveCompanyId) {
     addCondition("company_id = ?", effectiveCompanyId);
   }
+  // Despesas do CONTROLE DE REPOSIÇÃO não aparecem no Contas a Pagar (27/11/2026):
+  // ficam em Despesas e na DRE, já pagas pelo responsável.
+  addCondition("(expense_id IS NULL OR expense_id = '' OR expense_id NOT IN (SELECT expense_id FROM finance_replacement_entries WHERE expense_id <> ''))");
   const supplierId = safeText(params.get("supplierId"), 80);
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const financeItemId = safeText(params.get("financeItemId"), 80);

@@ -7,7 +7,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // divisão entre as lojas só na DRE, pelo Feito do mês de cada conta; sem
 // Feito = RATEIO PENDENTE, recalculado quando o Feito chega/muda.
 
-const db = await setupRouteDb([
+const db = await setupRouteDb(["finance_replacement_entries", 
   "shared_state", "accounts_payable", "accounts_payable_payments", "accounts_payable_payment_attachments", "expenses",
   "expense_rateio_shares", "expense_attachments", "commercial_store_goals", "finance_items", "finance_categories",
   "finance_cost_centers", "finance_store_entries", "finance_accounts", "finance_dre_allocations", "finance_suppliers",

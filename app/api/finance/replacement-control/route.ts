@@ -18,6 +18,7 @@ import {
   planReplacementDelete,
   SECTORS,
 } from "./shared";
+import { loadPayable, planPayablePayment } from "../payables/shared";
 
 // Controle de Reposição (Financeiro — Fase 8). Registra valores repostos/
 // gastos por Assistência, Logística e outros setores. "Adicionar como
@@ -26,7 +27,8 @@ import {
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 // Só os tipos de saída de dinheiro podem virar Despesa.
-const EXPENSE_ELIGIBLE_KINDS = new Set(KIND_GROUPS.saida);
+// OUTROS (SAÍDA) não é classificado (27/11/2026): fica FINALIZADO sem despesa.
+const EXPENSE_ELIGIBLE_KINDS = new Set(KIND_GROUPS.saida.filter((kind) => kind !== "outros_saida"));
 
 type Row = Record<string, unknown>;
 
@@ -225,9 +227,9 @@ export async function PATCH(request: Request) {
     if (!id) return jsonResponse({ error: "LANÇAMENTO INVÁLIDO." }, 400);
     const database = await getD1();
     const existing = await database
-      .prepare("SELECT id, kind, expense_id AS expenseId, finance_item_id AS financeItemId FROM finance_replacement_entries WHERE id=?1")
+      .prepare("SELECT id, kind, entry_date AS entryDate, expense_id AS expenseId, finance_item_id AS financeItemId FROM finance_replacement_entries WHERE id=?1")
       .bind(id)
-      .first<{ id: string; kind: string; expenseId: string; financeItemId: string }>();
+      .first<{ id: string; kind: string; entryDate: string; expenseId: string; financeItemId: string }>();
     if (!existing) return jsonResponse({ error: "LANÇAMENTO NÃO ENCONTRADO." }, 404);
     if (expenseId && !EXPENSE_ELIGIBLE_KINDS.has(existing.kind)) {
       return jsonResponse(
@@ -235,14 +237,37 @@ export async function PATCH(request: Request) {
         400,
       );
     }
-    await database
-      .prepare(
-        `UPDATE finance_replacement_entries
-         SET expense_id=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP, finance_item_id=?5
-         WHERE id=?4`,
-      )
-      .bind(expenseId, actor.id, actor.displayName || "Administrador", id, financeItemId || existing.financeItemId)
-      .run();
+    // 27/11/2026: a despesa da reposição já nasce PAGA (o dinheiro saiu da conta
+    // do responsável na data do lançamento) — some do Contas a Pagar e do Fluxo
+    // de Caixa futuro; fica em Despesas e na DRE.
+    const statements: [string, unknown[]][] = [[
+      `UPDATE finance_replacement_entries
+       SET expense_id=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP, finance_item_id=?5
+       WHERE id=?4`,
+      [expenseId, actor.id, actor.displayName || "Administrador", id, financeItemId || existing.financeItemId],
+    ]];
+    if (expenseId) {
+      const payables = await database
+        .prepare("SELECT id FROM accounts_payable WHERE expense_id=?1 AND status <> 'canceled' AND paid_amount_cents < original_amount_cents")
+        .bind(expenseId)
+        .all<{ id: string }>();
+      for (const { id: payableId } of payables.results ?? []) {
+        const payable = await loadPayable(database, payableId);
+        if (!payable) continue;
+        const payment = await planPayablePayment(database, payable, actor, {
+          idempotencyKey: `reposicao-pago:${payableId}`,
+          amountCents: payable.originalAmountCents - payable.paidAmountCents,
+          paymentDate: existing.entryDate,
+          scheduled: false,
+          paymentMethod: "CONTROLE DE REPOSIÇÃO",
+          financeAccountId: "",
+          notes: "PAGO PELO RESPONSÁVEL (CONTROLE DE REPOSIÇÃO).",
+        });
+        if ("error" in payment) return jsonResponse({ error: payment.error }, payment.status);
+        statements.push(...payment.statements);
+      }
+    }
+    await database.batch(statements.map(([sql, values]) => database.prepare(sql).bind(...values)));
     return jsonResponse({ updated: true, id, expenseId });
   } catch (error) {
     console.error("Não foi possível vincular a despesa ao lançamento.", error);

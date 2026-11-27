@@ -6,7 +6,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // escritório) e DESTINO NA DRE escolhido por quem lança (NÃO INCLUIR /
 // RATEAR / INCLUIR EM) — prompt 2 dos ajustes do Financeiro (22/10/2026).
 
-const db = await setupRouteDb([
+const db = await setupRouteDb(["finance_replacement_entries", 
   "shared_state", "accounts_payable", "accounts_payable_payments", "finance_items", "finance_accounts",
   "finance_cost_centers", "finance_store_entries", "finance_rateio_model_shares", "finance_suppliers",
   "supplier_open_debts", "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",

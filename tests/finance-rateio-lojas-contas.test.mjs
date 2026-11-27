@@ -6,7 +6,7 @@ import { callRoute, setupRouteDb } from "./helpers/route-db.mjs";
 // lojas escolhidas (B), despesa rateada como UMA linha em Contas a Pagar (C)
 // e cadastro de Contas Financeiras (D). Rotas reais sobre SQLite.
 
-const db = await setupRouteDb([
+const db = await setupRouteDb(["finance_replacement_entries", 
   "shared_state", "accounts_payable", "accounts_payable_payments", "expenses", "expense_rateio_shares",
   "finance_rateio_model_shares", "commercial_store_goals", "finance_store_headcount", "finance_items", "finance_categories",
   "finance_cost_centers", "finance_store_entries", "finance_accounts", "supplier_open_debts", "finance_suppliers",
