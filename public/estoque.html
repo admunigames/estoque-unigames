@@ -7982,7 +7982,8 @@
           <div class="field"><label for="rh13Loja">LOJA</label><select id="rh13Loja"><option value="">TODAS AS LOJAS</option></select></div>
           <div class="field"><label for="rh13Nome">NOME</label><input type="search" id="rh13Nome" placeholder="DIGITE O NOME"></div>
           <div class="dre-toolbar-actions">
-            <button class="btn-accent" id="btnRh13Salvar" type="button">SALVAR LANÇAMENTOS</button>
+            <button class="btn-outline" id="btnRh13Excel" type="button">BAIXAR EXCEL</button>
+          <button class="btn-accent" id="btnRh13Salvar" type="button">SALVAR LANÇAMENTOS</button>
             <button class="btn-outline" id="btnRh13Fechar" type="button">VOLTAR À FOLHA</button>
           </div>
         </div>
@@ -53675,6 +53676,105 @@ function renderHomeTasks(){
     if(!el('rh13Ano').value) el('rh13Ano').value = String(new Date().getFullYear());
     loadRh13();
   }
+  // BAIXAR EXCEL (27/11/2026): as linhas dos filtros da tela (ANO + PARCELA + LOJA + NOME;
+  // sem loja/nome = todos), por loja e nome, com TOTAL por fórmula. Modelo do Excel dos BENEFÍCIOS.
+  el('btnRh13Excel').addEventListener('click', async event => {
+    const lines = rh13Lines().sort((a, b) => String(a.employee.companyName || '').localeCompare(String(b.employee.companyName || '')) ||
+      String(a.employee.fullName).localeCompare(String(b.employee.fullName)));
+    if(!lines.length){ showPurchaseToast('Nada para exportar com este filtro.','error'); return; }
+    const button = event.currentTarget;
+    button.disabled = true;
+    try{
+      const ExcelJS = await ensureExcelJs();
+      const year = el('rh13Ano').value || String(new Date().getFullYear());
+      const parcela = RH_13_INSTALLMENT_LABELS[el('rh13Parcela').value] || el('rh13Parcela').value;
+      const store = el('rh13Loja').value ? el('rh13Loja').selectedOptions[0].textContent : 'TODAS AS LOJAS';
+      const name = el('rh13Nome').value.trim();
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'UNIGAMES';
+      wb.calcProperties.fullCalcOnLoad = true;
+      const NAVY = 'FF1F3A5F', ZEBRA = 'FFF6F8FB', LINE = 'FFC9D3DF';
+      const MONEY = '"R$" #,##0.00;[Red]-"R$" #,##0.00';
+      const fill = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
+      const border = {top:{style:'thin', color:{argb:LINE}}, left:{style:'thin', color:{argb:LINE}}, bottom:{style:'thin', color:{argb:LINE}}, right:{style:'thin', color:{argb:LINE}}};
+      const columns = [
+        {label:'FUNCIONÁRIO', width:34, get: l => l.employee.fullName},
+        {label:'LOJA', width:26, get: l => l.employee.companyName || '—'},
+        {label:'ANO', width:8, get: () => year},
+        {label:'PARCELA', width:16, get: () => parcela},
+        {label:'BRUTO', width:15, money:true, get: l => l.entry ? l.entry.grossCents : null},
+        {label:'DESCONTO', width:15, money:true, get: l => l.entry ? l.entry.deductionsCents : null},
+        {label:'LÍQUIDO', width:15, money:true, get: l => l.entry ? l.entry.netCents : null},
+        {label:'SITUAÇÃO', width:14, get: l => !l.entry ? 'NÃO LANÇADO' : l.entry.paymentDone ? 'PAGO' : 'EM ABERTO'},
+        {label:'DATA DO PAGAMENTO', width:14, get: l => l.entry && l.entry.paymentDone && l.entry.paymentDate ? rhFormatDate(l.entry.paymentDate) : ''},
+        {label:'OBSERVAÇÕES', width:40, get: l => l.entry ? l.entry.notes || '' : ''},
+      ];
+      const width = columns.length;
+      const ws = wb.addWorksheet('13º SALÁRIO', {views:[{showGridLines:false}], pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, paperSize:9}});
+      ws.mergeCells(1, 1, 1, width);
+      ws.getCell(1, 1).value = '13º SALÁRIO — '+year+' — '+parcela;
+      ws.getCell(1, 1).font = {bold:true, size:15, color:{argb:'FFFFFFFF'}};
+      ws.getCell(1, 1).fill = fill(NAVY);
+      ws.getCell(1, 1).alignment = {vertical:'middle', indent:1};
+      ws.getRow(1).height = 30;
+      ws.mergeCells(2, 1, 2, width);
+      ws.getCell(2, 1).value = ('ANO '+year+' · PARCELA '+parcela+' · '+store+(name ? ' · NOME: '+name : '')+' · GERADO EM '+(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+String(currentSession.displayName || '')).toLocaleUpperCase('pt-BR');
+      ws.getCell(2, 1).font = {size:9, color:{argb:'FF475569'}};
+      ws.getCell(2, 1).alignment = {indent:1, wrapText:true};
+      ws.getRow(2).height = 28;
+      const head = 4;
+      columns.forEach((column, i) => {
+        const cell = ws.getRow(head).getCell(i + 1);
+        cell.value = column.label;
+        cell.font = {bold:true, size:9, color:{argb:'FFFFFFFF'}};
+        cell.fill = fill(NAVY);
+        cell.alignment = {vertical:'middle', horizontal:'center', wrapText:true};
+        cell.border = border;
+        ws.getColumn(i + 1).width = column.width;
+      });
+      ws.getRow(head).height = 26;
+      lines.forEach((line, index) => {
+        const row = ws.getRow(head + 1 + index);
+        columns.forEach((column, i) => {
+          const cell = row.getCell(i + 1);
+          const value = column.get(line);
+          cell.value = column.money ? (value === null ? null : (Number(value) || 0) / 100) : String(value || '').toLocaleUpperCase('pt-BR');
+          if(column.money) cell.numFmt = MONEY;
+          cell.border = border;
+          cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left', wrapText:column.label === 'OBSERVAÇÕES'};
+          if(index % 2) cell.fill = fill(ZEBRA);
+        });
+      });
+      const first = head + 1, last = head + lines.length;
+      const launched = lines.filter(line => line.entry).length;
+      const total = ws.getRow(last + 1);
+      columns.forEach((column, i) => {
+        const cell = total.getCell(i + 1);
+        const colLetter = String.fromCharCode(65 + i);
+        if(i === 0) cell.value = 'TOTAL ('+launched+' LANÇADO(S) DE '+lines.length+')';
+        else if(column.money){
+          cell.value = {formula:'SUM('+colLetter+first+':'+colLetter+last+')', result:lines.reduce((acc, line) => acc + (Number(column.get(line)) || 0), 0) / 100};
+          cell.numFmt = MONEY;
+        }
+        cell.font = {bold:true, color:{argb:'FFFFFFFF'}};
+        cell.fill = fill(NAVY);
+        cell.border = border;
+        cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left'};
+      });
+      total.height = 22;
+      ws.views = [{state:'frozen', xSplit:1, ySplit:head, showGridLines:false}];
+      ws.autoFilter = {from:{row:head, column:1}, to:{row:last, column:width}};
+      ws.pageSetup.printTitlesRow = head+':'+head;
+      const buffer = await wb.xlsx.writeBuffer();
+      const slug = text => normalizeSearchText(text).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const fileName = '13-SALARIO-'+year+'-'+slug(parcela)+(el('rh13Loja').value ? '-'+slug(store) : '')+(name ? '-'+slug(name) : '')+'.xlsx';
+      downloadBlobFile(new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName);
+    }catch(error){
+      showPurchaseToast(error.message || 'NÃO FOI POSSÍVEL GERAR O EXCEL.','error');
+    }finally{
+      button.disabled = false;
+    }
+  });
   el('btnRhDecimoTerceiro').addEventListener('click', () => showRhDecimo(true));
   el('btnRh13Fechar').addEventListener('click', () => showRhDecimo(false));
   el('rh13Ano').addEventListener('change', loadRh13);

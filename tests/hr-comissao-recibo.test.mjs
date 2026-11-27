@@ -70,3 +70,11 @@ test("filtro de CARGO: com ou sem acento é o mesmo cargo (uma opção, mostrada
   ]);
   assert.equal(key("TÉCNICO"), key("tecnico  "));
 });
+
+test("13º SALÁRIO: BAIXAR EXCEL segue os filtros da tela (ano, parcela, loja, nome; sem filtro = todos)", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.match(html, /id="btnRh13Excel" type="button">BAIXAR EXCEL</);
+  assert.match(html, /el\('btnRh13Excel'\)\.addEventListener\('click', async event => \{\s*const lines = rh13Lines\(\)/);
+  assert.match(html, /'13-SALARIO-'\+year\+'-'\+slug\(parcela\)/);
+});
