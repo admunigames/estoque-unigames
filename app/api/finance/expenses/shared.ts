@@ -14,7 +14,13 @@ import {
   splitIntoInstallments,
   type RecurrenceFrequency,
 } from "../../../lib/payables-recurrence";
-import { assertFinanceAccountBelongsToCompany, assertSlotAvailableForPayable, findDuplicatePayable } from "../payables/shared";
+import {
+  assertFinanceAccountBelongsToCompany,
+  assertSlotAvailableForPayable,
+  findDuplicatePayable,
+  MANUAL_PAYMENT_SQL,
+  NO_PAYABLE_PAYMENT_PREFIX,
+} from "../payables/shared";
 import { MONTH_PATTERN, safeText, type JsonMap } from "../shared";
 import { isAutoRateioModel, RATEIO_MODELS, type RateioModel } from "../../../lib/rateio-models";
 import { distributeAmount, type RateioShareInput } from "../../../lib/rateio-distribute";
@@ -229,6 +235,10 @@ export async function planExpense(
   }
 
   const kind = (safeText(body.kind, 20) || "single") as "single" | "installment" | "recurring";
+  // SEM CONTA A PAGAR (27/11/2026): despesa única já paga — a conta interna (que
+  // alimenta a DRE) nasce PAGA na data da despesa e não aparece no Contas a Pagar.
+  const noPayable = body.noPayable === true;
+  if (noPayable && kind !== "single") return reply({ error: "SÓ DESPESA AVULSA PODE SER LANÇADA SEM CONTA A PAGAR." }, 400);
 
   const item = await database
     .prepare("SELECT id FROM finance_items WHERE id=?1")
@@ -555,6 +565,25 @@ export async function planExpense(
           costCenterId || null,
         ],
       ]);
+      if (noPayable) {
+        statements.push(
+          [
+            "UPDATE accounts_payable SET paid_amount_cents=original_amount_cents, status='paid' WHERE id=?1",
+            [payableId],
+          ],
+          [
+            `INSERT INTO accounts_payable_payments
+              (id, payable_id, amount_cents, payment_date, payment_method, finance_account_id, notes,
+               scheduled, confirmed_at, created_by, created_by_name, created_at, idempotency_key)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,0,?8,?9,?10,CURRENT_TIMESTAMP,?11)`,
+            [
+              crypto.randomUUID(), payableId, occurrence.amountCents, issueDate || occurrence.dueDate,
+              paymentMethod || "DESPESA SEM CONTA A PAGAR", financeAccountId, "DESPESA LANÇADA SEM CONTA A PAGAR (JÁ PAGA).",
+              new Date().toISOString(), actor.id, actorName, `${NO_PAYABLE_PAYMENT_PREFIX}${payableId}`,
+            ],
+          ],
+        );
+      }
     });
   }
 
@@ -614,7 +643,7 @@ export async function planExpenseDeletion(
     ? await database
         .prepare(
           `SELECT COUNT(*) AS n FROM accounts_payable_payments
-           WHERE confirmed_at <> '' AND payable_id IN (${payables.map((_, index) => `?${index + 1}`).join(",")})`,
+           WHERE confirmed_at <> '' AND ${MANUAL_PAYMENT_SQL} AND payable_id IN (${payables.map((_, index) => `?${index + 1}`).join(",")})`,
         )
         .bind(...payables.map((payable) => payable.id))
         .first<{ n: number }>()

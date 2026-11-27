@@ -12,7 +12,7 @@ const db = await setupRouteDb([
   "finance_cost_centers", "finance_store_entries", "finance_rateio_model_shares", "finance_suppliers",
   "supplier_open_debts", "supplier_invoices", "supplier_invoice_installments", "supplier_invoice_events",
   "expenses", "expense_rateio_shares", "finance_store_revenue", "finance_store_headcount",
-  "finance_replacement_entries", "finance_replacement_balances",
+  "finance_replacement_entries", "finance_replacement_balances", "accounts_payable_payment_attachments", "expense_attachments", "finance_dre_allocations",
 ]);
 const replacement = await import("../app/api/finance/replacement-control/route.ts");
 const expenses = await import("../app/api/finance/expenses/route.ts");
@@ -56,4 +56,27 @@ test("OUTROS (SAÍDA) e ENTRADA não viram despesa", async () => {
     const res = await callRoute(replacement.PATCH, FIN, "PATCH", api, { id, expenseId: "qualquer" });
     assert.equal(res.status, 400, kind);
   }
+});
+
+test("Despesas: JÁ PAGA — SEM CONTA A PAGAR (só avulsa); exclui normalmente", async () => {
+  const base = { companyId: ALFA, companyName: "LOJA ALFA", financeItemId: "item-comb", originalAmountCents: 5_000, issueDate: "2026-11-10", dueDate: "2026-11-15" };
+  const parcelada = await callRoute(expenses.POST, FIN, "POST", "/api/finance/expenses", { ...base, idempotencyKey: "np-0", kind: "installment", installmentTotal: 2, description: "PARCELADA", noPayable: true });
+  assert.equal(parcelada.status, 400);
+  const created = await (await callRoute(expenses.POST, FIN, "POST", "/api/finance/expenses", { ...base, idempotencyKey: "np-1", kind: "single", description: "POSTO SEM BOLETO", noPayable: true })).json();
+  const payable = db.sqlite.prepare("SELECT id, status, paid_amount_cents AS paid FROM accounts_payable WHERE expense_id=?").get(created.id);
+  assert.deepEqual([payable.status, payable.paid], ["paid", 5_000]);
+  assert.equal(db.sqlite.prepare("SELECT payment_date AS d FROM accounts_payable_payments WHERE payable_id=?").get(payable.id).d, "2026-11-10");
+  const list = await (await callRoute(payables.GET, FIN, "GET", "/api/finance/payables?pageSize=100")).json();
+  assert.equal(list.rows.some((row) => row.id === payable.id), false, "fora do Contas a Pagar");
+  const exp = await (await callRoute(expenses.GET, FIN, "GET", "/api/finance/expenses?pageSize=100")).json();
+  assert.equal(exp.rows.some((row) => row.id === created.id), true, "em Despesas");
+  // Despesa normal continua no Contas a Pagar.
+  const normal = await (await callRoute(expenses.POST, FIN, "POST", "/api/finance/expenses", { ...base, idempotencyKey: "np-2", kind: "single", description: "COM BOLETO" })).json();
+  const list2 = await (await callRoute(payables.GET, FIN, "GET", "/api/finance/payables?pageSize=100")).json();
+  assert.equal(list2.rows.some((row) => row.expenseId === normal.id), true);
+  // O pagamento automático não trava a exclusão.
+  const bulk = await import("../app/api/finance/expenses/bulk/route.ts");
+  const del = await (await callRoute(bulk.POST, FIN, "POST", "/api/finance/expenses/bulk", { action: "delete", ids: [created.id] })).json();
+  assert.equal(del.skipped?.length ?? 0, 0, JSON.stringify(del));
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM accounts_payable WHERE expense_id=?").get(created.id).n, 0);
 });

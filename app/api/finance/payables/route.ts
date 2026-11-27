@@ -3,7 +3,7 @@ import { unauthorizedResponse } from "../../../lib/notion";
 import { canSeeAllStores, hasCompany, NO_COMPANY_ERROR } from "../../../lib/access-scope";
 import { quickViewDueRange, todayInTimezone, type QuickView } from "../../../lib/finance-status";
 import { canManageFinance, FINANCE_CATEGORY_FILTER_SQL, identity, jsonResponse, safeText, sameOrigin, MONTH_PATTERN, type JsonMap } from "../shared";
-import { DATE_PATTERN, displayStatusCaseSql } from "./shared";
+import { HIDDEN_FROM_PAYABLES_SQL, DATE_PATTERN, displayStatusCaseSql } from "./shared";
 import { planPayableCreate } from "./create";
 
 // Filtro "SEM LOJA" (escritório / PF / outros) da listagem.
@@ -142,9 +142,10 @@ export async function GET(request: Request) {
   } else if (effectiveCompanyId) {
     addCondition("company_id = ?", effectiveCompanyId);
   }
-  // Despesas do CONTROLE DE REPOSIÇÃO não aparecem no Contas a Pagar (27/11/2026):
-  // ficam em Despesas e na DRE, já pagas pelo responsável.
+  // Despesas do CONTROLE DE REPOSIÇÃO e despesas SEM CONTA A PAGAR não aparecem
+  // no Contas a Pagar (27/11/2026): ficam em Despesas e na DRE, já pagas.
   addCondition("(expense_id IS NULL OR expense_id = '' OR expense_id NOT IN (SELECT expense_id FROM finance_replacement_entries WHERE expense_id <> ''))");
+  addCondition(HIDDEN_FROM_PAYABLES_SQL);
   const supplierId = safeText(params.get("supplierId"), 80);
   if (supplierId) addCondition("supplier_id = ?", supplierId);
   const financeItemId = safeText(params.get("financeItemId"), 80);

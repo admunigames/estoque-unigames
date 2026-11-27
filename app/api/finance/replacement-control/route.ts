@@ -18,7 +18,7 @@ import {
   planReplacementDelete,
   SECTORS,
 } from "./shared";
-import { loadPayable, planPayablePayment } from "../payables/shared";
+import { loadPayable, planPayablePayment, REPLACEMENT_PAYMENT_PREFIX } from "../payables/shared";
 
 // Controle de Reposição (Financeiro — Fase 8). Registra valores repostos/
 // gastos por Assistência, Logística e outros setores. "Adicionar como
@@ -255,7 +255,7 @@ export async function PATCH(request: Request) {
         const payable = await loadPayable(database, payableId);
         if (!payable) continue;
         const payment = await planPayablePayment(database, payable, actor, {
-          idempotencyKey: `reposicao-pago:${payableId}`,
+          idempotencyKey: `${REPLACEMENT_PAYMENT_PREFIX}${payableId}`,
           amountCents: payable.originalAmountCents - payable.paidAmountCents,
           paymentDate: existing.entryDate,
           scheduled: false,

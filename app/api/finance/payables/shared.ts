@@ -611,3 +611,13 @@ export async function findDuplicatePayable(
     (found.createdByName ? ` (CADASTRADA POR ${String(found.createdByName).toUpperCase()} EM ${br(found.createdAt)})` : "") + ".";
 }
 
+// Pagamentos AUTOMÁTICOS (27/11/2026): despesa da reposição (pago pelo responsável)
+// e despesa lançada SEM CONTA A PAGAR. A conta deles não aparece no Contas a Pagar
+// e o pagamento automático não impede excluir a despesa.
+export const REPLACEMENT_PAYMENT_PREFIX = "reposicao-pago:";
+export const NO_PAYABLE_PAYMENT_PREFIX = "sem-conta-a-pagar:";
+export const MANUAL_PAYMENT_SQL =
+  `COALESCE(idempotency_key,'') NOT LIKE '${REPLACEMENT_PAYMENT_PREFIX}%' AND COALESCE(idempotency_key,'') NOT LIKE '${NO_PAYABLE_PAYMENT_PREFIX}%'`;
+export const HIDDEN_FROM_PAYABLES_SQL =
+  `id NOT IN (SELECT payable_id FROM accounts_payable_payments WHERE idempotency_key LIKE '${REPLACEMENT_PAYMENT_PREFIX}%' OR idempotency_key LIKE '${NO_PAYABLE_PAYMENT_PREFIX}%')`;
+

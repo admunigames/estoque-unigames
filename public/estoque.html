@@ -15517,6 +15517,11 @@
         <label><input type="radio" name="expenseKind" value="installment"> PARCELADA</label>
         <label><input type="radio" name="expenseKind" value="recurring"> RECORRENTE</label>
       </div>
+      <!-- 27/11/2026: despesa já paga, sem conta a pagar (fica em Despesas e na DRE). -->
+      <div class="purchase-field full" id="expenseNoPayableField">
+        <label class="assist-check"><input type="checkbox" id="expenseNoPayable"> JÁ PAGA — NÃO GERAR CONTA A PAGAR</label>
+        <span class="purchase-field-help">A DESPESA FICA SÓ EM DESPESAS E NA DRE, PAGA NA DATA INFORMADA (OU NO VENCIMENTO, SE NÃO TIVER DATA). NÃO APARECE NO CONTAS A PAGAR.</span>
+      </div>
       <div class="purchase-field" id="expenseInstallmentTotalField" hidden><label for="expenseInstallmentTotal">QUANTIDADE DE PARCELAS</label><input type="number" id="expenseInstallmentTotal" min="2" max="360"></div>
       <div class="purchase-field" id="expenseRecurrenceFrequencyField" hidden><label for="expenseRecurrenceFrequency">FREQUÊNCIA</label>
         <select id="expenseRecurrenceFrequency">
@@ -50298,6 +50303,8 @@ function renderHomeTasks(){
     el('expenseRecurrenceCountField').hidden = kind !== 'recurring';
     el('expenseRecurrenceEndField').hidden = kind !== 'recurring';
     el('expenseCompetenceMonthField').style.display = kind === 'single' ? '' : 'none';
+    el('expenseNoPayableField').hidden = kind !== 'single';
+    if(kind !== 'single') el('expenseNoPayable').checked = false;
     const help = el('expenseKindHelp');
     if(kind === 'installment'){
       help.hidden = false;
@@ -50509,6 +50516,7 @@ function renderHomeTasks(){
     }
     if(kind === 'single'){
       if(el('expenseCompetenceMonth').value) body.competenceMonth = el('expenseCompetenceMonth').value;
+      if(el('expenseNoPayable').checked) body.noPayable = true;
     }else if(kind === 'installment'){
       body.installmentTotal = Number(el('expenseInstallmentTotal').value);
       if(!body.installmentTotal || body.installmentTotal < 2){ statusEl.textContent = 'INFORME A QUANTIDADE DE PARCELAS (MÍNIMO 2).'; return; }
@@ -50525,7 +50533,7 @@ function renderHomeTasks(){
     button.disabled = true;
     try{
       const response = await financeCreateConfirmingDuplicate('/expenses', body);
-      showPurchaseToast(response && response.dreWarning ? response.dreWarning : 'Despesa salva.');
+      showPurchaseToast(response && response.dreWarning ? response.dreWarning : body.noPayable ? 'Despesa salva — já paga, sem conta a pagar.' : 'Despesa salva.');
       closeExpenseDialog();
       await refreshAfterAction(() => loadExpensesList({silent:true}));
     }catch(error){
