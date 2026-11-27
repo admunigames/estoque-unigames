@@ -97,3 +97,20 @@ test("leitura do PDF do contador (modelo GEOVANA): líquido, INSS, bases e FGTS;
   assert.equal(JSON.stringify(geo).includes("136"), false);
   assert.deepEqual([joao.name, joao.netCents, joao.fgtsCents], ["JOÃO TESTE", 100000, 0]);
 });
+
+test("CONTRACHEQUE EM LOTE: grava desconto avulso e observações; o PDF (só contracheque) não apaga esses campos", async () => {
+  const MES = "2030-09";
+  const get = async () => (await (await callRoute(entriesRoute.GET, RH, "GET", `/api/hr-payroll/entries?month=${MES}`)).json()).entries.find((row) => row.employeeId === "geo");
+  assert.equal((await post({ action: "payslips", month: MES, values: [{ employeeId: "geo", payslipCents: 150000, deductionsCents: 2000, notes: "VALE" }] })).status, 200);
+  let geo = await get();
+  assert.deepEqual([geo.payslipCents, geo.deductionsCents, geo.notes], [150000, 2000, "VALE"]);
+  await post({ action: "payslips", month: MES, values: [{ employeeId: "geo", payslipCents: 151000 }] });
+  geo = await get();
+  assert.deepEqual([geo.payslipCents, geo.deductionsCents, geo.notes], [151000, 2000, "VALE"]);
+  await post({ action: "payslips", month: MES, values: [{ employeeId: "geo", payslipCents: 151000, deductionsCents: 0, notes: "" }] });
+  geo = await get();
+  assert.deepEqual([geo.deductionsCents, geo.notes], [0, ""]);
+  assert.equal((await post({ action: "payslips", month: MES, values: [{ employeeId: "geo", payslipCents: 1, deductionsCents: -5 }] })).status, 400);
+  const html = await readFile(new URL("../public/estoque.html", import.meta.url), "utf8");
+  assert.ok(html.includes('id="btnRhFolhaLote"') && html.includes("function openRhFolhaLote"));
+});

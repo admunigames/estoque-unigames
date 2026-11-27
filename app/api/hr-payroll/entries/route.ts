@@ -331,6 +331,13 @@ async function savePayslips(database: Database, actor: Identity, body: JsonMap) 
     const employeeId = safeText(item.employeeId, 80);
     const payslipCents = centsValue(item.payslipCents);
     if (!employeeId || !Number.isFinite(payslipCents) || payslipCents < 0) return jsonResponse({ error: "CONTRACHEQUE INVÁLIDO NA LISTA." }, 400);
+    // CONTRACHEQUE EM LOTE (27/11/2026) também manda DESCONTO AVULSO e OBSERVAÇÕES;
+    // o LER PDF manda só o contracheque — campo ausente fica como está.
+    const hasDeductions = item.deductionsCents !== undefined;
+    const deductionsCents = hasDeductions ? centsValue(item.deductionsCents) : 0;
+    if (!Number.isFinite(deductionsCents) || deductionsCents < 0) return jsonResponse({ error: "DESCONTO INVÁLIDO NA LISTA." }, 400);
+    const hasNotes = item.notes !== undefined;
+    const notes = hasNotes ? safeText(item.notes, 500) : "";
     const employee = await loadEmployeeForMonth(database, employeeId, month);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
     const existing = await database
@@ -340,8 +347,13 @@ async function savePayslips(database: Database, actor: Identity, body: JsonMap) 
     statements.push(
       existing
         ? database
-            .prepare("UPDATE hr_payroll_entries SET payslip_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP WHERE id=?4")
-            .bind(payslipCents, actor.id, actorName(actor), existing.id)
+            .prepare(
+              `UPDATE hr_payroll_entries SET payslip_cents=?1, updated_by=?2, updated_by_name=?3, updated_at=CURRENT_TIMESTAMP,
+                 deductions_cents=CASE WHEN ?5=1 THEN ?6 ELSE deductions_cents END,
+                 notes=CASE WHEN ?7=1 THEN ?8 ELSE notes END
+               WHERE id=?4`,
+            )
+            .bind(payslipCents, actor.id, actorName(actor), existing.id, hasDeductions ? 1 : 0, deductionsCents, hasNotes ? 1 : 0, notes)
         : database
             .prepare(
               `INSERT INTO hr_payroll_entries
@@ -350,12 +362,12 @@ async function savePayslips(database: Database, actor: Identity, body: JsonMap) 
                  payment_done, payment_date, attachment_file_name, attachment_r2_key,
                  attachment_size_bytes, created_by, created_by_name, created_at, updated_by,
                  updated_by_name, updated_at, payslip_cents)
-               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, 0, 0, 0, 0, '', 0, '', '', '', 0,
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, 0, 0, ?11, 0, ?12, 0, '', '', '', 0,
                        ?8, ?9, CURRENT_TIMESTAMP, ?8, ?9, CURRENT_TIMESTAMP, ?10)`,
             )
             .bind(
               crypto.randomUUID(), employeeId, employee.fullName, employee.companyId, employee.companyName, month,
-              Number(employee.salaryCents || 0), actor.id, actorName(actor), payslipCents,
+              Number(employee.salaryCents || 0), actor.id, actorName(actor), payslipCents, deductionsCents, notes,
             ),
     );
   }

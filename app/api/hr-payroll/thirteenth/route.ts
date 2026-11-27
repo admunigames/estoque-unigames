@@ -15,11 +15,63 @@ import {
   type Identity,
   type JsonMap,
 } from "../shared";
+import { actingStoresForMonth } from "../../../lib/acting-store";
+import { loadCompanyList } from "../../finance/shared";
 
 // 13º salário — anual, por funcionário. Parcela: 'adiantamento' | 'final'
 // | 'unico'. Independente da folha mensal. Líquido = bruto − descontos.
 
-const INSTALLMENTS = ["adiantamento", "final", "unico"] as const;
+// 27/11/2026: só ADIANTAMENTO e PARCELA FINAL em lançamento novo/editado; os
+// ÚNICO antigos foram migrados para ADIANTAMENTO (a leitura ainda aceita).
+const INSTALLMENTS = ["adiantamento", "final"] as const;
+const INSTALLMENT_ERROR = "SELECIONE A PARCELA (ADIANTAMENTO OU PARCELA FINAL).";
+// Loja atuante da parcela: adiantamento = novembro, final = dezembro do ano.
+const installmentMonth = (year: string, installment: string) => `${year}-${installment === "final" ? "12" : "11"}`;
+
+/**
+ * Lojas de cada funcionário (LOJA ADMISSÃO; LOJA ATUANTE no mês de cada parcela)
+ * e quem está DESLIGADO (inativo, ou com desligamento registrado depois da
+ * admissão) — desligado não entra em lançamento novo de 13º.
+ */
+async function employeeStores(database: Database, year: string) {
+  const [employees, terminations, companies, novActing, decActing] = await Promise.all([
+    database
+      .prepare(
+        `SELECT id, status, admission_date AS admissionDate, company_id AS companyId, company_name AS companyName,
+                admission_company_id AS admissionCompanyId, admission_company_name AS admissionCompanyName
+         FROM hr_employees`,
+      )
+      .all<{ id: string; status: string; admissionDate: string; companyId: string; companyName: string; admissionCompanyId: string; admissionCompanyName: string }>(),
+    database
+      .prepare("SELECT employee_id AS employeeId, MAX(termination_date) AS terminationDate FROM hr_terminations GROUP BY employee_id")
+      .all<{ employeeId: string; terminationDate: string }>(),
+    loadCompanyList(database),
+    actingStoresForMonth(database, installmentMonth(year, "adiantamento")),
+    actingStoresForMonth(database, installmentMonth(year, "final")),
+  ]);
+  const lastTermination = new Map((terminations.results ?? []).map((row) => [row.employeeId, String(row.terminationDate || "")]));
+  const nameOf = (id: string, fallback: string) => companies.find((company) => company.id === id)?.name ?? fallback;
+  const stores: Record<string, {
+    admissionCompanyId: string; admissionCompanyName: string; blocked: boolean;
+    acting: Record<string, { companyId: string; companyName: string }>;
+  }> = {};
+  for (const employee of employees.results ?? []) {
+    const admissionId = employee.admissionCompanyId || employee.companyId || "";
+    const terminated = lastTermination.get(employee.id) ?? "";
+    const acting = (map: Map<string, { companyId: string; companyName: string }>) => {
+      const store = map.get(employee.id);
+      const id = store?.companyId ?? employee.companyId;
+      return { companyId: id, companyName: nameOf(id, store?.companyName ?? employee.companyName) };
+    };
+    stores[employee.id] = {
+      admissionCompanyId: admissionId,
+      admissionCompanyName: nameOf(admissionId, employee.admissionCompanyId ? employee.admissionCompanyName : employee.companyName),
+      blocked: employee.status !== "active" || Boolean(terminated && terminated >= String(employee.admissionDate || "")),
+      acting: { adiantamento: acting(novActing), final: acting(decActing) },
+    };
+  }
+  return stores;
+}
 const YEAR_PATTERN = /^\d{4}$/;
 
 type Row = {
@@ -74,13 +126,23 @@ export async function GET(request: Request) {
       .prepare(`SELECT ${COLUMNS} FROM hr_thirteenth_salary ${where} ORDER BY employee_name ASC, installment ASC`)
       .bind(...params)
       .all<Row>();
-    const rows = (result.results ?? []).map((row) => ({
-      ...row,
-      netCents: Number(row.grossCents || 0) - Number(row.deductionsCents || 0),
-    }));
+    const stores = await employeeStores(database, year || String(new Date().getFullYear()));
+    const rows = (result.results ?? []).map((row) => {
+      const store = stores[row.employeeId];
+      const acting = store?.acting[row.installment === "final" ? "final" : "adiantamento"];
+      return {
+        ...row,
+        netCents: Number(row.grossCents || 0) - Number(row.deductionsCents || 0),
+        admissionCompanyId: store?.admissionCompanyId ?? row.companyId,
+        admissionCompanyName: store?.admissionCompanyName ?? row.companyName,
+        actingCompanyId: acting?.companyId ?? row.companyId,
+        actingCompanyName: acting?.companyName ?? row.companyName,
+      };
+    });
     return jsonResponse({
       year,
       entries: rows,
+      employeeStores: stores,
       totalGrossCents: rows.reduce((sum, row) => sum + Number(row.grossCents || 0), 0),
       totalNetCents: rows.reduce((sum, row) => sum + row.netCents, 0),
     });
@@ -147,7 +209,8 @@ async function saveBatch(database: Database, actor: Identity, body: JsonMap) {
   const year = safeText(body.year, 4);
   const installment = safeText(body.installment, 20);
   if (!YEAR_PATTERN.test(year)) return jsonResponse({ error: "INFORME UM ANO VÁLIDO (AAAA)." }, 400);
-  if (!isOneOf(INSTALLMENTS, installment)) return jsonResponse({ error: "SELECIONE A PARCELA (ADIANTAMENTO, FINAL OU ÚNICO)." }, 400);
+  if (!isOneOf(INSTALLMENTS, installment)) return jsonResponse({ error: INSTALLMENT_ERROR }, 400);
+  const stores = await employeeStores(database, year);
   const rows = Array.isArray(body.rows) ? (body.rows as JsonMap[]) : [];
   if (!rows.length) return jsonResponse({ error: "NENHUM VALOR PARA GRAVAR." }, 400);
   if (new Set(rows.map((row) => safeText(row.employeeId, 80))).size !== rows.length) {
@@ -158,8 +221,10 @@ async function saveBatch(database: Database, actor: Identity, body: JsonMap) {
     const employeeId = safeText(row.employeeId, 80);
     const grossCents = centsValue(row.grossCents);
     const deductionsCents = centsValue(row.deductionsCents ?? 0);
+    const notes = safeText(row.notes, 500);
     const employee = employeeId ? await loadEmployee(database, employeeId) : null;
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO NA LISTA." }, 404);
+    if (stores[employeeId]?.blocked) return jsonResponse({ error: `${employee.fullName} ESTÁ DESLIGADO — NÃO ENTRA NO 13º.` }, 409);
     if (!Number.isFinite(grossCents) || grossCents <= 0) return jsonResponse({ error: `INFORME O BRUTO DE ${employee.fullName}.` }, 400);
     if (!Number.isFinite(deductionsCents) || deductionsCents < 0 || deductionsCents > grossCents) {
       return jsonResponse({ error: `DESCONTO INVÁLIDO PARA ${employee.fullName}.` }, 400);
@@ -172,27 +237,35 @@ async function saveBatch(database: Database, actor: Identity, body: JsonMap) {
       existing
         ? database
             .prepare(
-              `UPDATE hr_thirteenth_salary SET gross_cents=?1, deductions_cents=?2, updated_by=?3, updated_by_name=?4,
-                      updated_at=CURRENT_TIMESTAMP WHERE id=?5`,
+              `UPDATE hr_thirteenth_salary SET gross_cents=?1, deductions_cents=?2, notes=?3, updated_by=?4, updated_by_name=?5,
+                      updated_at=CURRENT_TIMESTAMP WHERE id=?6`,
             )
-            .bind(grossCents, deductionsCents, actor.id, actorName(actor), existing.id)
+            .bind(grossCents, deductionsCents, notes, actor.id, actorName(actor), existing.id)
         : database
             .prepare(
               `INSERT INTO hr_thirteenth_salary
                 (id, employee_id, employee_name, company_id, company_name, year, installment,
                  gross_cents, deductions_cents, payment_done, payment_date, notes, created_by,
                  created_by_name, created_at, updated_by, updated_by_name, updated_at)
-               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, '', '', ?10, ?11, CURRENT_TIMESTAMP,
-                       ?10, ?11, CURRENT_TIMESTAMP)`,
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, '', ?10, ?11, ?12, CURRENT_TIMESTAMP,
+                       ?11, ?12, CURRENT_TIMESTAMP)`,
             )
             .bind(
               crypto.randomUUID(), employeeId, employee.fullName, employee.companyId, employee.companyName, year, installment,
-              grossCents, deductionsCents, actor.id, actorName(actor),
+              grossCents, deductionsCents, notes, actor.id, actorName(actor),
             ),
     );
   }
   await database.batch(statements);
   return jsonResponse({ saved: statements.length });
+}
+
+/** EXCLUIR em lote (27/11/2026): { action: 'delete', ids[] }. */
+async function deleteMany(database: Database, body: JsonMap) {
+  const ids = [...new Set((Array.isArray(body.ids) ? (body.ids as unknown[]) : []).map((value) => safeText(value, 80)).filter(Boolean))];
+  if (!ids.length) return jsonResponse({ error: "SELECIONE OS LANÇAMENTOS." }, 400);
+  await database.batch(ids.map((rowId) => database.prepare("DELETE FROM hr_thirteenth_salary WHERE id=?1").bind(rowId)));
+  return jsonResponse({ deleted: ids.length });
 }
 
 export async function POST(request: Request) {
@@ -211,6 +284,7 @@ export async function POST(request: Request) {
     const database = await getD1();
     if (safeText(body.action, 20) === "mark_paid") return await markPaid(database, actor, body);
     if (safeText(body.action, 20) === "batch") return await saveBatch(database, actor, body);
+    if (safeText(body.action, 20) === "delete") return await deleteMany(database, body);
 
     const editId = safeText(body.id, 80);
     const employeeId = safeText(body.employeeId, 80);
@@ -225,7 +299,7 @@ export async function POST(request: Request) {
     if (!employeeId) return jsonResponse({ error: "SELECIONE O FUNCIONÁRIO." }, 400);
     if (!YEAR_PATTERN.test(year)) return jsonResponse({ error: "INFORME UM ANO VÁLIDO (AAAA)." }, 400);
     if (!isOneOf(INSTALLMENTS, installment)) {
-      return jsonResponse({ error: "SELECIONE A PARCELA (ADIANTAMENTO, FINAL OU ÚNICO)." }, 400);
+      return jsonResponse({ error: INSTALLMENT_ERROR }, 400);
     }
     if (!Number.isFinite(grossCents) || grossCents <= 0) {
       return jsonResponse({ error: "INFORME UM VALOR BRUTO MAIOR QUE ZERO." }, 400);
@@ -239,6 +313,9 @@ export async function POST(request: Request) {
 
     const employee = await loadEmployee(database, employeeId);
     if (!employee) return jsonResponse({ error: "FUNCIONÁRIO NÃO ENCONTRADO." }, 404);
+    if (!editId && (await employeeStores(database, year))[employeeId]?.blocked) {
+      return jsonResponse({ error: `${employee.fullName} ESTÁ DESLIGADO — NÃO ENTRA NO 13º.` }, 409);
+    }
 
     const clash = await database
       .prepare(

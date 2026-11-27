@@ -7943,8 +7943,10 @@
           <button class="btn-outline" id="btnRhDecimoTerceiro" type="button">13º SALÁRIO</button>
           <button class="btn-outline" id="btnRhFolhaParametros" type="button">PARÂMETROS</button>
           <button class="btn-outline" id="btnRhFolhaPdf" type="button">LER PDF DA FOLHA</button>
+          <button class="btn-outline" id="btnRhFolhaLote" type="button">CONTRACHEQUE EM LOTE</button>
           <button class="btn-outline" id="btnRhCustoFuncionario" type="button" hidden>CUSTO TOTAL POR FUNCIONÁRIO</button>
           <button class="btn-outline" id="btnRhFolhaPrint" type="button">RELATÓRIO / PDF</button>
+          <button class="btn-outline" id="btnRhFolhaExcel" type="button">BAIXAR EXCEL</button>
         </div>
       </div>
 
@@ -7973,42 +7975,83 @@
       <div class="print-only" id="rhFolhaPrintPorLoja"></div>
       </div>
 
-      <!-- 13º SALÁRIO (tela cheia com lote, 04/11/2026). -->
+      <!-- 13º SALÁRIO (04/11/2026; 27/11/2026: abas LANÇAMENTOS × AJUSTES no modelo dos Benefícios). -->
       <div id="rhDecimoPanel" hidden>
         <div class="dre-toolbar no-print">
           <strong style="align-self:center;">13º SALÁRIO</strong>
           <div class="field"><label for="rh13Ano">ANO</label><input type="number" id="rh13Ano" min="2000" max="2100" step="1"></div>
-          <div class="field"><label for="rh13Parcela">PARCELA</label><select id="rh13Parcela"><option value="unico">LANÇAMENTO ÚNICO</option><option value="adiantamento">ADIANTAMENTO</option><option value="final">PARCELA FINAL</option></select></div>
-          <div class="field"><label for="rh13Loja">LOJA</label><select id="rh13Loja"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="rh13Parcela">PARCELA</label><select id="rh13Parcela"><option value="" data-rh13-lanc>TODAS AS PARCELAS</option><option value="adiantamento">ADIANTAMENTO</option><option value="final">PARCELA FINAL</option></select></div>
+          <div class="field"><label for="rh13Admissao">LOJA ADMISSÃO</label><select id="rh13Admissao"><option value="">TODAS AS LOJAS</option></select></div>
+          <div class="field"><label for="rh13Loja">LOJA ATUANTE</label><select id="rh13Loja"><option value="">TODAS AS LOJAS</option></select></div>
           <div class="field"><label for="rh13Nome">NOME</label><input type="search" id="rh13Nome" placeholder="DIGITE O NOME"></div>
+          <div class="field" data-rh13-lanc><label for="rh13StatusFiltro">STATUS</label><select id="rh13StatusFiltro"><option value="">TODOS</option><option value="a_pagar">A PAGAR</option><option value="pago">PAGO</option></select></div>
           <div class="dre-toolbar-actions">
-            <button class="btn-outline" id="btnRh13Excel" type="button">BAIXAR EXCEL</button>
-          <button class="btn-accent" id="btnRh13Salvar" type="button">SALVAR LANÇAMENTOS</button>
+            <button class="btn-outline" id="btnRh13Excel" type="button" data-rh13-lanc>BAIXAR EXCEL</button>
+            <button class="btn-accent" id="btnRh13Salvar" type="button" data-rh13-ajuste hidden>SALVAR LANÇAMENTOS</button>
             <button class="btn-outline" id="btnRh13Fechar" type="button">VOLTAR À FOLHA</button>
           </div>
         </div>
-        <p class="purchase-field-help no-print">DIGITE O BRUTO E O DESCONTO DE TODOS E CLIQUE EM SALVAR LANÇAMENTOS (SÓ GRAVA O QUE FOI PREENCHIDO OU MUDOU). LÍQUIDO = BRUTO − DESCONTO. PODE LANÇAR ADIANTAMENTO + PARCELA FINAL OU UM LANÇAMENTO ÚNICO.</p>
+        <div class="output-tabs no-print" role="tablist" aria-label="13º salário" style="margin-bottom:12px;">
+          <button class="output-tab active" type="button" role="tab" aria-selected="true" data-rh13-tab="lancamentos">LANÇAMENTOS</button>
+          <button class="output-tab" type="button" role="tab" aria-selected="false" data-rh13-tab="ajustes">AJUSTES (LANÇAR VALORES)</button>
+        </div>
+        <p class="purchase-field-help no-print" data-rh13-ajuste hidden>SÓ APARECEM FUNCIONÁRIOS ATIVOS SEM A PARCELA LANÇADA NO ANO (DESLIGADOS NÃO ENTRAM). DIGITE CONTRACHEQUE, DESCONTO E OBSERVAÇÕES E CLIQUE EM SALVAR LANÇAMENTOS — CADA LINHA VIRA UM LANÇAMENTO NA ABA LANÇAMENTOS. LÍQUIDO = CONTRACHEQUE − DESCONTO.</p>
         <div class="user-form-status" id="rh13Status" role="status" aria-live="polite"></div>
         <div class="table-panel" id="rh13Resumo" style="padding:12px 14px;font-size:11px;color:var(--ink-soft);margin-bottom:12px;"></div>
-        <div class="bulk-bar no-print" id="rh13BulkBar">
-          <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
-          <div class="bulk-bar-actions" data-bulk-actions hidden>
-            <strong class="bulk-bar-count" data-bulk-count></strong>
-            <label style="display:flex;gap:6px;align-items:center;font-size:11px;">DATA <input type="date" id="rh13BulkDate"></label>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-action="unpay">DESFAZER PAGAMENTO</button>
-            <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+
+        <div id="rh13TabLancamentos">
+          <div class="bulk-bar no-print" id="rh13BulkBar">
+            <label class="bulk-select-all"><input type="checkbox" data-bulk-all> SELECIONAR TODOS</label>
+            <div class="bulk-bar-actions" data-bulk-actions hidden>
+              <strong class="bulk-bar-count" data-bulk-count></strong>
+              <label style="display:flex;gap:6px;align-items:center;font-size:11px;">DATA <input type="date" id="rh13BulkDate"></label>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="pay">MARCAR COMO PAGO</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-action="unpay">DESFAZER PAGAMENTO</button>
+              <button class="btn-danger-outline btn-sm" type="button" data-bulk-action="delete">EXCLUIR SELECIONADOS</button>
+              <button class="btn-outline btn-sm" type="button" data-bulk-clear>LIMPAR SELEÇÃO</button>
+            </div>
+          </div>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="rh13Table">
+                <thead><tr><th class="bulk-col no-print" aria-label="Selecionar"></th><th>Funcionário</th><th>Loja admissão</th><th>Loja atuante</th><th>Parcela</th><th>Contracheque</th><th>Desconto</th><th>Líquido</th><th>Observações</th><th>Status</th><th class="no-print"></th></tr></thead>
+                <tbody id="rh13TableBody"><tr><td colspan="11" class="responsive-empty">Carregando…</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </div>
-        <div class="table-panel responsive-table">
-          <div class="table-scroll">
-            <table id="rh13Table">
-              <thead><tr><th class="bulk-col no-print" aria-label="Selecionar"></th><th>Funcionário</th><th>Loja</th><th>Bruto</th><th>Desconto</th><th>Líquido</th><th>Pagamento</th><th class="no-print"></th></tr></thead>
-              <tbody id="rh13TableBody"><tr><td colspan="8" class="responsive-empty">Carregando…</td></tr></tbody>
-            </table>
+
+        <div id="rh13TabAjustes" hidden>
+          <div class="table-panel responsive-table">
+            <div class="table-scroll">
+              <table id="rh13AjustesTable">
+                <thead><tr><th>Funcionário</th><th>Loja admissão</th><th>Loja atuante</th><th>Contracheque</th><th>Desconto</th><th>Líquido</th><th>Observações</th></tr></thead>
+                <tbody id="rh13AjustesBody"><tr><td colspan="7" class="responsive-empty">Carregando…</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
+
+      <dialog class="purchase-dialog" id="rh13EditDialog" aria-labelledby="rh13EditTitle">
+        <div class="purchase-dialog-head">
+          <h3 id="rh13EditTitle">EDITAR 13º</h3>
+          <button class="purchase-dialog-close" id="btnCloseRh13Edit" type="button" aria-label="Fechar">×</button>
+        </div>
+        <form class="purchase-form" id="rh13EditForm">
+          <p class="purchase-field-help" id="rh13EditInfo"></p>
+          <div class="purchase-form-grid">
+            <div class="purchase-field"><label for="rh13EditGross">CONTRACHEQUE (R$) *</label><input type="text" inputmode="decimal" id="rh13EditGross" placeholder="R$ 0,00" required></div>
+            <div class="purchase-field"><label for="rh13EditDed">DESCONTO (R$)</label><input type="text" inputmode="decimal" id="rh13EditDed" placeholder="R$ 0,00"></div>
+            <div class="purchase-field full"><label for="rh13EditNotes">OBSERVAÇÕES</label><input id="rh13EditNotes" maxlength="500"></div>
+          </div>
+          <div class="user-form-status" id="rh13EditStatus" role="status" aria-live="polite"></div>
+          <div class="purchase-form-actions">
+            <button class="btn-outline" id="btnCancelRh13Edit" type="button">CANCELAR</button>
+            <button class="btn-accent" type="submit">SALVAR</button>
+          </div>
+        </form>
+      </dialog>
 
       <!-- CUSTO TOTAL POR FUNCIONÁRIO (só quem tem RH Financeiro + Financeiro). -->
       <div id="rhCustoFuncPanel" hidden>
@@ -14603,6 +14646,28 @@
     <div class="purchase-form-actions">
       <button class="btn-outline" id="btnCancelRhFolhaPdf" type="button">CANCELAR</button>
       <button class="btn-accent" id="btnSaveRhFolhaPdf" type="button" disabled>GRAVAR</button>
+    </div>
+  </div>
+</dialog>
+<dialog class="purchase-dialog" id="rhFolhaLoteDialog" aria-labelledby="rhFolhaLoteTitle" style="width:min(1100px,96vw);">
+  <div class="purchase-dialog-head">
+    <h3 id="rhFolhaLoteTitle">CONTRACHEQUE EM LOTE</h3>
+    <button class="purchase-dialog-close" id="btnCloseRhFolhaLote" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div class="purchase-form">
+    <p class="purchase-field-help" id="rhFolhaLoteHelp"></p>
+    <div class="table-panel responsive-table">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Colaborador</th><th>Loja atuante</th><th>Contracheque</th><th>Desconto avulso</th><th>Observações</th></tr></thead>
+          <tbody id="rhFolhaLoteBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="user-form-status" id="rhFolhaLoteStatus" role="status" aria-live="polite"></div>
+    <div class="purchase-form-actions">
+      <button class="btn-outline" id="btnCancelRhFolhaLote" type="button">CANCELAR</button>
+      <button class="btn-accent" id="btnSaveRhFolhaLote" type="button">SALVAR</button>
     </div>
   </div>
 </dialog>
@@ -53610,61 +53675,193 @@ function renderHomeTasks(){
     }
   });
 
-  // ---------------------- 13º SALÁRIO (tela cheia com lote, 04/11/2026) ----------------------
-  // Uma linha por funcionário ativo (ou com 13º lançado) para o ANO + PARCELA:
-  // digita bruto/desconto de todos e SALVA EM LOTE; pagamento em lote.
+  // Excel padrão do RH (modelo do Excel dos Benefícios): título, filtros, cabeçalho
+  // azul, zebra, R$, linha de TOTAL com fórmula, filtro e cabeçalho fixo, A4 deitado.
+  // columns: [{label, width, money?, get(row)}] — usado pelo 13º e pela Folha (27/11/2026).
+  async function rhDownloadStyledXlsx({title, subtitle, sheetName, columns, rows, totalLabel, fileName}){
+    const ExcelJS = await ensureExcelJs();
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'UNIGAMES';
+    wb.calcProperties.fullCalcOnLoad = true;
+    const NAVY = 'FF1F3A5F', ZEBRA = 'FFF6F8FB', LINE = 'FFC9D3DF';
+    const MONEY = '"R$" #,##0.00;[Red]-"R$" #,##0.00';
+    const fill = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
+    const border = {top:{style:'thin', color:{argb:LINE}}, left:{style:'thin', color:{argb:LINE}}, bottom:{style:'thin', color:{argb:LINE}}, right:{style:'thin', color:{argb:LINE}}};
+    const letter = n => { let out = ''; for(; n > 0; n = Math.floor((n - 1) / 26)) out = String.fromCharCode(65 + (n - 1) % 26) + out; return out; };
+    const width = columns.length;
+    const ws = wb.addWorksheet(sheetName, {views:[{showGridLines:false}], pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, paperSize:9}});
+    ws.mergeCells(1, 1, 1, width);
+    ws.getCell(1, 1).value = title;
+    ws.getCell(1, 1).font = {bold:true, size:15, color:{argb:'FFFFFFFF'}};
+    ws.getCell(1, 1).fill = fill(NAVY);
+    ws.getCell(1, 1).alignment = {vertical:'middle', indent:1};
+    ws.getRow(1).height = 30;
+    ws.mergeCells(2, 1, 2, width);
+    ws.getCell(2, 1).value = (subtitle+' · GERADO EM '+(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+String(currentSession.displayName || '')).toLocaleUpperCase('pt-BR');
+    ws.getCell(2, 1).font = {size:9, color:{argb:'FF475569'}};
+    ws.getCell(2, 1).alignment = {indent:1, wrapText:true};
+    ws.getRow(2).height = 28;
+    const head = 4;
+    columns.forEach((column, i) => {
+      const cell = ws.getRow(head).getCell(i + 1);
+      cell.value = column.label;
+      cell.font = {bold:true, size:9, color:{argb:'FFFFFFFF'}};
+      cell.fill = fill(NAVY);
+      cell.alignment = {vertical:'middle', horizontal:'center', wrapText:true};
+      cell.border = border;
+      ws.getColumn(i + 1).width = column.width || 14;
+    });
+    ws.getRow(head).height = 26;
+    rows.forEach((row, index) => {
+      const line = ws.getRow(head + 1 + index);
+      columns.forEach((column, i) => {
+        const cell = line.getCell(i + 1);
+        const value = column.get(row);
+        cell.value = column.money ? (value === null || value === undefined ? null : (Number(value) || 0) / 100) : String(value ?? '').toLocaleUpperCase('pt-BR');
+        if(column.money) cell.numFmt = MONEY;
+        cell.border = border;
+        cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left', wrapText:column.label === 'OBSERVAÇÕES'};
+        if(index % 2) cell.fill = fill(ZEBRA);
+      });
+    });
+    const first = head + 1, last = head + rows.length;
+    const total = ws.getRow(last + 1);
+    columns.forEach((column, i) => {
+      const cell = total.getCell(i + 1);
+      if(i === 0) cell.value = totalLabel;
+      else if(column.money){
+        cell.value = {formula:'SUM('+letter(i + 1)+first+':'+letter(i + 1)+last+')', result:rows.reduce((acc, row) => acc + (Number(column.get(row)) || 0), 0) / 100};
+        cell.numFmt = MONEY;
+      }
+      cell.font = {bold:true, color:{argb:'FFFFFFFF'}};
+      cell.fill = fill(NAVY);
+      cell.border = border;
+      cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left'};
+    });
+    total.height = 22;
+    ws.views = [{state:'frozen', xSplit:1, ySplit:head, showGridLines:false}];
+    ws.autoFilter = {from:{row:head, column:1}, to:{row:last, column:width}};
+    ws.pageSetup.printTitlesRow = head+':'+head;
+    const buffer = await wb.xlsx.writeBuffer();
+    downloadBlobFile(new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName);
+  }
+  const rhFileSlug = text => normalizeSearchText(text).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const rhSelectedText = id => el(id).value ? el(id).selectedOptions[0].textContent : '';
+
+  // ---------------------- 13º SALÁRIO (27/11/2026: modelo dos Benefícios) ----------------------
+  // AJUSTES: funcionários ATIVOS (desligado não entra) sem a parcela lançada no ano —
+  // digita CONTRACHEQUE/DESCONTO/OBSERVAÇÕES e SALVA: cada linha vira um lançamento.
+  // LANÇAMENTOS: os salvos, com seleção, PAGO/A PAGAR, editar, excluir e Excel.
   const RH_13_INSTALLMENT_LABELS = { unico:'ÚNICO', adiantamento:'ADIANTAMENTO', final:'PARCELA FINAL' };
   let rh13Entries = [];
-  function rh13Lines(){
-    const installment = el('rh13Parcela').value;
-    const byEmployee = new Map(rh13Entries.filter(entry => entry.installment === installment).map(entry => [entry.employeeId, entry]));
-    const store = el('rh13Loja').value;
-    const name = normalizeHeader(el('rh13Nome').value || '');
-    return rhEmployees
-      .filter(employee => employee.status !== 'inactive' || byEmployee.has(employee.id))
-      .filter(employee => (!store || employee.companyId === store) && (!name || normalizeHeader(employee.fullName || '').includes(name)))
-      .sort((a, b) => String(a.fullName).localeCompare(String(b.fullName)))
-      .map(employee => ({employee, entry: byEmployee.get(employee.id) || null}));
+  let rh13Stores = {};
+  let rh13Tab = 'lancamentos';
+  let rh13EditingId = '';
+  function rh13Store(employeeId, installment){
+    const store = rh13Stores[employeeId] || {};
+    const acting = (store.acting || {})[installment === 'final' ? 'final' : 'adiantamento'] || {};
+    return {admissionId: store.admissionCompanyId || '', admissionName: store.admissionCompanyName || '', actingId: acting.companyId || '', actingName: acting.companyName || '', blocked: Boolean(store.blocked)};
   }
-  function renderRh13Table(){
-    const lines = rh13Lines();
-    el('rh13TableBody').innerHTML = lines.length ? lines.map(({employee, entry}) => {
-      const pgto = !entry ? '—' : entry.paymentDone
-        ? '<span class="status-pill done">PAGO'+(entry.paymentDate ? ' · '+escapeHtml(rhFormatDate(entry.paymentDate)) : '')+'</span>'
-        : '<span class="status-pill waiting">EM ABERTO</span>';
-      return '<tr data-rh13-employee="'+escapeHtml(employee.id)+'">'+
-        '<td class="bulk-col no-print">'+(entry ? bulkRowCheckbox(entry.id, 'Selecionar '+employee.fullName) : '')+'</td>'+
-        '<td data-label="Funcionário">'+escapeHtml(employee.fullName)+(employee.status === 'inactive' ? ' <span class="status-pill alert">INATIVO</span>' : '')+'</td>'+
-        '<td data-label="Loja">'+escapeHtml(employee.companyName || '—')+'</td>'+
-        '<td data-label="Bruto"><input type="text" inputmode="decimal" placeholder="R$ 0,00" data-rh13-gross></td>'+
-        '<td data-label="Desconto"><input type="text" inputmode="decimal" placeholder="R$ 0,00" data-rh13-ded></td>'+
-        '<td data-label="Líquido" data-rh13-net><strong>'+formatCentsBRL(entry ? entry.netCents : 0)+'</strong></td>'+
-        '<td data-label="Pagamento">'+pgto+'</td>'+
-        '<td class="no-print">'+(entry ? '<button class="btn-outline" type="button" data-rh13-delete="'+escapeHtml(entry.id)+'">EXCLUIR</button>' : '')+'</td>'+
-      '</tr>';
-    }).join('') : '<tr><td colspan="8" class="responsive-empty">Nenhum funcionário para os filtros.</td></tr>';
-    lines.forEach(({employee, entry}) => {
-      const tr = el('rh13TableBody').querySelector('[data-rh13-employee="'+CSS.escape(employee.id)+'"]');
-      const gross = tr.querySelector('[data-rh13-gross]'), ded = tr.querySelector('[data-rh13-ded]');
-      attachCurrencyMask(gross); attachCurrencyMask(ded);
-      setCurrencyValue(gross, entry ? Number(entry.grossCents)/100 : '');
-      setCurrencyValue(ded, entry ? Number(entry.deductionsCents)/100 : '');
+  function rh13Filters(){
+    return {parcela: el('rh13Parcela').value, admissao: el('rh13Admissao').value, loja: el('rh13Loja').value,
+      nome: normalizeHeader(el('rh13Nome').value || ''), status: el('rh13StatusFiltro').value};
+  }
+  const rh13ByStoreAndName = (a, b) => String(a.store || '').localeCompare(String(b.store || '')) || String(a.name).localeCompare(String(b.name));
+  function rh13VisibleEntries(){
+    const f = rh13Filters();
+    return rh13Entries
+      .filter(entry => (!f.parcela || entry.installment === f.parcela) && (!f.admissao || entry.admissionCompanyId === f.admissao) &&
+        (!f.loja || entry.actingCompanyId === f.loja) && (!f.nome || normalizeHeader(entry.employeeName || '').includes(f.nome)) &&
+        (!f.status || (f.status === 'pago') === Boolean(entry.paymentDone)))
+      .map(entry => ({entry, store: entry.actingCompanyName, name: entry.employeeName}))
+      .sort((a, b) => rh13ByStoreAndName(a, b) || String(a.entry.installment).localeCompare(String(b.entry.installment)))
+      .map(item => item.entry);
+  }
+  function rh13AjusteLines(){
+    const f = rh13Filters();
+    const launched = new Set(rh13Entries.filter(entry => entry.installment === f.parcela).map(entry => entry.employeeId));
+    return rhEmployees
+      .filter(employee => employee.status === 'active' && !rh13Store(employee.id, f.parcela).blocked && !launched.has(employee.id))
+      .map(employee => ({employee, ...rh13Store(employee.id, f.parcela), store: rh13Store(employee.id, f.parcela).actingName, name: employee.fullName}))
+      .filter(line => (!f.admissao || line.admissionId === f.admissao) && (!f.loja || line.actingId === f.loja) && (!f.nome || normalizeHeader(line.name || '').includes(f.nome)))
+      .sort(rh13ByStoreAndName);
+  }
+  function renderRh13(){
+    el('rh13Status').textContent = '';
+    document.querySelectorAll('[data-rh13-tab]').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.rh13Tab === rh13Tab);
+      tab.setAttribute('aria-selected', String(tab.dataset.rh13Tab === rh13Tab));
     });
-    const saved = lines.filter(line => line.entry);
-    const sum = key => saved.reduce((total, line) => total + Number(line.entry[key] || 0), 0);
-    el('rh13Resumo').innerHTML = '<strong>'+saved.length+'</strong> lançado(s) de '+lines.length+' · Bruto: <strong>'+formatCentsBRL(sum('grossCents'))+'</strong> · Líquido: <strong>'+formatCentsBRL(sum('netCents'))+'</strong> · Pago: <strong>'+saved.filter(line => line.entry.paymentDone).length+'</strong>';
+    document.querySelectorAll('[data-rh13-lanc]').forEach(node => { node.hidden = rh13Tab !== 'lancamentos'; });
+    document.querySelectorAll('[data-rh13-ajuste]').forEach(node => { node.hidden = rh13Tab !== 'ajustes'; });
+    el('rh13TabLancamentos').hidden = rh13Tab !== 'lancamentos';
+    el('rh13TabAjustes').hidden = rh13Tab !== 'ajustes';
+    if(rh13Tab === 'ajustes') renderRh13Ajustes(); else renderRh13Lancamentos();
+  }
+  function renderRh13Lancamentos(){
+    const rows = rh13VisibleEntries();
+    el('rh13TableBody').innerHTML = rows.length ? rows.map(entry => {
+      const status = entry.paymentDone
+        ? '<span class="status-pill done">PAGO'+(entry.paymentDate ? ' · '+escapeHtml(rhFormatDate(entry.paymentDate)) : '')+'</span>'
+        : '<span class="status-pill waiting">A PAGAR</span>';
+      return '<tr>'+
+        '<td class="bulk-col no-print" data-label="Selecionar">'+bulkRowCheckbox(entry.id, 'Selecionar '+entry.employeeName)+'</td>'+
+        '<td data-label="Funcionário">'+escapeHtml(entry.employeeName)+(rh13Store(entry.employeeId, entry.installment).blocked ? ' <span class="status-pill alert">DESLIGADO</span>' : '')+'</td>'+
+        '<td data-label="Loja admissão">'+escapeHtml(entry.admissionCompanyName || '—')+'</td>'+
+        '<td data-label="Loja atuante">'+escapeHtml(entry.actingCompanyName || '—')+'</td>'+
+        '<td data-label="Parcela">'+escapeHtml(RH_13_INSTALLMENT_LABELS[entry.installment] || entry.installment)+'</td>'+
+        '<td data-label="Contracheque">'+formatCentsBRL(entry.grossCents)+'</td>'+
+        '<td data-label="Desconto">'+formatCentsBRL(entry.deductionsCents)+'</td>'+
+        '<td data-label="Líquido"><strong>'+formatCentsBRL(entry.netCents)+'</strong></td>'+
+        '<td data-label="Observações">'+escapeHtml(entry.notes || '—')+'</td>'+
+        '<td data-label="Status">'+status+'</td>'+
+        '<td class="no-print"><span style="display:flex;gap:6px;flex-wrap:wrap;">'+
+          '<button class="btn-outline btn-sm" type="button" data-rh13-edit="'+escapeHtml(entry.id)+'" data-edit-icon aria-label="EDITAR" title="EDITAR">✎</button>'+
+          (entry.paymentDone
+            ? '<button class="btn-outline btn-sm" type="button" data-rh13-unpay="'+escapeHtml(entry.id)+'">DESFAZER PAGAMENTO</button>'
+            : '<button class="btn-outline btn-sm" type="button" data-rh13-pay="'+escapeHtml(entry.id)+'">MARCAR PAGO</button>')+
+          '<button class="btn-danger-outline btn-sm" type="button" data-rh13-delete="'+escapeHtml(entry.id)+'">EXCLUIR</button>'+
+        '</span></td>'+
+      '</tr>';
+    }).join('') : '<tr><td colspan="11" class="responsive-empty">Nenhum lançamento de 13º para os filtros. Lance os valores na aba AJUSTES.</td></tr>';
+    const sum = (list, key) => list.reduce((total, entry) => total + Number(entry[key] || 0), 0);
+    const paid = rows.filter(entry => entry.paymentDone), open = rows.filter(entry => !entry.paymentDone);
+    el('rh13Resumo').innerHTML = '<strong>'+rows.length+'</strong> lançamento(s) · Contracheque: <strong>'+formatCentsBRL(sum(rows, 'grossCents'))+'</strong> · Desconto: <strong>'+formatCentsBRL(sum(rows, 'deductionsCents'))+
+      '</strong> · Líquido: <strong>'+formatCentsBRL(sum(rows, 'netCents'))+'</strong> · PAGO: <strong>'+paid.length+' ('+formatCentsBRL(sum(paid, 'netCents'))+')</strong> · A PAGAR: <strong>'+open.length+' ('+formatCentsBRL(sum(open, 'netCents'))+')</strong>';
     rh13Bulk.sync();
+  }
+  function renderRh13Ajustes(){
+    const body = el('rh13AjustesBody');
+    if(!el('rh13Parcela').value){
+      body.innerHTML = '<tr><td colspan="7" class="responsive-empty">Escolha a PARCELA (ADIANTAMENTO OU PARCELA FINAL) para lançar.</td></tr>';
+      el('rh13Resumo').textContent = '';
+      return;
+    }
+    const lines = rh13AjusteLines();
+    body.innerHTML = lines.length ? lines.map(line =>
+      '<tr data-rh13-employee="'+escapeHtml(line.employee.id)+'">'+
+        '<td data-label="Funcionário">'+escapeHtml(line.employee.fullName)+'</td>'+
+        '<td data-label="Loja admissão">'+escapeHtml(line.admissionName || '—')+'</td>'+
+        '<td data-label="Loja atuante">'+escapeHtml(line.actingName || '—')+'</td>'+
+        '<td data-label="Contracheque"><input type="text" inputmode="decimal" placeholder="R$ 0,00" data-rh13-gross aria-label="Contracheque de '+escapeHtml(line.employee.fullName)+'"></td>'+
+        '<td data-label="Desconto"><input type="text" inputmode="decimal" placeholder="R$ 0,00" data-rh13-ded aria-label="Desconto de '+escapeHtml(line.employee.fullName)+'"></td>'+
+        '<td data-label="Líquido" data-rh13-net><strong>'+formatCentsBRL(0)+'</strong></td>'+
+        '<td data-label="Observações"><input maxlength="500" data-rh13-notes aria-label="Observações de '+escapeHtml(line.employee.fullName)+'"></td>'+
+      '</tr>').join('') : '<tr><td colspan="7" class="responsive-empty">Todos os funcionários ativos dos filtros já têm '+escapeHtml(RH_13_INSTALLMENT_LABELS[el('rh13Parcela').value])+' lançado. Veja na aba LANÇAMENTOS.</td></tr>';
+    body.querySelectorAll('[data-rh13-gross],[data-rh13-ded]').forEach(attachCurrencyMask);
+    el('rh13Resumo').innerHTML = '<strong>'+lines.length+'</strong> funcionário(s) ativo(s) sem '+escapeHtml(RH_13_INSTALLMENT_LABELS[el('rh13Parcela').value])+' de '+escapeHtml(el('rh13Ano').value)+' lançado. Desligados não aparecem.';
   }
   async function loadRh13(){
     const year = el('rh13Ano').value || String(new Date().getFullYear());
-    el('rh13TableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">Carregando…</td></tr>';
+    el('rh13TableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">Carregando…</td></tr>';
     try{
       const data = await rhApiRequest('/thirteenth?'+new URLSearchParams({year}).toString());
       rh13Entries = Array.isArray(data.entries) ? data.entries : [];
-      renderRh13Table();
+      rh13Stores = data.employeeStores || {};
+      renderRh13();
     }catch(error){
       rh13Entries = [];
-      el('rh13TableBody').innerHTML = '<tr><td colspan="8" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
+      el('rh13TableBody').innerHTML = '<tr><td colspan="11" class="responsive-empty">'+escapeHtml(error.message)+'</td></tr>';
     }
   }
   function showRhDecimo(show){
@@ -53672,116 +53869,24 @@ function renderHomeTasks(){
     el('rhFolhaMain').hidden = show;
     el('rhCustoFuncPanel').hidden = true;
     if(!show) return;
+    rhFillSelect('rh13Admissao','TODAS AS LOJAS',rhCompanyOptions());
     rhFillSelect('rh13Loja','TODAS AS LOJAS',rhCompanyOptions());
     if(!el('rh13Ano').value) el('rh13Ano').value = String(new Date().getFullYear());
+    if(!el('rh13BulkDate').value) el('rh13BulkDate').value = todayDateKeyRecife();
     loadRh13();
   }
-  // BAIXAR EXCEL (27/11/2026): as linhas dos filtros da tela (ANO + PARCELA + LOJA + NOME;
-  // sem loja/nome = todos), por loja e nome, com TOTAL por fórmula. Modelo do Excel dos BENEFÍCIOS.
-  el('btnRh13Excel').addEventListener('click', async event => {
-    const lines = rh13Lines().sort((a, b) => String(a.employee.companyName || '').localeCompare(String(b.employee.companyName || '')) ||
-      String(a.employee.fullName).localeCompare(String(b.employee.fullName)));
-    if(!lines.length){ showPurchaseToast('Nada para exportar com este filtro.','error'); return; }
-    const button = event.currentTarget;
-    button.disabled = true;
-    try{
-      const ExcelJS = await ensureExcelJs();
-      const year = el('rh13Ano').value || String(new Date().getFullYear());
-      const parcela = RH_13_INSTALLMENT_LABELS[el('rh13Parcela').value] || el('rh13Parcela').value;
-      const store = el('rh13Loja').value ? el('rh13Loja').selectedOptions[0].textContent : 'TODAS AS LOJAS';
-      const name = el('rh13Nome').value.trim();
-      const wb = new ExcelJS.Workbook();
-      wb.creator = 'UNIGAMES';
-      wb.calcProperties.fullCalcOnLoad = true;
-      const NAVY = 'FF1F3A5F', ZEBRA = 'FFF6F8FB', LINE = 'FFC9D3DF';
-      const MONEY = '"R$" #,##0.00;[Red]-"R$" #,##0.00';
-      const fill = argb => ({type:'pattern', pattern:'solid', fgColor:{argb}});
-      const border = {top:{style:'thin', color:{argb:LINE}}, left:{style:'thin', color:{argb:LINE}}, bottom:{style:'thin', color:{argb:LINE}}, right:{style:'thin', color:{argb:LINE}}};
-      const columns = [
-        {label:'FUNCIONÁRIO', width:34, get: l => l.employee.fullName},
-        {label:'LOJA', width:26, get: l => l.employee.companyName || '—'},
-        {label:'ANO', width:8, get: () => year},
-        {label:'PARCELA', width:16, get: () => parcela},
-        {label:'BRUTO', width:15, money:true, get: l => l.entry ? l.entry.grossCents : null},
-        {label:'DESCONTO', width:15, money:true, get: l => l.entry ? l.entry.deductionsCents : null},
-        {label:'LÍQUIDO', width:15, money:true, get: l => l.entry ? l.entry.netCents : null},
-        {label:'SITUAÇÃO', width:14, get: l => !l.entry ? 'NÃO LANÇADO' : l.entry.paymentDone ? 'PAGO' : 'EM ABERTO'},
-        {label:'DATA DO PAGAMENTO', width:14, get: l => l.entry && l.entry.paymentDone && l.entry.paymentDate ? rhFormatDate(l.entry.paymentDate) : ''},
-        {label:'OBSERVAÇÕES', width:40, get: l => l.entry ? l.entry.notes || '' : ''},
-      ];
-      const width = columns.length;
-      const ws = wb.addWorksheet('13º SALÁRIO', {views:[{showGridLines:false}], pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, paperSize:9}});
-      ws.mergeCells(1, 1, 1, width);
-      ws.getCell(1, 1).value = '13º SALÁRIO — '+year+' — '+parcela;
-      ws.getCell(1, 1).font = {bold:true, size:15, color:{argb:'FFFFFFFF'}};
-      ws.getCell(1, 1).fill = fill(NAVY);
-      ws.getCell(1, 1).alignment = {vertical:'middle', indent:1};
-      ws.getRow(1).height = 30;
-      ws.mergeCells(2, 1, 2, width);
-      ws.getCell(2, 1).value = ('ANO '+year+' · PARCELA '+parcela+' · '+store+(name ? ' · NOME: '+name : '')+' · GERADO EM '+(formatDateTimeBR(new Date().toISOString()) || '')+' POR '+String(currentSession.displayName || '')).toLocaleUpperCase('pt-BR');
-      ws.getCell(2, 1).font = {size:9, color:{argb:'FF475569'}};
-      ws.getCell(2, 1).alignment = {indent:1, wrapText:true};
-      ws.getRow(2).height = 28;
-      const head = 4;
-      columns.forEach((column, i) => {
-        const cell = ws.getRow(head).getCell(i + 1);
-        cell.value = column.label;
-        cell.font = {bold:true, size:9, color:{argb:'FFFFFFFF'}};
-        cell.fill = fill(NAVY);
-        cell.alignment = {vertical:'middle', horizontal:'center', wrapText:true};
-        cell.border = border;
-        ws.getColumn(i + 1).width = column.width;
-      });
-      ws.getRow(head).height = 26;
-      lines.forEach((line, index) => {
-        const row = ws.getRow(head + 1 + index);
-        columns.forEach((column, i) => {
-          const cell = row.getCell(i + 1);
-          const value = column.get(line);
-          cell.value = column.money ? (value === null ? null : (Number(value) || 0) / 100) : String(value || '').toLocaleUpperCase('pt-BR');
-          if(column.money) cell.numFmt = MONEY;
-          cell.border = border;
-          cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left', wrapText:column.label === 'OBSERVAÇÕES'};
-          if(index % 2) cell.fill = fill(ZEBRA);
-        });
-      });
-      const first = head + 1, last = head + lines.length;
-      const launched = lines.filter(line => line.entry).length;
-      const total = ws.getRow(last + 1);
-      columns.forEach((column, i) => {
-        const cell = total.getCell(i + 1);
-        const colLetter = String.fromCharCode(65 + i);
-        if(i === 0) cell.value = 'TOTAL ('+launched+' LANÇADO(S) DE '+lines.length+')';
-        else if(column.money){
-          cell.value = {formula:'SUM('+colLetter+first+':'+colLetter+last+')', result:lines.reduce((acc, line) => acc + (Number(column.get(line)) || 0), 0) / 100};
-          cell.numFmt = MONEY;
-        }
-        cell.font = {bold:true, color:{argb:'FFFFFFFF'}};
-        cell.fill = fill(NAVY);
-        cell.border = border;
-        cell.alignment = {vertical:'middle', horizontal:column.money ? 'right' : 'left'};
-      });
-      total.height = 22;
-      ws.views = [{state:'frozen', xSplit:1, ySplit:head, showGridLines:false}];
-      ws.autoFilter = {from:{row:head, column:1}, to:{row:last, column:width}};
-      ws.pageSetup.printTitlesRow = head+':'+head;
-      const buffer = await wb.xlsx.writeBuffer();
-      const slug = text => normalizeSearchText(text).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '');
-      const fileName = '13-SALARIO-'+year+'-'+slug(parcela)+(el('rh13Loja').value ? '-'+slug(store) : '')+(name ? '-'+slug(name) : '')+'.xlsx';
-      downloadBlobFile(new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName);
-    }catch(error){
-      showPurchaseToast(error.message || 'NÃO FOI POSSÍVEL GERAR O EXCEL.','error');
-    }finally{
-      button.disabled = false;
-    }
-  });
   el('btnRhDecimoTerceiro').addEventListener('click', () => showRhDecimo(true));
   el('btnRh13Fechar').addEventListener('click', () => showRhDecimo(false));
   el('rh13Ano').addEventListener('change', loadRh13);
-  el('rh13Parcela').addEventListener('change', renderRh13Table);
-  el('rh13Loja').addEventListener('change', renderRh13Table);
-  el('rh13Nome').addEventListener('input', renderRh13Table);
-  el('rh13TableBody').addEventListener('input', event => {
+  ['rh13Parcela','rh13Admissao','rh13Loja','rh13StatusFiltro'].forEach(id => el(id).addEventListener('change', renderRh13));
+  el('rh13Nome').addEventListener('input', renderRh13);
+  document.querySelectorAll('[data-rh13-tab]').forEach(tab => tab.addEventListener('click', () => {
+    rh13Tab = tab.dataset.rh13Tab;
+    // AJUSTES lança UMA parcela: sem parcela escolhida, começa pelo ADIANTAMENTO.
+    if(rh13Tab === 'ajustes' && !el('rh13Parcela').value) el('rh13Parcela').value = 'adiantamento';
+    renderRh13();
+  }));
+  el('rh13AjustesBody').addEventListener('input', event => {
     const tr = event.target.closest('[data-rh13-employee]');
     if(!tr) return;
     const gross = parseBRLToCents(getCurrencyValue(tr.querySelector('[data-rh13-gross]')) || '0') || 0;
@@ -53791,42 +53896,159 @@ function renderHomeTasks(){
   el('btnRh13Salvar').addEventListener('click', async () => {
     const status = el('rh13Status');
     status.textContent = '';
-    const byEmployee = new Map(rh13Lines().map(line => [line.employee.id, line]));
+    const installment = el('rh13Parcela').value;
+    if(!installment){ status.textContent = 'ESCOLHA A PARCELA.'; return; }
     const rows = [];
-    for(const tr of el('rh13TableBody').querySelectorAll('[data-rh13-employee]')){
-      const line = byEmployee.get(tr.dataset.rh13Employee);
+    for(const tr of el('rh13AjustesBody').querySelectorAll('[data-rh13-employee]')){
       const grossCents = parseBRLToCents(getCurrencyValue(tr.querySelector('[data-rh13-gross]')) || '0');
       const deductionsCents = parseBRLToCents(getCurrencyValue(tr.querySelector('[data-rh13-ded]')) || '0') || 0;
       if(!grossCents) continue;
-      if(line.entry && Number(line.entry.grossCents) === grossCents && Number(line.entry.deductionsCents) === deductionsCents) continue;
-      if(deductionsCents > grossCents){ status.textContent = 'O DESCONTO DE '+line.employee.fullName+' É MAIOR QUE O BRUTO.'; return; }
-      rows.push({employeeId: line.employee.id, grossCents, deductionsCents});
+      if(deductionsCents > grossCents){ status.textContent = 'O DESCONTO DE '+tr.cells[0].textContent+' É MAIOR QUE O CONTRACHEQUE.'; return; }
+      rows.push({employeeId: tr.dataset.rh13Employee, grossCents, deductionsCents, notes: tr.querySelector('[data-rh13-notes]').value.trim()});
     }
-    if(!rows.length){ status.textContent = 'NENHUM VALOR NOVO OU ALTERADO PARA SALVAR.'; return; }
+    if(!rows.length){ status.textContent = 'PREENCHA O CONTRACHEQUE DE ALGUÉM PARA SALVAR.'; return; }
+    const button = el('btnRh13Salvar');
+    button.disabled = true;
     try{
       await rhApiRequest('/thirteenth', {method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'batch', year: el('rh13Ano').value, installment: el('rh13Parcela').value, rows})});
+        body:JSON.stringify({action:'batch', year: el('rh13Ano').value, installment, rows})});
       await loadRh13();
-      showPurchaseToast(rows.length+' lançamento(s) de 13º salvo(s).');
+      showPurchaseToast(rows.length+' lançamento(s) de 13º salvo(s) — estão na aba LANÇAMENTOS.');
     }catch(error){ status.textContent = error.message; }
+    finally{ button.disabled = false; }
   });
+  async function rh13MarkPaid(ids, paymentDone){
+    const paymentDate = el('rh13BulkDate').value || todayDateKeyRecife();
+    await rhApiRequest('/thirteenth', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'mark_paid', ids, paymentDone, paymentDate})});
+    await loadRh13();
+    showPurchaseToast(ids.length+(paymentDone ? ' lançamento(s) pago(s) em '+rhFormatDate(paymentDate)+'.' : ' pagamento(s) desfeito(s).'));
+  }
+  async function rh13Delete(ids){
+    if(!await askConfirm('EXCLUIR '+ids.length+' LANÇAMENTO(S) DE 13º? NÃO DÁ PARA DESFAZER.', {okText:'EXCLUIR', danger:true})) return false;
+    await rhApiRequest('/thirteenth', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'delete', ids})});
+    await loadRh13();
+    showPurchaseToast(ids.length+' lançamento(s) excluído(s).');
+  }
   el('rh13TableBody').addEventListener('click', async event => {
+    const pay = event.target.closest('[data-rh13-pay]');
+    const unpay = event.target.closest('[data-rh13-unpay]');
     const del = event.target.closest('[data-rh13-delete]');
-    if(!del || !await askConfirm('Excluir este lançamento de 13º?')) return;
+    const edit = event.target.closest('[data-rh13-edit]');
     try{
-      await rhApiRequest('/thirteenth?id='+encodeURIComponent(del.dataset.rh13Delete), {method:'DELETE'});
-      await loadRh13();
-      showPurchaseToast('Lançamento excluído.');
+      if(pay) await rh13MarkPaid([pay.dataset.rh13Pay], true);
+      else if(unpay){ if(await askConfirm('Desfazer o pagamento deste lançamento?')) await rh13MarkPaid([unpay.dataset.rh13Unpay], false); }
+      else if(del) await rh13Delete([del.dataset.rh13Delete]);
+      else if(edit) openRh13Edit(edit.dataset.rh13Edit);
     }catch(error){ showPurchaseToast(error.message,'error'); }
   });
   const rh13Bulk = setupBulkSelection(el('rh13BulkBar'), el('rh13TableBody'), async (action, ids) => {
-    const paymentDate = el('rh13BulkDate').value;
-    if(action === 'pay' && !paymentDate){ showPurchaseToast('INFORME A DATA DO PAGAMENTO.','error'); return false; }
+    if(action === 'delete') return rh13Delete(ids);
     if(action === 'unpay' && !await askConfirm('Desfazer o pagamento de '+ids.length+' lançamento(s)?')) return false;
-    await rhApiRequest('/thirteenth', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'mark_paid', ids, paymentDone: action === 'pay', paymentDate})});
-    await loadRh13();
-    showPurchaseToast(ids.length+(action === 'pay' ? ' lançamento(s) pago(s).' : ' pagamento(s) desfeito(s).'));
+    await rh13MarkPaid(ids, action === 'pay');
+  });
+  function openRh13Edit(id){
+    const entry = rh13Entries.find(item => item.id === id);
+    if(!entry) return;
+    rh13EditingId = id;
+    el('rh13EditInfo').textContent = entry.employeeName+' · '+(RH_13_INSTALLMENT_LABELS[entry.installment] || entry.installment)+' · '+entry.year+
+      (entry.installment === 'unico' ? ' — AO SALVAR, PASSA A ADIANTAMENTO.' : '');
+    attachCurrencyMask(el('rh13EditGross')); attachCurrencyMask(el('rh13EditDed'));
+    setCurrencyValue(el('rh13EditGross'), Number(entry.grossCents) / 100);
+    setCurrencyValue(el('rh13EditDed'), Number(entry.deductionsCents) / 100);
+    el('rh13EditNotes').value = entry.notes || '';
+    el('rh13EditStatus').textContent = '';
+    el('rh13EditDialog').showModal();
+  }
+  el('btnCloseRh13Edit').addEventListener('click', () => el('rh13EditDialog').close());
+  el('btnCancelRh13Edit').addEventListener('click', () => el('rh13EditDialog').close());
+  el('rh13EditForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const entry = rh13Entries.find(item => item.id === rh13EditingId);
+    if(!entry) return;
+    try{
+      await rhApiRequest('/thirteenth', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+        id: entry.id, employeeId: entry.employeeId, year: entry.year, installment: entry.installment === 'unico' ? 'adiantamento' : entry.installment,
+        grossCents: parseBRLToCents(getCurrencyValue(el('rh13EditGross')) || '0'),
+        deductionsCents: parseBRLToCents(getCurrencyValue(el('rh13EditDed')) || '0') || 0,
+        notes: el('rh13EditNotes').value.trim()
+      })});
+      el('rh13EditDialog').close();
+      await loadRh13();
+      showPurchaseToast('Lançamento de 13º salvo.');
+    }catch(error){ el('rh13EditStatus').textContent = error.message; }
+  });
+  // BAIXAR EXCEL: os LANÇAMENTOS dos filtros da tela (sem filtro = todos do ano).
+  el('btnRh13Excel').addEventListener('click', async event => {
+    const rows = rh13VisibleEntries();
+    if(!rows.length){ showPurchaseToast('Nada para exportar com este filtro.','error'); return; }
+    const button = event.currentTarget;
+    button.disabled = true;
+    try{
+      const year = el('rh13Ano').value || String(new Date().getFullYear());
+      const parcela = el('rh13Parcela').value ? RH_13_INSTALLMENT_LABELS[el('rh13Parcela').value] : 'TODAS AS PARCELAS';
+      const filters = [rhSelectedText('rh13Admissao') && 'ADMISSÃO: '+rhSelectedText('rh13Admissao'), rhSelectedText('rh13Loja') && 'ATUANTE: '+rhSelectedText('rh13Loja'),
+        el('rh13Nome').value.trim() && 'NOME: '+el('rh13Nome').value.trim(), rhSelectedText('rh13StatusFiltro') && 'STATUS: '+rhSelectedText('rh13StatusFiltro')].filter(Boolean);
+      await rhDownloadStyledXlsx({
+        title: '13º SALÁRIO — '+year+' — '+parcela,
+        subtitle: 'ANO '+year+' · '+parcela+' · '+(filters.length ? filters.join(' · ') : 'TODAS AS LOJAS'),
+        sheetName: '13º SALÁRIO',
+        columns: [
+          {label:'FUNCIONÁRIO', width:34, get: e => e.employeeName},
+          {label:'LOJA ADMISSÃO', width:24, get: e => e.admissionCompanyName || '—'},
+          {label:'LOJA ATUANTE', width:24, get: e => e.actingCompanyName || '—'},
+          {label:'PARCELA', width:16, get: e => RH_13_INSTALLMENT_LABELS[e.installment] || e.installment},
+          {label:'CONTRACHEQUE', width:15, money:true, get: e => e.grossCents},
+          {label:'DESCONTO', width:15, money:true, get: e => e.deductionsCents},
+          {label:'LÍQUIDO', width:15, money:true, get: e => e.netCents},
+          {label:'OBSERVAÇÕES', width:38, get: e => e.notes || ''},
+          {label:'STATUS', width:12, get: e => e.paymentDone ? 'PAGO' : 'A PAGAR'},
+          {label:'DATA DO PAGAMENTO', width:14, get: e => e.paymentDone && e.paymentDate ? rhFormatDate(e.paymentDate) : ''},
+        ],
+        rows,
+        totalLabel: 'TOTAL ('+rows.length+' LANÇAMENTO(S))',
+        fileName: '13-SALARIO-'+year+'-'+rhFileSlug(parcela)+(filters.length ? '-'+rhFileSlug(filters.map(text => text.split(': ')[1]).join(' ')) : '')+'.xlsx'
+      });
+    }catch(error){ showPurchaseToast(error.message || 'NÃO FOI POSSÍVEL GERAR O EXCEL.','error'); }
+    finally{ button.disabled = false; }
+  });
+
+  // FOLHA — BAIXAR EXCEL (27/11/2026): as linhas da tela (competência, lojas e nome).
+  el('btnRhFolhaExcel').addEventListener('click', async event => {
+    const rows = rhFolhaVisibleRows();
+    if(!rows.length){ showPurchaseToast('Nada para exportar com este filtro.','error'); return; }
+    const button = event.currentTarget;
+    button.disabled = true;
+    try{
+      const month = el('rhFolhaMes').value || '';
+      const competencia = month ? month.slice(5, 7)+'/'+month.slice(0, 4) : '';
+      const filters = [rhSelectedText('rhFolhaAdmissao') && 'ADMISSÃO: '+rhSelectedText('rhFolhaAdmissao'), rhSelectedText('rhFolhaLoja') && 'ATUANTE: '+rhSelectedText('rhFolhaLoja'),
+        el('rhFolhaNome').value.trim() && 'NOME: '+el('rhFolhaNome').value.trim()].filter(Boolean);
+      const deductionsOf = row => row.totalDeductionsCents != null ? row.totalDeductionsCents : row.deductionsCents;
+      await rhDownloadStyledXlsx({
+        title: 'FOLHA DE PAGAMENTO — '+competencia,
+        subtitle: 'COMPETÊNCIA '+competencia+' · '+(filters.length ? filters.join(' · ') : 'TODAS AS LOJAS'),
+        sheetName: 'FOLHA',
+        columns: [
+          {label:'COLABORADOR', width:34, get: r => r.employeeName},
+          {label:'BANCO', width:16, get: r => r.bankName || ''},
+          {label:'CHAVE PIX', width:22, get: r => r.pixKey || ''},
+          {label:'LOJA ADMISSÃO', width:24, get: r => r.admissionCompanyName || '—'},
+          {label:'LOJA ATUANTE', width:24, get: r => r.companyName || '—'},
+          {label:'CONTRACHEQUE', width:15, money:true, get: r => r.payslipCents || 0},
+          {label:'PREMIAÇÃO', width:15, money:true, get: r => r.premiumCents || 0},
+          {label:'DESCONTOS', width:15, money:true, get: r => deductionsOf(r) || 0},
+          {label:'VALOR TOTAL', width:15, money:true, get: r => r.totalPayCents || 0},
+          {label:'OBSERVAÇÕES', width:36, get: r => r.notes || ''},
+          {label:'SITUAÇÃO', width:13, get: r => !r.saved ? 'NÃO LANÇADO' : r.paymentDone ? 'PAGO' : 'A PAGAR'},
+          {label:'DATA DO PAGAMENTO', width:14, get: r => r.paymentDone && r.paymentDate ? rhFormatDate(r.paymentDate) : ''},
+        ],
+        rows,
+        totalLabel: 'TOTAL ('+rows.length+' FUNCIONÁRIO(S))',
+        fileName: 'FOLHA-'+(month || 'SEM-COMPETENCIA')+(filters.length ? '-'+rhFileSlug(filters.map(text => text.split(': ')[1]).join(' ')) : '')+'.xlsx'
+      });
+    }catch(error){ showPurchaseToast(error.message || 'NÃO FOI POSSÍVEL GERAR O EXCEL.','error'); }
+    finally{ button.disabled = false; }
   });
 
   async function loadRhFolha(opts){
@@ -54048,6 +54270,69 @@ function renderHomeTasks(){
       await refreshAfterAction(() => loadRhFolha({silent:true}));
       showPurchaseToast(rows.length+' funcionário(s) gravado(s) do PDF.');
     }catch(error){ el('rhFolhaPdfStatus').textContent = error.message; }
+    finally{ button.disabled = false; }
+  });
+
+  // ------------- CONTRACHEQUE EM LOTE (27/11/2026) -------------
+  // Grade com os funcionários da tela (competência + filtros): digita CONTRACHEQUE,
+  // DESCONTO AVULSO e OBSERVAÇÕES de todos e salva de uma vez (action payslips).
+  // Folha já PAGA fica travada; só as linhas alteradas são enviadas.
+  function openRhFolhaLote(){
+    if(!el('rhFolhaMes').value){ showPurchaseToast('Escolha a competência.','error'); return; }
+    const rows = rhFolhaVisibleRows().slice().sort((a, b) => String(a.employeeName).localeCompare(String(b.employeeName), 'pt-BR'));
+    if(!rows.length){ showPurchaseToast('Nenhum funcionário para os filtros desta competência.','error'); return; }
+    el('rhFolhaLoteHelp').textContent = 'COMPETÊNCIA '+rhFormatMonth(el('rhFolhaMes').value)+' · '+rows.length+' FUNCIONÁRIO(S) DOS FILTROS DA TELA. FOLHA JÁ PAGA NÃO PODE SER ALTERADA AQUI.';
+    el('rhFolhaLoteBody').innerHTML = rows.map(row => {
+      const lock = row.paymentDone ? ' disabled' : '';
+      const name = escapeHtml(row.employeeName);
+      return '<tr data-rh-lote-employee="'+escapeHtml(row.employeeId)+'">'+
+        '<td data-label="Colaborador">'+name+(row.paymentDone ? ' <span class="status-pill done">PAGO</span>' : '')+'</td>'+
+        '<td data-label="Loja atuante">'+escapeHtml(row.companyName || '—')+'</td>'+
+        '<td data-label="Contracheque"><input type="text" inputmode="decimal" placeholder="R$ 0,00" data-rh-lote-payslip aria-label="Contracheque de '+name+'"'+lock+'></td>'+
+        '<td data-label="Desconto avulso"><input type="text" inputmode="decimal" placeholder="R$ 0,00" data-rh-lote-ded aria-label="Desconto avulso de '+name+'"'+lock+'></td>'+
+        '<td data-label="Observações"><input maxlength="500" data-rh-lote-notes aria-label="Observações de '+name+'"'+lock+'></td>'+
+      '</tr>';
+    }).join('');
+    rows.forEach((row, index) => {
+      const tr = el('rhFolhaLoteBody').rows[index];
+      const payslip = tr.querySelector('[data-rh-lote-payslip]');
+      const ded = tr.querySelector('[data-rh-lote-ded]');
+      attachCurrencyMask(payslip);
+      attachCurrencyMask(ded);
+      if(Number(row.payslipCents)) setCurrencyValue(payslip, Number(row.payslipCents)/100);
+      if(Number(row.deductionsCents)) setCurrencyValue(ded, Number(row.deductionsCents)/100);
+      tr.querySelector('[data-rh-lote-notes]').value = row.notes || '';
+    });
+    el('rhFolhaLoteStatus').textContent = '';
+    el('rhFolhaLoteDialog').showModal();
+  }
+  el('btnRhFolhaLote').addEventListener('click', openRhFolhaLote);
+  ['btnCloseRhFolhaLote','btnCancelRhFolhaLote'].forEach(id => el(id).addEventListener('click', () => el('rhFolhaLoteDialog').close()));
+  el('btnSaveRhFolhaLote').addEventListener('click', async () => {
+    const status = el('rhFolhaLoteStatus');
+    status.textContent = '';
+    const values = [];
+    for(const tr of el('rhFolhaLoteBody').querySelectorAll('[data-rh-lote-employee]')){
+      const payslipInput = tr.querySelector('[data-rh-lote-payslip]');
+      if(payslipInput.disabled) continue;
+      const row = rhFolhaRows.find(item => item.employeeId === tr.dataset.rhLoteEmployee) || {};
+      const payslipCents = parseBRLToCents(getCurrencyValue(payslipInput) || '0');
+      const deductionsCents = parseBRLToCents(getCurrencyValue(tr.querySelector('[data-rh-lote-ded]')) || '0');
+      const notes = tr.querySelector('[data-rh-lote-notes]').value.trim();
+      if(payslipCents === null || deductionsCents === null){ status.textContent = 'VALOR INVÁLIDO EM '+tr.cells[0].textContent+'.'; return; }
+      const changed = payslipCents !== Number(row.payslipCents || 0) || deductionsCents !== Number(row.deductionsCents || 0) || notes !== (row.notes || '');
+      if(changed && (row.saved || payslipCents || deductionsCents || notes)) values.push({employeeId: tr.dataset.rhLoteEmployee, payslipCents, deductionsCents, notes});
+    }
+    if(!values.length){ status.textContent = 'NADA FOI ALTERADO.'; return; }
+    const button = el('btnSaveRhFolhaLote');
+    button.disabled = true;
+    try{
+      await rhApiRequest('/entries', {method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'payslips', month: el('rhFolhaMes').value, values})});
+      el('rhFolhaLoteDialog').close();
+      await refreshAfterAction(() => loadRhFolha({silent:true}));
+      showPurchaseToast(values.length+' contracheque(s) salvo(s).');
+    }catch(error){ status.textContent = error.message; }
     finally{ button.disabled = false; }
   });
 
